@@ -25,7 +25,7 @@ public class SplashScreen extends Application {
   @Override
   public void start(Stage primaryStage) {
     BorderPane root = new BorderPane();
-    Label altToImage = new Label(" Loading Ride, please wait...");
+    Label altToImage = new Label(" Loading Gride, please wait...");
     root.setTop(altToImage);
 
     Image logo = new Image(Objects.requireNonNull(FileUtils.getResourceUrl("image/logo.png")).toExternalForm());

@@ -105,11 +105,11 @@
       <outputDirectory>.</outputDirectory>
     </file>
     <file>
-      <source>src/main/resources/image/ride-icon.png</source>
+      <source>src/bin/gride-icon.png</source>
       <outputDirectory>.</outputDirectory>
     </file>
     <file>
-      <source>src/bin/ride-icon.ico</source>
+      <source>src/bin/gride-icon.ico</source>
       <outputDirectory>.</outputDirectory>
     </file>
   </files>
@@ -127,16 +127,15 @@
       <directory>src/bin/</directory>
       <outputDirectory>.</outputDirectory>
       <includes>
-        <include>ride.xml</include>
         <include>*.md</include>
-        <include>ride.cmd</include>
+        <include>gride.cmd</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>src/bin/</directory>
       <outputDirectory>.</outputDirectory>
       <includes>
-        <include>ride.sh</include>
+        <include>gride.sh</include>
         <include>createLauncher.sh</include>
       </includes>
       <lineEnding>unix</lineEnding>
