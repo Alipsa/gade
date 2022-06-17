@@ -3,7 +3,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "${DIR}" || exit 1
 
-LAUNCHER=~/.local/share/applications/ride.desktop
+LAUNCHER=~/.local/share/applications/gride.desktop
 {
 echo "[Desktop Entry]
 Name=Gride
