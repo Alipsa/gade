@@ -4,6 +4,7 @@ import static se.alipsa.gride.Constants.BRIGHT_THEME;
 import static se.alipsa.gride.Constants.THEME;
 import static se.alipsa.gride.menu.GlobalOptions.MAVEN_HOME;
 
+import groovy.lang.GroovyClassLoader;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -63,6 +64,7 @@ public class Gride extends Application {
   @Override
   public void start(Stage primaryStage) {
     log.info("Starting Gride...");
+    //Thread.currentThread().setContextClassLoader(new GroovyClassLoader());
     instance = this;
     grideBaseDir = Path.of("").toAbsolutePath().toFile();
 

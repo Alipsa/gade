@@ -1,5 +1,6 @@
 package se.alipsa.gride.code.groovytab;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.util.GroovyScriptEngine;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -7,6 +8,7 @@ import javafx.scene.control.Button;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.code.CodeTextArea;
@@ -53,6 +55,7 @@ public class GroovyTab extends TextAreaTab {
 
   public void initSession() {
     engine = factory.getScriptEngine();
+    //engine = new GroovyScriptEngineImpl(new GroovyClassLoader());
     Platform.runLater(() -> engine.put("inout", gui.getInoutComponent()));;
   }
 
@@ -109,6 +112,7 @@ public class GroovyTab extends TextAreaTab {
       gui.getConsoleComponent().promptAndScrollToEnd();
     });
     Thread thread = new Thread(task);
+    //thread.setContextClassLoader(new GroovyClassLoader());
     thread.setDaemon(false);
     consoleComponent.startThreadWhenOthersAreFinished(thread, "groovyScript");
   }
