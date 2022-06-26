@@ -1,5 +1,7 @@
 package se.alipsa.gride.model;
 
+import tech.tablesaw.api.Row;
+
 import java.util.List;
 
 public class TableMetaData {
@@ -31,6 +33,19 @@ public class TableMetaData {
     setNumericPrecision(toInt(row.get(7)));
     setNumericScale(toInt(row.get(8)));
     setCollationName(String.valueOf(row.get(9)));
+  }
+
+  public TableMetaData(Row row) {
+    setTableName(row.getString(0));
+    setTableType(row.getString(1));
+    setColumnName(row.getString(2));
+    setOrdinalPosition(row.getInt(3)); // Usually an int but on hsqldb this is a double
+    setIsNullable(row.getString(4));
+    setDataType(String.valueOf(row.getObject(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
+    setCharacterMaximumLength(row.getInt(6));
+    setNumericPrecision(row.getInt(7));
+    setNumericScale(row.getInt(8));
+    setCollationName(row.getString(9));
   }
 
   public TableMetaData(Object tableName, Object tableType, Object columnName, Object ordinalPosition,

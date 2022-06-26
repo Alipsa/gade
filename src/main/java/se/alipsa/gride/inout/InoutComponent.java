@@ -2,6 +2,7 @@ package se.alipsa.gride.inout;
 
 import static se.alipsa.gride.menu.GlobalOptions.ENABLE_GIT;
 import static se.alipsa.gride.menu.GlobalOptions.USE_MAVEN_CLASSLOADER;
+import static se.alipsa.gride.utils.TableUtils.transpose;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -30,6 +31,8 @@ import se.alipsa.gride.environment.connections.ConnectionInfo;
 import se.alipsa.gride.inout.plot.PlotsTab;
 import se.alipsa.gride.inout.viewer.ViewTab;
 import se.alipsa.gride.utils.*;
+import tech.tablesaw.api.StringColumn;
+import tech.tablesaw.api.Table;
 
 import java.io.File;
 import java.io.IOException;
@@ -222,11 +225,19 @@ public class InoutComponent extends TabPane implements InOut {
     display(img, title);
   }
 
-  public void view(Object matrix, String... title) {
-   View(matrix,title);
+  public void view(Table table, String... title) {
+    String tit = title.length > 0 ? title[0] : table.name();
+    if (tit == null) {
+      tit = gui.getCodeComponent().getActiveScriptName();
+      int extIdx = tit.lastIndexOf('.');
+      if (extIdx > 0) {
+        tit = tit.substring(0, extIdx);
+      }
+    }
+    showInViewer(table, tit);
   }
 
-  public void View(Object matrix, String... title) {
+  public void view(Object matrix, String... title) {
     if (matrix == null) {
       Alerts.warnFx("View", "matrix is null, cannot View");
       return;
@@ -245,7 +256,7 @@ public class InoutComponent extends TabPane implements InOut {
     }
   }
 
-  public void View(List<List<Object>> matrix, String... title) {
+  public void view(List<List<Object>> matrix, String... title) {
     if (matrix == null) {
       Alerts.warnFx("View", "matrix is null, cannot View");
       return;
@@ -257,22 +268,29 @@ public class InoutComponent extends TabPane implements InOut {
       Alerts.warnFx("Cannot view a ListAdapter directly", "Convert " + matrix.getClass().getName() + " to a java 2D array before viewing using Java.to(data,'java.lang.Object[][]')");
       return;
     }
-    Table table = new Table(header, matrix);
+
+    var t = transpose(matrix);
+    StringColumn[] columns = new StringColumn[t.size()];
+    for (int i = 0; i < columns.length; i++) {
+      columns[i] = StringColumn.create(header.get(i), t.get(i).stream().map(String::valueOf).toArray(String[]::new));
+    }
+    Table table = Table.create().addColumns(columns);
     showInViewer(table, title);
   }
 
   private void view2dArray(Object[][] matrix, String... title) {
-      List<List<Object>> objList = new ArrayList<>();
-      for (Object[] row : matrix) {
-        objList.add(Arrays.asList(row));
-      }
-      List<String> header = createAnonymousHeader(matrix[0].length);
-      Table table = new Table(header, objList);
-      showInViewer(table, title);
-  }
-
-  public void view(List<List<Object>> matrix, String... title) {
-    View(matrix, title);
+    List<List<Object>> objList = new ArrayList<>();
+    for (Object[] row : matrix) {
+      objList.add(Arrays.asList(row));
+    }
+    List<String> header = createAnonymousHeader(matrix[0].length);
+    var t = transpose(matrix);
+    StringColumn[] columns = new StringColumn[t.length];
+    for (int i = 0; i < columns.length; i++) {
+      columns[i] = StringColumn.create(header.get(i), Arrays.stream(t[i]).map(String::valueOf).toArray(String[]::new));
+    }
+    Table table = Table.create().addColumns(columns);
+    showInViewer(table, title);
   }
 
   @NotNull
@@ -348,16 +366,6 @@ public class InoutComponent extends TabPane implements InOut {
 
   public Stage getStage() {
     return gui.getStage();
-  }
-
-  private void view(Matrix mat, String... title) {
-    Table table = new Table(mat);
-    showInViewer(table, title);
-  }
-
-  private void view(Vector<?> vec, String... title) {
-    Table table = new Table(vec);
-    showInViewer(table, title);
   }
 
   public void showInViewer(Table table, String... title) {

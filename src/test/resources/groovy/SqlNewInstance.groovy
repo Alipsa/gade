@@ -5,7 +5,7 @@ package groovy
 
 import se.alipsa.groovy.datautil.SqlUtil
 
-def sql = SqlUtil.newInstance(dbUrl, dbUser, dbPasswd, dbDriver, this)
+def sql = SqlUtil.newInstance(dbUrl, dbUser, dbPasswd, dbDriver)
 def idList = new ArrayList()
 
 try {

@@ -16,7 +16,11 @@ import se.alipsa.gride.code.CodeType;
 import se.alipsa.gride.code.TextAreaTab;
 import se.alipsa.gride.console.ConsoleComponent;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
-import se.alipsa.gride.utils.*;
+import se.alipsa.gride.utils.Alerts;
+import se.alipsa.gride.utils.ExceptionAlert;
+import se.alipsa.gride.utils.SqlParser;
+import se.alipsa.gride.utils.StringUtils;
+import tech.tablesaw.api.Table;
 
 import java.io.File;
 import java.sql.Connection;
@@ -120,7 +124,7 @@ public class SqlTab extends TextAreaTab {
               while (hasMoreResultSets || stm.getUpdateCount() != -1) {
                 if (hasMoreResultSets) {
                   try (ResultSet rs = stm.getResultSet()) {
-                    Table table = new Table(rs);
+                    Table table = Table.read().db(rs);
                     Platform.runLater(() ->
                         gui.getInoutComponent().showInViewer(table, SqlTab.this.getTitle() + " " + queryCount.getAndIncrement() + ".")
                     );

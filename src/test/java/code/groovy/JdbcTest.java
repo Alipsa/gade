@@ -16,8 +16,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JdbcTest {
 
@@ -50,13 +53,16 @@ public class JdbcTest {
     URL url = getClass().getResource(scriptPath);
     String groovyCode = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A").next();
     System.out.println("***** runWithShell");
-    runWithShell(groovyCode, variables);
+    var idList = (List<?>)runWithShell(groovyCode, variables);
+    assertEquals(2, idList.size());
 
     System.out.println("***** runWithGroovyScriptEngine");
-    runWithGroovyScriptEngine(url, variables);
+    idList = (List<?>)runWithGroovyScriptEngine(url, variables);
+    assertEquals(2, idList.size());
 
     System.out.println("***** runWithScriptEngine");
-    runWithScriptEngine(groovyCode, variables);
+    idList = (List<?>)runWithScriptEngine(groovyCode, variables);
+    assertEquals(2, idList.size());
   }
 
   @Test
@@ -68,13 +74,16 @@ public class JdbcTest {
     URL url = getClass().getResource(scriptPath);
     String groovyCode = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A").next();
     System.out.println("***** runWithShell");
-    runWithShell(groovyCode, variables);
+    var idList = (List<?>)runWithShell(groovyCode, variables);
+    assertEquals(2, idList.size());
 
     System.out.println("***** runWithGroovyScriptEngine");
-    runWithGroovyScriptEngine(url, variables);
+    idList = (List<?>)runWithGroovyScriptEngine(url, variables);
+    assertEquals(2, idList.size());
 
     System.out.println("***** runWithScriptEngine");
-    runWithScriptEngine(groovyCode, variables);
+    idList = (List<?>)runWithScriptEngine(groovyCode, variables);
+    assertEquals(2, idList.size());
   }
 
   @Test
@@ -86,13 +95,16 @@ public class JdbcTest {
     URL url = getClass().getResource(scriptPath);
     String groovyCode = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A").next();
     System.out.println("***** runWithShell");
-    runWithShell(groovyCode, variables);
+    var idList = (List<?>)runWithShell(groovyCode, variables);
+    assertEquals(2, idList.size());
 
     System.out.println("***** runWithGroovyScriptEngine");
-    runWithGroovyScriptEngine(url, variables);
+    idList = (List<?>)runWithGroovyScriptEngine(url, variables);
+    assertEquals(2, idList.size());
 
     System.out.println("***** runWithScriptEngine");
-    runWithScriptEngine(groovyCode, variables);
+    idList = (List<?>)runWithScriptEngine(groovyCode, variables);
+    assertEquals(2, idList.size());
   }
 
 

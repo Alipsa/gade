@@ -2,6 +2,7 @@ package se.alipsa.gride.inout.viewer;
 
 import static se.alipsa.gride.Constants.KEY_CODE_COPY;
 import static se.alipsa.gride.utils.HtmlDecorator.decorate;
+import static se.alipsa.gride.utils.TableUtils.toRowList;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -25,6 +26,7 @@ import se.alipsa.gride.Constants;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.code.TextAreaTab;
 import se.alipsa.gride.code.xmltab.XmlTextArea;
+import tech.tablesaw.api.Table;
 import se.alipsa.gride.utils.*;
 
 import javax.xml.transform.OutputKeys;
@@ -59,8 +61,9 @@ public class ViewTab extends Tab {
 
   public void viewTable(Table table, String... title) {
     try {
-      List<String> headerList = table.getHeaderList();
-      List<List<Object>> rowList = table.getRowList();
+
+      List<String> headerList = table.columnNames();
+      List<List<Object>> rowList = toRowList(table);
       NumberFormat numberFormatter = NumberFormat.getInstance();
       numberFormatter.setGroupingUsed(false);
 
@@ -103,7 +106,7 @@ public class ViewTab extends Tab {
         TableColumn<List<String>, String> col = new TableColumn<>();
 
         Label colLabel = new Label(colName);
-        colLabel.setTooltip(new Tooltip(table.getColumnType(i).getClass().getSimpleName()));
+        colLabel.setTooltip(new Tooltip(table.column(i).type().name()));
         col.setGraphic(colLabel);
         col.setPrefWidth(new Text(colName).getLayoutBounds().getWidth() * 1.25 + 12.0);
 

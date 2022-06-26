@@ -1,8 +1,5 @@
 package se.alipsa.gride.environment.connections;
 
-import static se.alipsa.gride.Constants.*;
-import static se.alipsa.gride.utils.RQueryBuilder.*;
-
 import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -26,16 +23,17 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
-import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
+import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.UnStyledCodeArea;
 import se.alipsa.gride.code.CodeType;
 import se.alipsa.gride.code.groovytab.GroovyTextArea;
 import se.alipsa.gride.model.TableMetaData;
 import se.alipsa.gride.utils.*;
+import tech.tablesaw.api.Table;
 
 import javax.script.ScriptEngine;
 import java.io.Serializable;
@@ -46,9 +44,13 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
+import static se.alipsa.gride.Constants.*;
+import static se.alipsa.gride.utils.QueryBuilder.*;
+
 public class ConnectionsTab extends Tab {
 
   private static final String NAME_PREF = "ConnectionsTab.name";
+  private static final String DEPENDENCY_PREF = "ConnectionsTab.dependency";
   private static final String DRIVER_PREF = "ConnectionsTab.driver";
   private static final String URL_PREF = "ConnectionsTab.url";
   private static final String USER_PREF = "ConnectionsTab.user";
@@ -56,6 +58,7 @@ public class ConnectionsTab extends Tab {
   private final BorderPane contentPane;
   private final Gride gui;
   private final ComboBox<String> name = new ComboBox<>();
+  private TextField dependencyText;
   private TextField driverText;
   private TextField urlText;
   private TextField userText;
@@ -105,6 +108,7 @@ public class ConnectionsTab extends Tab {
     name.setPrefWidth(300);
     name.getSelectionModel().selectedIndexProperty().addListener((observable, oldValue, newValue) -> {
       ConnectionInfo ci = getSavedConnection(name.getValue());
+      dependencyText.setText(ci.getDependency());
       userText.setText(ci.getUser());
       driverText.setText(ci.getDriver());
       urlText.setText(ci.getUrl());
@@ -130,6 +134,14 @@ public class ConnectionsTab extends Tab {
     passwordBox.getChildren().addAll(passwordLabel, passwordField);
     topInputPane.getChildren().add(passwordBox);
 
+    VBox dependencyBox = new VBox();
+    Label dependencyLabel = new Label("Dependency:");
+    dependencyText = new TextField(getPrefOrBlank(DEPENDENCY_PREF));
+    HBox.setHgrow(dependencyBox, Priority.SOMETIMES);
+    dependencyBox.getChildren().addAll(dependencyLabel, dependencyText);
+    middleInputPane.getChildren().add(dependencyBox);
+
+
     VBox driverBox = new VBox();
     Label driverLabel = new Label("Driver:");
     driverText = new TextField(getPrefOrBlank(DRIVER_PREF));
@@ -148,6 +160,7 @@ public class ConnectionsTab extends Tab {
     newButton.setPadding(new Insets(7, 10, 7, 10));
     newButton.setOnAction(a -> {
       name.setValue("");
+      dependencyText.clear();
       userText.clear();
       passwordField.clear();
       driverText.clear();
@@ -168,6 +181,7 @@ public class ConnectionsTab extends Tab {
       connectionsTable.getItems().removeIf(c -> c.getName().equals(connectionName));
       name.getItems().remove(connectionName);
       name.setValue("");
+      dependencyText.clear();
       userText.clear();
       passwordField.clear();
       driverText.clear();
@@ -192,7 +206,7 @@ public class ConnectionsTab extends Tab {
         log.warn(msg);
         Alerts.info("MySQL and multiple query statements", msg);
       }
-      ConnectionInfo con = new ConnectionInfo(name.getValue(), driverText.getText(), urlText.getText(), userText.getText(), passwordField.getText());
+      ConnectionInfo con = new ConnectionInfo(name.getValue(), dependencyText.getText(), driverText.getText(), urlText.getText(), userText.getText(), passwordField.getText());
       try {
         Connection connection = con.connect();
         if (connection == null) {
@@ -241,12 +255,14 @@ public class ConnectionsTab extends Tab {
     } else {
       existing.setUser(con.getUser());
       existing.setPassword(con.getPassword());
+      existing.setDependency(con.getDependency());
       existing.setDriver(con.getDriver());
       existing.setUrl(con.getUrl());
 
     }
     if (name.getItems().stream().filter(c -> c.equals(con.getName())).findAny().orElse(null) == null) {
       name.getItems().add(con.getName());
+      dependencyText.setText(con.getDependency());
       userText.setText(con.getUser());
       passwordField.setText(con.getPassword());
       driverText.setText(con.getDriver());
@@ -308,8 +324,8 @@ public class ConnectionsTab extends Tab {
       final MenuItem viewDatabasesMenuItem = new MenuItem("view databases");
       viewDatabasesMenuItem.setOnAction(event -> showDatabases(row.getItem()));
 
-      final MenuItem viewRcodeMenuItem = new MenuItem("show R connection code");
-      viewRcodeMenuItem.setOnAction(event -> showRConnectionCode());
+      final MenuItem viewRcodeMenuItem = new MenuItem("show connection code");
+      viewRcodeMenuItem.setOnAction(event -> showConnectionCode());
 
       contextMenu.getItems().addAll(viewMenuItem, viewDatabasesMenuItem, removeMenuItem, deleteMenuItem, viewRcodeMenuItem);
       row.contextMenuProperty().bind(
@@ -322,6 +338,7 @@ public class ConnectionsTab extends Tab {
         ConnectionInfo info = tableView.getSelectionModel().getSelectedItem();
         if (info != null) {
           name.setValue(info.getName());
+          dependencyText.setText(info.getDependency());
           driverText.setText(info.getDriver());
           urlText.setText(info.getUrl());
           userText.setText(info.getUser());
@@ -332,16 +349,14 @@ public class ConnectionsTab extends Tab {
     });
   }
 
-  private void showRConnectionCode() {
+  private void showConnectionCode() {
     ConnectionInfo info = connectionsTable.getSelectionModel().getSelectedItem();
     String code = createConnectionCode(info);
     displayTextInWindow("Groovy connection code for " + info.getName(), code, CodeType.GROOVY);
   }
 
   private String createConnectionCode(ConnectionInfo info) {
-    StringBuilder code = RQueryBuilder.baseRQueryString(info, "sqlDf <- dbGetQuery", "select * from someTable")
-        .append("\n# close the connection\n")
-        .append("dbDisconnect(").append(CONNECTION_VAR_NAME).append(")\n");
+    StringBuilder code = QueryBuilder.baseQueryString(info, "select * from someTable");
     String rCode = code.toString();
     rCode = rCode.replace(DRIVER_VAR_NAME, "drv");
     rCode = rCode.replace(CONNECTION_VAR_NAME, "con");
@@ -365,6 +380,7 @@ public class ConnectionsTab extends Tab {
     Preferences pref = gui.getPrefs().node(CONNECTIONS_PREF).node(name);
     ConnectionInfo c = new ConnectionInfo();
     c.setName(name);
+    c.setDependency(pref.get(DEPENDENCY_PREF, ""));
     c.setDriver(pref.get(DRIVER_PREF, ""));
     c.setUrl(pref.get(URL_PREF, ""));
     c.setUser(pref.get(USER_PREF, ""));
@@ -374,11 +390,13 @@ public class ConnectionsTab extends Tab {
   private void saveConnection(ConnectionInfo c) {
     // Save current
     setPref(NAME_PREF, name.getValue());
+    setPref(DEPENDENCY_PREF, dependencyText.getText());
     setPref(DRIVER_PREF, driverText.getText());
     setPref(URL_PREF, urlText.getText());
     setPref(USER_PREF, userText.getText());
     // Save to list of defined connections
     Preferences pref = gui.getPrefs().node(CONNECTIONS_PREF).node(c.getName());
+    pref.put(DEPENDENCY_PREF, c.getDependency());
     pref.put(DRIVER_PREF, c.getDriver());
     pref.put(URL_PREF, c.getUrl());
     if (c.getUser() != null) {
@@ -409,7 +427,6 @@ public class ConnectionsTab extends Tab {
   private void showConnectionMetaData(ConnectionInfo con) {
     setWaitCursor();
     String sql;
-    boolean addNaWhenBlank = false;
     if (con.getDriver().equals(DRV_SQLLITE)) {
       boolean hasTables = false;
       try {
@@ -462,10 +479,7 @@ public class ConnectionsTab extends Tab {
          "where TABLE_TYPE <> 'SYSTEM TABLE'\n" +
          "and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')";
     }
-    if (con.getDriver().equals(DRV_SQLSERVER)) {
-      addNaWhenBlank = true;
-    }
-    String rCode = baseRQueryString(con, "connectionsTabDf <- dbGetQuery", sql, addNaWhenBlank).toString();
+    String rCode = baseQueryString(con, sql).toString();
 
     // runScriptSilent newer returns so have to run in a thread
     runScriptInThread(rCode, con);
@@ -543,28 +557,28 @@ public class ConnectionsTab extends Tab {
 
   void runScriptInThread(String groovyCode, ConnectionInfo con) {
     String connectionName = con.getName();
-    Task<Void> task = new Task<>() {
+    Task<Table> task = new Task<>() {
       @Override
-      public Void call() throws Exception {
+      public Table call() throws Exception {
         try {
           var factory = new GroovyScriptEngineFactory();
           ScriptEngine engine = factory.getScriptEngine();
-          engine.eval(groovyCode);
+          return (Table)engine.eval(groovyCode);
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
           throw new Exception(e);
         }
-        return null;
       }
     };
     task.setOnSucceeded(e -> {
       try {
-        var connectionsTabDf = gui.getConsoleComponent().fetchVar("connectionsTabDf");
-        List<List<Object>> rows = (List<List<Object>>)connectionsTabDf;
+        var table = task.get();
         List<TableMetaData> metaDataList = new ArrayList<>();
-        rows.forEach(r -> metaDataList.add(new TableMetaData(r)));
-        gui.getConsoleComponent().runScriptSilent(cleanupRQueryString().append("rm(connectionsTabDf)").toString());
+        for (var row : table) {
+          metaDataList.add(new TableMetaData(row));
+        }
+        //gui.getConsoleComponent().runScriptSilent(cleanupQueryString().append("rm(connectionsTabDf)").toString());
         setNormalCursor();
         TreeView<String> treeView = createMetaDataTree(metaDataList, con);
         createAndShowWindow(connectionName + " connection view", treeView);
@@ -582,7 +596,7 @@ public class ConnectionsTab extends Tab {
         ex = throwable;
       }
       String msg = gui.getConsoleComponent().createMessageFromEvalException(ex);
-      log.warn("Exception when running R code {}", groovyCode);
+      log.warn("Exception when running Groovy code {}", groovyCode);
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
     });
     Thread scriptThread = new Thread(task);
@@ -697,7 +711,7 @@ public class ConnectionsTab extends Tab {
             Table table;
             try (ResultSet rs = stm.executeQuery("SELECT * from " + tableName)) {
               rs.setFetchSize(200);
-              table = new Table(rs);
+              table = Table.read().db(rs);
             }
             gui.getInoutComponent().showInViewer(table, tableName);
 
