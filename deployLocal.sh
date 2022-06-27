@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-source "/home/per/.sdkman/bin/sdkman-init.sh"
+
+source ~/.sdkman/bin/sdkman-init.sh
 source jdk17
 
 cd "${SCRIPT_DIR}" || exit
@@ -9,7 +10,11 @@ echo "building Gride"
 mvn clean package || exit 1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TARGET_DIR="$HOME/programs/gride"
+if [[ -z "${1}" ]]; then
+  TARGET_DIR="$HOME/programs/gride"
+else
+  TARGET_DIR="${1}"
+fi
 cd "${DIR}" || exit 1
 
 PROPERTY_FILE=version.properties

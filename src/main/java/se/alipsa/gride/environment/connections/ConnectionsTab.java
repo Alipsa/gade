@@ -197,7 +197,7 @@ public class ConnectionsTab extends Tab {
 
     addButton.setOnAction(e -> {
       if (name.getValue() == null || name.getValue().isBlank()) {
-        log.info("No connection name provided, cannot add it");
+        Alerts.info("Information missing", "No connection name provided, cannot add it");
         return;
       }
       String urlString = urlText.getText().toLowerCase();
@@ -208,11 +208,18 @@ public class ConnectionsTab extends Tab {
       }
       ConnectionInfo con = new ConnectionInfo(name.getValue(), dependencyText.getText(), driverText.getText(), urlText.getText(), userText.getText(), passwordField.getText());
       try {
+        log.info("Connecting to " + urlString);
         Connection connection = con.connect();
         if (connection == null) {
-          return;
+          boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
+              "Do you still want to save this connection?");
+          if (dontSave) {
+            return;
+          }
         }
-        connection.close();
+        if (connection != null) {
+          connection.close();
+        }
         log.info("Connection created successfully, all good!");
       } catch (SQLException ex) {
         Exception exceptionToShow = ex;
