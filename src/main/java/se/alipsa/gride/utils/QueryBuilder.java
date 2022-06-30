@@ -34,7 +34,6 @@ public class QueryBuilder {
         .append(password).append("', '")
         .append(con.getDriver())
         .append("')\n")
-        .append("table = null\n")
         .append("\nsql.query(\"\"\"").append(sql).append("\"\"\") { rs -> {")
         .append("\n  table = Table.read().db(rs)\n")
         .append("  }\n")
