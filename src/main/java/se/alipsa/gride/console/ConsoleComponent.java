@@ -363,11 +363,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void removeVariableFromSession(String varName) {
-    try {
-      engine.eval("if (exists('" + varName + "')) rm(" + varName + ")");
-    } catch (ScriptException e) {
-      log.warn("Failed to remove variable {}", varName);
-    }
+    engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
   }
 
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
@@ -704,7 +700,10 @@ public class ConsoleComponent extends BorderPane {
       engine.getContext().setWriter(outputWriter);
       engine.getContext().setErrorWriter(errWriter);
 
-      engine.eval(script);
+      var result = engine.eval(script);
+      if (result != null) {
+        gui.getConsoleComponent().getConsole().appendFx("[result] " + result, true);
+      }
       Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
       postEvalOutput();
 
