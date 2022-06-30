@@ -27,7 +27,7 @@ public class UserManual {
   private final WebEngine webEngine;
   private final Button featuresButton;
   private final Button rideShortCuts;
-  private final Button interactingWithRideButton;
+  private final Button interactingWithGrideButton;
   private final Button examplesButton;
   private final Button packagesButton;
   private final Stage stage;
@@ -48,22 +48,22 @@ public class UserManual {
     borderPane.setTop(linkPane);
 
     featuresUrl = FileUtils.getResourceUrl("manual/features.html");
-    URL interactionUrl = FileUtils.getResourceUrl("manual/InteractingWithRide.html");
+    URL interactionUrl = FileUtils.getResourceUrl("manual/InteractingWithGride.html");
     URL shortcutsUrl = FileUtils.getResourceUrl("manual/KeyBoardShortcuts.html");
     URL examplesUrl = FileUtils.getResourceUrl("manual/examples.html");
     URL packagesUrl = FileUtils.getResourceUrl("manual/packages.html");
 
-    featuresButton = new Button("Ride features");
+    featuresButton = new Button("Gride features");
     featuresButton.getStyleClass().add(NORMAL_BUTTON);
     featuresButton.setOnAction(e -> loadPage(featuresUrl, featuresButton));
 
-    rideShortCuts = new Button("Ride keyboard shortcuts");
+    rideShortCuts = new Button("Gride keyboard shortcuts");
     rideShortCuts.getStyleClass().add(NORMAL_BUTTON);
     rideShortCuts.setOnAction(e -> loadPage(shortcutsUrl, rideShortCuts));
 
-    interactingWithRideButton = new Button("Interacting with Ride");
-    interactingWithRideButton.getStyleClass().add(NORMAL_BUTTON);
-    interactingWithRideButton.setOnAction(e -> loadPage(interactionUrl, interactingWithRideButton));
+    interactingWithGrideButton = new Button("Interacting with Gride");
+    interactingWithGrideButton.getStyleClass().add(NORMAL_BUTTON);
+    interactingWithGrideButton.setOnAction(e -> loadPage(interactionUrl, interactingWithGrideButton));
 
     examplesButton = new Button("Tips and tricks");
     examplesButton.getStyleClass().add(NORMAL_BUTTON);
@@ -73,7 +73,7 @@ public class UserManual {
     packagesButton.getStyleClass().add(NORMAL_BUTTON);
     packagesButton.setOnAction(e -> loadPage(packagesUrl, packagesButton));
 
-    linkPane.getChildren().addAll(featuresButton, rideShortCuts, interactingWithRideButton, packagesButton, examplesButton);
+    linkPane.getChildren().addAll(featuresButton, rideShortCuts, interactingWithGrideButton, packagesButton, examplesButton);
 
     webEngine.setCreatePopupHandler(
         (PopupFeatures config) -> {
@@ -119,7 +119,7 @@ public class UserManual {
   void clearButtonStyles() {
     clearButtonStyle(featuresButton);
     clearButtonStyle(rideShortCuts);
-    clearButtonStyle(interactingWithRideButton);
+    clearButtonStyle(interactingWithGrideButton);
     clearButtonStyle(examplesButton);
     clearButtonStyle(packagesButton);
   }

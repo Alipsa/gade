@@ -442,7 +442,7 @@ public class MainMenu extends MenuBar {
       gui.setWaitCursor();
       Alert popup = new Alert(Alert.AlertType.INFORMATION);
       popup.setTitle("Check latest version");
-      popup.getDialogPane().setHeaderText("Ride version info");
+      popup.getDialogPane().setHeaderText("Gride version info");
       TextArea textArea = new TextArea("Checking for the latest version....");
       textArea.setEditable(false);
       textArea.setWrapText(true);
@@ -533,8 +533,8 @@ public class MainMenu extends MenuBar {
         .append(" (").append(nashornScriptEngineFactory.getLanguageName())
         .append(" ").append(nashornScriptEngineFactory.getLanguageVersion()).append(")");
 
-    content.append("\n\n See https://github.com/Alipsa/ride/ for more info or to report issues");
-    showInfoAlert("About Ride", content, 615, 220);
+    content.append("\n\n See https://github.com/perNyfelt/gride/ for more info or to report issues");
+    showInfoAlert("About Gride", content, 615, 220);
 
   }
 

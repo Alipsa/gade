@@ -12,7 +12,7 @@ import se.alipsa.gride.Gride;
 import se.alipsa.gride.code.CodeTextArea;
 import se.alipsa.gride.code.CodeType;
 import se.alipsa.gride.code.TextAreaTab;
-import se.alipsa.gride.console.AppenderPrintWriter;
+import se.alipsa.gride.console.AppenderWriter;
 import se.alipsa.gride.console.ConsoleComponent;
 import se.alipsa.gride.console.ConsoleTextArea;
 import se.alipsa.gride.console.WarningAppenderWriter;
@@ -95,7 +95,7 @@ public class JsTab extends TextAreaTab {
       @Override
       public Void call() throws Exception {
         try (
-            AppenderPrintWriter out = new AppenderPrintWriter(console);
+            AppenderWriter out = new AppenderWriter(console);
             WarningAppenderWriter err = new WarningAppenderWriter(console);
             PrintWriter outputWriter = new PrintWriter(out);
             PrintWriter errWriter = new PrintWriter(err)

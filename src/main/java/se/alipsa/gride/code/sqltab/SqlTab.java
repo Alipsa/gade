@@ -109,7 +109,8 @@ public class SqlTab extends TextAreaTab {
       @Override
       protected Void call() throws Exception {
         ConnectionInfo ci = connectionCombo.getValue();
-        try (Connection con = ci.connect()) {
+
+        try (Connection con = gui.getEnvironmentComponent().connect(ci)) {
           if (con == null) {
             throw new Exception("Failed to establish a connection");
           }

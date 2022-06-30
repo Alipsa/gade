@@ -43,9 +43,13 @@ public class TableMetaData {
     setIsNullable(row.getString(4));
     setDataType(String.valueOf(row.getObject(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
     setCharacterMaximumLength(row.getInt(6));
-    setNumericPrecision(row.getInt(7));
+    setNumericPrecision(toInteger(row.getObject(7))); // On SQL Server, NUMERIC_PRECISION is of type SHORT and cannot be cast to INTEGER
     setNumericScale(row.getInt(8));
     setCollationName(row.getString(9));
+  }
+
+  private Integer toInteger(Object obj) {
+    return obj == null ? null : Integer.parseInt(String.valueOf(obj));
   }
 
   public TableMetaData(Object tableName, Object tableType, Object columnName, Object ordinalPosition,
@@ -220,9 +224,9 @@ public class TableMetaData {
     if (isNullable.equalsIgnoreCase("YES")
         || isNullable.equalsIgnoreCase("TRUE")
         || isNullable.equalsIgnoreCase("1")) {
-      nullable = "null";
+      nullable = "nullable";
     } else {
-      nullable = "not null";
+      nullable = "not nullable";
     }
     //System.out.println(columnName + COLUMN_META_START + dataType + precision + ", " + nullable + COLUMN_META_END);
     return columnName + COLUMN_META_START + dataType + precision + ", " + nullable + COLUMN_META_END;

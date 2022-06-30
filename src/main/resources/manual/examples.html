@@ -12,13 +12,16 @@
 
 
 <h2 id="querying_db">Querying a database</h2>
-You can of course use any R package to work with a database but many of them does not fully work in Renjin yet.
-Gride comes with R2JDBC, a forked version of RJDBC that, in my experience, works well. The SQL support in Ride uses R2JDBC to
-execute queries. I find the following workflow to work well:
+You can of course use any Groovy or Java library to work with a database.
+Gride comes with data-utils, a layer on top of groovy.sql.Sql that makes things work more like normal Groovy code.
+When pulling a jdbc Driver using @Grab and then loading it you easily end up in classLoader issues but data-utils
+fixes that for you so you do not need to worry about that.
+
+I find the following workflow to work well:
 
 <ol>
     <li>Use the query editor (File -> New File -> SQL File) to develop the query</li>
-    <li>Save the sql file and read it in the R code</li>
+    <li>Save the sql file and read it in the Groovy code</li>
 </ol>
 Here is an example:
 <h4>You have the following SQL file saved as fancy.sql</h4>
@@ -27,27 +30,29 @@ Here is an example:
 </div>
 <h4>Now you can use this query as follows:</h4>
 <div class="codeblock">
-    <span class="keyword">library</span>(<span class="string">"org.renjin.cran:DBI"</span>)<br/>
-    <span class="keyword">library</span>(<span class="string">"se.alipsa:R2JDBC"</span>)<br/>
-    <span class="keyword">library</span>(<span class="string">"se.alipsa:rideutils"</span>) <span class="comment"># enable us to use View</span><br/>
+    <span class="keyword">@Grab</span>(<span class="string">'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17'</span>)<br/>
+    <span class="keyword">@Grab</span>(<span class="string">'se.alipsa.groovy:data-utils:1.0-SNAPSHOT'</span>)<br/><br/>
+    <span class="keyword">import</span> se.alipsa.groovy.datautil.SqlUtil
+    <span class="keyword">import</span> tech.tablesaw.api.Table
     <br/>
-    readFile <- <span class="keyword">function</span>(fileName) {<br/>
-        &nbsp;&nbsp;paste(readLines(fileName), collapse=<span class="string">"\n"</span>)<br/>
+    String readFile <span class="keyword">readFile</span>(String fileName) {<br/>
+        &nbsp;&nbsp;return new File(fileName).text<br/>
     }<br/>
     <br/>
-    drv <- JDBC(<span class="string">"com.microsoft.sqlserver.jdbc.SQLServerDriver"</span>)<br/>
+    drv <- <span class="string">"com.microsoft.sqlserver.jdbc.SQLServerDriver"</span><br/>
 
-    fancyCon <- dbConnect(drv<br/>
+    sql <- SqlUtil.newInstance(
     &nbsp;&nbsp;, url=<span class="string">"jdbc:sqlserver://mydbserver:1433;databaseName=fancy;"</span><br/>
     &nbsp;&nbsp;, user=<span class="string">"mmbla"</span><br/>
     &nbsp;&nbsp;, password=<span class="string">"s3cretpassword"</span><br/>
+    &nbsp;&nbsp;, drv
     )<br/>
     <br/>
     <span class="comment"># Read the sql file:</span><br/>
     fancyQuery <- readFile(<span class="string">"fancy.sql"</span>)<br/>
     <br/>
     <span class="comment"># Execute the query:</span><br/>
-    fancyDf <- dbGetQuery(fancyCon, fancyQuery)<br/>
+    fancyTable <- dbGetQuery(fancyCon, fancyQuery)<br/>
     dbDisconnect(fancyCon)<br/>
     <br/>
     <span class="comment"># Do some stuff with the data frame:</span><br/>
@@ -84,6 +89,6 @@ variable or function with exists. E.g:
 
 A more proper way to reuse code is to create a package. How to do that is described in <a href="http://docs.renjin.org/en/latest/writing-renjin-extensions.html">the documentation</a>.<br/>
 <br/>
-Ride has a wizard that helps you create the structure and all the boilerplate code needed (Code -> Create package project).
+Gride has a wizard that helps you create the structure and all the boilerplate code needed (Code -> Create package project).
 </body>
 </html>

@@ -40,7 +40,7 @@ public final class GuiUtils {
 
   private static boolean validateDialogNotNull(Gride gui, Object dialog) {
     if (dialog == null) {
-      String msg = "GuiUtils.addStyle() : Ride instance is " + gui + ", dialog is null. Called from "
+      String msg = "GuiUtils.addStyle() : Gride instance is " + gui + ", dialog is null. Called from "
           + InvocationUtils.callingMethod(4) + ". " + REPORT_BUG;
       if (Platform.isFxApplicationThread()) {
         Alerts.warn("Unexpected error", msg);
@@ -68,7 +68,7 @@ public final class GuiUtils {
         styleSheetList.add(styleSheetUrl.toExternalForm());
       }
     } else {
-      String msg = "GuiUtils.addStyle() : Ride instance is " + gui + ", style sheet list is " + styleSheetList + ". Called from "
+      String msg = "GuiUtils.addStyle() : Gride instance is " + gui + ", style sheet list is " + styleSheetList + ". Called from "
                    + InvocationUtils.callingMethod(stacktraceElement) + ". " + REPORT_BUG;
       log.error(msg);
 

@@ -15,7 +15,7 @@ import java.io.File;
 /** If the DefaultSshSessionFactory is not working, we can roll our own and
  * insert it into the command (like below for a pullCommand):
  * <code>
- * SshSessionFactory sshSessionFactory = new RideSshSessionFactory();
+ * SshSessionFactory sshSessionFactory = new GrideSshSessionFactory();
  *       pullCommand.setTransportConfigCallback( new TransportConfigCallback() {
  *         public void configure( Transport transport ) {
  *           SshTransport sshTransport = ( SshTransport )transport;
@@ -24,7 +24,7 @@ import java.io.File;
  *       } );
  * </code>
  */
-public class RideSshSessionFactory extends JschConfigSessionFactory {
+public class GrideSshSessionFactory extends JschConfigSessionFactory {
 
   @Override
   protected void configure(OpenSshConfig.Host hc, Session session) {

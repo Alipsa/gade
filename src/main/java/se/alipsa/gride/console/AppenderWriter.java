@@ -4,12 +4,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Writer;
 
-public class AppenderPrintWriter extends Writer {
+public class AppenderWriter extends Writer {
 
     private final ConsoleTextArea console;
     private StringBuilder text = null;
 
-    public AppenderPrintWriter(ConsoleTextArea console, boolean... cacheText) {
+    public AppenderWriter(ConsoleTextArea console, boolean... cacheText) {
         this.console = console;
         if (cacheText.length > 0 && cacheText[0]) {
             this.text = new StringBuilder();

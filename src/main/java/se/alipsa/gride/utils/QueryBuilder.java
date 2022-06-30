@@ -18,18 +18,24 @@ public class QueryBuilder {
     String url = con.getUrl();
     String user = con.getUser() == null ? "" : con.getUser().trim();
     String password = con.getPassword() == null ? "" : con.getPassword().trim();
+
+    str.append("""
+        
+        """);
     str.append("@Grab('").append(con.getDependency()).append("')\n")
-        .append("@Grab('se.alipsa.groovy:data-utils:1.0-SNAPSHOT')\n\n")
-        .append("import se.alipsa.groovy.datautil.SqlUtil\n")
-        .append("import tech.tablesaw.api.Table\n\n")
-        .append("def sql = SqlUtil.newInstance('")
+        .append("""
+        @Grab('se.alipsa.groovy:data-utils:1.0-SNAPSHOT')
+        import se.alipsa.groovy.datautil.SqlUtil
+        import tech.tablesaw.api.Table
+        
+        def sql = SqlUtil.newInstance('""")
         .append(url).append("', '")
         .append(user).append("', '")
         .append(password).append("', '")
         .append(con.getDriver())
         .append("')\n")
-        .append("Table table\n")
-        .append("\ndef rs = sql.query(\"\"\"").append(sql).append("\"\"\") { rs -> {")
+        .append("table = null\n")
+        .append("\nsql.query(\"\"\"").append(sql).append("\"\"\") { rs -> {")
         .append("\n  table = Table.read().db(rs)\n")
         .append("  }\n")
         .append("}\n")

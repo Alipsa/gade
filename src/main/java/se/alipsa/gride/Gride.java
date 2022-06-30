@@ -23,6 +23,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import se.alipsa.gride.utils.DynamicClassLoader;
 import se.alipsa.maven.MavenUtils;
 import se.alipsa.gride.code.CodeComponent;
 import se.alipsa.gride.console.ConsoleComponent;
@@ -52,6 +53,9 @@ public class Gride extends Application {
   private File grideBaseDir;
   private FileOpener fileOpener;
   private static Gride instance;
+  // Drivers that uses dll files (e.g. for integrated security) cannot load the dll twice byt different classloaders
+  // so we need to cache the classloader and reuse it.
+  public GroovyClassLoader dynamicClassLoader = new GroovyClassLoader();
 
   public static void main(String[] args) {
     launch(args);
@@ -246,6 +250,7 @@ public class Gride extends Application {
     Platform.runLater(() -> {
       scene.setCursor(Cursor.DEFAULT);
       consoleComponent.ready();
+      environmentComponent.setNormalCursor();
     });
   }
 

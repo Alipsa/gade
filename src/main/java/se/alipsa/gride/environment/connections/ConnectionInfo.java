@@ -79,6 +79,10 @@ public class ConnectionInfo implements Comparable<ConnectionInfo> {
     return url.getValue();
   }
 
+  public String getUrlSafe() {
+    return url.getValueSafe();
+  }
+
   public void setUrl(String url) {
     this.url.setValue(url);
   }
@@ -121,70 +125,6 @@ public class ConnectionInfo implements Comparable<ConnectionInfo> {
     } else {
       return false;
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  public Connection connect() throws SQLException {
-    log.info("Connecting to {} using {}", getUrl(), getDependency());
-    var gui = Gride.instance();
-    Driver driver;
-    ClassLoader cl;
-    if (gui != null) {
-      cl = gui.getConsoleComponent().getClassLoader();
-    } else {
-      cl = Thread.currentThread().getContextClassLoader();
-    }
-
-    try {
-      MavenUtils mavenUtils = new MavenUtils();
-      String[] dep = getDependency().split(":");
-      log.info("Resolving dependency {}", getDependency());
-      File jar = mavenUtils.resolveArtifact(dep[0], dep[1], null, "jar", dep[2]);
-      URL[] urls = new URL[] {jar.toURI().toURL()};
-      log.info("Dependency url is {}", urls[0]);
-      ClassLoader classLoader = new URLClassLoader(urls, cl);
-      log.info("Attempting to load the class {}", getDriver());
-      Class<Driver> clazz = (Class<Driver>) classLoader.loadClass(getDriver());
-      log.info("Loaded driver from session classloader, instating the driver {}", getDriver());
-      try {
-        driver = clazz.getDeclaredConstructor().newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | NullPointerException e) {
-        log.error("Failed to instantiate the driver: {}, clazz is {}", getDriver(), clazz, e);
-        Platform.runLater(() ->
-            Alerts.showAlert("Failed to instantiate the driver",
-                getDriver() + " could not be loaded from dependency " + getDependency(),
-                Alert.AlertType.ERROR)
-        );
-        return null;
-      }
-    } catch (ClassCastException | ClassNotFoundException | SettingsBuildingException | ArtifactResolutionException | MalformedURLException e) {
-      Platform.runLater(() ->
-          Alerts.showAlert("Failed to load driver",
-              getDriver() + " could not be loaded from dependency " + getDependency(),
-              Alert.AlertType.ERROR)
-      );
-      return null;
-    }
-    Properties props = new Properties();
-    if ( urlContainsLogin() ) {
-      log.info("Skipping specified user/password since it is part of the url");
-    } else {
-      if (getUser() != null) {
-        props.put("user", getUser());
-        if (getPassword() != null) {
-          props.put("password", getPassword());
-        }
-      }
-    }
-    if (gui != null) {
-      gui.setNormalCursor();
-    }
-    return driver.connect(getUrl(), props);
-  }
-
-  public boolean urlContainsLogin() {
-    String safeLcUrl = url.getValueSafe().toLowerCase();
-    return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") ) || safeLcUrl.contains("@");
   }
 
   public String asJson() {

@@ -1,5 +1,7 @@
 package se.alipsa.gride.environment.connections;
 
+import groovy.lang.GroovyClassLoader;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -25,7 +27,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
+import org.apache.maven.settings.building.SettingsBuildingException;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.UnStyledCodeArea;
@@ -33,11 +36,14 @@ import se.alipsa.gride.code.CodeType;
 import se.alipsa.gride.code.groovytab.GroovyTextArea;
 import se.alipsa.gride.model.TableMetaData;
 import se.alipsa.gride.utils.*;
+import se.alipsa.maven.MavenUtils;
 import tech.tablesaw.api.Table;
 
-import javax.script.ScriptEngine;
+import java.io.File;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.*;
 import java.util.*;
 import java.util.prefs.BackingStoreException;
@@ -209,7 +215,7 @@ public class ConnectionsTab extends Tab {
       ConnectionInfo con = new ConnectionInfo(name.getValue(), dependencyText.getText(), driverText.getText(), urlText.getText(), userText.getText(), passwordField.getText());
       try {
         log.info("Connecting to " + urlString);
-        Connection connection = con.connect();
+        Connection connection = connect(con);
         if (connection == null) {
           boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
               "Do you still want to save this connection?");
@@ -437,7 +443,7 @@ public class ConnectionsTab extends Tab {
     if (con.getDriver().equals(DRV_SQLLITE)) {
       boolean hasTables = false;
       try {
-        Connection jdbcCon = con.connect();
+        Connection jdbcCon = connect(con);
         if (jdbcCon == null) {
           Alerts.warn("Failed to connect", "Failed to establish a connection to SQLite");
           return;
@@ -486,15 +492,22 @@ public class ConnectionsTab extends Tab {
          "where TABLE_TYPE <> 'SYSTEM TABLE'\n" +
          "and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')";
     }
-    String rCode = baseQueryString(con, sql).toString();
 
-    // runScriptSilent newer returns so have to run in a thread
-    runScriptInThread(rCode, con);
+    runQueryInThread(sql, con);
+    /*
+    try {
+      log.info("java.library.path={}", System.getProperty("java.library.path"));
+      Table table = runQuery(sql, con);
+      createTableTree(table, con);
+    } catch (SQLException e) {
+      ExceptionAlert.showAlert("Failed to run meta data query", e);
+    }
+     */
   }
 
   private void showDatabases(ConnectionInfo connectionInfo) {
 
-    try(Connection con = connectionInfo.connect()) {
+    try(Connection con = connect(connectionInfo)) {
 
       if (con == null) {
         Alerts.warn("Failed to connect to db", "Failed to establish a connection to the database");
@@ -562,15 +575,31 @@ public class ConnectionsTab extends Tab {
     createAndShowWindow(title, scrollPane);
   }
 
-  void runScriptInThread(String groovyCode, ConnectionInfo con) {
+  Table runQuery(String sql, ConnectionInfo con) throws SQLException {
+    try (Connection connection = connect(con)){
+      ResultSet rs = connection.createStatement().executeQuery(sql);
+      return Table.read().db(rs);
+    }
+  }
+
+  void createTableTree(Table table, ConnectionInfo con) {
     String connectionName = con.getName();
+    List<TableMetaData> metaDataList = new ArrayList<>();
+    for (var row : table) {
+      metaDataList.add(new TableMetaData(row));
+    }
+    setNormalCursor();
+    TreeView<String> treeView = createMetaDataTree(metaDataList, con);
+    createAndShowWindow(connectionName + " connection view", treeView);
+  }
+
+  void runQueryInThread(String sql, ConnectionInfo con) {
     Task<Table> task = new Task<>() {
       @Override
       public Table call() throws Exception {
-        try {
-          var factory = new GroovyScriptEngineFactory();
-          ScriptEngine engine = factory.getScriptEngine();
-          return (Table)engine.eval(groovyCode);
+        try (Connection connection = connect(con)){
+          ResultSet rs = connection.createStatement().executeQuery(sql);
+          return Table.read().db(rs);
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -580,15 +609,7 @@ public class ConnectionsTab extends Tab {
     };
     task.setOnSucceeded(e -> {
       try {
-        var table = task.get();
-        List<TableMetaData> metaDataList = new ArrayList<>();
-        for (var row : table) {
-          metaDataList.add(new TableMetaData(row));
-        }
-        //gui.getConsoleComponent().runScriptSilent(cleanupQueryString().append("rm(connectionsTabDf)").toString());
-        setNormalCursor();
-        TreeView<String> treeView = createMetaDataTree(metaDataList, con);
-        createAndShowWindow(connectionName + " connection view", treeView);
+        createTableTree(task.get(), con);
       } catch (Exception ex) {
         setNormalCursor();
         ExceptionAlert.showAlert("Failed to create connection tree view", ex);
@@ -603,7 +624,7 @@ public class ConnectionsTab extends Tab {
         ex = throwable;
       }
       String msg = gui.getConsoleComponent().createMessageFromEvalException(ex);
-      log.warn("Exception when running Groovy code {}", groovyCode);
+      log.warn("Exception when running sql code {}", sql);
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
     });
     Thread scriptThread = new Thread(task);
@@ -626,13 +647,13 @@ public class ConnectionsTab extends Tab {
     stage.toFront();
   }
 
-  private void setNormalCursor() {
+  public void setNormalCursor() {
     gui.setNormalCursor();
     contentPane.setCursor(Cursor.DEFAULT);
     connectionsTable.setCursor(Cursor.DEFAULT);
   }
 
-  private void setWaitCursor() {
+  public void setWaitCursor() {
     gui.setWaitCursor();
     contentPane.setCursor(Cursor.WAIT);
     connectionsTable.setCursor(Cursor.WAIT);
@@ -708,7 +729,7 @@ public class ConnectionsTab extends Tab {
       tableRightClickMenu.getItems().add(sampleContent);
       sampleContent.setOnAction(event -> {
         String tableName = getTreeItem().getValue();
-        try (Connection connection = con.connect()){
+        try (Connection connection = connect(con)){
           if (connection == null) {
             Alerts.warn("Failed to connect to database", "Failed to establish a connection to the database");
             return;
@@ -746,5 +767,87 @@ public class ConnectionsTab extends Tab {
         }
       }
     }
+  }
+
+
+  @SuppressWarnings("unchecked")
+  public Connection connect(ConnectionInfo ci) throws SQLException {
+    log.info("Connecting to {} using {}", ci.getUrl(), ci.getDependency());
+    var gui = Gride.instance();
+    Driver driver;
+
+    try {
+      MavenUtils mavenUtils = new MavenUtils();
+      String[] dep = ci.getDependency().split(":");
+      log.info("Resolving dependency {}", ci.getDependency());
+      File jar = mavenUtils.resolveArtifact(dep[0], dep[1], null, "jar", dep[2]);
+      URL url = jar.toURI().toURL();
+      URL[] urls = new URL[]{url};
+      log.info("Dependency url is {}", urls[0]);
+      if (gui.dynamicClassLoader == null) {
+        ClassLoader cl;
+        if (gui != null) {
+          cl = gui.getConsoleComponent().getClassLoader();
+        } else {
+          cl = Thread.currentThread().getContextClassLoader();
+        }
+        gui.dynamicClassLoader = new GroovyClassLoader(cl);
+      }
+
+      if (Arrays.stream(gui.dynamicClassLoader.getURLs()).noneMatch(p -> p.equals(url))) {
+        gui.dynamicClassLoader.addURL(url);
+      }
+
+    } catch (SettingsBuildingException | ArtifactResolutionException | MalformedURLException e) {
+      Platform.runLater(() ->
+          ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
+      );
+      return null;
+    }
+
+
+    try {
+      log.info("Attempting to load the class {}", ci.getDriver());
+      Class<Driver> clazz = (Class<Driver>) gui.dynamicClassLoader.loadClass(ci.getDriver());
+      log.info("Loaded driver from session classloader, instating the driver {}", ci.getDriver());
+      try {
+        driver = clazz.getDeclaredConstructor().newInstance();
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | NullPointerException e) {
+        log.error("Failed to instantiate the driver: {}, clazz is {}", ci.getDriver(), clazz, e);
+        Platform.runLater(() ->
+            Alerts.showAlert("Failed to instantiate the driver",
+                ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(),
+                Alert.AlertType.ERROR)
+        );
+        return null;
+      }
+    } catch (ClassCastException | ClassNotFoundException e) {
+      Platform.runLater(() ->
+          Alerts.showAlert("Failed to load driver",
+              ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(),
+              Alert.AlertType.ERROR)
+      );
+      return null;
+    }
+    Properties props = new Properties();
+    if ( urlContainsLogin(ci.getUrlSafe()) ) {
+      log.info("Skipping specified user/password since it is part of the url");
+    } else {
+      if (ci.getUser() != null) {
+        props.put("user", ci.getUser());
+        if (ci.getPassword() != null) {
+          props.put("password", ci.getPassword());
+        }
+      }
+    }
+    if (gui != null) {
+      gui.setNormalCursor();
+    }
+    return driver.connect(ci.getUrl(), props);
+  }
+
+  public boolean urlContainsLogin(String url) {
+    String safeLcUrl = url.toLowerCase();
+    return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") ) || safeLcUrl.contains("@");
   }
 }

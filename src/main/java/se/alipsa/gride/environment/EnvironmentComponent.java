@@ -13,13 +13,13 @@ import se.alipsa.gride.Gride;
 import se.alipsa.gride.UnStyledCodeArea;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
 import se.alipsa.gride.environment.connections.ConnectionsTab;
+import tech.tablesaw.api.Table;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
 
 public class EnvironmentComponent extends TabPane {
 
@@ -55,25 +55,39 @@ public class EnvironmentComponent extends TabPane {
   }
 
   public void setEnvironment(ScriptEngine engine) {
-    envTa.clear();
-    LOG.warn("TODO: implement me!");
-    /*
-    StringVector names = env.getNames();
-    for (String varName : names) {
-      int start = envTa.getContent().getLength();
-      envTa.appendText(varName);
-      int endVar = start + varName.length();
-      envTa.setStyleClass(start, endVar, "env-varName");
-      String content = env.getVariable(ctx, varName).toString();
-      if (content.length() > MAX_CONTENT_LENGTH) {
-        content = content.substring(0, MAX_CONTENT_LENGTH) + "... (length = " + content.length() + ")";
-      }
-      content = INDENT + content;
-      envTa.appendText( content + "\n");
-      envTa.setStyleClass(endVar + 1 , endVar + content.length(), "env-varValue");
-    }
+    Platform.runLater(() -> {
+      envTa.clear();
+      for (var entry : engine.getBindings(ScriptContext.ENGINE_SCOPE).entrySet()) {
+        String varName = entry.getKey();
+        int start = envTa.getContent().getLength();
+        envTa.appendText(varName);
+        int endVar = start + varName.length();
+        envTa.setStyleClass(start, endVar, "env-varName");
 
-     */
+        Object value = entry.getValue();
+        String content = "";
+        if (value instanceof Table table) {
+          var tableName = table.name() == null ? "" : table.name() + ": ";
+          String colNames = String.join(", ", table.columnNames().stream().map(String::valueOf).toList());
+          if (colNames.length() > MAX_CONTENT_LENGTH - 50) {
+            colNames = colNames.substring(0, MAX_CONTENT_LENGTH - 50) + "...";
+          }
+          content = tableName
+              + colNames
+              + " (" + table.columnNames().size() + " columns, " + table.rowCount() + " rows)";
+        } else if (value instanceof Collection<?> collection) {
+          content = "(" + collection.size() +  " elements)";
+        } else {
+          content = String.valueOf(value);
+          if (content.length() > MAX_CONTENT_LENGTH) {
+            content = content.substring(0, MAX_CONTENT_LENGTH) + "... (length = " + content.length() + ")";
+          }
+        }
+        content = INDENT + value.getClass().getSimpleName() + ": " + content;
+        envTa.appendText(content + "\n");
+        envTa.setStyleClass(endVar + 1, endVar + content.length(), "env-varValue");
+      }
+    });
   }
 
   public void clearEnvironment() {
@@ -110,5 +124,15 @@ public class EnvironmentComponent extends TabPane {
 
   public void removeContextFunctionsUpdateListener(ContextFunctionsUpdateListener listener) {
     contextFunctionsUpdateListeners.remove(listener);
+  }
+
+  public void setNormalCursor() {
+    if (connectionsTab != null) {
+      connectionsTab.setNormalCursor();
+    }
+  }
+
+  public Connection connect(ConnectionInfo ci) throws SQLException {
+    return connectionsTab.connect(ci);
   }
 }

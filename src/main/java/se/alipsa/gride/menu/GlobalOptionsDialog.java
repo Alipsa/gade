@@ -179,15 +179,15 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     grid.add(gitOptionPane, 0, 6, 2, 1);
 
     FlowPane autoRunPane = new FlowPane();
-    Label autoRunGlobalLabel = new Label("Run global autorun.R on session init");
-    autoRunGlobalLabel.setTooltip(new Tooltip("Run autorun.R from Ride install dir each time a session (re)starts."));
+    Label autoRunGlobalLabel = new Label("Run global autorun.groovy on session init");
+    autoRunGlobalLabel.setTooltip(new Tooltip("Run autorun.groovy from Gride install dir each time a session (re)starts."));
     autoRunGlobalLabel.setPadding(new Insets(0, 20, 0, 0));
     autoRunGlobal = new CheckBox();
     autoRunGlobal.setSelected(gui.getPrefs().getBoolean(AUTORUN_GLOBAL, false));
     autoRunPane.getChildren().addAll(autoRunGlobalLabel, autoRunGlobal);
 
-    Label autoRunProjectLabel = new Label("Run project autorun.R on session init");
-    autoRunProjectLabel.setTooltip(new Tooltip("Run autorun.R from the project dir (working dir) each time a session (re)starts"));
+    Label autoRunProjectLabel = new Label("Run project autorun.groovy on session init");
+    autoRunProjectLabel.setTooltip(new Tooltip("Run autorun.groovy from the project dir (working dir) each time a session (re)starts"));
     autoRunProjectLabel.setPadding(new Insets(0, 20, 0, 20));
     autoRunProject = new CheckBox();
     autoRunProject.setSelected(gui.getPrefs().getBoolean(AUTORUN_PROJECT, false));

@@ -383,7 +383,7 @@ public class InoutComponent extends TabPane implements InOut {
 
   @Override
   public String toString() {
-    return "The Ride InOutComponent";
+    return "The Gride InOutComponent";
   }
 
   public TreeItem<FileItem> getRoot() {

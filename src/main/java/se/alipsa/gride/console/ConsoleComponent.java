@@ -25,6 +25,7 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +41,7 @@ import se.alipsa.gride.utils.FileUtils;
 import se.alipsa.maven.DependenciesResolveException;
 import se.alipsa.maven.MavenUtils;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
@@ -74,6 +76,7 @@ public class ConsoleComponent extends BorderPane {
   private final Map<Thread, String> threadMap = new HashMap<>();
   private final MavenUtils mavenUtils;
   private ScriptEngine engine;
+
 
   public ConsoleComponent(Gride gui) {
     this.gui = gui;
@@ -223,9 +226,9 @@ public class ConsoleComponent extends BorderPane {
         }
       }
       // TODO do something with the classloader
-
-      GroovyScriptEngineFactory factory = new GroovyScriptEngineFactory();
-      engine = factory.getScriptEngine();
+      engine = new GroovyScriptEngineImpl(gui.dynamicClassLoader);
+      //GroovyScriptEngineFactory factory = new GroovyScriptEngineFactory();
+      //engine = factory.getScriptEngine();
       engine.put("inout", gui.getInoutComponent());
       return null;
     } catch (RuntimeException e) {
@@ -369,7 +372,7 @@ public class ConsoleComponent extends BorderPane {
 
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
     if (engine == null) {
-      Alerts.infoFx("Renjin engine not ready", "Renjin is still starting up, please wait a few seconds");
+      Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
       return null;
     }
     //log.info("engine is {}, gui is {}", engine, gui);
@@ -496,32 +499,7 @@ public class ConsoleComponent extends BorderPane {
       protected Void call() throws Exception {
         try {
           // TODO get library dependencies from Grab and maven?
-          /*
-          StringVector pkgs = (StringVector) engine.eval("(.packages())");
-          Platform.runLater(() -> gui.getInoutComponent().setPackages(pkgs));
-
-          String script = ".ride_funcList <- c()\n" +
-              ".ride_objList <- c()\n" +
-              "for (.ride_pkg in paste0('package:',.packages())) {\n" +
-              "   .ride_funcList <- c(.ride_funcList,  ls(.ride_pkg)[(ls(.ride_pkg) %in% c(lsf.str(.ride_pkg)))]) \n" +
-              "   .ride_objList <- c(.ride_objList, ls(.ride_pkg)[!(ls(.ride_pkg) %in% c(lsf.str(.ride_pkg)))]) \n" +
-              "}\n" +
-              ".ride_funcList <- c(.ride_funcList, ls()[(ls() %in% c(lsf.str()))]) \n" +
-              ".ride_objList <- c(.ride_objList, ls()[!(ls() %in% c(lsf.str()))]) \n" +
-              "list('functions' = .ride_funcList, 'objects' = .ride_objList)";
-
-          ListVector funcObj = (ListVector) engine.eval(script);
-          StringVector functions = (StringVector) funcObj.get("functions");
-          StringVector objects = (StringVector) funcObj.get("objects");
-
-          engine.eval("rm(.ride_funcList, .ride_objList, .ride_pkg)");
-          Platform.runLater(() -> {
-            gui.getEnvironmentComponent().setEnvironment(global, topContext);
-            gui.getEnvironmentComponent().updateContextFunctions(functions, objects);
-          });
-
-           */
-
+          gui.getEnvironmentComponent().setEnvironment(engine);
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -546,10 +524,6 @@ public class ConsoleComponent extends BorderPane {
     Thread thread = new Thread(task);
     thread.setDaemon(false);
     startThreadWhenOthersAreFinished(thread, "updateEnvironment");
-
-    // TODO consider setting the working dir in filetree after each run as setwd() night have changed it
-    // Below is how to get it:
-    // log.info("Working dir is {}", engine.getSession().getWorkingDirectory().getName().getPath());
   }
 
   private void runTests(GroovyTab rTab) {
@@ -714,10 +688,10 @@ public class ConsoleComponent extends BorderPane {
 
     EnvironmentComponent env = gui.getEnvironmentComponent();
     try (
-         AppenderPrintWriter out = new AppenderPrintWriter(console, true);
-         WarningAppenderWriter err = new WarningAppenderWriter(console);
-         PrintWriter outputWriter = new PrintWriter(out);
-         PrintWriter errWriter = new PrintWriter(err)
+        AppenderWriter out = new AppenderWriter(console, true);
+        WarningAppenderWriter err = new WarningAppenderWriter(console);
+        PrintWriter outputWriter = new PrintWriter(out);
+        PrintWriter errWriter = new PrintWriter(err)
     ) {
 
       engine.put("inout", gui.getInoutComponent());
