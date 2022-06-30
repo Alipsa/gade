@@ -701,8 +701,9 @@ public class ConsoleComponent extends BorderPane {
       engine.getContext().setErrorWriter(errWriter);
 
       var result = engine.eval(script);
+      // TODO: add config to opt out of printing the result to the console
       if (result != null) {
-        gui.getConsoleComponent().getConsole().appendFx("[result] " + result, true);
+        gui.getConsoleComponent().getConsole().appendFx(result.toString(), true);
       }
       Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
       postEvalOutput();
