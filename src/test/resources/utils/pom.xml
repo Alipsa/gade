@@ -12,24 +12,17 @@
 
    <!-- general information about your package -->
    <name>phoneNumber</name>
-   <description>Renjin wrapper around googles liphonenumber</description>
+   <description>Groovy wrapper around googles liphonenumber</description>
 
    <properties>
-      <renjin.version>3.5-beta65</renjin.version>
       <maven.compiler.source>1.8</maven.compiler.source>
       <maven.compiler.target>1.8</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+      <groovy.version>4.0.3</groovy.version>
    </properties>
 
    <dependencies>
-      <dependency>
-         <groupId>org.renjin</groupId>
-         <artifactId>renjin-script-engine</artifactId>
-         <version>${renjin.version}</version>
-         <scope>provided</scope>
-      </dependency>
-
       <dependency>
          <groupId>org.slf4j</groupId>
          <artifactId>slf4j-api</artifactId>
@@ -48,112 +41,136 @@
          <artifactId>libphonenumber</artifactId>
          <version>8.10.19</version>
       </dependency>
-      <!-- the hamcrest package is only required if you use it for unit tests -->
-      <dependency>
-         <groupId>org.renjin</groupId>
-         <artifactId>hamcrest</artifactId>
-         <version>${renjin.version}</version>
-         <scope>test</scope>
-      </dependency>
    </dependencies>
-
-   <repositories>
-      <repository>
-         <id>bedatadriven</id>
-         <name>bedatadriven public repo</name>
-         <url>https://nexus.bedatadriven.com/content/groups/public/</url>
-      </repository>
-      <repository>
-         <id>mavencentral</id>
-         <name>central</name>
-         <url>https://repo1.maven.org/maven2/</url>
-      </repository>
-   </repositories>
-
-   <pluginRepositories>
-      <pluginRepository>
-         <id>bedatadriven</id>
-         <name>bedatadriven public repo</name>
-         <url>https://nexus.bedatadriven.com/content/groups/public/</url>
-      </pluginRepository>
-   </pluginRepositories>
 
    <build>
       <plugins>
          <plugin>
-            <groupId>org.renjin</groupId>
-            <artifactId>renjin-maven-plugin</artifactId>
-            <version>${renjin.version}</version>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>3.1.0</version>
             <executions>
                <execution>
-                  <id>build</id>
+                  <id>compile</id>
+                  <phase>compile</phase>
+                  <configuration>
+                     <target>
+                        <mkdir dir="${groovy.sourceDirectory}"/>
+                        <taskdef name="groovyc"
+                                 classname="org.codehaus.groovy.ant.Groovyc">
+                           <classpath refid="maven.compile.classpath"/>
+                        </taskdef>
+                        <mkdir dir="${project.build.outputDirectory}"/>
+                        <echo message="Compiling Groovy files" />
+                        <groovyc destdir="${project.build.outputDirectory}"
+                                 srcdir="${groovy.sourceDirectory}" listfiles="false">
+                           <classpath refid="maven.compile.classpath"/>
+                        </groovyc>
+                     </target>
+                  </configuration>
                   <goals>
-                     <goal>namespace-compile</goal>
+                     <goal>run</goal>
                   </goals>
-                  <phase>process-classes</phase>
+               </execution>
+               <execution>
+                  <id>test-compile</id>
+                  <phase>test-compile</phase>
+                  <configuration>
+                     <target>
+                        <mkdir dir="${basedir}/src/test/groovy"/>
+                        <taskdef name="groovyc"
+                                 classname="org.codehaus.groovy.ant.Groovyc">
+                           <classpath refid="maven.test.classpath"/>
+                        </taskdef>
+                        <mkdir dir="${project.build.testOutputDirectory}"/>
+                        <groovyc destdir="${project.build.testOutputDirectory}"
+                                 srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                           <classpath refid="maven.test.classpath"/>
+                        </groovyc>
+                     </target>
+                  </configuration>
+                  <goals>
+                     <goal>run</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>groovydoc</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>run</goal>
+                  </goals>
+                  <configuration>
+                     <target>
+                        <taskdef name="groovydoc"
+                                 classname="org.codehaus.groovy.ant.Groovydoc"
+                                 classpathref="maven.compile.classpath"
+                        />
+                        <groovydoc destdir="${project.build.directory}/groovydoc"
+                                   sourcepath="${basedir}/src/main/groovy" use="true"
+                                   windowtitle="${project.name}"
+                                   doctitle="${project.name}"
+                        >
+                           <link packages="java."
+                                 href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base" />
+                           <link packages="org.apache.tools.ant."
+                                 href="https://javadoc.io/doc/org.apache.ant/ant/latest" />
+                           <link packages="org.junit.,junit.framework."
+                                 href="https://junit.org/junit5/docs/current/api" />
+                           <link packages="groovy.,org.apache.groovy."
+                                 href="https://docs.groovy-lang.org/latest/html/gapi" />
+                        </groovydoc>
+                        <property name="docFile" value="${project.build.directory}/${project.artifactId}-${project.version}-groovydoc.jar"/>
+                        <jar destfile="${docFile}"
+                             basedir="${project.build.directory}/groovydoc"/>
+
+                        <!-- Note: this will rename the jar to data-utils-1.0-javadoc.jar -->
+                        <attachartifact file="${docFile}" classifier="javadoc" type="jar"/>
+                     </target>
+                  </configuration>
                </execution>
             </executions>
             <dependencies>
                <dependency>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-api</artifactId>
-                  <version>1.7.35</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-log4j12</artifactId>
-                  <version>1.7.35</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>jcl-over-slf4j</artifactId>
-                  <version>1.7.35</version>
+                  <groupId>org.apache.groovy</groupId>
+                  <artifactId>groovy-all</artifactId>
+                  <version>${groovy.version}</version>
+                  <type>pom</type>
                </dependency>
             </dependencies>
          </plugin>
          <plugin>
-            <groupId>se.alipsa</groupId>
-            <artifactId>renjin-hamcrest-maven-plugin</artifactId>
-            <version>1.2</version>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M7</version>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.2.1</version>
+            <executions>
+               <execution>
+                  <id>attach-sources</id>
+                  <goals>
+                     <goal>jar-no-fork</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-site-plugin</artifactId>
+            <version>3.12.0</version>
             <configuration>
-               <testFailureIgnore>false</testFailureIgnore>
+               <generateReports>false</generateReports>
             </configuration>
             <executions>
                <execution>
                   <phase>test</phase>
                   <goals>
-                     <goal>testR</goal>
+                     <goal>site</goal>
                   </goals>
                </execution>
             </executions>
-            <dependencies>
-               <dependency>
-                  <groupId>org.renjin</groupId>
-                  <artifactId>renjin-script-engine</artifactId>
-                  <version>${renjin.version}</version>
-                  <exclusions>
-                     <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                     </exclusion>
-                  </exclusions>
-               </dependency>
-               <dependency>
-                  <groupId>org.renjin</groupId>
-                  <artifactId>hamcrest</artifactId>
-                  <version>${renjin.version}</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-log4j12</artifactId>
-                  <version>1.7.35</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>jcl-over-slf4j</artifactId>
-                  <version>1.7.27</version>
-               </dependency>
-            </dependencies>
          </plugin>
       </plugins>
    </build>

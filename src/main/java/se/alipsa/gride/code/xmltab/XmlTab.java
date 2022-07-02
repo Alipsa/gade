@@ -62,7 +62,7 @@ public class XmlTab extends TextAreaTab {
     goalLabel = new Label("Goals:");
 
     Button packageBrowserButton = new Button("Lookup");
-    packageBrowserButton.setTooltip(new Tooltip("Search for package on Renjin CRAN"));
+    packageBrowserButton.setTooltip(new Tooltip("Search for package on Maven Central"));
     packageBrowserButton.setOnAction(this::lockupPackage);
     buttonPane.getChildren().addAll(goalLabel, targetsField, packageBrowserButton);
 
@@ -121,14 +121,7 @@ public class XmlTab extends TextAreaTab {
     };
 
     task.setOnSucceeded(e -> {
-      boolean hasRenjinPlugin = false;
-      try {
-        Model model = mavenUtils.parsePom(getFile());
-        hasRenjinPlugin = model.getBuild().getPlugins().stream().anyMatch(p -> "org.renjin".equals(p.getGroupId()) && "renjin-maven-plugin".equals(p.getArtifactId()));
-      } catch (SettingsBuildingException | ModelBuildingException ex) {
-        ExceptionAlert.showAlert("Failed to parse pom file", ex);
-      }
-      if (getGui().getPrefs().getBoolean(RESTART_SESSION_AFTER_MVN_RUN, false) && hasRenjinPlugin &&
+      if (getGui().getPrefs().getBoolean(RESTART_SESSION_AFTER_MVN_RUN, false) &&
           (args.contains("compile") || args.contains("package") || args.contains("install") || args.contains("site"))) {
         getGui().getConsoleComponent().restartGroovy();
       }

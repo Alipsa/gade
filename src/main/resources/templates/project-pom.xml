@@ -16,20 +16,26 @@
 
   <properties>
     <groovy.version>[groovyVersion]</groovy.version>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <slf4j.version>1.7.36</slf4j.version>
   </properties>
 
   <dependencies>
-
+    <!-- Note: you might want to pick individual groovy modules to save space instead -->
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy-all</artifactId>
       <version>${groovy.version}</version>
       <type>pom</type>
+    </dependency>
+    <!-- enable @Grab to work in groovy -->
+    <dependency>
+      <groupId>org.apache.ivy</groupId>
+      <artifactId>ivy</artifactId>
+      <version>2.5.0</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -44,140 +50,113 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- uncomment the appropriate jdbc driver to be able to connect to a relational db -->
-    <!--dependency>
-      <groupId>com.microsoft.sqlserver</groupId>
-      <artifactId>mssql-jdbc</artifactId>
-      <version>9.4.1.jre8</version>
-    </dependency-->
-    <!--dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>2.1.212</version>
-    </dependency-->
-    <!--dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>42.3.3</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency-->
-    <!--dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.28</version>
-    </dependency-->
-    <!--dependency>
-      <groupId>com.oracle.database.jdbc</groupId>
-      <artifactId>ojdbc11</artifactId>
-      <version>21.5.0.0</version>
-    </dependency-->
-
-    <!-- the hamcrest package is only required if you use it for unit tests -->
-    <dependency>
-      <groupId>org.renjin</groupId>
-      <artifactId>hamcrest</artifactId>
-      <version>${renjin.version}</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
+      <artifactId>junit-jupiter</artifactId>
       <version>5.8.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-library</artifactId>
-      <version>2.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>bedatadriven</id>
-      <name>bedatadriven public repo</name>
-      <url>https://nexus.bedatadriven.com/content/groups/public/</url>
-    </repository>
-    <repository>
-      <id>mavencentral</id>
-      <name>central</name>
-      <url>https://repo1.maven.org/maven2/</url>
-    </repository>
-  </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>bedatadriven</id>
-      <name>bedatadriven public repo</name>
-      <url>https://nexus.bedatadriven.com/content/groups/public/</url>
-    </pluginRepository>
-    <pluginRepository>
-      <id>mavencentral</id>
-      <name>central</name>
-      <url>https://repo1.maven.org/maven2/</url>
-    </pluginRepository>
-  </pluginRepositories>
-
   <build>
-    <resources>
-      <resource>
-        <directory>${project.basedir}/R</directory>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
-        <groupId>se.alipsa</groupId>
-        <artifactId>renjin-test-maven-plugin</artifactId>
-        <version>1.3.6</version>
-        <configuration>
-          <testFailureIgnore>false</testFailureIgnore>
-          <runSourceScriptsBeforeTests>true</runSourceScriptsBeforeTests>
-          <sourceDirectory>${project.basedir}/R</sourceDirectory>
-          <testSourceDirectory>${project.basedir}/tests</testSourceDirectory>
-          <testResourceDirectory>${project.basedir}/tests/resources</testResourceDirectory>
-        </configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
-            <phase>test</phase>
+            <id>compile</id>
+            <phase>compile</phase>
+            <configuration>
+              <target>
+                <mkdir dir="${groovy.sourceDirectory}"/>
+                <taskdef name="groovyc"
+                         classname="org.codehaus.groovy.ant.Groovyc">
+                  <classpath refid="maven.compile.classpath"/>
+                </taskdef>
+                <mkdir dir="${project.build.outputDirectory}"/>
+                <echo message="Compiling Groovy files" />
+                <groovyc destdir="${project.build.outputDirectory}"
+                         srcdir="${groovy.sourceDirectory}" listfiles="false">
+                  <classpath refid="maven.compile.classpath"/>
+                </groovyc>
+              </target>
+            </configuration>
             <goals>
-              <goal>testR</goal>
+              <goal>run</goal>
             </goals>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <phase>test-compile</phase>
+            <configuration>
+              <target>
+                <mkdir dir="${basedir}/src/test/groovy"/>
+                <taskdef name="groovyc"
+                         classname="org.codehaus.groovy.ant.Groovyc">
+                  <classpath refid="maven.test.classpath"/>
+                </taskdef>
+                <mkdir dir="${project.build.testOutputDirectory}"/>
+                <groovyc destdir="${project.build.testOutputDirectory}"
+                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                  <classpath refid="maven.test.classpath"/>
+                </groovyc>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>groovydoc</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <taskdef name="groovydoc"
+                         classname="org.codehaus.groovy.ant.Groovydoc"
+                         classpathref="maven.compile.classpath"
+                />
+                <groovydoc destdir="${project.build.directory}/groovydoc"
+                           sourcepath="${basedir}/src/main/groovy" use="true"
+                           windowtitle="${project.name}"
+                           doctitle="${project.name}"
+                >
+                  <link packages="java."
+                        href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base" />
+                  <link packages="org.apache.tools.ant."
+                        href="https://javadoc.io/doc/org.apache.ant/ant/latest" />
+                  <link packages="org.junit.,junit.framework."
+                        href="https://junit.org/junit5/docs/current/api" />
+                  <link packages="groovy.,org.apache.groovy."
+                        href="https://docs.groovy-lang.org/latest/html/gapi" />
+                </groovydoc>
+                <property name="docFile" value="${project.build.directory}/${project.artifactId}-${project.version}-groovydoc.jar"/>
+                <jar destfile="${docFile}"
+                     basedir="${project.build.directory}/groovydoc"/>
+
+                <!-- Note: this will rename the jar to data-utils-1.0-javadoc.jar -->
+                <attachartifact file="${docFile}" classifier="javadoc" type="jar"/>
+              </target>
+            </configuration>
           </execution>
         </executions>
         <dependencies>
           <dependency>
-            <groupId>org.renjin</groupId>
-            <artifactId>renjin-script-engine</artifactId>
-            <version>${renjin.version}</version>
-            <exclusions>
-              <exclusion>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-          <dependency>
-            <groupId>org.renjin</groupId>
-            <artifactId>hamcrest</artifactId>
-            <version>${renjin.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy.version}</version>
+            <type>pom</type>
           </dependency>
         </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M7</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -187,47 +166,27 @@
           <execution>
             <id>attach-sources</id>
             <goals>
-              <goal>jar</goal>
+              <goal>jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.3.2</version>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.12.0</version>
+        <configuration>
+          <generateReports>false</generateReports>
+        </configuration>
         <executions>
           <execution>
-            <id>attach-javadocs</id>
+            <phase>test</phase>
             <goals>
-              <goal>jar</goal>
+              <goal>site</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
-      <!-- uncomment this to be able to run the main R script from maven with mvn exec:runR -->
-      <!--plugin>
-        <groupId>se.alipsa</groupId>
-        <artifactId>exec-renjin-maven-plugin</artifactId>
-        <version>1.0.1</version>
-        <configuration>
-          <rfile>src/main/R/[mainScriptName]</rfile>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>runR</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.renjin</groupId>
-            <artifactId>renjin-script-engine</artifactId>
-            <version>${renjin.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin-->
     </plugins>
   </build>
   <!-- TODO: uncomment this and add the real url if you have a repository to deploy to -->

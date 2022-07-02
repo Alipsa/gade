@@ -4,16 +4,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public class RenjinLibrary implements Comparable<RenjinLibrary>{
+public class Library implements Comparable<Library>{
   private String title;
   private String group;
   private String version;
   private String packageName;
   private boolean loaded;
 
-  public RenjinLibrary() {}
+  public Library() {}
 
-  public RenjinLibrary(String title, String group, String packageName, String version) {
+  public Library(String title, String group, String packageName, String version) {
     setTitle(title);
     setGroup(group);
     setVersion(version);
@@ -69,7 +69,7 @@ public class RenjinLibrary implements Comparable<RenjinLibrary>{
   }
 
   @Override
-  public int compareTo(@NotNull RenjinLibrary o) {
+  public int compareTo(@NotNull Library o) {
     return getFullName().compareTo(o.getFullName());
   }
 
@@ -77,7 +77,7 @@ public class RenjinLibrary implements Comparable<RenjinLibrary>{
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
-    RenjinLibrary that = (RenjinLibrary) obj;
+    Library that = (Library) obj;
     return Objects.equals(group, that.group) && Objects.equals(version, that.version) && Objects.equals(packageName, that.packageName);
   }
 

@@ -131,18 +131,6 @@ public class CreatePackageWizardDialog extends Dialog<CreatePackageWizardResult>
     packageLayoutBox.setPadding(insets);
     packageLayoutBox.setSpacing(10);
     vBox.getChildren().add(packageLayoutBox);
-    final ToggleGroup group = new ToggleGroup();
-    RadioButton renjinLayout = new RadioButton("Renjin Layout");
-    renjinLayout.setToggleGroup(group);
-    renjinLayout.setSelected(true);
-    RadioButton gnurLayout = new RadioButton("GNU R Layout");
-    gnurLayout.setToggleGroup(group);
-
-    // TODO not yet implemented so disable them
-    renjinLayout.setDisable(true);
-    gnurLayout.setDisable(true);
-    packageLayoutBox.getChildren().addAll(renjinLayout, gnurLayout);
-
 
     getDialogPane().setPrefSize(700, 320);
     getDialogPane().setMinHeight(Region.USE_PREF_SIZE);

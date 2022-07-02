@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import se.alipsa.gride.model.RenjinLibrary;
+import se.alipsa.gride.model.Library;
 import se.alipsa.gride.utils.LibraryUtils;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class LibraryUtilsTest {
   @Disabled
   @Test
   public void testAvailableLibraries() throws IOException {
-    Set<RenjinLibrary> packages = LibraryUtils.getAvailableLibraries(getClass().getClassLoader());
+    Set<Library> packages = LibraryUtils.getAvailableLibraries(getClass().getClassLoader());
     assertNotNull(packages, "Available libraries was unexpectedly null");
     assertTrue(packages.size() > 0, "Expected available libraries to contain at least one library");
 

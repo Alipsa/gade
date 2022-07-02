@@ -120,7 +120,7 @@ public class ConsoleComponent extends BorderPane {
         autoRunScripts();
         updateEnvironment();
       } catch (Exception e) {
-        ExceptionAlert.showAlert("Failed to reset classloader and Renjin, please report this!", e);
+        ExceptionAlert.showAlert("Failed to reset classloader and Groovy, please report this!", e);
       }
     } else {
       Platform.runLater(() -> initGroovy(getStoredRemoteRepositories(), parentClassLoader));
@@ -171,7 +171,7 @@ public class ConsoleComponent extends BorderPane {
 
       if (gui.getInoutComponent() == null) {
         log.warn("InoutComponent is null, timing is off");
-        throw new RuntimeException("intiRenjin called too soon, InoutComponent is null, timing is off");
+        throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
       }
 
       log.info("USE_MAVEN_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false));
@@ -322,7 +322,6 @@ public class ConsoleComponent extends BorderPane {
 
   public void restartGroovy() {
     console.append("Restarting Groovy..\n");
-    //initRenjin(getStoredRemoteRepositories(), Thread.currentThread().getContextClassLoader());
     initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
     gui.getEnvironmentComponent().clearEnvironment();
   }
@@ -768,7 +767,7 @@ public class ConsoleComponent extends BorderPane {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    log.info("initializing Renjin with {} repos", repos.size());
+    log.info("initializing Groovy with {} repos", repos.size());
     initGroovy(repos, cl);
   }
 

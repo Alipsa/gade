@@ -74,7 +74,7 @@ public class PackageBrowserDialog extends Dialog<Void> {
       groupLabel.setPadding(FLOWPANE_INSETS);
       topPane.getChildren().add(groupLabel);
 
-      groupField = new TextField("org.renjin.cran");
+      groupField = new TextField("");
       groupField.setPrefWidth(150);
       groupField.setPadding(FLOWPANE_INSETS);
       topPane.getChildren().add(groupField);
@@ -95,11 +95,11 @@ public class PackageBrowserDialog extends Dialog<Void> {
 
       repoCombo = new ComboBox<>();
       HBox.setMargin(repoCombo, new Insets(0,5,0,10));
-      repoCombo.getItems().addAll(LookupUrl.RENJIN_CRAN, LookupUrl.MAVEN_CENTRAL);
-      repoCombo.getSelectionModel().select(LookupUrl.RENJIN_CRAN);
+      repoCombo.getItems().addAll(LookupUrl.MAVEN_CENTRAL);
+      repoCombo.getSelectionModel().select(LookupUrl.MAVEN_CENTRAL);
       repoCombo.setOnAction(e -> {
-         if (repoCombo.getSelectionModel().getSelectedItem().equals(LookupUrl.RENJIN_CRAN)) {
-            groupField.setText("org.renjin.cran");
+         if (repoCombo.getSelectionModel().getSelectedItem().equals(LookupUrl.MAVEN_CENTRAL)) {
+            groupField.setText("");
          }
       });
       topPane.getChildren().add(repoCombo);
@@ -120,7 +120,6 @@ public class PackageBrowserDialog extends Dialog<Void> {
    }
 
    private enum LookupUrl {
-      RENJIN_CRAN("Renjin CRAN", "https://nexus.bedatadriven.com/content/groups/public/"),
       MAVEN_CENTRAL("Maven Central", "https://repo1.maven.org/maven2/");
 
       String name;
@@ -154,11 +153,6 @@ public class PackageBrowserDialog extends Dialog<Void> {
             .append("\n\t").append("<version>").append(version).append("</version>")
             .append("\n</dependency>\n\n");
 
-             if (lookupUrl.equals(LookupUrl.RENJIN_CRAN)) {
-               sb.append("Package status: http://packages.renjin.org/package/org.renjin.cran/")
-                    .append(artifact);
-             }
-
          textArea.setText(sb.toString());
 
       } catch (IOException | ParserConfigurationException | SAXException e) {
@@ -189,13 +183,7 @@ public class PackageBrowserDialog extends Dialog<Void> {
       browserStage.show();
       String group = groupField.getText().trim();
       String artifact = artifactField.getText().trim();
-      String url;
-      if (LookupUrl.RENJIN_CRAN.equals(repoCombo.getValue())) {
-         String searchString = artifact.length() > 0 ? artifact : group;
-         url = "http://packages.renjin.org/packages/search?q=" + searchString;
-      } else {
-         url = "https://mvnrepository.com/search?q=" + group + "+" + artifact;
-      }
+      String url = "https://mvnrepository.com/search?q=" + group + "+" + artifact;
       webEngine.load(url);
       browserStage.toFront();
       browserStage.requestFocus();

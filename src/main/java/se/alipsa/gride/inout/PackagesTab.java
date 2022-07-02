@@ -14,7 +14,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gride.Gride;
-import se.alipsa.gride.model.RenjinLibrary;
+import se.alipsa.gride.model.Library;
 import se.alipsa.gride.utils.ExceptionAlert;
 import se.alipsa.gride.utils.LibraryUtils;
 
@@ -73,7 +73,7 @@ public class PackagesTab extends Tab {
 
     nameColumn.setSortType(TableColumn.SortType.ASCENDING);
     view.getSortOrder().setAll(nameColumn);
-    view.setPlaceholder(new Label("No libraries (Renjin extensions) loaded"));
+    view.setPlaceholder(new Label("No libraries (Groovy extensions) loaded"));
     view.setEditable( true );
     setContent(view);
   }
@@ -82,7 +82,7 @@ public class PackagesTab extends Tab {
     // LibraryUtils.getAvailableLibraries() is very fast, but maybe it would make more sense to run this in a separate thread
     Platform.runLater(() -> {
       // AetherPackageLoader might have picked up new packages, so we need to do this each time
-      Set<RenjinLibrary> availablePackages;
+      Set<Library> availablePackages;
       try {
         availablePackages = LibraryUtils.getAvailableLibraries(Gride.instance().getConsoleComponent().getGroovyClassLoader());
       } catch (IOException | RuntimeException e) {
@@ -104,14 +104,14 @@ public class PackagesTab extends Tab {
     private final BooleanProperty loaded = new SimpleBooleanProperty();
     private final StringProperty version = new SimpleStringProperty();
     private final StringProperty description = new SimpleStringProperty();
-    private final RenjinLibrary renjinLibrary;
+    private final Library library;
 
-    public AvailablePackage( RenjinLibrary renjinLibrary, boolean loaded ) {
-      this.renjinLibrary = renjinLibrary;
-      this.name.set(renjinLibrary.getFullName());
-      this.version.set(renjinLibrary.getVersion());
+    public AvailablePackage(Library library, boolean loaded ) {
+      this.library = library;
+      this.name.set(library.getFullName());
+      this.version.set(library.getVersion());
       this.loaded.set( loaded );
-      this.description.set(renjinLibrary.getTitle());
+      this.description.set(library.getTitle());
 
       loadedProperty().addListener(
           (observableValue, oldVal, newVal) -> {
@@ -129,11 +129,11 @@ public class PackagesTab extends Tab {
     public StringProperty versionProperty  () { return version; }
     public BooleanProperty loadedProperty() { return loaded; }
     public StringProperty descriptionProperty  () { return description; }
-    public RenjinLibrary getRenjinLibrary() { return renjinLibrary; }
+    public Library getLibrary() { return library; }
 
     @Override
     public String toString() {
-      return renjinLibrary.getFullName();
+      return library.getFullName();
     }
 
     @Override

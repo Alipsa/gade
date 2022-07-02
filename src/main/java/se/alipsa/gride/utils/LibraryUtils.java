@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gride.console.ConsoleComponent;
 import se.alipsa.gride.inout.PackagesTab;
-import se.alipsa.gride.model.RenjinLibrary;
+import se.alipsa.gride.model.Library;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,22 +24,22 @@ public class LibraryUtils {
   private static final Logger LOG = LogManager.getLogger();
 
   /**
-   * Scan all ClassLoaders for Renjin Extensions (libraries / packages)
-   * @param renjinClassLoader this is needed if we use AetherPackageLoader to pick upp dynamically fetched libraries
-   * @return a set of RenjinLibraries (which is an Object equivalent of the DESCRIPTION file in a package)
+   * Scan all ClassLoaders for Extensions (libraries / packages)
+   * @param classLoader this is needed if we use AetherPackageLoader to pick upp dynamically fetched libraries
+   * @return a set of Libraries (which is an Object equivalent of the dependencies)
    */
-  public static Set<RenjinLibrary> getAvailableLibraries(ClassLoader renjinClassLoader) throws IOException {
-    Map<String, RenjinLibrary> packageNames = new HashMap<>();
+  public static Set<Library> getAvailableLibraries(ClassLoader classLoader) throws IOException {
+    Map<String, Library> packageNames = new HashMap<>();
     AtomicInteger count = new AtomicInteger();
-    try (ScanResult scanResult = new ClassGraph().addClassLoader(renjinClassLoader).scan()) {
+    try (ScanResult scanResult = new ClassGraph().addClassLoader(classLoader).scan()) {
       scanResult.getResourcesWithLeafName("DESCRIPTION")
           .forEachByteArrayThrowingIOException((Resource res, byte[] fileContent) -> {
             count.incrementAndGet();
-            RenjinLibrary renjinLibrary = parseDescription(res.getPath(), new String(fileContent, StandardCharsets.UTF_8));
-            if (renjinLibrary != null) {
-              RenjinLibrary existing = packageNames.get(renjinLibrary.getFullName());
-              if (existing == null || SemanticVersion.compare(existing.getVersion(), renjinLibrary.getVersion()) < 0) {
-                packageNames.put(renjinLibrary.getFullName(), renjinLibrary);
+            Library library = parseDescription(res.getPath(), new String(fileContent, StandardCharsets.UTF_8));
+            if (library != null) {
+              Library existing = packageNames.get(library.getFullName());
+              if (existing == null || SemanticVersion.compare(existing.getVersion(), library.getVersion()) < 0) {
+                packageNames.put(library.getFullName(), library);
               }
             }
       });
@@ -54,7 +54,7 @@ public class LibraryUtils {
     return new HashSet<>(packageNames.values());
   }
 
-  public static RenjinLibrary parseDescription(String path, String content) throws IOException {
+  public static Library parseDescription(String path, String content) throws IOException {
     String packageName = null;
     String groupName = "";
     String title = "";
@@ -76,7 +76,7 @@ public class LibraryUtils {
     } catch (IOException e) {
       throw new IOException("Failed to parse DESCRIPTION in " + path, e);
     }
-    return packageName == null ? null : new RenjinLibrary(title, groupName, packageName, version);
+    return packageName == null ? null : new Library(title, groupName, packageName, version);
   }
 
   public static String extractPackageName(String content) throws IOException {
@@ -133,13 +133,13 @@ public class LibraryUtils {
   public static void loadOrUnloadLibrary(ConsoleComponent console, PackagesTab.AvailablePackage pkg, Boolean isLoaded) throws Exception {
     // TODO not sure what to do here, comment out the stuff from Ride
     try {
-      //SEXP result;
+      //Object result;
       if (isLoaded) {
-        console.addOutput("Packages", "loading package " + pkg.getRenjinLibrary().getFullName(), true, true);
-        //result = console.runScript("library('" + pkg.getRenjinLibrary().getFullName() + "')");
+        console.addOutput("Packages", "loading package " + pkg.getLibrary().getFullName(), true, true);
+        //result = console.runScript("library('" + pkg.getLibrary().getFullName() + "')");
       } else {
-        console.addOutput("Packages", "unloading package " + pkg.getRenjinLibrary().getFullName(), true, true);
-        //result = console.runScript("detach('package:" + pkg.getRenjinLibrary().getPackageName() + "')");
+        console.addOutput("Packages", "unloading package " + pkg.getLibrary().getFullName(), true, true);
+        //result = console.runScript("detach('package:" + pkg.getLibrary().getPackageName() + "')");
       }
       //LOG.info(result);
     } catch (Exception e) {
