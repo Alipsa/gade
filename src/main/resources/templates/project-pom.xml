@@ -16,6 +16,8 @@
 
   <properties>
     <groovy.version>[groovyVersion]</groovy.version>
+    <groovy.sourceDirectory>${basedir}/src/main/groovy</groovy.sourceDirectory>
+    <groovy.testSourceDirectory>${basedir}/src/test/groovy</groovy.testSourceDirectory>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,7 +28,7 @@
   <dependencies>
     <!-- Note: you might want to pick individual groovy modules to save space instead -->
     <dependency>
-      <groupId>org.codehaus.groovy</groupId>
+      <groupId>org.apache.groovy</groupId>
       <artifactId>groovy-all</artifactId>
       <version>${groovy.version}</version>
       <type>pom</type>
@@ -36,7 +38,61 @@
       <groupId>org.apache.ivy</groupId>
       <artifactId>ivy</artifactId>
       <version>2.5.0</version>
+      <exclusions>
+        <exclusion>
+          <!-- workaround for inability to handle transient pom dependencies in maven-utils -->
+          <groupId>com.jcraft</groupId>
+          <artifactId>jsch.agentproxy</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+    <!-- workaround for inability to handle transient pom dependencies in maven-utils -->
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.core</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.connector-factory</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.jsch</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.sshj</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.pageant</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.sshagent</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.usocket-jna</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.usocket-nc</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch.agentproxy.svnkit-trilead-ssh2</artifactId>
+      <version>0.0.9</version>
+    </dependency>
+
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -92,14 +148,14 @@
             <phase>test-compile</phase>
             <configuration>
               <target>
-                <mkdir dir="${basedir}/src/test/groovy"/>
+                <mkdir dir="${groovy.testSourceDirectory}"/>
                 <taskdef name="groovyc"
                          classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.test.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.testOutputDirectory}"/>
                 <groovyc destdir="${project.build.testOutputDirectory}"
-                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                         srcdir="${groovy.testSourceDirectory}" listfiles="true">
                   <classpath refid="maven.test.classpath"/>
                 </groovyc>
               </target>
@@ -121,7 +177,7 @@
                          classpathref="maven.compile.classpath"
                 />
                 <groovydoc destdir="${project.build.directory}/groovydoc"
-                           sourcepath="${basedir}/src/main/groovy" use="true"
+                           sourcepath="${groovy.sourceDirectory}" use="true"
                            windowtitle="${project.name}"
                            doctitle="${project.name}"
                 >

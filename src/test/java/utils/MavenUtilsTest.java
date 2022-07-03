@@ -34,7 +34,7 @@ public class MavenUtilsTest {
       log.info("pom file is {}", projectPomFile);
       Model project = mavenUtils.parsePom(projectPomFile);
       assertThat(project.getArtifactId(), equalTo("phone-number"));
-      assertThat(project.getProperties().getProperty("maven.compiler.source"), equalTo("1.8"));
+      assertThat(project.getProperties().getProperty("maven.compiler.source"), equalTo("17"));
 
       LocalRepository localRepository = MavenUtils.getLocalRepository();
 

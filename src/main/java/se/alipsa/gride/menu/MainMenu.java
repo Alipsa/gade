@@ -608,7 +608,8 @@ public class MainMenu extends MenuBar {
       log.info("selectedRepos = {}\n currentRepos = {}", selectedRepos, currentRepos);
       gui.getConsoleComponent().setRemoteRepositories(
          selectedRepos,
-         gui.getClass().getClassLoader()
+         //gui.getClass().getClassLoader()
+         gui.dynamicClassLoader
       );
     }
 

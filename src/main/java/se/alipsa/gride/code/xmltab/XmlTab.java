@@ -77,7 +77,8 @@ public class XmlTab extends TextAreaTab {
       if (getFile() != null && getFile().getName().equals("pom.xml") && gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false)) {
         // TODO check if the dependecies have changed so we do not restart the session for nothing
         log.info("Maven build file saved, reloading classloader and restarting session");
-        gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
+        //gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
+        gui.getConsoleComponent().initGroovy(Gride.instance().dynamicClassLoader);
       }
     });
   }

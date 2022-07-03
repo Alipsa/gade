@@ -146,7 +146,8 @@ public class Gride extends Application {
     );
     primaryStage.setScene(scene);
     enableDragDrop(scene);
-    consoleComponent.initGroovy(Gride.this.getClass().getClassLoader());
+    //consoleComponent.initGroovy(Gride.this.getClass().getClassLoader());
+    consoleComponent.initGroovy(Gride.instance().dynamicClassLoader);
     primaryStage.show();
   }
 

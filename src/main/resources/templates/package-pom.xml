@@ -15,6 +15,8 @@
   <description>TODO: write a short description here</description>
 
   <properties>
+    <groovy.sourceDirectory>${basedir}/src/main/groovy</groovy.sourceDirectory>
+    <groovy.testSourceDirectory>${basedir}/src/test/groovy</groovy.testSourceDirectory>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,12 +31,6 @@
       <artifactId>groovy-all</artifactId>
       <version>4.0.3</version>
       <type>pom</type>
-    </dependency>
-    <!-- enable @Grab to work in groovy -->
-    <dependency>
-      <groupId>org.apache.ivy</groupId>
-      <artifactId>ivy</artifactId>
-      <version>2.5.0</version>
     </dependency>
 
     <dependency>
@@ -92,14 +88,14 @@
             <phase>test-compile</phase>
             <configuration>
               <target>
-                <mkdir dir="${basedir}/src/test/groovy"/>
+                <mkdir dir="${groovy.testSourceDirectory}"/>
                 <taskdef name="groovyc"
                          classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.test.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.testOutputDirectory}"/>
                 <groovyc destdir="${project.build.testOutputDirectory}"
-                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                         srcdir="${groovy.testSourceDirectory}" listfiles="true">
                   <classpath refid="maven.test.classpath"/>
                 </groovyc>
               </target>
@@ -121,7 +117,7 @@
                          classpathref="maven.compile.classpath"
                 />
                 <groovydoc destdir="${project.build.directory}/groovydoc"
-                           sourcepath="${basedir}/src/main/groovy" use="true"
+                           sourcepath="${groovy.sourceDirectory}" use="true"
                            windowtitle="${project.name}"
                            doctitle="${project.name}"
                 >

@@ -7,6 +7,7 @@ import static se.alipsa.gride.utils.StringUtils.format;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -70,7 +71,9 @@ public class ConsoleComponent extends BorderPane {
   private final ConsoleTextArea console;
   private final Gride gui;
   private List<RemoteRepository> remoteRepositories;
-  private ClassLoader classLoader = ConsoleComponent.class.getClassLoader();
+  //private ClassLoader classLoader = ConsoleComponent.class.getClassLoader();
+  private GroovyClassLoader classLoader;
+
   private Thread runningThread;
   private File workingDir;
   private final Map<Thread, String> threadMap = new HashMap<>();
@@ -176,7 +179,7 @@ public class ConsoleComponent extends BorderPane {
 
       log.info("USE_MAVEN_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false));
 
-      classLoader = parentClassLoader;
+      classLoader = new GroovyClassLoader(parentClassLoader);
 
       boolean useMavenClassloader = skipMavenClassloading.length > 0
           ? !skipMavenClassloading[0]
@@ -201,7 +204,8 @@ public class ConsoleComponent extends BorderPane {
           }
           if (urlList.size() > 0) {
             log.trace("Adding compile dirs to classloader: {}", urlList);
-            classLoader = new URLClassLoader(urlList.toArray(new URL[0]), classLoader);
+            urlList.forEach(url -> classLoader.addURL(url));
+            //classLoader = new URLClassLoader(urlList.toArray(new URL[0]), classLoader);
           }
         }
 
@@ -211,7 +215,7 @@ public class ConsoleComponent extends BorderPane {
             log.debug("Parsing pom to use maven classloader");
             console.appendFx("* Parsing pom to create maven classloader...", true);
             try {
-              classLoader = mavenUtils.getMavenDependenciesClassloader(pomFile, classLoader);
+              classLoader = new GroovyClassLoader(mavenUtils.getMavenDependenciesClassloader(pomFile, classLoader));
             } catch (Exception e) {
               if (e instanceof DependenciesResolveException) {
                 Platform.runLater(() -> ExceptionAlert.showAlert("Failed to resolve maven dependency: " + e.getMessage(), e));
@@ -226,9 +230,8 @@ public class ConsoleComponent extends BorderPane {
         }
       }
       // TODO do something with the classloader
-      engine = new GroovyScriptEngineImpl(gui.dynamicClassLoader);
-      //GroovyScriptEngineFactory factory = new GroovyScriptEngineFactory();
-      //engine = factory.getScriptEngine();
+      //engine = new GroovyScriptEngineImpl(gui.dynamicClassLoader);
+      engine = new GroovyScriptEngineImpl(classLoader);
       engine.put("inout", gui.getInoutComponent());
       return null;
     } catch (RuntimeException e) {
@@ -322,7 +325,8 @@ public class ConsoleComponent extends BorderPane {
 
   public void restartGroovy() {
     console.append("Restarting Groovy..\n");
-    initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
+    //initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
+    initGroovy(getStoredRemoteRepositories(), gui.dynamicClassLoader);
     gui.getEnvironmentComponent().clearEnvironment();
   }
 

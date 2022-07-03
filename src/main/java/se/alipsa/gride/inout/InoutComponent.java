@@ -149,7 +149,8 @@ public class InoutComponent extends TabPane implements InOut {
     if (!dir.equals(getRootDir())) {
       fileTree.refresh(dir);
       if (gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false)) {
-        gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
+        //gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
+        gui.getConsoleComponent().initGroovy(gui.dynamicClassLoader);
       }
     }
   }
