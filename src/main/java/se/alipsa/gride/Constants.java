@@ -5,15 +5,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 
+import java.util.Arrays;
+
 public class Constants {
-
-  public static final String SESSION_MUNIN_CONNECTION = "MuninConnection";
-  public static final String DEFAULT_MDR_REPORT_NAME = "Mdr Report";
-  public static final String DEFAULT_R_REPORT_NAME = "R Report";
-
-  public static final String PREF_MUNIN_SERVER = "MuninConnection.serverName";
-  public static final String PREF_MUNIN_PORT = "MuninConnection.serverPort";
-  public static final String PREF_MUNIN_USERNAME = "MuninConnection.userName";
 
   public static final int ICON_HEIGHT = 20;
   public static final int ICON_WIDTH = 20;
@@ -31,15 +25,49 @@ public class Constants {
   public static final String BRIGHT_THEME = "brightTheme.css";
   public static final String BLUE_THEME = "blueTheme.css";
 
-  public static final String DRV_POSTGRES = "org.postgresql.Driver";
-  public static final String DRV_MYSQL = "com.mysql.jdbc.Driver";
-  public static final String DRV_MARIADB = "org.mariadb.jdbc.Driver";
-  public static final String DRV_H2 = "org.h2.Driver";
-  public static final String DRV_SQLSERVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-  public static final String DRV_SQLLITE = "org.sqlite.JDBC";
-  public static final String DRV_FIREBIRD = "org.firebirdsql.jdbc.FBDriver";
-  public static final String DRV_DERBY = "org.apache.derby.jdbc.ClientDriver";
-  public static final String DRV_ORACLE = "oracle.jdbc.OracleDriver";
+  public enum Driver {
+    POSTGRES("org.postgresql.Driver", "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17"),
+    MYSQL("com.mysql.jdbc.Driver", "mysql:mysql-connector-java:8.0.29"),
+    MARIADB("org.mariadb.jdbc.Driver", "org.mariadb.jdbc:mariadb-java-client:3.0.6"),
+    H2("org.h2.Driver", "com.h2database:h2:2.1.214"),
+    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17"),
+    SQLLITE("org.sqlite.JDBC", "org.xerial:sqlite-jdbc:3.36.0.3"),
+    FIREBIRD("org.firebirdsql.jdbc.FBDriver", "org.firebirdsql.jdbc:jaybird:4.0.6.java11"),
+    DERBY("org.apache.derby.jdbc.ClientDriver", "org.apache.derby:derby:10.16.1.1"),
+    ORACLE("oracle.jdbc.OracleDriver", "com.oracle.database.jdbc:ojdbc10:19.15.0.0.1"),
+    NONE("", "");
+
+    final String driverClass;
+    final String dependency;
+
+    Driver(String driverClass, String dependency) {
+      this.driverClass = driverClass;
+      this.dependency = dependency;
+    }
+
+    public static Driver fromClass(String driverName) {
+      for (Driver driver : values()) {
+        if (driver.getDriverClass().equals(driverName)) {
+          return driver;
+        }
+      }
+      return NONE;
+    }
+
+    public String getDriverClass() {
+      return driverClass;
+    }
+
+    public String getDependency() {
+      return dependency;
+    }
+
+    @Override
+    public String toString() {
+      return driverClass;
+    }
+  }
+
   public static final String PREF_LAST_EXPORT_DIR = "last.export.dir";
   public static final String AUTORUN_FILENAME = "autorun.groovy";
 

@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.maven.settings.building.SettingsBuildingException;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+import se.alipsa.gride.Constants;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.UnStyledCodeArea;
 import se.alipsa.gride.code.CodeType;
@@ -45,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
+import java.sql.Driver;
 import java.util.*;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -442,7 +444,7 @@ public class ConnectionsTab extends Tab {
   private void showConnectionMetaData(ConnectionInfo con) {
     setWaitCursor();
     String sql;
-    if (con.getDriver().equals(DRV_SQLLITE)) {
+    if (con.getDriver().equals(Constants.Driver.SQLLITE.getDriverClass())) {
       boolean hasTables = false;
       try {
         Connection jdbcCon = connect(con);
@@ -788,11 +790,7 @@ public class ConnectionsTab extends Tab {
       log.info("Dependency url is {}", urls[0]);
       if (gui.dynamicClassLoader == null) {
         ClassLoader cl;
-        if (gui != null) {
-          cl = gui.getConsoleComponent().getClassLoader();
-        } else {
-          cl = Thread.currentThread().getContextClassLoader();
-        }
+        cl = gui.getConsoleComponent().getClassLoader();
         gui.dynamicClassLoader = new GroovyClassLoader(cl);
       }
 

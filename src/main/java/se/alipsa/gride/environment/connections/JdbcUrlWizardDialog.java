@@ -27,6 +27,7 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
   private final Gride gui;
 
   private final ComboBox<String> driver = new ComboBox<>();
+  private final TextField dependency = new TextField();
   private final TextField server = new TextField();
   private final IntField port = new IntField(0, 65535, 5432);
   private final TextField database = new TextField();
@@ -60,15 +61,15 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     int rowIndex = 0;
 
     driver.getItems().addAll(
-        DRV_POSTGRES,
-        DRV_MYSQL,
-        DRV_MARIADB,
-        DRV_H2,
-        DRV_SQLSERVER,
-        DRV_SQLLITE,
-        DRV_FIREBIRD,
-        DRV_DERBY,
-        DRV_ORACLE
+        Driver.POSTGRES.getDriverClass(),
+        Driver.MYSQL.getDriverClass(),
+        Driver.MARIADB.getDriverClass(),
+        Driver.H2.getDriverClass(),
+        Driver.SQLSERVER.getDriverClass(),
+        Driver.SQLLITE.getDriverClass(),
+        Driver.FIREBIRD.getDriverClass(),
+        Driver.DERBY.getDriverClass(),
+        Driver.ORACLE.getDriverClass()
     );
 
     driver.getEditor().focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
@@ -80,6 +81,9 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
 
     grid.add(new Label("Driver: "), 0, ++rowIndex);
     grid.add(driver, 1, rowIndex);
+
+    grid.add(new Label("Dependency: "), 0, ++rowIndex);
+    grid.add(dependency, 1, rowIndex);
 
     grid.add(new Label("Connection type"), 0, ++rowIndex);
     connectionMethodsBox.getChildren().add(connectMethods);
@@ -152,6 +156,8 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
   }
 
   private void addSqlServerSpecifics() {
+
+    // TODO: add support for ;trustServerCertificate=true;encrypt=true
     initialOptionsDelimiter = ";";
     subsequentOptionsDelimiter = ";";
     port.setValue(1433);
@@ -286,42 +292,27 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     server.setDisable(false);
 
     String driverName = driver.getValue();
+    Driver driver = Driver.fromClass(driverName);
     server.setText("localhost");
     database.setText("mydatabase");
     initialOptionsDelimiter = "?";
     subsequentOptionsDelimiter = "?";
-    switch (driverName) {
-      case DRV_POSTGRES:
-        addPostgresSpecifics();
-        break;
-      case DRV_SQLSERVER:
-        addSqlServerSpecifics();
-        break;
-      case DRV_MARIADB:
-        addMariaDbSpecifics();
-        break;
-      case DRV_MYSQL:
-        addMysqlSpecifics();
-        break;
-      case DRV_DERBY:
-        addDerbySpecifics();
-        break;
-      case DRV_FIREBIRD:
-        addFirebirdSpecifics();
-        break;
-      case DRV_H2:
-        addH2Specifics();
-        break;
-      case DRV_SQLLITE:
-        addSqlLiteSpecifics();
-        break;
-      case DRV_ORACLE:
-        addOracleSpecifics();
-        break;
-      default:
+    dependency.setText(driver.getDependency());
+    switch (driver) {
+      case POSTGRES -> addPostgresSpecifics();
+      case SQLSERVER -> addSqlServerSpecifics();
+      case MARIADB -> addMariaDbSpecifics();
+      case MYSQL -> addMysqlSpecifics();
+      case DERBY -> addDerbySpecifics();
+      case FIREBIRD -> addFirebirdSpecifics();
+      case H2 -> addH2Specifics();
+      case SQLLITE -> addSqlLiteSpecifics();
+      case ORACLE -> addOracleSpecifics();
+      default -> {
         server.setText("unknown");
         port.setValue(1025);
         database.setText("");
+      }
     }
     updateUrl();
     getDialogPane().getScene().getWindow().sizeToScene();

@@ -1,25 +1,8 @@
 package se.alipsa.gride.environment.connections;
 
-import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.control.Alert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.maven.settings.building.SettingsBuildingException;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import se.alipsa.gride.Gride;
-import se.alipsa.gride.utils.Alerts;
-import se.alipsa.maven.MavenUtils;
-
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.SQLException;
-import java.util.Properties;
 
 public class ConnectionInfo implements Comparable<ConnectionInfo> {
 
