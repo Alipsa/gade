@@ -85,12 +85,15 @@ public class ConnectionsTab extends Tab {
     HBox topInputPane = new HBox();
     HBox middleInputPane = new HBox();
     HBox bottomInputPane = new HBox();
-    inputBox.getChildren().addAll(topInputPane, middleInputPane, bottomInputPane);
+    HBox buttonInputPane = new HBox();
+    inputBox.getChildren().addAll(topInputPane, middleInputPane, bottomInputPane, buttonInputPane);
 
     topInputPane.setPadding(FLOWPANE_INSETS);
     topInputPane.setSpacing(2);
     middleInputPane.setPadding(FLOWPANE_INSETS);
     middleInputPane.setSpacing(2);
+    bottomInputPane.setPadding(FLOWPANE_INSETS);
+    bottomInputPane.setSpacing(2);
     contentPane.setTop(inputBox);
 
     VBox nameBox = new VBox();
@@ -147,7 +150,6 @@ public class ConnectionsTab extends Tab {
     dependencyBox.getChildren().addAll(dependencyLabel, dependencyText);
     middleInputPane.getChildren().add(dependencyBox);
 
-
     VBox driverBox = new VBox();
     Label driverLabel = new Label("Driver:");
     driverText = new TextField(getPrefOrBlank(DRIVER_PREF));
@@ -160,7 +162,7 @@ public class ConnectionsTab extends Tab {
     urlText = new TextField(getPrefOrBlank(URL_PREF));
     urlBox.getChildren().addAll(urlLabel, urlText);
     HBox.setHgrow(urlBox, Priority.ALWAYS);
-    middleInputPane.getChildren().add(urlBox);
+    bottomInputPane.getChildren().add(urlBox);
 
     Button newButton = new Button("New");
     newButton.setPadding(new Insets(7, 10, 7, 10));
@@ -251,11 +253,11 @@ public class ConnectionsTab extends Tab {
     Button wizardButton = new Button("Url Wizard", wizImg);
     wizardButton.setOnAction(this::openUrlWizard);
     wizardButton.setTooltip(new Tooltip("create/update the url using the wizard"));
-    bottomInputPane.setAlignment(Pos.CENTER);
+    buttonInputPane.setAlignment(Pos.CENTER);
     Insets btnInsets = new Insets(5, 10, 5, 10);
     wizardButton.setPadding(btnInsets);
-    bottomInputPane.setSpacing(10);
-    bottomInputPane.getChildren().addAll(newButton, addButton, wizardButton, deleteButton);
+    buttonInputPane.setSpacing(10);
+    buttonInputPane.getChildren().addAll(newButton, addButton, wizardButton, deleteButton);
   }
 
   private void addConnection(ConnectionInfo con) {

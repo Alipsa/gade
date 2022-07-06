@@ -25,12 +25,10 @@
   </properties>
 
   <dependencies>
-    <!-- Note: you might want to pick individual groovy modules to save space instead -->
     <dependency>
       <groupId>org.apache.groovy</groupId>
-      <artifactId>groovy-all</artifactId>
+      <artifactId>groovy</artifactId>
       <version>4.0.3</version>
-      <type>pom</type>
     </dependency>
 
     <dependency>
