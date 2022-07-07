@@ -1,7 +1,6 @@
 package se.alipsa.gride.code.xmltab;
 
 import static se.alipsa.gride.Constants.FLOWPANE_INSETS;
-import static se.alipsa.gride.utils.MavenRepoLookup.getLatestArtifact;
 import static se.alipsa.gride.utils.MavenRepoLookup.metaDataUrl;
 
 import javafx.application.Platform;
@@ -28,6 +27,7 @@ import org.xml.sax.SAXException;
 import se.alipsa.gride.Constants;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.utils.GuiUtils;
+import se.alipsa.gride.utils.MavenRepoLookup;
 
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -125,7 +125,7 @@ public class PackageBrowserDialog extends Dialog<Void> {
       String baseUrl = mavenRepositoryUrl.baseUrl;
 
       try {
-         String version = getLatestArtifact(group, artifact, baseUrl).getVersion();
+         String version = MavenRepoLookup.fetchLatestArtifact(group, artifact, baseUrl).getVersion();
 
          String sb = "Latest version is:" +
              "\n<dependency>" +

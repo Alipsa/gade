@@ -10,20 +10,23 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.xml.sax.SAXException;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.utils.FileUtils;
 import se.alipsa.gride.utils.GuiUtils;
 import se.alipsa.gride.utils.IntField;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static se.alipsa.gride.Constants.*;
 import static se.alipsa.gride.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
-import static se.alipsa.gride.utils.MavenRepoLookup.getLatestArtifact;
-import static se.alipsa.gride.utils.MavenRepoLookup.getLatestArtifactShortString;
+import static se.alipsa.gride.utils.MavenRepoLookup.*;
 
 public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
   private static final Logger log = LogManager.getLogger();
@@ -89,10 +92,25 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     grid.add(new Label("Dependency: "), 0, ++rowIndex);
     HBox dependencyGroup = new HBox();
     dependencyGroup.getChildren().add(dependency);
-    Button latestVersionButton = new Button("Fetch Latest");
-    latestVersionButton.setOnAction(a -> dependency.setText(
-      getLatestArtifactShortString(dependency.getText(), MAVEN_CENTRAL.baseUrl)
-    ));
+    Button latestVersionButton = new Button("Pick from central");
+    latestVersionButton.setOnAction(a -> {
+      String[] defaultDep = dependency.getText().split(":");
+      var groupId = defaultDep[0];
+      var artifactId = defaultDep[1];
+      var defaultVersion = defaultDep[2];
+      try {
+        List<String> versions = fetchVersions(groupId, artifactId, MAVEN_CENTRAL.baseUrl);
+        Collections.reverse(versions); // If this is not good enough, use SemanticVersion to sort properly
+        ChoiceDialog<String> choiceDialog = new ChoiceDialog<>(defaultVersion, versions);
+        choiceDialog.setTitle("Available versions from maven central");
+        choiceDialog.setHeaderText("Select version for " + groupId + ":" + artifactId);
+        String version = choiceDialog.showAndWait().orElse(defaultVersion);
+        dependency.setText(toShortDependency(groupId, artifactId, version));
+      } catch (ParserConfigurationException | IOException | SAXException e) {
+        dependency.setText(
+            fetchLatestArtifactShortString(dependency.getText(), MAVEN_CENTRAL.baseUrl));
+      }
+    });
     dependencyGroup.getChildren().add(latestVersionButton);
     HBox.setHgrow(dependency, Priority.ALWAYS);
     grid.add(dependencyGroup, 1, rowIndex);

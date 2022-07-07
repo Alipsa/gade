@@ -688,14 +688,13 @@ public class MainMenu extends MenuBar {
   }
 
   private void showSessionInfo(ActionEvent actionEvent) {
-    ConsoleComponent cc = gui.getConsoleComponent();
-    var engine = cc.getSession();
     StringBuilder content = new StringBuilder();
-    content.append("\nClassloader: ");
-    content.append(engine.getClass().getClassLoader().getClass().getName());
-    content.append("\nWorking dir: ");
-    content.append("TODO");
-    content.append("\n\n Please execute print(sessionInfo()) for other relevant session info");
+    content.append(" Available cpu cores: ");
+    content.append(Runtime.getRuntime().availableProcessors());
+    content.append("\n Free memory (MB): ");
+    content.append(Math.round((double)Runtime.getRuntime().freeMemory() / 1024 / 1024));
+    content.append("\n Maximum memory (MB): ");
+    content.append(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024));
     showInfoAlert("Session info", content, 600, 300);
   }
 

@@ -26,7 +26,7 @@ public class Constants {
   public static final String BLUE_THEME = "blueTheme.css";
 
   public enum Driver {
-    POSTGRES("org.postgresql.Driver", "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17"),
+    POSTGRES("org.postgresql.Driver", "org.postgresql:postgresql:42.4.0"),
     MYSQL("com.mysql.jdbc.Driver", "mysql:mysql-connector-java:8.0.29"),
     MARIADB("org.mariadb.jdbc.Driver", "org.mariadb.jdbc:mariadb-java-client:3.0.6"),
     H2("org.h2.Driver", "com.h2database:h2:2.1.214"),
