@@ -91,4 +91,16 @@ public class Constants {
   }
 
   public static final String REPORT_BUG = "Please report this bug to https://github.com/perNyfelt/gride/issues!";
+
+  public enum MavenRepositoryUrl {
+     MAVEN_CENTRAL("Maven Central", "https://repo1.maven.org/maven2/");
+
+     public final String name;
+     public final String baseUrl;
+
+     MavenRepositoryUrl(String name, String baseUrl) {
+        this.name = name;
+        this.baseUrl = baseUrl;
+     }
+  }
 }

@@ -1,6 +1,8 @@
 package se.alipsa.gride.code.xmltab;
 
 import static se.alipsa.gride.Constants.FLOWPANE_INSETS;
+import static se.alipsa.gride.utils.MavenRepoLookup.getLatestArtifact;
+import static se.alipsa.gride.utils.MavenRepoLookup.metaDataUrl;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -22,15 +24,12 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import se.alipsa.gride.Constants;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.utils.GuiUtils;
 
 import java.io.IOException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 /*
@@ -50,7 +49,7 @@ public class PackageBrowserDialog extends Dialog<Void> {
    private final TextArea textArea = new TextArea();
    private final TextField artifactField;
    private final TextField groupField;
-   private final ComboBox<LookupUrl> repoCombo;
+   private final ComboBox<Constants.MavenRepositoryUrl> repoCombo;
    private Stage browserStage = null;
    
    private static final Logger log = LogManager.getLogger();
@@ -95,10 +94,10 @@ public class PackageBrowserDialog extends Dialog<Void> {
 
       repoCombo = new ComboBox<>();
       HBox.setMargin(repoCombo, new Insets(0,5,0,10));
-      repoCombo.getItems().addAll(LookupUrl.MAVEN_CENTRAL);
-      repoCombo.getSelectionModel().select(LookupUrl.MAVEN_CENTRAL);
+      repoCombo.getItems().addAll(Constants.MavenRepositoryUrl.MAVEN_CENTRAL);
+      repoCombo.getSelectionModel().select(Constants.MavenRepositoryUrl.MAVEN_CENTRAL);
       repoCombo.setOnAction(e -> {
-         if (repoCombo.getSelectionModel().getSelectedItem().equals(LookupUrl.MAVEN_CENTRAL)) {
+         if (repoCombo.getSelectionModel().getSelectedItem().equals(Constants.MavenRepositoryUrl.MAVEN_CENTRAL)) {
             groupField.setText("");
          }
       });
@@ -119,44 +118,26 @@ public class PackageBrowserDialog extends Dialog<Void> {
       });
    }
 
-   private enum LookupUrl {
-      MAVEN_CENTRAL("Maven Central", "https://repo1.maven.org/maven2/");
-
-      String name;
-      String baseUrl;
-
-      LookupUrl(String name, String baseUrl) {
-         this.name = name;
-         this.baseUrl = baseUrl;
-      }
-   }
-
    private void lookupArtifact(ActionEvent actionEvent) {
       String group = groupField.getText().trim();
-      String groupUrlpart = group.replace('.', '/') + "/";
       String artifact = artifactField.getText().trim();
-      LookupUrl lookupUrl = repoCombo.getSelectionModel().getSelectedItem();
-      String baseUrl = lookupUrl.baseUrl;
-      String url = baseUrl + groupUrlpart + artifact + "/maven-metadata.xml";
+      Constants.MavenRepositoryUrl mavenRepositoryUrl = repoCombo.getSelectionModel().getSelectedItem();
+      String baseUrl = mavenRepositoryUrl.baseUrl;
+
       try {
-         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-         Document doc = docBuilder.parse(url);
-         Element versioning = (Element)doc.getDocumentElement().getElementsByTagName("versioning").item(0);
-         Element release = (Element)versioning.getElementsByTagName("release").item(0);
-         String version = release.getTextContent();
+         String version = getLatestArtifact(group, artifact, baseUrl).getVersion();
 
-         StringBuilder sb = new StringBuilder("Latest version is:")
-            .append("\n<dependency>")
-            .append("\n\t").append("<groupId>").append(group).append("</groupId>")
-            .append("\n\t").append("<artifactId>").append(artifact).append("</artifactId>")
-            .append("\n\t").append("<version>").append(version).append("</version>")
-            .append("\n</dependency>\n\n");
+         String sb = "Latest version is:" +
+             "\n<dependency>" +
+             "\n\t" + "<groupId>" + group + "</groupId>" +
+             "\n\t" + "<artifactId>" + artifact + "</artifactId>" +
+             "\n\t" + "<version>" + version + "</version>" +
+             "\n</dependency>\n\n";
 
-         textArea.setText(sb.toString());
+         textArea.setText(sb);
 
       } catch (IOException | ParserConfigurationException | SAXException e) {
-         log.info("Failed to get metadata from {}, opening search browser", url);
+         log.info("Failed to get metadata from {}, opening search browser", metaDataUrl(group, artifact, baseUrl));
          openMavenSearchBrowser();
       }
    }

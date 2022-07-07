@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static se.alipsa.gride.Constants.*;
+import static se.alipsa.gride.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
+import static se.alipsa.gride.utils.MavenRepoLookup.getLatestArtifact;
+import static se.alipsa.gride.utils.MavenRepoLookup.getLatestArtifactShortString;
 
 public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
   private static final Logger log = LogManager.getLogger();
@@ -83,7 +87,15 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     grid.add(driver, 1, rowIndex);
 
     grid.add(new Label("Dependency: "), 0, ++rowIndex);
-    grid.add(dependency, 1, rowIndex);
+    HBox dependencyGroup = new HBox();
+    dependencyGroup.getChildren().add(dependency);
+    Button latestVersionButton = new Button("Fetch Latest");
+    latestVersionButton.setOnAction(a -> dependency.setText(
+      getLatestArtifactShortString(dependency.getText(), MAVEN_CENTRAL.baseUrl)
+    ));
+    dependencyGroup.getChildren().add(latestVersionButton);
+    HBox.setHgrow(dependency, Priority.ALWAYS);
+    grid.add(dependencyGroup, 1, rowIndex);
 
     grid.add(new Label("Connection type"), 0, ++rowIndex);
     connectionMethodsBox.getChildren().add(connectMethods);
@@ -157,11 +169,13 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
 
   private void addSqlServerSpecifics() {
 
-    // TODO: add support for ;trustServerCertificate=true;encrypt=true
     initialOptionsDelimiter = ";";
     subsequentOptionsDelimiter = ";";
     port.setValue(1433);
     urlTemplate = "jdbc:sqlserver://{server}:{port};databaseName={database}";
+    HBox firstRow = new HBox();
+    firstRow.setSpacing(15);
+    optionsBox.getChildren().add(firstRow);
     CheckboxOption readOnlyCbo = new CheckboxOption("Read-only");
     readOnlyCbo.setOnAction(a -> {
       if (readOnlyCbo.isSelected()) {
@@ -171,7 +185,7 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
       }
       updateUrl();
     });
-    optionsBox.getChildren().add(readOnlyCbo);
+    firstRow.getChildren().add(readOnlyCbo);
 
     CheckboxOption integratedSecurity = new CheckboxOption("Integrated security");
     integratedSecurity.setOnAction(a -> {
@@ -182,7 +196,32 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
       }
       updateUrl();
     });
-    optionsBox.getChildren().add(integratedSecurity);
+    firstRow.getChildren().add(integratedSecurity);
+
+    HBox secondRow = new HBox();
+    secondRow.setSpacing(15);
+    optionsBox.getChildren().add(secondRow);
+    CheckboxOption encrypt = new CheckboxOption("encrypt");
+    encrypt.setOnAction(a -> {
+      if (encrypt.isSelected()) {
+        options.add("encrypt=true");
+      } else {
+        options.remove("encrypt=true");
+      }
+      updateUrl();
+    });
+    secondRow.getChildren().add(encrypt);
+
+    CheckboxOption trustServerCertificate = new CheckboxOption("Trust Server Certificate");
+    trustServerCertificate.setOnAction(a -> {
+      if (trustServerCertificate.isSelected()) {
+        options.add("trustServerCertificate=true");
+      } else {
+        options.remove("trustServerCertificate=true");
+      }
+      updateUrl();
+    });
+    secondRow.getChildren().add(trustServerCertificate);
   }
 
   private void addPostgresSpecifics() {
