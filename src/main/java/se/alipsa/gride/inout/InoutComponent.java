@@ -26,6 +26,8 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gride.Gride;
+import se.alipsa.gride.chart.Chart;
+import se.alipsa.gride.chart.Plot;
 import se.alipsa.gride.console.ConsoleTextArea;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
 import se.alipsa.gride.inout.plot.PlotsTab;
@@ -185,6 +187,13 @@ public class InoutComponent extends TabPane implements InOut {
     return fileTree.getRootDir();
   }
 
+  public void plot(Chart chart) {
+    String title = chart.getTitle();
+    if (title == null || title.equals("")) {
+      title = gui.getCodeComponent().getActiveScriptName();
+    }
+    display(Plot.jfx(chart), title);
+  }
   public void display(Node node, String... title) {
     Platform.runLater(() -> {
           plotsTab.showPlot(node, title);
@@ -324,6 +333,19 @@ public class InoutComponent extends TabPane implements InOut {
     });
   }
 
+  @Override
+  public File projectDir() {
+    return fileTree.getRootDir();
+  }
+
+  @Override
+  public File scriptDir() {
+    File file = gui.getCodeComponent().getActiveTab().getFile();
+    if (file == null) {
+      return projectDir();
+    }
+    return file.getParentFile();
+  }
   /**
    * As this is called from the script engine which runs on a separate thread
    * any gui interaction must be performed in a Platform.runLater (not sure if this qualifies as gui interaction though)
@@ -331,20 +353,14 @@ public class InoutComponent extends TabPane implements InOut {
    *
    * @return the file from the active tab or null if the active tab has never been saved
    */
-  public String scriptFile() {
+  @Override
+  public File scriptFile() {
 
     try {
-      File file = gui.getCodeComponent().getActiveTab().getFile();
-      if (file == null) {
-        return null;
-      }
-      return file.getCanonicalPath().replace('\\', '/');
+      return gui.getCodeComponent().getActiveTab().getFile();
     } catch (IllegalStateException e) {
       log.info("Not on javafx thread", e);
-      final FutureTask<String> query = new FutureTask<>(() -> {
-        File file = gui.getCodeComponent().getActiveTab().getFile();
-        return file.getCanonicalPath().replace('\\', '/');
-      });
+      final FutureTask<File> query = new FutureTask<>(() -> gui.getCodeComponent().getActiveTab().getFile());
       Platform.runLater(query);
       try {
         return query.get();
@@ -352,10 +368,6 @@ public class InoutComponent extends TabPane implements InOut {
         Platform.runLater(() -> ExceptionAlert.showAlert("Failed to get file from active tab", e1));
         return null;
       }
-    } catch (IOException e) {
-      log.info("Failed to resolve canonical path", e);
-      File file = gui.getCodeComponent().getActiveTab().getFile();
-      return file.getAbsolutePath().replace('\\', '/');
     }
   }
 

@@ -1,6 +1,7 @@
 package se.alipsa.gride.chart;
 
 import javafx.scene.web.WebView;
+import se.alipsa.gride.chart.jfx.AreaChartConverter;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +41,10 @@ public class Plot {
   }
 
   public static javafx.scene.chart.Chart jfx(Chart chart) {
-    throw new RuntimeException("Not yet implemented");
+    if (chart instanceof AreaChart) {
+      return AreaChartConverter.convert((AreaChart) chart);
+    }
+    throw new RuntimeException(chart.getClass().getSimpleName() + " conversion is not yet implemented");
   }
 
   /**
@@ -50,14 +54,17 @@ public class Plot {
    * @return a javafx WebView containing the chart
    */
   public static WebView webView(Chart chart) {
-    throw new RuntimeException("Not yet implemented");
+    WebView webView = new WebView();
+    webView.getEngine().setJavaScriptEnabled(true);
+    webView.getEngine().loadContent(jsPlot(chart).asJavascript("target"));
+    return webView;
   }
 
   /**
    * You can use this to show it using tech.tablesaw.plotly.Plot.show(jsPlot(chart)) or
    * inout.viewHtml(jsPlot(chart).asJavaScript("divName"))
-   * @param chart
-   * @return
+   * @param chart the chart to render
+   * @return a Figure that can be converted into various outputs (String, html file etc.)
    */
   public static tech.tablesaw.plotly.components.Figure jsPlot(Chart chart) {
     throw new RuntimeException("Not yet implemented");
