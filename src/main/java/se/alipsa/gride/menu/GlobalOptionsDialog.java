@@ -130,7 +130,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     grid.add(cpPane, 0,4, 2, 1);
 
     Label useMavenFileClasspathLabel = new Label("Use pom classpath");
-    useMavenFileClasspathLabel.setTooltip(new Tooltip("Use classpath from pom.xml (if available) when running R code"));
+    useMavenFileClasspathLabel.setTooltip(new Tooltip("Use classpath from pom.xml (if available) when running Groovy code"));
     useMavenFileClasspathLabel.setPadding(new Insets(0, 37, 0, 0));
     cpPane.getChildren().add(useMavenFileClasspathLabel);
     useMavenFileClasspath = new CheckBox();

@@ -1,6 +1,7 @@
 package se.alipsa.gride.chart;
 
 import tech.tablesaw.api.ColumnType;
+import tech.tablesaw.columns.Column;
 
 /**
  * When plotting a chart we need to be able to determine whether the column is numeric or categorical
@@ -29,5 +30,10 @@ public class DataType {
     } else {
       return NUMERIC;
     }
+  }
+
+  public static boolean isCategorical(Column column) {
+    ColumnType type = column.type();
+    return CHARACTER.equals(dataType(type));
   }
 }

@@ -471,7 +471,7 @@ public class ConsoleComponent extends BorderPane {
     String msg = "";
 
     if (ex instanceof RuntimeException) {
-      msg = "An unknown error occurred running R script: ";
+      msg = "An unknown error occurred running Groovy script: ";
     } else if (ex instanceof IOException) {
       msg = "Failed to close writer capturing groovy results ";
     } else if (ex instanceof RuntimeScriptException) {

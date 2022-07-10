@@ -2,6 +2,7 @@ package se.alipsa.gride.inout;
 
 import static se.alipsa.gride.menu.GlobalOptions.ENABLE_GIT;
 import static se.alipsa.gride.menu.GlobalOptions.USE_MAVEN_CLASSLOADER;
+import static se.alipsa.gride.utils.FileUtils.baseName;
 import static se.alipsa.gride.utils.TableUtils.transpose;
 
 import javafx.application.Platform;
@@ -35,6 +36,8 @@ import se.alipsa.gride.inout.viewer.ViewTab;
 import se.alipsa.gride.utils.*;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
+import tech.tablesaw.plotly.components.Figure;
+import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
 import java.io.IOException;
@@ -187,13 +190,25 @@ public class InoutComponent extends TabPane implements InOut {
     return fileTree.getRootDir();
   }
 
-  public void plot(Chart chart) {
-    String title = chart.getTitle();
-    if (title == null || title.equals("")) {
-      title = gui.getCodeComponent().getActiveScriptName();
-    }
+  public void plot(Chart chart, String... titleOpt) {
+    String title = titleOpt.length > 0 ? titleOpt[0] : baseName(gui.getCodeComponent().getActiveScriptName());
     display(Plot.jfx(chart), title);
   }
+
+  public void plot(Figure figure, String... titleOpt) {
+    String title = titleOpt.length > 0 ? titleOpt[0] : baseName(gui.getCodeComponent().getActiveScriptName());
+    Page page = Page.pageBuilder(figure, "target").build();
+    String output = page.asJavascript();
+    //viewHtml(output, title);
+    Platform.runLater(() -> {
+      WebView webView = new WebView();
+      webView.getEngine().setJavaScriptEnabled(true);
+      webView.getEngine().loadContent(output);
+      display(webView, title);
+    });
+  }
+
+
   public void display(Node node, String... title) {
     Platform.runLater(() -> {
           plotsTab.showPlot(node, title);

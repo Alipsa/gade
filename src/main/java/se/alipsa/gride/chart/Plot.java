@@ -1,12 +1,22 @@
 package se.alipsa.gride.chart;
 
+import javafx.application.Platform;
 import javafx.scene.web.WebView;
-import se.alipsa.gride.chart.jfx.AreaChartConverter;
+import se.alipsa.gride.chart.jfx.JfxAreaChartConverter;
+import se.alipsa.gride.chart.jfx.JfxBarChartConverter;
+import se.alipsa.gride.chart.plotly.PlotlyAreaChartConverter;
+import se.alipsa.gride.chart.plotly.PlotlyBarChartConverter;
+import se.alipsa.gride.utils.ExceptionAlert;
+import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+
+import static se.alipsa.gride.utils.FileUtils.baseName;
 
 public class Plot {
 
@@ -42,22 +52,22 @@ public class Plot {
 
   public static javafx.scene.chart.Chart jfx(Chart chart) {
     if (chart instanceof AreaChart) {
-      return AreaChartConverter.convert((AreaChart) chart);
+      return JfxAreaChartConverter.convert((AreaChart) chart);
+    } else if (chart instanceof BarChart) {
+      return JfxBarChartConverter.convert((BarChart) chart);
     }
     throw new RuntimeException(chart.getClass().getSimpleName() + " conversion is not yet implemented");
   }
 
   /**
-   * Uses the plotly module to create html which will be loaded
-   * into a WebView. This is useful if the jfx method cannot handle the chart.
+   * Uses the plotly module to create html which can be loaded
+   * into a WebView or browser. This is useful if the jfx method cannot handle the chart.
    * @param chart the chart to render
-   * @return a javafx WebView containing the chart
+   * @return a String containing the html for the chart
    */
-  public static WebView webView(Chart chart) {
-    WebView webView = new WebView();
-    webView.getEngine().setJavaScriptEnabled(true);
-    webView.getEngine().loadContent(jsPlot(chart).asJavascript("target"));
-    return webView;
+  public static String html(Chart chart) {
+    Page page = Page.pageBuilder(jsPlot(chart), "target").build();
+    return page.asJavascript();
   }
 
   /**
@@ -67,6 +77,11 @@ public class Plot {
    * @return a Figure that can be converted into various outputs (String, html file etc.)
    */
   public static tech.tablesaw.plotly.components.Figure jsPlot(Chart chart) {
-    throw new RuntimeException("Not yet implemented");
+    if (chart instanceof AreaChart) {
+      return PlotlyAreaChartConverter.convert((AreaChart) chart);
+    } else if (chart instanceof BarChart) {
+      return PlotlyBarChartConverter.convert((BarChart) chart);
+    }
+    throw new RuntimeException(chart.getClass().getSimpleName() + " conversion is not yet implemented");
   }
 }

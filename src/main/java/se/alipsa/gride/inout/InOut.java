@@ -2,6 +2,7 @@ package se.alipsa.gride.inout;
 
 import se.alipsa.gride.chart.Chart;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
+import tech.tablesaw.plotly.components.Figure;
 
 import java.io.File;
 
@@ -27,6 +28,7 @@ public interface InOut {
    */
   File projectDir();
 
-  void plot(Chart chart);
+  void plot(Chart chart, String... titleOpt);
+  void plot(Figure figure, String... titleOpt);
 
 }
