@@ -3,3 +3,5 @@
 /.idea
 /gride.log
 /nnDeploy.sh
+/*.mv.db
+/*.trace.db
