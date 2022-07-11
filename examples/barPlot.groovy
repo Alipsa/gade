@@ -27,9 +27,11 @@ inout.plot(
 */
 
 scaleColumn = summaryTable.column("Scale").asStringColumn()
-injuriesData= new Table("Injuries", summaryTable.column("sum [log injuries]"), scaleColumn)
-fatalitiesData = new Table("Fatalities", summaryTable.column("Sum [Fatalities]"), scaleColumn)
-chart = BarChart.create("Tornado Impact", ChartType.STACKED, injuriesData, fatalitiesData)
+chart = BarChart.create("Tornado Impact", ChartType.STACKED, 
+  scaleColumn,
+  summaryTable.column("sum [log injuries]"),
+  summaryTable.column("Sum [Fatalities]")
+);
 inout.plot(chart)
 
 // TODO: does not work
@@ -42,7 +44,7 @@ inout.plot(
     summaryTable,
     "scale",
     tech.tablesaw.plotly.components.Layout.BarMode.STACK,
+    "Sum [log injuries]",
     "Sum [Fatalities]",
-    "Sum [log injuries]"
-  )
+  ), "manual"
 )

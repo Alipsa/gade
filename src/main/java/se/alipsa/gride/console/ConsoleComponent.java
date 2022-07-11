@@ -35,6 +35,7 @@ import se.alipsa.gride.Gride;
 import se.alipsa.gride.TaskListener;
 import se.alipsa.gride.code.groovytab.GroovyTab;
 import se.alipsa.gride.environment.EnvironmentComponent;
+import se.alipsa.gride.interaction.GuiInteraction;
 import se.alipsa.gride.model.Repo;
 import se.alipsa.gride.utils.Alerts;
 import se.alipsa.gride.utils.ExceptionAlert;
@@ -233,6 +234,7 @@ public class ConsoleComponent extends BorderPane {
       //engine = new GroovyScriptEngineImpl(gui.dynamicClassLoader);
       engine = new GroovyScriptEngineImpl(classLoader);
       engine.put("inout", gui.getInoutComponent());
+      gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
       return null;
     } catch (RuntimeException e) {
       // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
@@ -376,13 +378,13 @@ public class ConsoleComponent extends BorderPane {
     }
     //log.info("engine is {}, gui is {}", engine, gui);
     engine.put("inout", gui.getInoutComponent());
+    gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
     if (additionalParams != null) {
       for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
         engine.put(entry.getKey(), entry.getValue());
       }
     }
     var result = engine.eval(script);
-    postEvalOutput();
     return result;
   }
 
@@ -549,6 +551,7 @@ public class ConsoleComponent extends BorderPane {
         ((TaskListener) rTab).taskStarted();
         start = System.currentTimeMillis();
         engine.put("inout", gui.getInoutComponent());
+        gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
         List<TestResult> results = new ArrayList<>();
         try (StringWriter out = new StringWriter();
              StringWriter err = new StringWriter();
@@ -692,8 +695,12 @@ public class ConsoleComponent extends BorderPane {
         PrintWriter outputWriter = new PrintWriter(out);
         PrintWriter errWriter = new PrintWriter(err)
     ) {
-
+      if (engine == null) {
+        Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
+        return;
+      }
       engine.put("inout", gui.getInoutComponent());
+      gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
 
       Platform.runLater(() -> {
         console.append(title, true);
@@ -709,25 +716,9 @@ public class ConsoleComponent extends BorderPane {
         gui.getConsoleComponent().getConsole().appendFx(result.toString(), true);
       }
       Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
-      postEvalOutput();
 
     } catch (ScriptException | RuntimeException e) {
-      postEvalOutput();
       throw e;
-    }
-  }
-
-  private void postEvalOutput() throws IOException {
-    try (StringWriter warnStrWriter = new StringWriter();
-         PrintWriter warnWriter = new PrintWriter(warnStrWriter)) {
-      console.flush();
-      engine.getContext().setWriter(warnWriter);
-
-      // TODO: fetch warnings
-      //session.printWarnings();
-      Platform.runLater(() -> console.appendWarning(warnStrWriter.toString()));
-      // TODO clear warnings
-      //session.clearWarnings();
     }
   }
 

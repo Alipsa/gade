@@ -315,4 +315,12 @@ public class FileUtils {
     }
     return basename.length() > 0 ? basename : url;
   }
+
+  public static String removeExt(String str) {
+    if (str == null) return null;
+    if (str.lastIndexOf('.') == -1) {
+      return str;
+    }
+    return str.substring(0, str.lastIndexOf('.'));
+  }
 }

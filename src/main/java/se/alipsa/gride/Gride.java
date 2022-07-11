@@ -23,6 +23,10 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import se.alipsa.gride.interaction.Dialogs;
+import se.alipsa.gride.interaction.GuiInteraction;
+import se.alipsa.gride.interaction.ReadImage;
+import se.alipsa.gride.interaction.UrlUtil;
 import se.alipsa.gride.utils.DynamicClassLoader;
 import se.alipsa.maven.MavenUtils;
 import se.alipsa.gride.code.CodeComponent;
@@ -57,6 +61,8 @@ public class Gride extends Application {
   // so we need to cache the classloader and reuse it.
   public GroovyClassLoader dynamicClassLoader = new GroovyClassLoader();
 
+  public Map<String, GuiInteraction> guiInteractions;
+
   public static void main(String[] args) {
     launch(args);
   }
@@ -70,6 +76,11 @@ public class Gride extends Application {
     log.info("Starting Gride...");
     //Thread.currentThread().setContextClassLoader(new GroovyClassLoader());
     instance = this;
+    guiInteractions = Map.of(
+        "dialogs", new Dialogs(primaryStage),
+        "ReadImage", new ReadImage(),
+        "UrlUtil", new UrlUtil()
+        );
     grideBaseDir = Path.of("").toAbsolutePath().toFile();
 
     preferences = Preferences.userRoot().node(Gride.class.getName());

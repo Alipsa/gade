@@ -25,6 +25,7 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
 public class JsTab extends TextAreaTab {
 
@@ -73,6 +74,7 @@ public class JsTab extends TextAreaTab {
     engine = nashornScriptEngineFactory.getScriptEngine(options);
 
     engine.put("inout", gui.getInoutComponent());
+    gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
     try {
       engine.eval(initScript);
     } catch (ScriptException e) {

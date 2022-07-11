@@ -3,6 +3,7 @@ package se.alipsa.gride.inout;
 import static se.alipsa.gride.menu.GlobalOptions.ENABLE_GIT;
 import static se.alipsa.gride.menu.GlobalOptions.USE_MAVEN_CLASSLOADER;
 import static se.alipsa.gride.utils.FileUtils.baseName;
+import static se.alipsa.gride.utils.FileUtils.removeExt;
 import static se.alipsa.gride.utils.TableUtils.transpose;
 
 import javafx.application.Platform;
@@ -33,6 +34,7 @@ import se.alipsa.gride.console.ConsoleTextArea;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
 import se.alipsa.gride.inout.plot.PlotsTab;
 import se.alipsa.gride.inout.viewer.ViewTab;
+import se.alipsa.gride.interaction.GuiInteraction;
 import se.alipsa.gride.utils.*;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
@@ -46,7 +48,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
-public class InoutComponent extends TabPane implements InOut {
+public class InoutComponent extends TabPane implements InOut, GuiInteraction {
 
   private final FileTree fileTree;
   private final PlotsTab plotsTab;
@@ -191,12 +193,12 @@ public class InoutComponent extends TabPane implements InOut {
   }
 
   public void plot(Chart chart, String... titleOpt) {
-    String title = titleOpt.length > 0 ? titleOpt[0] : baseName(gui.getCodeComponent().getActiveScriptName());
+    String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     display(Plot.jfx(chart), title);
   }
 
   public void plot(Figure figure, String... titleOpt) {
-    String title = titleOpt.length > 0 ? titleOpt[0] : baseName(gui.getCodeComponent().getActiveScriptName());
+    String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     Page page = Page.pageBuilder(figure, "target").build();
     String output = page.asJavascript();
     //viewHtml(output, title);
@@ -462,5 +464,29 @@ public class InoutComponent extends TabPane implements InOut {
 
   public boolean hasPomFile() {
     return getRootDir() != null && new File(getRootDir(), "pom.xml").exists();
+  }
+
+  @Override
+  public String help() {
+    return """
+        ConnectionInfo connection(String name)
+          Return a connections for the name defined in Gride.
+                
+        File scriptFile()
+          return the file from the active tab or null if the active tab has never been saved
+                
+        File scriptDir()
+          return the dir where the current script resides
+          or the project dir if the active tab has never been saved
+                
+        File projectDir()
+          return the project dir (the root of the file tree)
+                
+        void plot(Chart chart, String... titleOpt)
+          Show the chart in the plots tab
+        
+        void plot(Figure figure, String... titleOpt)
+          Show the figure in the plots tab
+        """;
   }
 }
