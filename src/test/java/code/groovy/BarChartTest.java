@@ -31,7 +31,7 @@ public class BarChartTest {
         //var injuriesData = Table.create("Injuries", summaryTable.column("sum [log injuries]"), scaleColumn);
         //var fatalitiesData = Table.create("Fatalities", summaryTable.column("Sum [Fatalities]"), scaleColumn);
         //var chart = BarChart.create("Tornado Impact", ChartType.STACKED, injuriesData, fatalitiesData);
-        var chart = BarChart.create("Tornado Impact", ChartType.STACKED, scaleColumn,
+        var chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.VERTICAL, scaleColumn,
             summaryTable.column("sum [log injuries]"),
             summaryTable.column("Sum [Fatalities]"));
         var figure = se.alipsa.gride.chart.Plot.jsPlot(chart);

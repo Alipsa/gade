@@ -1,14 +1,17 @@
 import tech.tablesaw.api.Table
-import tech.tablesaw.plotly.Plot
 import se.alipsa.gride.chart.AreaChart
 
-Table robberies = Table.read().csv(new File(inout.scriptDir(), "/data/boston-robberies.csv"));
+robberies = Table.read().csv(new File(inout.scriptDir(), "/data/boston-robberies.csv"));
 robberies.setName("Boston Robberies by month: Jan 1966-Oct 1975")
 
-robChart = AreaChart.create(robberies.select("Record", "Robberies"))
-inout.plot(robChart, "Boston Robberies")
+robChart = AreaChart.create(
+  robberies.name(),
+  robberies.column("Record").asStringColumn(), 
+  robberies.column("Robberies")
+)
+inout.display(robChart, "Boston Robberies")
 
-inout.plot(tech.tablesaw.plotly.api.AreaPlot.create(
+inout.display(tech.tablesaw.plotly.api.AreaPlot.create(
   "Boston Robberies by month: Jan 1966-Oct 1975", 
   robberies, 
   "Record", 
@@ -16,7 +19,7 @@ inout.plot(tech.tablesaw.plotly.api.AreaPlot.create(
   "Boston Robberies"
 )
 /*
-Plot.show(
+tech.tablesaw.plotly.Plot.show(
     AreaPlot.create(
         "Boston Robberies by month: Jan 1966-Oct 1975", robberies, "Record", "Robberies"));
 */

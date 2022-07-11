@@ -103,8 +103,8 @@ public class ReadImage implements GuiInteraction {
     @Override
     public String help() {
         return """
-            Image reader that can read SVG files
-            
+            ReadImage: An Image reader that can read SVG files
+            --------------------------------------------------
             Image read(String name)
                 create an javafx Image from the url/path specified
                 

@@ -23,9 +23,10 @@ public class UrlUtil implements GuiInteraction {
   @Override
   public String help() {
     return """
-        Url utilities
+        UrlUtil: Convenient url utilities
+        ---------------------------------
         boolean exists(String urlString, int timeout)
-          attempts to connect to the url specified with a HEAD request to see if it is there or not     
+          attempts to connect to the url specified with a HEAD request to see if it is there or not.
         """;
   }
 }

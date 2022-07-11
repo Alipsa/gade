@@ -203,7 +203,7 @@ public class ViewTab extends Tab {
         initialFileName = initialFileName + ".csv";
       }
       Gride gui = Gride.instance();
-      String dir = gui.getPrefs().get(Constants.PREF_LAST_EXPORT_DIR,gui.getInoutComponent().getRootDir().getAbsolutePath());
+      String dir = gui.getPrefs().get(Constants.PREF_LAST_EXPORT_DIR,gui.getInoutComponent().projectDir().getAbsolutePath());
       fc.setInitialDirectory(new File(dir));
       fc.setInitialFileName(initialFileName);
       fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("CSV", "*.csv"));
@@ -322,22 +322,7 @@ public class ViewTab extends Tab {
     history.go(entryList.size() > 1 && currentIndex < entryList.size() - 1 ? 1 : 0);
   }
 
-  public void viewHtml(String content, String... title) {
-    Tab tab = new Tab();
-    if (title.length > 0) {
-      tab.setText(title[0]);
-    }
-    viewPane.getTabs().add(tab);
-    WebView browser = new WebView();
-    WebEngine webEngine = browser.getEngine();
-    webEngine.loadContent(content);
-    tab.setContent(browser);
-    browser.setContextMenuEnabled(false);
-    createContextMenu(browser, content);
-    viewPane.getSelectionModel().select(tab);
-  }
-
-  public void viewer(String url, String... title) {
+  public void viewHtml(String url, String... title) {
     if (url == null) {
       log.warn("url is null, nothing to view");
       return;

@@ -35,7 +35,6 @@ import se.alipsa.gride.UnStyledCodeArea;
 import se.alipsa.gride.code.CodeTextArea;
 import se.alipsa.gride.code.CodeType;
 import se.alipsa.gride.code.TextAreaTab;
-import se.alipsa.gride.console.ConsoleComponent;
 import se.alipsa.gride.model.Repo;
 import se.alipsa.gride.utils.*;
 import se.alipsa.gride.utils.git.GitUtils;
@@ -781,7 +780,7 @@ public class MainMenu extends MenuBar {
       saveFile(codeArea, file);
       Git git = gui.getInoutComponent().getGit();
       if(codeArea.getTreeItem() != null && git != null) {
-        String path = GitUtils.asRelativePath(codeArea.getFile(), gui.getInoutComponent().getRootDir());
+        String path = GitUtils.asRelativePath(codeArea.getFile(), gui.getInoutComponent().projectDir());
         GitUtils.colorNode(git, path, codeArea.getTreeItem());
       }
     } catch (FileNotFoundException e) {
@@ -815,7 +814,7 @@ public class MainMenu extends MenuBar {
 
   public File promptForFile() {
     FileChooser fileChooser = new FileChooser();
-    fileChooser.setInitialDirectory(gui.getInoutComponent().getRootDir());
+    fileChooser.setInitialDirectory(gui.getInoutComponent().projectDir());
     fileChooser.setTitle("Save File");
     return fileChooser.showSaveDialog(gui.getStage());
   }
@@ -826,7 +825,7 @@ public class MainMenu extends MenuBar {
         new FileChooser.ExtensionFilter(
             fileTypeDescription, "*" + extension);
     fileChooser.getExtensionFilters().add(fileExtensions);
-    fileChooser.setInitialDirectory(gui.getInoutComponent().getRootDir());
+    fileChooser.setInitialDirectory(gui.getInoutComponent().projectDir());
     fileChooser.setTitle("Save File");
     fileChooser.setInitialFileName(suggestedName);
     File file = fileChooser.showSaveDialog(gui.getStage());

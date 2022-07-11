@@ -2,7 +2,6 @@ package se.alipsa.gride.inout;
 
 import static se.alipsa.gride.menu.GlobalOptions.ENABLE_GIT;
 import static se.alipsa.gride.menu.GlobalOptions.USE_MAVEN_CLASSLOADER;
-import static se.alipsa.gride.utils.FileUtils.baseName;
 import static se.alipsa.gride.utils.FileUtils.removeExt;
 import static se.alipsa.gride.utils.TableUtils.transpose;
 
@@ -127,7 +126,7 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
 
   private void handleChangeDir(ActionEvent actionEvent) {
     DirectoryChooser dirChooser = new DirectoryChooser();
-    File rootDir = gui.getInoutComponent().getRootDir();
+    File rootDir = gui.getInoutComponent().projectDir();
     if (rootDir != null && rootDir.exists()) {
       dirChooser.setInitialDirectory(rootDir);
     }
@@ -153,7 +152,7 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
   }
 
   public void changeRootDir(File dir) {
-    if (!dir.equals(getRootDir())) {
+    if (!dir.equals(projectDir())) {
       fileTree.refresh(dir);
       if (gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false)) {
         //gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
@@ -188,16 +187,18 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     fileTree.addTreeNode(file);
   }
 
-  public File getRootDir() {
+  public File projectDir() {
     return fileTree.getRootDir();
   }
 
-  public void plot(Chart chart, String... titleOpt) {
+  @Override
+  public void display(Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     display(Plot.jfx(chart), title);
   }
 
-  public void plot(Figure figure, String... titleOpt) {
+  @Override
+  public void display(Figure figure, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     Page page = Page.pageBuilder(figure, "target").build();
     String output = page.asJavascript();
@@ -211,6 +212,7 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
   }
 
 
+  @Override
   public void display(Node node, String... title) {
     Platform.runLater(() -> {
           plotsTab.showPlot(node, title);
@@ -220,11 +222,13 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     );
   }
 
+  @Override
   public void display(Image img, String... title) {
     ImageView node = new ImageView(img);
     display(node, title);
   }
 
+  @Override
   public void display(String fileName, String... title) {
     URL url = FileUtils.getResourceUrl(fileName);
     log.info("Reading image from " + url);
@@ -252,6 +256,7 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     display(img, title);
   }
 
+  @Override
   public void view(Table table, String... title) {
     String tit = title.length > 0 ? title[0] : table.name();
     if (tit == null) {
@@ -264,23 +269,12 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     showInViewer(table, tit);
   }
 
-  public void view(Object matrix, String... title) {
-    if (matrix == null) {
-      Alerts.warnFx("View", "matrix is null, cannot View");
-      return;
-    }
-    ConsoleTextArea console = gui.getConsoleComponent().getConsole();
-    //if (matrix instanceof NativeArray || matrix instanceof ScriptObjectMirror) {
-    if (matrix instanceof ScriptObjectMirror) {
-      Alerts.warnFx("Cannot View native javascript objects", "Use the View function or convert the matrix to a java 2d array before calling inout.View()");
-      return;
-    }
-    if (matrix instanceof Object[][]) {
-      view2dArray((Object[][])matrix, title);
-    } else {
-      console.appendWarningFx("Unknown matrix type " + matrix.getClass().getName());
-      console.appendFx(String.valueOf(matrix), true);
-    }
+  @Override
+  public void view(String html, String... title) {
+    Platform.runLater(() -> {
+      viewer.viewHtml(html, title);
+      getSelectionModel().select(viewer);
+    });
   }
 
   public void view(List<List<Object>> matrix, String... title) {
@@ -303,6 +297,25 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     }
     Table table = Table.create().addColumns(columns);
     showInViewer(table, title);
+  }
+
+  public void view(Object matrix, String... title) {
+    if (matrix == null) {
+      Alerts.warnFx("View", "matrix is null, cannot View");
+      return;
+    }
+    ConsoleTextArea console = gui.getConsoleComponent().getConsole();
+    //if (matrix instanceof NativeArray || matrix instanceof ScriptObjectMirror) {
+    if (matrix instanceof ScriptObjectMirror) {
+      Alerts.warnFx("Cannot View native javascript objects", "Use the View function or convert the matrix to a java 2d array before calling inout.View()");
+      return;
+    }
+    if (matrix instanceof Object[][]) {
+      view2dArray((Object[][])matrix, title);
+    } else {
+      console.appendWarningFx("Unknown matrix type " + matrix.getClass().getName());
+      console.appendFx(String.valueOf(matrix), true);
+    }
   }
 
   private void view2dArray(Object[][] matrix, String... title) {
@@ -329,30 +342,11 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     return header;
   }
 
-  public void viewHtml(String html, String... title) {
-    Platform.runLater(() -> {
-      viewer.viewHtml(html, title);
-      getSelectionModel().select(viewer);
-    });
-  }
-
   public void viewHtmlWithBootstrap(String html, String... title) {
     Platform.runLater(() -> {
       viewer.viewHtmlWithBootstrap(html, title);
       getSelectionModel().select(viewer);
     });
-  }
-
-  public void viewer(String html, String... title) {
-    Platform.runLater(() -> {
-      viewer.viewer(html, title);
-      getSelectionModel().select(viewer);
-    });
-  }
-
-  @Override
-  public File projectDir() {
-    return fileTree.getRootDir();
   }
 
   @Override
@@ -463,12 +457,49 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
   }
 
   public boolean hasPomFile() {
-    return getRootDir() != null && new File(getRootDir(), "pom.xml").exists();
+    return projectDir() != null && new File(projectDir(), "pom.xml").exists();
   }
 
   @Override
   public String help() {
     return """
+        Inout: Providing interaction capabilities between Groovy Code and Gride 
+                
+        void display(Node node, String... title)
+           display an image in the Plot tab
+           @param node the Node to display
+           @param title an optional title for the component displaying the node
+         
+        void display(Image img, String... title)
+           display an image in the Plot tab     
+           @param img the Image to display
+           @param title an optional title for the component displaying the image
+
+        void display(String fileName, String... title)
+          display an image in the Plot tab
+          @param fileName the file name of the image to display
+          @param title an optional title for the component displaying the image    
+              
+        void display(Chart chart, String... titleOpt)
+          Show the chart in the plots tab
+                
+        void display(Figure figure, String... titleOpt)
+          Show the figure in the plots tab
+                
+        void view(Table table, String... title)
+          display data in the Viewer tab
+          @param table the tablesaw Table to show
+          @param title an optional title for the component displaying the table
+        
+        void view(String html, String... title)
+          display html in the Viewer tab        
+          @param html a String or similar with the html content to view or a path or url to a file containing the html
+          @param title an optional title for the component displaying the html
+
+        Stage getStage()
+          Allows Dialogs and similar in external packages to interact with Ride
+          @return the primary stage
+         
         ConnectionInfo connection(String name)
           Return a connections for the name defined in Gride.
                 
@@ -480,13 +511,7 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
           or the project dir if the active tab has never been saved
                 
         File projectDir()
-          return the project dir (the root of the file tree)
-                
-        void plot(Chart chart, String... titleOpt)
-          Show the chart in the plots tab
-        
-        void plot(Figure figure, String... titleOpt)
-          Show the figure in the plots tab
+          return the project dir (the root of the file tree)               
         """;
   }
 }

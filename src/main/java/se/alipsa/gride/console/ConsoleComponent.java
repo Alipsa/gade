@@ -25,7 +25,6 @@ import javafx.stage.Stage;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -35,7 +34,6 @@ import se.alipsa.gride.Gride;
 import se.alipsa.gride.TaskListener;
 import se.alipsa.gride.code.groovytab.GroovyTab;
 import se.alipsa.gride.environment.EnvironmentComponent;
-import se.alipsa.gride.interaction.GuiInteraction;
 import se.alipsa.gride.model.Repo;
 import se.alipsa.gride.utils.Alerts;
 import se.alipsa.gride.utils.ExceptionAlert;
@@ -52,7 +50,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -188,7 +185,7 @@ public class ConsoleComponent extends BorderPane {
 
 
       if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
-        File wd = gui.getInoutComponent().getRootDir();
+        File wd = gui.getInoutComponent().projectDir();
         if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true) && wd != null && wd.exists()) {
           File classesDir = new File(wd, "target/classes");
           List<URL> urlList = new ArrayList<>();
@@ -211,7 +208,7 @@ public class ConsoleComponent extends BorderPane {
         }
 
         if (useMavenClassloader) {
-          File pomFile = new File(gui.getInoutComponent().getRootDir(), "pom.xml");
+          File pomFile = new File(gui.getInoutComponent().projectDir(), "pom.xml");
           if (pomFile.exists()) {
             log.debug("Parsing pom to use maven classloader");
             console.appendFx("* Parsing pom to create maven classloader...", true);
@@ -257,7 +254,7 @@ public class ConsoleComponent extends BorderPane {
         }
       }
       if(gui.getPrefs().getBoolean(AUTORUN_PROJECT, false)) {
-        file = new File(gui.getInoutComponent().getRootDir(), Constants.AUTORUN_FILENAME);
+        file = new File(gui.getInoutComponent().projectDir(), Constants.AUTORUN_FILENAME);
         if (file.exists()) {
           runScriptSilent(FileUtils.readContent(file));
         }

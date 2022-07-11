@@ -2,6 +2,7 @@ package se.alipsa.gride.chart;
 
 import tech.tablesaw.api.ColumnType;
 import tech.tablesaw.api.Table;
+import tech.tablesaw.columns.Column;
 
 /**
  * Represents a chart in some form.
@@ -14,14 +15,20 @@ import tech.tablesaw.api.Table;
 public abstract class Chart {
 
   protected String title;
-  protected Table[] series;
+
+  protected Column<?> categorySeries;
+  protected Column<?>[] valueSeries;
 
   public String getTitle() {
     return title;
   }
 
-  public Table[] getSeries() {
-    return series;
+  public Column<?> getCategorySeries() {
+    return categorySeries;
+  }
+
+  public Column<?>[] getValueSeries() {
+    return valueSeries;
   }
 
   static void validateSeries(Table[] series) {

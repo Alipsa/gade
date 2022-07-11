@@ -98,7 +98,7 @@ public class CreatePackageWizardDialog extends Dialog<CreatePackageWizardResult>
     HBox.setHgrow(dirWrapper, Priority.ALWAYS);
     dirWrapper.setMaxWidth(Double.MAX_VALUE);
     dirField.setMaxWidth(Double.MAX_VALUE);
-    selectedDirectory = gui.getInoutComponent().getRootDir();
+    selectedDirectory = gui.getInoutComponent().projectDir();
     dirField.setText(selectedDirectory.getAbsolutePath());
     dirWrapper.setTooltip(new Tooltip(selectedDirectory.getAbsolutePath()));
     dirBox.getChildren().add(dirWrapper);
@@ -148,7 +148,7 @@ public class CreatePackageWizardDialog extends Dialog<CreatePackageWizardResult>
 
   private void chooseProjectDir(ActionEvent actionEvent) {
     DirectoryChooser dirChooser = new DirectoryChooser();
-    File rootDir = gui.getInoutComponent().getRootDir();
+    File rootDir = gui.getInoutComponent().projectDir();
     if (rootDir != null && rootDir.exists()) {
       dirChooser.setInitialDirectory(rootDir);
     }

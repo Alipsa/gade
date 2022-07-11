@@ -106,7 +106,7 @@ public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult>
     dirField.setDisable(true);
     grid.add(dirField, 2,2);
 
-    selectedDirectory = gui.getInoutComponent().getRootDir();
+    selectedDirectory = gui.getInoutComponent().projectDir();
     dirField.setText(selectedDirectory.getAbsolutePath());
     dirField.setTooltip(new Tooltip(selectedDirectory.getAbsolutePath()));
 
@@ -140,7 +140,7 @@ public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult>
 
   private void chooseProjectDir(ActionEvent actionEvent) {
     DirectoryChooser dirChooser = new DirectoryChooser();
-    File rootDir = gui.getInoutComponent().getRootDir();
+    File rootDir = gui.getInoutComponent().projectDir();
     if (rootDir != null && rootDir.exists()) {
       dirChooser.setInitialDirectory(rootDir);
     }

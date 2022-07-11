@@ -1,22 +1,15 @@
 package se.alipsa.gride.chart;
 
-import javafx.application.Platform;
-import javafx.scene.web.WebView;
 import se.alipsa.gride.chart.jfx.JfxAreaChartConverter;
 import se.alipsa.gride.chart.jfx.JfxBarChartConverter;
 import se.alipsa.gride.chart.plotly.PlotlyAreaChartConverter;
 import se.alipsa.gride.chart.plotly.PlotlyBarChartConverter;
-import se.alipsa.gride.utils.ExceptionAlert;
 import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-
-import static se.alipsa.gride.utils.FileUtils.baseName;
 
 public class Plot {
 

@@ -1,7 +1,11 @@
 package se.alipsa.gride.inout;
 
+import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.stage.Stage;
 import se.alipsa.gride.chart.Chart;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
+import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 
 import java.io.File;
@@ -28,7 +32,17 @@ public interface InOut {
    */
   File projectDir();
 
-  void plot(Chart chart, String... titleOpt);
-  void plot(Figure figure, String... titleOpt);
+  void display(Node node, String... title);
+
+  void display(Image img, String... title);
+  void display(String fileName, String... title);
+  void display(Chart chart, String... titleOpt);
+  void display(Figure figure, String... titleOpt);
+
+  void view(Table table, String... title);
+  void view(String html, String... title);
+
+  Stage getStage();
+
 
 }

@@ -50,7 +50,7 @@ public class CloneProjectDialog extends Dialog<CloneProjectDialogResult> {
 
     Label dirLabel = new Label("Target dir");
     grid.add(dirLabel,0,1);
-    selectedDirectory = gui.getInoutComponent().getRootDir().getParentFile();
+    selectedDirectory = gui.getInoutComponent().projectDir().getParentFile();
     dirField.setText(selectedDirectory.getAbsolutePath());
     dirField.setPrefColumnCount(35);
     dirField.setDisable(true);
@@ -78,7 +78,7 @@ public class CloneProjectDialog extends Dialog<CloneProjectDialogResult> {
 
   private void chooseProjectDir(ActionEvent actionEvent) {
     DirectoryChooser dirChooser = new DirectoryChooser();
-    File rootDir = gui.getInoutComponent().getRootDir();
+    File rootDir = gui.getInoutComponent().projectDir();
     if (rootDir != null && rootDir.exists()) {
       dirChooser.setInitialDirectory(rootDir);
     }

@@ -12,33 +12,26 @@ table.addColumns(logNInjuries)
 IntColumn scale = table.intColumn("scale")
 scale.set(scale.isLessThan(0), IntColumnType.missingValueIndicator())
 
-summaryTable = table.summarize("fatalities", "log injuries", sum).by("Scale")
+summaryTable = table
+  .summarize("fatalities", "log injuries", sum)
+  .by("Scale")
+  .sortAscendingOn("scale")
 
-/*
-inout.plot(
-  HorizontalBarPlot.create(
-    "Tornado Impact",
-    summaryTable,
-    "scale",
-    Layout.BarMode.STACK,
-    "Sum [Fatalities]",
-    "Sum [log injuries]")
-)
-*/
 
 scaleColumn = summaryTable.column("Scale").asStringColumn()
-chart = BarChart.create("Tornado Impact", ChartType.STACKED, 
+chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.HORIZONTAL,
   scaleColumn,
   summaryTable.column("sum [log injuries]"),
   summaryTable.column("Sum [Fatalities]")
 );
-inout.plot(chart)
+inout.display(chart)
 
-// TODO: does not work
+
 figure = se.alipsa.gride.chart.Plot.jsPlot(chart)
-inout.plot(figure, "plotly")
+inout.display(figure, "plotly")
 
-inout.plot(
+/*
+inout.display(
   tech.tablesaw.plotly.api.HorizontalBarPlot.create(
     "Tornado Impact",
     summaryTable,
@@ -48,3 +41,5 @@ inout.plot(
     "Sum [Fatalities]",
   ), "manual"
 )
+*/
+// inout.view("https://docs.oracle.com/javafx/2/charts/bar-chart.htm#CIHJFHDE")

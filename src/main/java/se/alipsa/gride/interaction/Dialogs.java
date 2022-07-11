@@ -66,21 +66,7 @@ public class Dialogs implements GuiInteraction {
         return task.get();
     }
 
-    public String promptDate(String title, String message, String outputFormat, String defaultValue) throws InterruptedException, ExecutionException {
-        if (outputFormat == null) outputFormat = "yyyy-MM-dd";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(outputFormat);
-        LocalDate defDate;
-        try {
-            defDate = LocalDate.parse(defaultValue, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        } catch (DateTimeParseException e) {
-            try {
-                defDate = LocalDate.parse(defaultValue, formatter);
-            } catch (DateTimeParseException ex) {
-                defDate = null;
-            }
-        }
-        final LocalDate defaultDate = defDate;
-
+    public LocalDate promptDate(String title, String message, LocalDate defaultValue) throws InterruptedException, ExecutionException {
         FutureTask<LocalDate> task = new FutureTask<>(() -> {
             Dialog<LocalDate> dialog = new Dialog<>();
             dialog.setTitle(title);
@@ -88,22 +74,11 @@ public class Dialogs implements GuiInteraction {
             content.setHgap(5);
             content.getChildren().add(new Label(message));
             DatePicker picker;
-            if (defaultDate == null) {
+            if (defaultValue == null) {
                 picker = new DatePicker();
             } else {
-                picker = new DatePicker(defaultDate);
+                picker = new DatePicker(defaultValue);
             }
-            picker.setConverter(new StringConverter<LocalDate>() {
-                @Override
-                public String toString(LocalDate localDate) {
-                    return localDate == null ? null : formatter.format(localDate);
-                }
-
-                @Override
-                public LocalDate fromString(String s) {
-                    return s == null ? null : LocalDate.parse(s, formatter);
-                }
-            });
             content.getChildren().add(picker);
             dialog.getDialogPane().setContent(content);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -119,27 +94,18 @@ public class Dialogs implements GuiInteraction {
             return dialog.showAndWait().orElse(null);
         });
         Platform.runLater(task);
-        LocalDate result = task.get();
-        return result == null ? null : formatter.format(result);
+        return task.get();
     }
 
-    public String promptYearMonth(String title, String message, String from, String to, String initial,
-                                  String languageTag, String monthFormat, String outputFormat)
+    public YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial)
             throws InterruptedException, ExecutionException {
-        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(outputFormat);
-        YearMonth fromYM = YearMonth.parse(from, inputFormatter);
-        YearMonth toYM = YearMonth.parse(to, inputFormatter);
-        YearMonth initialYM = YearMonth.parse(initial, inputFormatter);
-        Locale locale = languageTag == null ? Locale.getDefault() : Locale.forLanguageTag(languageTag);
-
         FutureTask<YearMonth> task = new FutureTask<>(() -> {
             Dialog<YearMonth> dialog = new Dialog<>();
             dialog.setTitle(title);
             FlowPane content = new FlowPane();
             content.setHgap(5);
             content.getChildren().add(new Label(message));
-            YearMonthPicker picker = new YearMonthPicker(fromYM, toYM, initialYM, locale, monthFormat, outputFormat);
+            YearMonthPicker picker = new YearMonthPicker(from, to, initial, Locale.getDefault(), "yyyy-MM");
             content.getChildren().add(picker);
             dialog.getDialogPane().setContent(content);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -155,9 +121,7 @@ public class Dialogs implements GuiInteraction {
             return dialog.showAndWait().orElse(null);
         });
         Platform.runLater(task);
-        YearMonth result = task.get();
-
-        return result == null ? null : outputFormatter.format(result);
+        return task.get();
     }
 
     public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws InterruptedException, ExecutionException {
@@ -189,21 +153,19 @@ public class Dialogs implements GuiInteraction {
 
     public String help() {
         return """
-            User input utilities
+            Dialogs: User input utilities
+            -----------------------------
             String prompt(String title, String headerText, String message, String defaultValue)
                prompt for text input
                
             String promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue)
                 prompt user to pick from a list of values
                 
-            String promptDate(String title, String message, String outputFormat, String defaultValue)
+            LocalDate promptDate(String title, String message, LocalDate defaultValue)
                 prompt user for a date. If outputformat is null, the format will be yyyy-MM-dd
-                Returns a String representation of the date in the format specified
                 
-            String promptYearMonth(String title, String message, String from, String to, String initial,
-                            String languageTag, String monthFormat, String outputFormat)
-                prompt user for a yearMonth
-                Return a String representation of the yearMonth in the format specified
+            YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial)
+                prompt user for a yearMonth (yyyy-MM)
                 
             File chooseFile(String title, String initialDirectory, String description, String... extensions)
                 asks user to select a file
