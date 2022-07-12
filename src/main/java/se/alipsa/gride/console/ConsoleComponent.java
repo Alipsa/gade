@@ -230,7 +230,6 @@ public class ConsoleComponent extends BorderPane {
       // TODO do something with the classloader
       //engine = new GroovyScriptEngineImpl(gui.dynamicClassLoader);
       engine = new GroovyScriptEngineImpl(classLoader);
-      engine.put("inout", gui.getInoutComponent());
       gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
       return null;
     } catch (RuntimeException e) {
@@ -374,7 +373,6 @@ public class ConsoleComponent extends BorderPane {
       return null;
     }
     //log.info("engine is {}, gui is {}", engine, gui);
-    engine.put("inout", gui.getInoutComponent());
     gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
     if (additionalParams != null) {
       for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
@@ -547,7 +545,6 @@ public class ConsoleComponent extends BorderPane {
       public Void call() {
         ((TaskListener) rTab).taskStarted();
         start = System.currentTimeMillis();
-        engine.put("inout", gui.getInoutComponent());
         gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
         List<TestResult> results = new ArrayList<>();
         try (StringWriter out = new StringWriter();
@@ -696,7 +693,6 @@ public class ConsoleComponent extends BorderPane {
         Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
         return;
       }
-      engine.put("inout", gui.getInoutComponent());
       gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
 
       Platform.runLater(() -> {

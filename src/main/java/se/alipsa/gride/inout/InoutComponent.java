@@ -33,7 +33,10 @@ import se.alipsa.gride.console.ConsoleTextArea;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
 import se.alipsa.gride.inout.plot.PlotsTab;
 import se.alipsa.gride.inout.viewer.ViewTab;
+import se.alipsa.gride.interaction.Dialogs;
 import se.alipsa.gride.interaction.GuiInteraction;
+import se.alipsa.gride.interaction.ReadImage;
+import se.alipsa.gride.interaction.UrlUtil;
 import se.alipsa.gride.utils.*;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
@@ -43,6 +46,8 @@ import tech.tablesaw.plotly.components.Page;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -58,6 +63,9 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
   private final Label branchLabel;
   private final TextField statusField;
   private boolean enableGit;
+  private Dialogs dialogs;
+  private ReadImage readImage;
+  private UrlUtil urlUtil;
 
   private static final Logger log = LogManager.getLogger(InoutComponent.class);
 
@@ -122,6 +130,10 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
     getTabs().add(viewer);
 
     setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
+
+    dialogs = new Dialogs(gui.getStage());
+    readImage = new ReadImage();
+    urlUtil = new UrlUtil();
   }
 
   private void handleChangeDir(ActionEvent actionEvent) {
@@ -405,11 +417,6 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
    packages.setLoadedPackages(pkgs);
   }
 
-  @Override
-  public String toString() {
-    return "The Gride InOutComponent";
-  }
-
   public TreeItem<FileItem> getRoot() {
     return fileTree.getRoot();
   }
@@ -458,6 +465,46 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
 
   public boolean hasPomFile() {
     return projectDir() != null && new File(projectDir(), "pom.xml").exists();
+  }
+
+  public String prompt(String title, String headerText, String message, String defaultValue) throws ExecutionException, InterruptedException {
+    return dialogs.prompt(title, headerText, message, defaultValue);
+  }
+
+  public Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue) throws ExecutionException, InterruptedException {
+    return dialogs.promptSelect(title, headerText, message, options, defaultValue);
+  }
+
+  public LocalDate promptDate(String title, String message, LocalDate defaultValue) throws ExecutionException, InterruptedException {
+    return dialogs.promptDate(title, message, defaultValue);
+  }
+
+  public YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial) throws ExecutionException, InterruptedException {
+    return dialogs.promptYearMonth(title, message, from, to, initial);
+  }
+
+  public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
+    return dialogs.chooseFile(title, initialDirectory, description, extensions);
+  }
+
+  public File chooseDir(String title, String initialDirectory) throws ExecutionException, InterruptedException {
+    return dialogs.chooseDir(title, initialDirectory);
+  }
+
+  public Image readImage(String filePath) throws IOException {
+    return readImage.read(filePath);
+  }
+
+  public URL getResourceUrl(String resource) {
+    return readImage.getResourceUrl(resource);
+  }
+
+  public String getContentType(String fileName) throws IOException {
+    return readImage.getContentType(fileName);
+  }
+
+  public boolean urlExists(String urlString, int timeout) {
+    return urlUtil.exists(urlString, timeout);
   }
 
   @Override
@@ -511,7 +558,44 @@ public class InoutComponent extends TabPane implements InOut, GuiInteraction {
           or the project dir if the active tab has never been saved
                 
         File projectDir()
-          return the project dir (the root of the file tree)               
+          return the project dir (the root of the file tree)    
+          
+        String prompt(String title, String headerText, String message, String defaultValue)
+           prompt for text input
+           
+        Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue)
+            prompt user to pick from a list of values
+            
+        LocalDate promptDate(String title, String message, LocalDate defaultValue)
+            prompt user for a date. If outputformat is null, the format will be yyyy-MM-dd
+            
+        YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial)
+            prompt user for a yearMonth (yyyy-MM)
+            
+        File chooseFile(String title, String initialDirectory, String description, String... extensions)
+            asks user to select a file
+            Returns the java.io.File selected by the user
+            
+        File chooseDir(String title, String initialDirectory)
+            asks user to select a dir
+            Return the java.io.File pointing to the directory chosen    
+        
+        Image readImage(String filePath)
+            create an javafx Image from the url/path specified
+            
+        URL getResourceUrl(String resource)
+            create an url to the path specified
+            
+        String getContentType(String fileName)
+            makes an educated guess of the content type for the filePath specified    
+            
+        boolean urlExists(String urlString, int timeout)
+          attempts to connect to the url specified with a HEAD request to see if it is there or not.     
         """;
+  }
+
+  @Override
+  public String toString() {
+    return "The Gride InOutComponent, run inout.help() for details";
   }
 }

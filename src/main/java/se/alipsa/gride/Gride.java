@@ -76,11 +76,6 @@ public class Gride extends Application {
     log.info("Starting Gride...");
     //Thread.currentThread().setContextClassLoader(new GroovyClassLoader());
     instance = this;
-    guiInteractions = Map.of(
-        "dialogs", new Dialogs(primaryStage),
-        "ReadImage", new ReadImage(),
-        "UrlUtil", new UrlUtil()
-        );
     grideBaseDir = Path.of("").toAbsolutePath().toFile();
 
     preferences = Preferences.userRoot().node(Gride.class.getName());
@@ -158,6 +153,9 @@ public class Gride extends Application {
     primaryStage.setScene(scene);
     enableDragDrop(scene);
     //consoleComponent.initGroovy(Gride.this.getClass().getClassLoader());
+    guiInteractions = Map.of(
+        "inout", inoutComponent
+    );
     consoleComponent.initGroovy(Gride.instance().dynamicClassLoader);
     primaryStage.show();
   }

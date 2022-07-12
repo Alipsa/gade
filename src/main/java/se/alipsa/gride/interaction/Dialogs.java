@@ -176,4 +176,9 @@ public class Dialogs implements GuiInteraction {
                 Return the java.io.File pointing to the directory chosen
             """;
     }
+
+    @Override
+    public String toString() {
+        return "User input utilities";
+    }
 }

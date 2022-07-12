@@ -6,7 +6,7 @@ import java.net.URL;
 
 public class UrlUtil implements GuiInteraction {
 
-  public static boolean exists(String urlString, int timeout) {
+  public boolean exists(String urlString, int timeout) {
     try {
       URL url = new URL(urlString);
       HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -28,5 +28,10 @@ public class UrlUtil implements GuiInteraction {
         boolean exists(String urlString, int timeout)
           attempts to connect to the url specified with a HEAD request to see if it is there or not.
         """;
+  }
+
+  @Override
+  public String toString() {
+    return "Convenient url utilities";
   }
 }

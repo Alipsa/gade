@@ -73,7 +73,6 @@ public class JsTab extends TextAreaTab {
     String[] options = new String[]{"--language=es6"};
     engine = nashornScriptEngineFactory.getScriptEngine(options);
 
-    engine.put("inout", gui.getInoutComponent());
     gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
     try {
       engine.eval(initScript);

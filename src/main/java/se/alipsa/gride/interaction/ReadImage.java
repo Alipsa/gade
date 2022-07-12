@@ -115,4 +115,9 @@ public class ReadImage implements GuiInteraction {
                 makes an educated guess of the content type for the filePath specified
             """;
     }
+
+    @Override
+    public String toString() {
+        return "An Image reader that can read SVG files";
+    }
 }
