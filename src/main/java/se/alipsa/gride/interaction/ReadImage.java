@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReadImage implements GuiInteraction {
+public class ReadImage {
 
     /* Note that SVG images are not supported OOTB in javafx */
     public Image read(String name) throws IOException {
@@ -100,7 +100,6 @@ public class ReadImage implements GuiInteraction {
         return tika.detect(file);
     }
 
-    @Override
     public String help() {
         return """
             ReadImage: An Image reader that can read SVG files

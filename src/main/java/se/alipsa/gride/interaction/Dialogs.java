@@ -21,7 +21,7 @@ import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
-public class Dialogs implements GuiInteraction {
+public class Dialogs {
 
     private final Stage stage;
 

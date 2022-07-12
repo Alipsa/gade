@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class UrlUtil implements GuiInteraction {
+public class UrlUtil {
 
   public boolean exists(String urlString, int timeout) {
     try {
@@ -20,7 +20,6 @@ public class UrlUtil implements GuiInteraction {
     }
   }
 
-  @Override
   public String help() {
     return """
         UrlUtil: Convenient url utilities

@@ -1,16 +1,7 @@
-
-@Grab('org.postgresql:postgresql:42.4.0')
-@Grab('se.alipsa.groovy:data-utils:1.0-SNAPSHOT')
 import se.alipsa.groovy.datautil.SqlUtil
 import tech.tablesaw.api.Table
 
-def sql = SqlUtil.newInstance('jdbc:postgresql://localhost:5432/rsg', 'rsg', 'Tian12Pan', 'org.postgresql.Driver')
-
-sql.query("""select user_name, count(1) as sessions from dbsession group by user_name""") { rs -> {
-  table = Table.read().db(rs)
-  }
-}
-sql.close()
+table = Table.read().csv(new File(inout.projectDir(), "/data/sessions.csv"))
 table.setName("Full")
 
 
