@@ -745,7 +745,7 @@ public class ConnectionsTab extends Tab {
               rs.setFetchSize(200);
               table = Table.read().db(rs);
             }
-            gui.getInoutComponent().showInViewer(table, tableName);
+            gui.getInoutComponent().viewTable(table, tableName);
 
           }
         } catch (SQLException e) {

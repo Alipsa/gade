@@ -127,7 +127,7 @@ public class SqlTab extends TextAreaTab {
                   try (ResultSet rs = stm.getResultSet()) {
                     Table table = Table.read().db(rs);
                     Platform.runLater(() ->
-                        gui.getInoutComponent().showInViewer(table, SqlTab.this.getTitle() + " " + queryCount.getAndIncrement() + ".")
+                        gui.getInoutComponent().viewTable(table, SqlTab.this.getTitle() + " " + queryCount.getAndIncrement() + ".")
                     );
                   }
                 } else { // if ddl/dml/...

@@ -1,7 +1,7 @@
 import tech.tablesaw.api.Table
 import se.alipsa.gride.chart.AreaChart
 
-robberies = Table.read().csv(new File(inout.scriptDir(), "/data/boston-robberies.csv"));
+robberies = Table.read().csv(new File(io.scriptDir(), "/data/boston-robberies.csv"));
 robberies.setName("Boston Robberies by month: Jan 1966-Oct 1975")
 
 robChart = AreaChart.create(
@@ -9,9 +9,9 @@ robChart = AreaChart.create(
   robberies.column("Record").asStringColumn(), 
   robberies.column("Robberies")
 )
-inout.display(robChart, "Boston Robberies")
+io.display(robChart, "Boston Robberies")
 
-inout.display(tech.tablesaw.plotly.api.AreaPlot.create(
+io.display(tech.tablesaw.plotly.api.AreaPlot.create(
   "Boston Robberies by month: Jan 1966-Oct 1975", 
   robberies, 
   "Record", 

@@ -23,11 +23,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import se.alipsa.gride.interaction.Dialogs;
-import se.alipsa.gride.interaction.GuiInteraction;
-import se.alipsa.gride.interaction.ReadImage;
-import se.alipsa.gride.interaction.UrlUtil;
-import se.alipsa.gride.utils.DynamicClassLoader;
+import se.alipsa.gride.interaction.*;
 import se.alipsa.maven.MavenUtils;
 import se.alipsa.gride.code.CodeComponent;
 import se.alipsa.gride.console.ConsoleComponent;
@@ -154,7 +150,7 @@ public class Gride extends Application {
     enableDragDrop(scene);
     //consoleComponent.initGroovy(Gride.this.getClass().getClassLoader());
     guiInteractions = Map.of(
-        "inout", inoutComponent
+        "io", new InOut()
     );
     consoleComponent.initGroovy(Gride.instance().dynamicClassLoader);
     primaryStage.show();

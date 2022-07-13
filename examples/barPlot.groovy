@@ -1,12 +1,10 @@
 import static tech.tablesaw.aggregate.AggregateFunctions.*
 import tech.tablesaw.api.*
 import tech.tablesaw.columns.numbers.*
-import tech.tablesaw.plotly.api.*
-import tech.tablesaw.plotly.components.*
 import se.alipsa.gride.chart.*
 
-Table table = Table.read().csv(new File(inout.scriptDir(), "/data/tornadoes_1950-2014.csv"))
-NumericColumn<?> logNInjuries = table.numberColumn("injuries").add(1).logN()
+Table table = Table.read().csv(new File(io.scriptDir(), "/data/tornadoes_1950-2014.csv"))
+NumericColumn<Number> logNInjuries = table.numberColumn("injuries").add(1).logN()
 logNInjuries.setName("log injuries")
 table.addColumns(logNInjuries)
 IntColumn scale = table.intColumn("scale")
@@ -24,14 +22,14 @@ chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.HORI
   summaryTable.column("sum [log injuries]"),
   summaryTable.column("Sum [Fatalities]")
 );
-inout.display(chart)
+io.display(chart)
 
 
 figure = se.alipsa.gride.chart.Plot.jsPlot(chart)
-inout.display(figure, "plotly")
+io.display(figure, "plotly")
 
 /*
-inout.display(
+io.display(
   tech.tablesaw.plotly.api.HorizontalBarPlot.create(
     "Tornado Impact",
     summaryTable,
@@ -42,4 +40,4 @@ inout.display(
   ), "manual"
 )
 */
-// inout.view("https://docs.oracle.com/javafx/2/charts/bar-chart.htm#CIHJFHDE")
+// io.view("https://docs.oracle.com/javafx/2/charts/bar-chart.htm#CIHJFHDE")

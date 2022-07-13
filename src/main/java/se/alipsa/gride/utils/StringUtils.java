@@ -19,11 +19,23 @@ public class StringUtils {
     return String.format("%1$"+length+ "s", string);
   }
 
+  public static String maxLengthString(String string, int length) {
+    if (string.length() <= length) {
+      return string;
+    } else {
+      return string.substring(0, length -3) + "...";
+    }
+  }
+
   public static String getLeadingSpaces(String str) {
     Matcher m = LEADING_SPACES.matcher(str);
     if(m.find()){
       return m.group(0);
     }
     return "";
+  }
+
+  public static String underLine(String name, char character) {
+    return name + "\n" + String.valueOf(character).repeat(name.length()) + "\n";
   }
 }

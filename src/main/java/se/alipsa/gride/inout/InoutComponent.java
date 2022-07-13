@@ -2,24 +2,18 @@ package se.alipsa.gride.inout;
 
 import static se.alipsa.gride.menu.GlobalOptions.ENABLE_GIT;
 import static se.alipsa.gride.menu.GlobalOptions.USE_MAVEN_CLASSLOADER;
-import static se.alipsa.gride.utils.FileUtils.removeExt;
 import static se.alipsa.gride.utils.TableUtils.transpose;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.web.WebView;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.Stage;
 import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,30 +21,15 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gride.Gride;
-import se.alipsa.gride.chart.Chart;
-import se.alipsa.gride.chart.Plot;
 import se.alipsa.gride.console.ConsoleTextArea;
-import se.alipsa.gride.environment.connections.ConnectionInfo;
 import se.alipsa.gride.inout.plot.PlotsTab;
 import se.alipsa.gride.inout.viewer.ViewTab;
-import se.alipsa.gride.interaction.Dialogs;
-import se.alipsa.gride.interaction.GuiInteraction;
-import se.alipsa.gride.interaction.ReadImage;
-import se.alipsa.gride.interaction.UrlUtil;
 import se.alipsa.gride.utils.*;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
-import tech.tablesaw.plotly.components.Figure;
-import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 
 public class InoutComponent extends TabPane  {
 
@@ -219,7 +198,7 @@ public class InoutComponent extends TabPane  {
       columns[i] = StringColumn.create(header.get(i), t.get(i).stream().map(String::valueOf).toArray(String[]::new));
     }
     Table table = Table.create().addColumns(columns);
-    showInViewer(table, title);
+    viewTable(table, title);
   }
 
   public void view(Object matrix, String... title) {
@@ -253,7 +232,7 @@ public class InoutComponent extends TabPane  {
       columns[i] = StringColumn.create(header.get(i), Arrays.stream(t[i]).map(String::valueOf).toArray(String[]::new));
     }
     Table table = Table.create().addColumns(columns);
-    showInViewer(table, title);
+    viewTable(table, title);
   }
 
   @NotNull
@@ -265,6 +244,13 @@ public class InoutComponent extends TabPane  {
     return header;
   }
 
+  public void viewHtml(String html, String... title) {
+    Platform.runLater(() -> {
+      viewer.viewHtml(html, title);
+      gui.getInoutComponent().getSelectionModel().select(viewer);
+    });
+  }
+
   public void viewHtmlWithBootstrap(String html, String... title) {
     Platform.runLater(() -> {
       viewer.viewHtmlWithBootstrap(html, title);
@@ -272,7 +258,7 @@ public class InoutComponent extends TabPane  {
     });
   }
 
-  public void showInViewer(Table table, String... title) {
+  public void viewTable(Table table, String... title) {
     Platform.runLater(() -> {
           viewer.viewTable(table, title);
           SingleSelectionModel<Tab> selectionModel = getSelectionModel();

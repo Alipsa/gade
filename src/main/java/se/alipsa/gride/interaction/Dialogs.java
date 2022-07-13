@@ -124,6 +124,33 @@ public class Dialogs {
         return task.get();
     }
 
+    public YearMonth promptYearMonth(String message)
+        throws InterruptedException, ExecutionException {
+        FutureTask<YearMonth> task = new FutureTask<>(() -> {
+            Dialog<YearMonth> dialog = new Dialog<>();
+            dialog.setTitle("");
+            FlowPane content = new FlowPane();
+            content.setHgap(5);
+            content.getChildren().add(new Label(message));
+            YearMonthPicker picker = new YearMonthPicker();
+            content.getChildren().add(picker);
+            dialog.getDialogPane().setContent(content);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            dialog.setResultConverter(buttonType -> {
+                if (buttonType == ButtonType.OK) {
+                    return picker.getValue();
+                }
+                return null;
+            });
+            dialog.setResizable(true);
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+            GuiUtils.addStyle(Gride.instance(), dialog);
+            return dialog.showAndWait().orElse(null);
+        });
+        Platform.runLater(task);
+        return task.get();
+    }
+
     public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws InterruptedException, ExecutionException {
         FutureTask<File> task = new FutureTask<>(() -> {
             FileChooser chooser = new FileChooser();

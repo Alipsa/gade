@@ -66,5 +66,8 @@ public abstract class Chart {
     }
   }
 
-
+  @Override
+  public String toString() {
+    return title + ", category: " + categorySeries.name() + ", " + valueSeries.length + " value series";
+  }
 }

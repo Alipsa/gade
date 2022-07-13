@@ -14,26 +14,26 @@ import se.alipsa.gride.Gride;
 import se.alipsa.gride.chart.Chart;
 import se.alipsa.gride.chart.Plot;
 import se.alipsa.gride.environment.connections.ConnectionInfo;
-import se.alipsa.gride.utils.Alerts;
-import se.alipsa.gride.utils.ExceptionAlert;
-import se.alipsa.gride.utils.FileUtils;
-import se.alipsa.gride.utils.TikaUtils;
+import se.alipsa.gride.utils.*;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 import static se.alipsa.gride.utils.FileUtils.removeExt;
 
-public class Inout implements GuiInteraction {
+public class InOut implements GuiInteraction {
 
   private static final Logger log = LogManager.getLogger();
   private final Gride gui;
@@ -41,14 +41,13 @@ public class Inout implements GuiInteraction {
   private final ReadImage readImage;
   private final UrlUtil urlUtil;
 
-  public Inout() {
+  public InOut() {
     gui = Gride.instance();
     dialogs = new Dialogs(gui.getStage());
     readImage = new ReadImage();
     urlUtil = new UrlUtil();
   }
 
-  @Override
   public ConnectionInfo connection(String name) {
     return gui.getEnvironmentComponent().getConnections().stream()
         .filter(ci -> ci.getName().equals(name)).findAny().orElse(null);
@@ -61,7 +60,6 @@ public class Inout implements GuiInteraction {
    *
    * @return the file from the active tab or null if the active tab has never been saved
    */
-  @Override
   public File scriptFile() {
 
     try {
@@ -79,7 +77,6 @@ public class Inout implements GuiInteraction {
     }
   }
 
-  @Override
   public File scriptDir() {
     File file = gui.getCodeComponent().getActiveTab().getFile();
     if (file == null) {
@@ -88,18 +85,15 @@ public class Inout implements GuiInteraction {
     return file.getParentFile();
   }
 
-  @Override
   public File projectDir() {
-    return null;
+    return gui.getInoutComponent().projectDir();
   }
 
-  @Override
   public void display(Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     display(Plot.jfx(chart), title);
   }
 
-  @Override
   public void display(Figure figure, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     Page page = Page.pageBuilder(figure, "target").build();
@@ -113,8 +107,6 @@ public class Inout implements GuiInteraction {
     });
   }
 
-
-  @Override
   public void display(Node node, String... title) {
     Platform.runLater(() -> {
           var plotsTab = gui.getInoutComponent().getPlotsTab();
@@ -125,13 +117,11 @@ public class Inout implements GuiInteraction {
     );
   }
 
-  @Override
   public void display(Image img, String... title) {
     ImageView node = new ImageView(img);
     display(node, title);
   }
 
-  @Override
   public void display(String fileName, String... title) {
     URL url = FileUtils.getResourceUrl(fileName);
     log.info("Reading image from " + url);
@@ -159,7 +149,6 @@ public class Inout implements GuiInteraction {
     display(img, title);
   }
 
-  @Override
   public void view(Table table, String... title) {
     String tit = title.length > 0 ? title[0] : table.name();
     if (tit == null) {
@@ -169,68 +158,57 @@ public class Inout implements GuiInteraction {
         tit = tit.substring(0, extIdx);
       }
     }
-    showInViewer(table, tit);
+    gui.getInoutComponent().viewTable(table, tit);
   }
 
-  @Override
   public void view(String html, String... title) {
-    Platform.runLater(() -> {
-      viewer.viewHtml(html, title);
-      gui.getInoutComponent().getSelectionModel().select(viewer);
-    });
+    gui.getInoutComponent().viewHtml(html, title);
   }
 
-  @Override
   public Stage getStage() {
     return gui.getStage();
   }
 
-  @Override
   public String prompt(String title, String headerText, String message, String defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.prompt(title, headerText, message, defaultValue);
   }
 
-  @Override
+  public String prompt(String message) throws ExecutionException, InterruptedException {
+    return dialogs.prompt("", "", message, "");
+  }
+
   public Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.promptSelect(title, headerText, message, options, defaultValue);
   }
 
-  @Override
   public LocalDate promptDate(String title, String message, LocalDate defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.promptDate(title, message, defaultValue);
   }
 
-  @Override
   public YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial) throws ExecutionException, InterruptedException {
     return dialogs.promptYearMonth(title, message, from, to, initial);
   }
 
-  @Override
+  public YearMonth promptYearMonth(String message) throws ExecutionException, InterruptedException {
+    return dialogs.promptYearMonth(message);
+  }
+
   public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
     return dialogs.chooseFile(title, initialDirectory, description, extensions);
   }
 
-  @Override
   public File chooseDir(String title, String initialDirectory) throws ExecutionException, InterruptedException {
     return dialogs.chooseDir(title, initialDirectory);
   }
 
-  @Override
   public Image readImage(String filePath) throws IOException {
     return readImage.read(filePath);
   }
 
-  @Override
-  public URL getResourceUrl(String resource) {
-    return readImage.getResourceUrl(resource);
-  }
-
-  @Override
   public String getContentType(String fileName) throws IOException {
     return readImage.getContentType(fileName);
   }
 
-  @Override
   public boolean urlExists(String urlString, int timeout) {
     return urlUtil.exists(urlString, timeout);
   }
@@ -291,6 +269,9 @@ public class Inout implements GuiInteraction {
         String prompt(String title, String headerText, String message, String defaultValue)
            prompt for text input
            
+        String prompt(String message)   
+           quick prompt for text input
+           
         Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue)
             prompt user to pick from a list of values
             
@@ -299,6 +280,9 @@ public class Inout implements GuiInteraction {
             
         YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial)
             prompt user for a yearMonth (yyyy-MM)
+            
+        public YearMonth promptYearMonth(String message)
+            quick prompt for a YearMonth
             
         File chooseFile(String title, String initialDirectory, String description, String... extensions)
             asks user to select a file
@@ -309,21 +293,73 @@ public class Inout implements GuiInteraction {
             Return the java.io.File pointing to the directory chosen    
         
         Image readImage(String filePath)
-            create an javafx Image from the url/path specified
-            
-        URL getResourceUrl(String resource)
-            create an url to the path specified
+            create an javafx Image from the url/path specified           
             
         String getContentType(String fileName)
             makes an educated guess of the content type for the filePath specified    
             
         boolean urlExists(String urlString, int timeout)
-          attempts to connect to the url specified with a HEAD request to see if it is there or not.     
+          attempts to connect to the url specified with a HEAD request to see if it is there or not. 
+          
+        String help(Class<?> clazz)
+          returns a String with useful info about the class i.e. available methods.
+        
+        String help(Object obj)
+          returns a String with useful info about the object i.e. the object type, available methods and toString content.   
         """;
+  }
+
+  public String help(Class<?> clazz) {
+    return help(clazz, true);
+  }
+
+  public String help(Class<?> clazz, boolean includeStatic) {
+    StringBuilder sb = new StringBuilder();
+    for (var method : clazz.getMethods()) {
+      if (Object.class.equals(method.getDeclaringClass())) {
+        continue;
+      }
+      if ( Modifier.isStatic(method.getModifiers())) {
+        if (includeStatic) {
+          sb.append("static ");
+        } else {
+          continue;
+        }
+      }
+      sb.append(method.getReturnType().getSimpleName()).append(" ");
+      sb.append(method.getName()).append("(");
+      Class<?>[] params = method.getParameterTypes();
+      List<String> paramList = new ArrayList<>();
+      for (Class<?> param : params) {
+        paramList.add(param.getSimpleName());
+      }
+      sb.append(String.join(", ", paramList)).append(")");
+
+      if (method.getExceptionTypes().length > 0) {
+        sb.append(" throws ");
+        List<String> exceptions = new ArrayList<>();
+        for (Class<?> exc : method.getExceptionTypes()) {
+          exceptions.add(exc.getSimpleName());
+        }
+        sb.append(String.join(", ", exceptions));
+      }
+      sb.append("\n");
+    }
+    return sb.toString();
+  }
+
+  public String help(Object obj) {
+    if (obj == null) {
+      return "Object is null, no help available";
+    }
+    return StringUtils.underLine(obj.getClass().getName(), '-')
+        + help(obj.getClass(), false)
+        + "\n"
+        + StringUtils.maxLengthString(obj.toString(), 300);
   }
 
   @Override
   public String toString() {
-    return "The Gride InOutComponent, run inout.help() for details";
+    return "Interaction capabilities, run io.help() for details";
   }
 }
