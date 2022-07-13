@@ -34,12 +34,25 @@ public class QueryBuilder {
         .append(password).append("', '")
         .append(con.getDriver())
         .append("')\n")
-        .append("\nsql.query(\"\"\"").append(sql).append("\"\"\") { rs -> {")
+        .append("\nsql.query(\"\"\"\n  ").append(sql).append("\n\"\"\") { rs -> {")
         .append("\n  table = Table.read().db(rs)\n")
         .append("  }\n")
         .append("}\n")
         .append("sql.close()\n")
-        .append("return table");
+        .append("// do something with table\n\n")
+        .append("// Alternative syntax using a connection from the connections tab:\n")
+            .append("new groovy.sql.Sql(io.connect(\"")
+        .append(con.getName())
+        .append("""                                        
+                ")).withCloseable { sql -> {
+                  sql.query(""\"select * from SomeTable""\") { rs -> {
+                    table = tech.tablesaw.api.Table.read().db(rs)
+                  }}
+                }}
+                
+                """);
+
+
     log.info(str.toString());
     return str;
   }

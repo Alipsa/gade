@@ -34,6 +34,15 @@ public class ConnectionInfo implements Comparable<ConnectionInfo> {
     this.password = new SimpleStringProperty(password);
   }
 
+  public ConnectionInfo(ConnectionInfo ci) {
+    this.name = new SimpleStringProperty(ci.getName());
+    this.dependency = new SimpleStringProperty(ci.getDependency());
+    this.driver = new SimpleStringProperty(ci.getDriver());
+    this.url = new SimpleStringProperty(ci.getUrl());
+    this.user = new SimpleStringProperty(ci.getUser());
+    this.password = new SimpleStringProperty(ci.getPassword());
+  }
+
   public String getName() {
     return name.getValue();
   }
@@ -116,7 +125,7 @@ public class ConnectionInfo implements Comparable<ConnectionInfo> {
        "\", \"driver\"=\"" + driver.getValue() +
        "\", \"url\"=\"" + url.getValue() +
        "\", \"user\"=" + user.getValue() +
-       "\", \"password\"=\"" + password.getValue() +
+       "\", \"password\"=\"" + password.getValue().replaceAll(".", "*") +
        "\"}";
   }
 }

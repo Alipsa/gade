@@ -391,6 +391,7 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     ConnectionInfo ci = new ConnectionInfo();
     ci.setDriver(driver.getValue());
     ci.setUrl(url.getText());
+    ci.setDependency(dependency.getText());
     return ci;
   }
 }

@@ -8,6 +8,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import se.alipsa.gride.Gride;
+import se.alipsa.gride.menu.PasswordDialog;
 import se.alipsa.gride.utils.GuiUtils;
 import se.alipsa.ymp.YearMonthPicker;
 
@@ -40,6 +41,16 @@ public class Dialogs {
             dialog.setContentText(message);
             dialog.setResizable(true);
             GuiUtils.addStyle(Gride.instance(), dialog);
+            return dialog.showAndWait().orElse(null);
+        });
+        Platform.runLater(task);
+        return task.get();
+    }
+
+    public String promptPassword(String title, String message) throws ExecutionException, InterruptedException {
+        FutureTask<String> task = new FutureTask<>(() -> {
+            PasswordDialog dialog = new PasswordDialog(title, message);
+            dialog.setResizable(true);
             return dialog.showAndWait().orElse(null);
         });
         Platform.runLater(task);
@@ -208,4 +219,5 @@ public class Dialogs {
     public String toString() {
         return "User input utilities";
     }
+
 }

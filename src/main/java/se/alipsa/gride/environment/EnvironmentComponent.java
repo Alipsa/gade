@@ -135,4 +135,8 @@ public class EnvironmentComponent extends TabPane {
   public Connection connect(ConnectionInfo ci) throws SQLException {
     return connectionsTab.connect(ci);
   }
+
+  public Set<ConnectionInfo> getDefinedConnections() {
+    return connectionsTab.getDefinedConnections();
+  }
 }

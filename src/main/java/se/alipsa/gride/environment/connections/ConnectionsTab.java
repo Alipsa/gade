@@ -299,6 +299,7 @@ public class ConnectionsTab extends Tab {
     ConnectionInfo ci = result.get();
     driverText.setText(ci.getDriver());
     urlText.setText(ci.getUrl());
+    dependencyText.setText(ci.getDependency());
   }
 
   private void createConnectionTableView() {
@@ -327,7 +328,11 @@ public class ConnectionsTab extends Tab {
       final TableRow<ConnectionInfo> row = new TableRow<>();
       final ContextMenu contextMenu = new ContextMenu();
       final MenuItem removeMenuItem = new MenuItem("remove connection");
-      removeMenuItem.setOnAction(event -> tableView.getItems().remove(row.getItem()));
+      removeMenuItem.setOnAction(event -> {
+        var item = row.getItem();
+        tableView.getItems().remove(item);
+        gui.getCodeComponent().removeConnectionFromTabs(item.getName());
+      });
       final MenuItem deleteMenuItem = new MenuItem("delete connection permanently");
       deleteMenuItem.setOnAction(event -> {
         ConnectionInfo item = row.getItem();
@@ -335,16 +340,17 @@ public class ConnectionsTab extends Tab {
         deleteSavedConnection(item);
         name.getItems().remove(item.getName());
         tableView.refresh();
+        gui.getCodeComponent().removeConnectionFromTabs(item.getName());
       });
       final MenuItem viewMenuItem = new MenuItem("view tables");
       viewMenuItem.setOnAction(event -> showConnectionMetaData(row.getItem()));
       final MenuItem viewDatabasesMenuItem = new MenuItem("view databases");
       viewDatabasesMenuItem.setOnAction(event -> showDatabases(row.getItem()));
 
-      final MenuItem viewRcodeMenuItem = new MenuItem("show connection code");
-      viewRcodeMenuItem.setOnAction(event -> showConnectionCode());
+      final MenuItem viewCodeMenuItem = new MenuItem("show connection code");
+      viewCodeMenuItem.setOnAction(event -> showConnectionCode());
 
-      contextMenu.getItems().addAll(viewMenuItem, viewDatabasesMenuItem, removeMenuItem, deleteMenuItem, viewRcodeMenuItem);
+      contextMenu.getItems().addAll(viewMenuItem, viewDatabasesMenuItem, removeMenuItem, deleteMenuItem, viewCodeMenuItem);
       row.contextMenuProperty().bind(
           Bindings.when(row.emptyProperty())
               .then((ContextMenu) null)
@@ -434,8 +440,25 @@ public class ConnectionsTab extends Tab {
     gui.getPrefs().put(pref, val);
   }
 
-  public Set<ConnectionInfo> getConnections() {
-    return new TreeSet<>(connectionsTable.getItems());
+  /**
+   * @return a Sorted Set of copies of the active connections in the connectionsTable
+   */
+  public SortedSet<ConnectionInfo> getConnections() {
+    return connectionsTable.getItems().stream().map(ConnectionInfo::new).collect(Collectors.toCollection(TreeSet::new));
+  }
+
+  public Set<ConnectionInfo> getDefinedConnections() {
+    Set<ConnectionInfo> definedConnections = getConnections();
+    // add the ones not active (HashSet contract does not add if element is already present)
+    for (String name : getSavedConnectionNames()) {
+      boolean isNew = definedConnections.add(getSavedConnection(name));
+      if (isNew) {
+        log.debug("adding saved connection for {}", name);
+      } else {
+        log.debug("{} already existed in active connections", name);
+      }
+    }
+    return definedConnections;
   }
 
   /**

@@ -31,4 +31,20 @@ public class PasswordDialog extends Dialog<String> {
 
     setResultConverter(callback -> callback == ButtonType.OK ? pwdTf.getText() : null);
   }
+
+  public PasswordDialog(String title, String message) {
+    getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+    GuiUtils.addStyle(Gride.instance(), this);
+    setTitle(title);
+    setHeaderText(message);
+    GridPane pane = new GridPane();
+    pane.setPadding(new Insets(5));
+    getDialogPane().setContent(pane);
+
+    pane.add(new Label("Password: "), 0, 2);
+    PasswordField pwdTf = new PasswordField();
+    pane.add(pwdTf, 1, 2);
+    pwdTf.requestFocus();
+    setResultConverter(callback -> callback == ButtonType.OK ? pwdTf.getText() : null);
+  }
 }

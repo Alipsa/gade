@@ -38,4 +38,11 @@ public class StringUtils {
   public static String underLine(String name, char character) {
     return name + "\n" + String.valueOf(character).repeat(name.length()) + "\n";
   }
+
+  public static boolean isBlank(String str) {
+    if (str == null) {
+      return true;
+    }
+    return str.isBlank();
+  }
 }

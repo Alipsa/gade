@@ -25,6 +25,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -54,6 +56,20 @@ public class InOut implements GuiInteraction {
   public ConnectionInfo connection(String name) {
     return gui.getEnvironmentComponent().getConnections().stream()
         .filter(ci -> ci.getName().equals(name)).findAny().orElse(null);
+  }
+
+  public Connection connect(String name) throws SQLException, ExecutionException, InterruptedException {
+    ConnectionInfo ci = gui.getEnvironmentComponent().getDefinedConnections().stream()
+        .filter(c -> c.getName().equals(name)).findAny().orElse(null);
+    if (ci == null) {
+      throw new RuntimeException("Connection " + name + " not found");
+    }
+    //ci = new ConnectionInfo(ci);
+    if (StringUtils.isBlank(ci.getPassword()) && !ci.getUrl().contains("passw")) {
+      String pwd = promptPassword("Password required", "Enter password to " + name + " for " + ci.getUser());
+      ci.setPassword(pwd);
+    }
+    return gui.getEnvironmentComponent().connect(ci);
   }
 
   /**
@@ -180,6 +196,10 @@ public class InOut implements GuiInteraction {
     return dialogs.prompt("", "", message, "");
   }
 
+  public String promptPassword(String title, String message) throws ExecutionException, InterruptedException {
+    return dialogs.promptPassword(title, message);
+  }
+
   public Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.promptSelect(title, headerText, message, options, defaultValue);
   }
@@ -256,9 +276,12 @@ public class InOut implements GuiInteraction {
           Allows Dialogs and similar in external packages to interact with Ride
           @return the primary stage
          
+        public Connection connect(String name)
+          Connect to a database defined in the Connections tab. 
+           
         ConnectionInfo connection(String name)
-          Return a connections for the name defined in Gride.
-                
+          Return a connection info (object containing the info) for the name defined in the Connections tab.            
+                 
         File scriptFile()
           return the file from the active tab or null if the active tab has never been saved
                 
@@ -274,6 +297,9 @@ public class InOut implements GuiInteraction {
            
         String prompt(String message)   
            quick prompt for text input
+           
+        String promptPassword(String title, String message)
+          prompt for a password (text shown as ***)   
            
         Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue)
             prompt user to pick from a list of values
