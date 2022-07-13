@@ -21,12 +21,15 @@ import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -314,46 +317,60 @@ public class InOut implements GuiInteraction {
   }
 
   public String help(Class<?> clazz, boolean includeStatic) {
-    StringBuilder sb = new StringBuilder();
-    for (var method : clazz.getMethods()) {
+    StringBuilder sb = new StringBuilder(StringUtils.underLine(clazz.getName(), '-'));
+    Method[] methods = clazz.getMethods();
+    if (includeStatic) {
+      Arrays.stream(methods)
+          .filter(method -> Modifier.isStatic(method.getModifiers()))
+          .forEach(method -> sb.append("static ").append(methodDescription(method)).append("\n"));
+    }
+
+    Arrays.sort(methods, Comparator.comparing(Method::getName));
+    for (var method : methods) {
       if (Object.class.equals(method.getDeclaringClass())) {
         continue;
       }
       if ( Modifier.isStatic(method.getModifiers())) {
-        if (includeStatic) {
-          sb.append("static ");
-        } else {
-          continue;
-        }
+        continue;
       }
-      sb.append(method.getReturnType().getSimpleName()).append(" ");
-      sb.append(method.getName()).append("(");
-      Class<?>[] params = method.getParameterTypes();
-      List<String> paramList = new ArrayList<>();
-      for (Class<?> param : params) {
-        paramList.add(param.getSimpleName());
-      }
-      sb.append(String.join(", ", paramList)).append(")");
-
-      if (method.getExceptionTypes().length > 0) {
-        sb.append(" throws ");
-        List<String> exceptions = new ArrayList<>();
-        for (Class<?> exc : method.getExceptionTypes()) {
-          exceptions.add(exc.getSimpleName());
-        }
-        sb.append(String.join(", ", exceptions));
-      }
+      sb.append(methodDescription(method));
       sb.append("\n");
     }
     return sb.toString();
+  }
+
+  private CharSequence methodDescription(Method method) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(method.getReturnType().getSimpleName()).append(" ");
+    sb.append(method.getName()).append("(");
+    Parameter[] params = method.getParameters();
+    List<String> paramList = new ArrayList<>();
+    for (Parameter param : params) {
+      String name = param.getType().getSimpleName();
+      if (param.isVarArgs()) {
+        name = name.substring(0, name.length() -2) + "...";
+      }
+      paramList.add(name);
+
+    }
+    sb.append(String.join(", ", paramList)).append(")");
+
+    if (method.getExceptionTypes().length > 0) {
+      sb.append(" throws ");
+      List<String> exceptions = new ArrayList<>();
+      for (Class<?> exc : method.getExceptionTypes()) {
+        exceptions.add(exc.getSimpleName());
+      }
+      sb.append(String.join(", ", exceptions));
+    }
+    return sb;
   }
 
   public String help(Object obj) {
     if (obj == null) {
       return "Object is null, no help available";
     }
-    return StringUtils.underLine(obj.getClass().getName(), '-')
-        + help(obj.getClass(), false)
+    return help(obj.getClass(), false)
         + "\n"
         + StringUtils.maxLengthString(obj.toString(), 300);
   }
