@@ -2,6 +2,7 @@ package se.alipsa.gride.inout;
 
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -22,7 +23,21 @@ public class HelpTab extends Tab {
     helpPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
   }
 
-  public void display(String url, String... title) {
+  public void showText(String content, String... title) {
+    Tab tab = new Tab();
+    if (title.length > 0) {
+      tab.setText(title[0]);
+    } else {
+      tab.setText("help");
+    }
+    helpPane.getTabs().add(tab);
+    TextArea ta = new TextArea();
+    ta.setText(content);
+    tab.setContent(ta);
+    helpPane.getSelectionModel().select(tab);
+  }
+
+  public void showUrl(String url, String... title) {
     if (url == null) {
       log.warn("url is null, nothing to view");
       return;

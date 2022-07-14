@@ -347,19 +347,23 @@ public class InOut implements GuiInteraction {
         boolean urlExists(String urlString, int timeout)
           attempts to connect to the url specified with a HEAD request to see if it is there or not. 
           
-        String help(Class<?> clazz)
-          returns a String with useful info about the class i.e. available methods.
+        void help(Class<?> clazz)
+          shows useful info about the class i.e. available methods in the help tab.
         
-        String help(Object obj)
-          returns a String with useful info about the object i.e. the object type, available methods and toString content.   
+        void help(Object obj)
+          shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.   
         """;
   }
 
-  public String help(Class<?> clazz) {
-    return help(clazz, true);
+  public void help(Class<?> clazz) {
+    gui.getInoutComponent().viewHelp(clazz.getSimpleName(), helpText(clazz));
   }
 
-  public String help(Class<?> clazz, boolean includeStatic) {
+  public String helpText(Class<?> clazz) {
+    return helpText(clazz, true);
+  }
+
+  public String helpText(Class<?> clazz, boolean includeStatic) {
     StringBuilder sb = new StringBuilder(StringUtils.underLine(clazz.getName(), '-'));
     Method[] methods = clazz.getMethods();
     if (includeStatic) {
@@ -409,14 +413,26 @@ public class InOut implements GuiInteraction {
     return sb;
   }
 
-  public String help(Object obj) {
+  public String helpText(Object obj) {
     if (obj == null) {
       return "Object is null, no help available";
     }
-    return help(obj.getClass(), false)
+    return helpText(obj.getClass(), false)
         + "\n"
         + StringUtils.maxLengthString(obj.toString(), 300);
   }
+
+  public void help(Object obj) {
+    if (obj == null) {
+      Alerts.warnFx("Cannot help", "Object is null, no help available");
+      return;
+    }
+    gui.getInoutComponent().viewHelp(
+        obj.getClass().getSimpleName(),
+        helpText(obj)
+    );
+  }
+
 
   @Override
   public String toString() {
