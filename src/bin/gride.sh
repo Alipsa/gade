@@ -85,7 +85,7 @@ if [[ "${OS}" == "win" ]]; then
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
-	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES} -cp "${JAR_NAME}" $JAVA_OPTS se.alipsa.gride.splash.SplashScreen
+	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES} -cp "${JAR_NAME}" se.alipsa.gride.splash.SplashScreen
 	# shellcheck disable=SC2068
 	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gride.Gride
 
@@ -93,7 +93,7 @@ else
 	JAVA_CMD=$(fullJavaPath "java")
 	CLASSPATH="${JAR_NAME}:${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
-	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -cp "${JAR_NAME}" $JAVA_OPTS se.alipsa.gride.splash.SplashScreen &
+	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -cp "${JAR_NAME}" se.alipsa.gride.splash.SplashScreen &
 	# shellcheck disable=SC2068
 	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gride.Gride &
 fi

@@ -2,6 +2,7 @@ package se.alipsa.gride.menu;
 
 import static se.alipsa.gride.Constants.*;
 import static se.alipsa.gride.menu.GlobalOptions.*;
+import static se.alipsa.gride.utils.StringUtils.formatNumber;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -690,10 +691,13 @@ public class MainMenu extends MenuBar {
     StringBuilder content = new StringBuilder();
     content.append(" Available cpu cores: ");
     content.append(Runtime.getRuntime().availableProcessors());
-    content.append("\n Free memory (MB): ");
-    content.append(Math.round((double)Runtime.getRuntime().freeMemory() / 1024 / 1024));
-    content.append("\n Maximum memory (MB): ");
-    content.append(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024));
+    content.append("\n Used Memory: ");
+    long usedMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+    content.append(formatNumber(Math.round((double)usedMem / 1024 / 1024))).append(" MB");
+    content.append("\n Free memory: ");
+    content.append(formatNumber(Math.round((double)Runtime.getRuntime().freeMemory() / 1024 / 1024))).append(" MB");
+    content.append("\n Maximum memory: ");
+    content.append(formatNumber(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024))).append(" MB");
     showInfoAlert("Session info", content, 600, 300);
   }
 

@@ -26,7 +26,9 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -64,12 +66,24 @@ public class InOut implements GuiInteraction {
     if (ci == null) {
       throw new RuntimeException("Connection " + name + " not found");
     }
+    if (ci.getUrl() == null) {
+      throw new RuntimeException("Connection url is missing");
+    }
     //ci = new ConnectionInfo(ci);
-    if (StringUtils.isBlank(ci.getPassword()) && !ci.getUrl().contains("passw")) {
+    String url = ci.getUrl().toLowerCase();
+    if (StringUtils.isBlank(ci.getPassword()) && !url.contains("passw") && !url.contains("integratedsecurity=true")) {
       String pwd = promptPassword("Password required", "Enter password to " + name + " for " + ci.getUser());
       ci.setPassword(pwd);
     }
     return gui.getEnvironmentComponent().connect(ci);
+  }
+  
+  public Table query(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = connect(connectionName);
+        Statement stm = con.createStatement();
+        ResultSet rs = stm.executeQuery(sqlQuery)) {
+      return Table.read().db(rs);
+    }
   }
 
   /**
@@ -282,6 +296,9 @@ public class InOut implements GuiInteraction {
         ConnectionInfo connection(String name)
           Return a connection info (object containing the info) for the name defined in the Connections tab.            
                  
+        Table query(String connectionName, String sqlQuery)
+          Convenient way to query a database using a connection defined in the Connections tab.
+                   
         File scriptFile()
           return the file from the active tab or null if the active tab has never been saved
                 
