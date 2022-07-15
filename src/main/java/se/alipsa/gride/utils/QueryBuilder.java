@@ -51,7 +51,9 @@ public class QueryBuilder {
                 }}
                 
                 """);
-
+    str.append("// Or even simpler:\n")
+            .append("table = io.select(\"").append(con.getName())
+        .append("\", \"\"\"select * from SomeTable\"\"\")\n");
 
     log.info(str.toString());
     return str;

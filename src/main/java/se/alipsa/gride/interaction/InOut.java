@@ -78,12 +78,27 @@ public class InOut implements GuiInteraction {
     return gui.getEnvironmentComponent().connect(ci);
   }
   
-  public Table query(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  public Table select(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = connect(connectionName);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
       return Table.read().db(rs);
     }
+  }
+
+  public int update(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = connect(connectionName);
+        Statement stm = con.createStatement()) {
+      return stm.executeUpdate(sqlQuery);
+    }
+  }
+
+  public int insert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    return update(connectionName, sqlQuery);
+  }
+
+  public int delete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    return update(connectionName, sqlQuery);
   }
 
   /**
@@ -280,7 +295,7 @@ public class InOut implements GuiInteraction {
           display data in the Viewer tab
           @param table the tablesaw Table to show
           @param title an optional title for the component displaying the table
-        
+                
         void view(String html, String... title)
           display html in the Viewer tab        
           @param html a String or similar with the html content to view or a path or url to a file containing the html
@@ -296,9 +311,18 @@ public class InOut implements GuiInteraction {
         ConnectionInfo connection(String name)
           Return a connection info (object containing the info) for the name defined in the Connections tab.            
                  
-        Table query(String connectionName, String sqlQuery)
+        Table select(String connectionName, String sqlQuery)
           Convenient way to query a database using a connection defined in the Connections tab.
-                   
+                  
+        public int update(String connectionName, String sqlQuery) 
+          Convenient way to run an update query using a connection defined in the Connections tab. 
+            
+        public int insert(String connectionName, String sqlQuery) 
+          Convenient way to run an insert query using a connection defined in the Connections tab.  
+              
+        public int delete(String connectionName, String sqlQuery) 
+          Convenient way to run a delete query using a connection defined in the Connections tab.  
+          
         File scriptFile()
           return the file from the active tab or null if the active tab has never been saved
                 
@@ -337,7 +361,7 @@ public class InOut implements GuiInteraction {
         File chooseDir(String title, String initialDirectory)
             asks user to select a dir
             Return the java.io.File pointing to the directory chosen    
-        
+                
         Image readImage(String filePath)
             create an javafx Image from the url/path specified           
             
@@ -349,7 +373,7 @@ public class InOut implements GuiInteraction {
           
         void help(Class<?> clazz, String... title)
           shows useful info about the class i.e. available methods in the help tab.
-        
+                
         void help(Object obj, String... title)
           shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.   
         """;
