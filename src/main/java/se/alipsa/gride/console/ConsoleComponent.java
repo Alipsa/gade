@@ -495,7 +495,7 @@ public class ConsoleComponent extends BorderPane {
       protected Void call() throws Exception {
         try {
           // TODO get library dependencies from Grab and maven?
-          gui.getEnvironmentComponent().setEnvironment(engine);
+          gui.getEnvironmentComponent().setEnvironment(getContextObjects());
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -520,6 +520,14 @@ public class ConsoleComponent extends BorderPane {
     Thread thread = new Thread(task);
     thread.setDaemon(false);
     startThreadWhenOthersAreFinished(thread, "updateEnvironment");
+  }
+
+  public Map<String, Object> getContextObjects() {
+    Map<String, Object> contextObjects = new HashMap<>();
+    for (Map.Entry<String, Object> entry : engine.getBindings(ScriptContext.ENGINE_SCOPE).entrySet()) {
+      contextObjects.put(entry.getKey(), entry.getValue());
+    }
+    return contextObjects;
   }
 
   private void runTests(GroovyTab rTab) {

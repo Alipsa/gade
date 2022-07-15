@@ -40,7 +40,7 @@ plot.setInteriorGap(0.04)
 plot.setOutlineVisible(false)
 
 // use gradients and white borders for the section colours
-plot.setSectionPaint("Others", createGradientPaint(new Color(200, 200, 255), Color.BLUE))
+plot.setSectionPaint("Others",createGradientPaint(new Color(200, 200, 255), Color.BLUE))
 plot.setSectionPaint("Samsung", createGradientPaint(new Color(255, 200, 200), Color.RED))
 plot.setSectionPaint("Apple", createGradientPaint(new Color(200, 255, 200), Color.GREEN))
 plot.setSectionPaint("Nokia", createGradientPaint(new Color(200, 255, 200), Color.YELLOW))

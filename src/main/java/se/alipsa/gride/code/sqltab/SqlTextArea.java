@@ -127,11 +127,11 @@ public class SqlTextArea extends CodeTextArea {
     String line = getText(getCurrentParagraph());
     String lastWord = line.replaceAll("^.*?(\\w+)\\W*$", "$1");
     if (line.endsWith(lastWord) && !"".equals(lastWord)) {
-      TreeSet<String> suggestions = new TreeSet<>();
+      TreeMap<String, Boolean> suggestions = new TreeMap<>();
       String lcLastWord = lastWord.toLowerCase();
       for (String keyWord : KEYWORDS) {
         if (keyWord.startsWith(lcLastWord)) {
-          suggestions.add(keyWord);
+          suggestions.put(keyWord, Boolean.FALSE);
         }
       }
       suggestCompletion(lastWord, suggestions, suggestionsPopup);

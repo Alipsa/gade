@@ -347,16 +347,27 @@ public class InOut implements GuiInteraction {
         boolean urlExists(String urlString, int timeout)
           attempts to connect to the url specified with a HEAD request to see if it is there or not. 
           
-        void help(Class<?> clazz)
+        void help(Class<?> clazz, String... title)
           shows useful info about the class i.e. available methods in the help tab.
         
-        void help(Object obj)
+        void help(Object obj, String... title)
           shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.   
         """;
   }
 
-  public void help(Class<?> clazz) {
-    gui.getInoutComponent().viewHelp(clazz.getSimpleName(), helpText(clazz));
+  public void help(Class<?> clazz, String... title) {
+    gui.getInoutComponent().viewHelp(title.length > 0 ? title[0] : clazz.getSimpleName(), helpText(clazz));
+  }
+
+  public void help(Object obj, String... title) {
+    if (obj == null) {
+      Alerts.warnFx("Cannot help", "Object is null, no help available");
+      return;
+    }
+    gui.getInoutComponent().viewHelp(
+        title.length > 0 ? title[0] : obj.getClass().getSimpleName(),
+        helpText(obj)
+    );
   }
 
   public String helpText(Class<?> clazz) {
@@ -420,17 +431,6 @@ public class InOut implements GuiInteraction {
     return helpText(obj.getClass(), false)
         + "\n"
         + StringUtils.maxLengthString(obj.toString(), 300);
-  }
-
-  public void help(Object obj) {
-    if (obj == null) {
-      Alerts.warnFx("Cannot help", "Object is null, no help available");
-      return;
-    }
-    gui.getInoutComponent().viewHelp(
-        obj.getClass().getSimpleName(),
-        helpText(obj)
-    );
   }
 
 

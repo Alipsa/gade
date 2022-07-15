@@ -17,6 +17,7 @@ import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 import se.alipsa.gride.Gride;
 import se.alipsa.gride.UnStyledCodeArea;
+import se.alipsa.gride.utils.ExceptionAlert;
 import se.alipsa.gride.utils.StringUtils;
 
 import java.io.File;
@@ -275,20 +276,37 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     // do nothing per default
   }
 
-  protected void suggestCompletion(String lastWord, TreeSet<String> keyWords, ContextMenu suggestionsPopup) {
+  protected void suggestCompletion(String lastWord, TreeMap<String, Boolean> keyWords, ContextMenu suggestionsPopup) {
     List<CustomMenuItem> menuItems = new LinkedList<>();
-    for (String result : keyWords) {
+    for (Map.Entry<String, Boolean> entry : keyWords.entrySet()) {
+      String result = entry.getKey();
       Label entryLabel = new Label(result);
       CustomMenuItem item = new CustomMenuItem(entryLabel, true);
       item.setOnAction(actionEvent -> {
-        String replacement = result.substring(lastWord.length());
-        insertText(getCaretPosition(), replacement);
-        int currentParagraph = getCurrentParagraph();
-        int lineEnd = getParagraphLength(currentParagraph);
-        int colIdx = replacement.endsWith(")") ?  lineEnd-1 : lineEnd;
-        moveTo(currentParagraph, colIdx);
-        suggestionsPopup.hide();
-        requestFocus();
+        try {
+          String replacement;
+          if (lastWord.contains(".")) { // We are selecting from a list of methods
+            String start = lastWord.substring(lastWord.lastIndexOf('.') + 1);
+            //Gride.instance().getConsoleComponent().getConsole().appendFx("start is " + start + ", result is " + result, true);
+            replacement = result.substring(start.length());
+          } else { // We are completing a keyword or an object name
+            replacement = result.substring(lastWord.length());
+          }
+          //Gride.instance().getConsoleComponent().getConsole().appendFx("result is " + result + ", replacement is " + replacement, true);
+          insertText(getCaretPosition(), replacement);
+          int currentParagraph = getCurrentParagraph();
+          if (entry.getValue()) {
+            int lineEnd = getParagraphLength(currentParagraph);
+            int colIdx = replacement.endsWith(")") ? lineEnd - 1 : lineEnd;
+            moveTo(currentParagraph, colIdx);
+          } else {
+            moveTo(currentParagraph, getParagraphLength(currentParagraph));
+          }
+          suggestionsPopup.hide();
+          requestFocus();
+        } catch (Throwable t) {
+          ExceptionAlert.showAlert("Failed to process suggestion: " + t.getMessage(), t);
+        }
       });
       menuItems.add(item);
     }

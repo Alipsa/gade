@@ -54,10 +54,10 @@ public class EnvironmentComponent extends TabPane {
     setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
   }
 
-  public void setEnvironment(ScriptEngine engine) {
+  public void setEnvironment(Map<String, Object> contextObjects) {
     Platform.runLater(() -> {
       envTa.clear();
-      for (var entry : engine.getBindings(ScriptContext.ENGINE_SCOPE).entrySet()) {
+      for (var entry : contextObjects.entrySet()) {
         String varName = entry.getKey();
         int start = envTa.getContent().getLength();
         envTa.appendText(varName);
@@ -108,22 +108,6 @@ public class EnvironmentComponent extends TabPane {
 
   public void rRestarted() {
     historyTab.rRestarted();
-  }
-
-  public void updateContextFunctions(List<String> functions, List<String> objects) {
-    final TreeSet<String> contextFunctions = new TreeSet<>(functions);
-    final TreeSet<String> contextObjects = new TreeSet<>(objects);
-    Platform.runLater(() ->
-      contextFunctionsUpdateListeners.forEach(l -> l.updateContextFunctions(contextFunctions, contextObjects))
-    );
-  }
-
-  public void addContextFunctionsUpdateListener(ContextFunctionsUpdateListener listener) {
-    contextFunctionsUpdateListeners.add(listener);
-  }
-
-  public void removeContextFunctionsUpdateListener(ContextFunctionsUpdateListener listener) {
-    contextFunctionsUpdateListeners.remove(listener);
   }
 
   public void setNormalCursor() {
