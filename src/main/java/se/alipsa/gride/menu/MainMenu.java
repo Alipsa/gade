@@ -592,7 +592,7 @@ public class MainMenu extends MenuBar {
     gui.setWaitCursor();
     GlobalOptions result = res.get();
 
-    String mavenHome = (String) result.get(MAVEN_HOME);
+    String mavenHome = result.getString(MAVEN_HOME);
     if (mavenHome != null && !mavenHome.isBlank()) {
       System.setProperty("MAVEN_HOME", mavenHome);
       gui.getPrefs().put(MAVEN_HOME, mavenHome);
@@ -619,12 +619,14 @@ public class MainMenu extends MenuBar {
       gui.getConsoleComponent().setConsoleMaxSize(consoleMaxLength);
     }
 
-    String theme = (String)result.get(THEME);
+    String theme = result.getString(THEME);
     if (!gui.getScene().getStylesheets().contains(theme)) {
       gui.getScene().getStylesheets().clear();
       gui.addStyleSheet(theme);
       gui.getPrefs().put(THEME, theme);
     }
+
+    Locale.setDefault(Locale.forLanguageTag(result.getString(DEFAULT_LOCALE)));
 
     boolean useMavenClassLoader = result.getBoolean(USE_MAVEN_CLASSLOADER);
     if (useMavenClassLoader != gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, !useMavenClassLoader)) {
@@ -647,15 +649,17 @@ public class MainMenu extends MenuBar {
     gui.getInoutComponent().setEnableGit(enableGit);
     gui.getPrefs().putBoolean(ENABLE_GIT, enableGit);
 
-    boolean runAutoRunGLobal = result.getBoolean(AUTORUN_GLOBAL);
-    if (runAutoRunGLobal != gui.getPrefs().getBoolean(AUTORUN_GLOBAL, !runAutoRunGLobal)) {
-      gui.getPrefs().putBoolean(AUTORUN_GLOBAL, runAutoRunGLobal);
+    boolean runAutoRunGlobal = result.getBoolean(AUTORUN_GLOBAL);
+    if (runAutoRunGlobal != gui.getPrefs().getBoolean(AUTORUN_GLOBAL, !runAutoRunGlobal)) {
+      gui.getPrefs().putBoolean(AUTORUN_GLOBAL, runAutoRunGlobal);
     }
 
     boolean runAutoRunProject = result.getBoolean(AUTORUN_PROJECT);
     if (runAutoRunProject != gui.getPrefs().getBoolean(AUTORUN_PROJECT, !runAutoRunProject)) {
       gui.getPrefs().putBoolean(AUTORUN_PROJECT, runAutoRunProject);
     }
+
+    gui.getPrefs().putBoolean(ADD_IMPORTS, result.getBoolean(ADD_IMPORTS));
 
     if (shouldRestartR) {
       restartR();

@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static se.alipsa.gride.menu.GlobalOptions.ADD_IMPORTS;
+
 public class GroovyTextArea extends CodeTextArea {
 
   TreeSet<String> contextObjects = new TreeSet<>();
@@ -68,12 +70,16 @@ public class GroovyTextArea extends CodeTextArea {
       if (e.isControlDown()) {
         if (KeyCode.ENTER.equals(e.getCode())) {
           CodeComponent codeComponent = parent.getGui().getCodeComponent();
-          String gCode = getText(getCurrentParagraph()); // current line
-
+          String gCode = "";
+          if (parent.getGui().getPrefs().getBoolean(ADD_IMPORTS, true)) {
+            gCode += getImports();
+          }
           String selected = selectedTextProperty().getValue();
-          // if text is selected then go with that instead
+          // if text is selected then go with that
           if (selected != null && !"".equals(selected)) {
-            gCode = codeComponent.getTextFromActiveTab();
+            gCode += codeComponent.getTextFromActiveTab();
+          } else {
+            gCode += getText(getCurrentParagraph()); // current line
           }
           parent.runGroovy(gCode);
           moveTo(getCurrentParagraph() + 1, 0);
@@ -86,6 +92,19 @@ public class GroovyTextArea extends CodeTextArea {
         }
       }
     });
+  }
+
+  String getImports() {
+    List<String> imports = new ArrayList<>();
+    try(Scanner scanner = new Scanner(getAllTextContent())) {
+      while (scanner.hasNextLine()) {
+        String line = scanner.nextLine().trim();
+        if (line.startsWith("import ")) {
+          imports.add(line);
+        }
+      }
+    }
+    return String.join("\n", imports) + "\n";
   }
 
   protected final StyleSpans<Collection<String>> computeHighlighting(String text) {

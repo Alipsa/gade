@@ -14,6 +14,8 @@ import se.alipsa.gride.console.ConsoleTextArea;
 
 import java.io.File;
 
+import static se.alipsa.gride.menu.GlobalOptions.ADD_IMPORTS;
+
 public class GroovyTab extends TextAreaTab implements TaskListener {
 
   private final GroovyTextArea groovyTextArea;
@@ -38,7 +40,11 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
   }
 
   public void runGroovy() {
-    runGroovy(getTextContent());
+    String code = "";
+    if (gui.getPrefs().getBoolean(ADD_IMPORTS, true)) {
+      code = groovyTextArea.getImports();
+    }
+    runGroovy(code + getTextContent());
   }
 
   public void runGroovy(final String content) {

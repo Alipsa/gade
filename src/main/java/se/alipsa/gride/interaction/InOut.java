@@ -436,6 +436,6 @@ public class InOut implements GuiInteraction {
 
   @Override
   public String toString() {
-    return "Interaction capabilities, run io.help() for details";
+    return "Interaction capabilities, run io.help(io) for details";
   }
 }

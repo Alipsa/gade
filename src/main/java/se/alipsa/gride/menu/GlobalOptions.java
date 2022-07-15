@@ -15,10 +15,15 @@ public class GlobalOptions extends HashMap<String, Object> {
   public static final String ENABLE_GIT = "GlobalOptions.EnableGit";
   public static final String AUTORUN_GLOBAL = "GlobalOptions.AutoRunGlobal";
   public static final String AUTORUN_PROJECT = "GlobalOptions.AutoRunProject";
+  public static final String DEFAULT_LOCALE = "GlobalOptions.defaultLocale";
+  public static final String ADD_IMPORTS = "GlobalOptions.addImports";
 
   private static final long serialVersionUID = -4781261903018339389L;
 
 
+  public String getString(String key) {
+    return String.valueOf(get(key));
+  }
   public int getInt(String key) {
     Object val = get(key);
     if (val instanceof Integer) {

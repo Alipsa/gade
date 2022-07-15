@@ -2,6 +2,7 @@ package se.alipsa.gride;
 
 import static se.alipsa.gride.Constants.BRIGHT_THEME;
 import static se.alipsa.gride.Constants.THEME;
+import static se.alipsa.gride.menu.GlobalOptions.DEFAULT_LOCALE;
 import static se.alipsa.gride.menu.GlobalOptions.MAVEN_HOME;
 
 import groovy.lang.GroovyClassLoader;
@@ -76,6 +77,8 @@ public class Gride extends Application {
 
     preferences = Preferences.userRoot().node(Gride.class.getName());
     this.primaryStage = primaryStage;
+
+    Locale.setDefault(Locale.forLanguageTag(getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag())));
 
     // Allow global option for MAVEN_HOME to override system settings.
     String mavenHome = getPrefs().get(MAVEN_HOME, MavenUtils.locateMavenHome());
