@@ -695,12 +695,16 @@ public class MainMenu extends MenuBar {
     StringBuilder content = new StringBuilder();
     content.append(" Available cpu cores: ");
     content.append(Runtime.getRuntime().availableProcessors());
+    content.append("\n Allocated Memory: ");
+    long totalMem = Runtime.getRuntime().totalMemory();
+    content.append(formatNumber(Math.round((double)totalMem / 1024 / 1024))).append(" MB");
     content.append("\n Used Memory: ");
-    long usedMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+    long freeMem = Runtime.getRuntime().freeMemory();
+    long usedMem = totalMem - freeMem;
     content.append(formatNumber(Math.round((double)usedMem / 1024 / 1024))).append(" MB");
     content.append("\n Free memory: ");
-    content.append(formatNumber(Math.round((double)Runtime.getRuntime().freeMemory() / 1024 / 1024))).append(" MB");
-    content.append("\n Maximum memory: ");
+    content.append(formatNumber(Math.round((double)freeMem / 1024 / 1024))).append(" MB");
+    content.append("\n Maximum allowed memory: ");
     content.append(formatNumber(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024))).append(" MB");
     showInfoAlert("Session info", content, 600, 300);
   }
