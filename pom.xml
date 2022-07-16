@@ -229,11 +229,11 @@
             <artifactId>richtextfx</artifactId>
             <version>0.10.9</version>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.jfree</groupId>
             <artifactId>fxgraphics2d</artifactId>
             <version>1.8</version>
-        </dependency>
+        </dependency-->
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
