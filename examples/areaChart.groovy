@@ -4,7 +4,7 @@ import se.alipsa.grade.chart.*
 table = Table.read().csv(new File(io.projectDir(), "/data/sessions.csv"))
 table.setName("Full")
 
-chart = se.alipsa.grade.chart.AreaChart.create(
+chart = AreaChart.create(
   "dbsessions", 
   table.column("user_name"),
   table.column("sessions"), 
