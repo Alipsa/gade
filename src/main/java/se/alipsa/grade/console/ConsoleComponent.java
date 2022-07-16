@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
+import io.github.classgraph.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -77,7 +78,6 @@ public class ConsoleComponent extends BorderPane {
   private final Map<Thread, String> threadMap = new HashMap<>();
   private final MavenUtils mavenUtils;
   private ScriptEngine engine;
-
 
   public ConsoleComponent(Grade gui) {
     this.gui = gui;
@@ -891,4 +891,5 @@ public class ConsoleComponent extends BorderPane {
   public ClassLoader getClassLoader() {
     return classLoader;
   }
+
 }

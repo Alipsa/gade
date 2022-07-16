@@ -1,5 +1,6 @@
 package se.alipsa.grade.code.groovytab;
 
+import io.github.classgraph.*;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -8,12 +9,14 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 import se.alipsa.grade.Grade;
 import se.alipsa.grade.code.CodeComponent;
 import se.alipsa.grade.code.CodeTextArea;
+import se.alipsa.grade.console.ConsoleComponent;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static se.alipsa.grade.menu.GlobalOptions.ADD_IMPORTS;
 
@@ -166,9 +169,13 @@ public class GroovyTextArea extends CodeTextArea {
   }
 
   private void suggestCompletion(String lastWord) {
+    var consoleComponent = Grade.instance().getConsoleComponent();
+    var console =  consoleComponent.getConsole();
+    //console.appendFx("Getting suggestions for " + lastWord, true);
+    TreeMap<String, Boolean> suggestions = new TreeMap<>();
+
     var contextObjects = Grade.instance().getConsoleComponent().getContextObjects();
 
-    TreeMap<String, Boolean> suggestions = new TreeMap<>();
     for (Map.Entry<String, Object> contextObject: contextObjects.entrySet()) {
       String key = contextObject.getKey();
       if (key.equals(lastWord)) {
@@ -178,14 +185,82 @@ public class GroovyTextArea extends CodeTextArea {
       } else if (lastWord.startsWith(key) && lastWord.contains(".")) {
         int firstDot = lastWord.indexOf('.');
         String varName = lastWord.substring(0, lastWord.indexOf('.'));
-        if (firstDot != lastWord.lastIndexOf('.')) {
-          Grade.instance().getConsoleComponent().getConsole().appendFx("static is not yet supported for" + varName, true);
-        } else if (key.equals(varName)){
+        if (key.equals(varName)){
           suggestions.putAll(getInstanceMethods(contextObject.getValue(), lastWord.substring(firstDot+1)));
         }
       }
     }
-    suggestCompletion(lastWord, suggestions, suggestionsPopup);
+    if (suggestions.size() > 0) {
+      suggestCompletion(lastWord, suggestions, suggestionsPopup);
+      return;
+    }
+
+    // Else it is probably package or Class related
+    String searchWord = lastWord;
+    boolean endsWithDot = false;
+    if (searchWord.endsWith(".")) {
+      searchWord = searchWord.substring(0, searchWord.length() -1);
+      endsWithDot = true;
+    }
+    ClassLoader cl = Grade.instance().getConsoleComponent().getClassLoader();
+    try {
+      Class<?> clazz = cl.loadClass(searchWord);
+      suggestions.putAll(getStaticMethods(clazz));
+    } catch (ClassNotFoundException e) {
+      try (ScanResult scanResult = new ClassGraph().enableClassInfo().addClassLoader(cl).scan()) {
+        String finalSearchWord = searchWord;
+        List<? extends Class<?>> exactMatches = scanResult.getAllClasses().stream()
+            .filter(ci -> ci.getSimpleName().equals(finalSearchWord)).map(ClassInfo::loadClass)
+            .toList();
+        if (exactMatches.size() == 1) {
+          String prefix = endsWithDot ? "" : ".";
+          lastWord = endsWithDot ? lastWord : lastWord + ".";
+          suggestions.putAll(getStaticMethods(exactMatches.get(0), prefix));
+        } else if (exactMatches.size() > 1){
+          console.appendWarningFx("Multiple matches for this class detected, cannot determine which one is meant");
+          return;
+        } else {
+          List<String> possiblePackages = scanResult.getPackageInfo().stream()
+              .map(PackageInfo::getName)
+              .filter(name -> name.startsWith(finalSearchWord))
+              .toList();
+          if (possiblePackages.size() > 0) {
+            Map<String, Boolean> packages = new TreeMap<>();
+            lastWord = endsWithDot ? lastWord : lastWord + ".";
+            for (String pkg : possiblePackages) {
+              String suggestion = pkg.substring(finalSearchWord.length());
+              if (endsWithDot && suggestion.startsWith(".")) {
+                suggestion = suggestion.substring(1);
+              }
+              packages.put(suggestion, Boolean.FALSE);
+            }
+            suggestions.putAll(packages);
+          }
+        }
+      }
+    }
+    if (suggestions.size() > 0) {
+      suggestCompletion(lastWord, suggestions, suggestionsPopup);
+    } else {
+      console.appendFx("No matches found for " + searchWord, true);
+    }
+  }
+
+  private Map<String, Boolean> getStaticMethods(Class<?> clazz, String... prefixOpt) {
+    String prefix = prefixOpt.length > 0 ? prefixOpt[0] : "";
+    Map<String, Boolean> staticMethods = new TreeMap<>();
+    for(Method method : clazz.getMethods()) {
+      //Grade.instance().getConsoleComponent().getConsole().appendFx(method.getName() + " and startWith '" + start + "'");
+      if ( Modifier.isStatic(method.getModifiers())) {
+        Boolean hasParams = method.getParameterCount() > 0;
+        String suggestion = method.getName() + "()";
+        if (Boolean.TRUE.equals(staticMethods.get(suggestion))) {
+          hasParams = Boolean.TRUE;
+        }
+        staticMethods.put(prefix + suggestion, hasParams);
+      }
+    }
+    return staticMethods;
   }
 
   private Map<String, Boolean> getInstanceMethods(Object obj, String start) {
