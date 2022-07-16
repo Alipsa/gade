@@ -105,11 +105,11 @@
       <outputDirectory>.</outputDirectory>
     </file>
     <file>
-      <source>src/bin/gride-icon.png</source>
+      <source>src/bin/grade-icon.png</source>
       <outputDirectory>.</outputDirectory>
     </file>
     <file>
-      <source>src/bin/gride-icon.ico</source>
+      <source>src/bin/grade-icon.ico</source>
       <outputDirectory>.</outputDirectory>
     </file>
   </files>
@@ -128,14 +128,14 @@
       <outputDirectory>.</outputDirectory>
       <includes>
         <include>*.md</include>
-        <include>gride.cmd</include>
+        <include>grade.cmd</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>src/bin/</directory>
       <outputDirectory>.</outputDirectory>
       <includes>
-        <include>gride.sh</include>
+        <include>grade.sh</include>
         <include>createLauncher.sh</include>
       </includes>
       <lineEnding>unix</lineEnding>

@@ -3,20 +3,23 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "${DIR}" || exit 1
 
-LAUNCHER=~/.local/share/applications/gride.desktop
+LAUNCHER=~/.local/share/applications/grade.desktop
 {
 echo "[Desktop Entry]
-Name=Gride
-Exec=${DIR}/gride.sh
-Comment=Gride, a Groovy IDE for Data Science
+Name=Grade
+Exec=${DIR}/grade.sh
+Comment=Grade, a Groovy Analytics Development Environment
 Terminal=false
-Icon=${DIR}/gride-icon.png
+Icon=${DIR}/grade-icon.png
 Type=Application
 Categories=Development"
 } > ${LAUNCHER}
 
-chmod +x gride.sh
+chmod +x grade.sh
 chmod +x ${LAUNCHER}
-ln -s ${LAUNCHER} ~/Desktop/gride.desktop
+if [[ -f ~/Desktop/grade.desktop ]]; then
+  rm ~/Desktop/grade.desktop
+fi
+ln -s ${LAUNCHER} ~/Desktop/grade.desktop
 
 echo "Launcher shortcuts created!"

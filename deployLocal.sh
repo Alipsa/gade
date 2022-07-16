@@ -6,12 +6,12 @@ source ~/.sdkman/bin/sdkman-init.sh
 source jdk17
 
 cd "${SCRIPT_DIR}" || exit
-echo "building Gride"
+echo "building Grade"
 mvn clean package || exit 1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 if [[ -z "${1}" ]]; then
-  TARGET_DIR="$HOME/programs/gride"
+  TARGET_DIR="$HOME/programs/grade"
 else
   TARGET_DIR="${1}"
 fi
@@ -33,7 +33,7 @@ mkdir -p "$TARGET_DIR"
 mkdir -p "$TARGET_DIR/lib"
 find "$TARGET_DIR" -name \*.jar -type f -delete
 find "$TARGET_DIR" -name \*.pom -type f -delete
-unzip -o "$DIR/target/gride-$RELEASE_TAG-dist.zip" -d "$TARGET_DIR"
+unzip -o "$DIR/target/grade-$RELEASE_TAG-dist.zip" -d "$TARGET_DIR"
 
 echo "Finished at $(date)"
 

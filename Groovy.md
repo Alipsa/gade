@@ -4,7 +4,7 @@ Groovy support was added to Ride 1.2.1. It makes it somewhat more convenient to 
 useful in developing, testing as well as certain data analysis situations. 
 
 Just as with R code, the inout component in injected into the Groovy session allowing you to interact
-with Gride in a simple way. E.g:
+with Grade in a simple way. E.g:
 (sample adopted from [PieChartFXDemo1](https://github.com/jfree/jfree-fxdemos/blob/master/src/main/java/org/jfree/chart/fx/demo/PieChartFXDemo1.java))
 ```groovy
 @Grab('org.jfree:jfreechart:1.5.3')
@@ -75,7 +75,7 @@ chart.addSubtitle(source)
 viewer = new ChartViewer(chart)
 inout.display(viewer)    
 ```
-![Screenshot](https://raw.githubusercontent.com/perNyfelt/gride/master/docs/GroovyPieChart.png)
+![Screenshot](https://raw.githubusercontent.com/perNyfelt/grade/master/docs/GroovyPieChart.png)
 
 Just like With R code you can execute line by line by pressing ctrl+enter (ctrl+enter executes the selected code if any
 otherwise the current line). There is a session concept somewhat similar to R although in the Groovy case there

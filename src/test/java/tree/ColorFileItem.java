@@ -2,7 +2,7 @@ package tree;
 
 import javafx.beans.value.ChangeListener;
 import javafx.scene.paint.Paint;
-import se.alipsa.gride.inout.FileItem;
+import se.alipsa.grade.inout.FileItem;
 
 import java.io.File;
 

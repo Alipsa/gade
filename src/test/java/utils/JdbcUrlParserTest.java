@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.net.MalformedURLException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static se.alipsa.gride.utils.JdbcUrlParser.validate;
+import static se.alipsa.grade.utils.JdbcUrlParser.validate;
 
 public class JdbcUrlParserTest {
 

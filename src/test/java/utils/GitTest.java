@@ -7,7 +7,7 @@ import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.*;
 import org.junit.Test;
-import se.alipsa.gride.utils.git.GitUtils;
+import se.alipsa.grade.utils.git.GitUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,8 +25,8 @@ public class GitTest {
     while (!curDir.getName().equals("ride") && curDir.getParentFile() != null) {
       curDir = curDir.getParentFile();
     }
-    File grideDir = curDir;
-    Git git = Git.open(grideDir);
+    File gradeDir = curDir;
+    Git git = Git.open(gradeDir);
     String url = git.getRepository().getConfig().getString("remote", "origin", "url");
     log.info("remote origin Url is " + url);
     log.info("Getting credentials");
@@ -46,11 +46,11 @@ public class GitTest {
     final Waiter waiter = new Waiter();
 
     File curDir = new File(".");
-    while (!curDir.getName().equals("gride") && curDir.getParentFile() != null) {
+    while (!curDir.getName().equals("grade") && curDir.getParentFile() != null) {
       curDir = curDir.getParentFile();
     }
-    File grideDir = curDir;
-    Git git = Git.open(grideDir);
+    File gradeDir = curDir;
+    Git git = Git.open(gradeDir);
     String url = git.getRepository().getConfig().getString("remote", "origin", "url");
 
     Thread runningThread = new Thread(() -> {

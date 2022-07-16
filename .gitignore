@@ -1,7 +1,7 @@
 /version.properties
 /target
 /.idea
-/gride.log
+/grade.log
 /nnDeploy.sh
 /*.mv.db
 /*.trace.db

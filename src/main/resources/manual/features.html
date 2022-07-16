@@ -22,7 +22,7 @@
     </p>
 
     <p>
-        Gride will detect the presence of hamcrest test and enable the "Run test" button which works a bit different than
+        Grade will detect the presence of hamcrest test and enable the "Run test" button which works a bit different than
         the Run button in the sense that first the code will be executed (so that all test methods will be loaded) and then
         will run each individual test method.
     </p>
@@ -55,7 +55,7 @@
     The AetherPackageLoader is used per default so libraries will be fetched automatically from
     bedatadriven or maven central repos. This can be modified in the Global Options menu.</p>
     <p>If you change to the ClasspathPackageLoader you should also add dependencies to the maven pom.xml
-    when running Gride. The change of package loader is persistent so add any required dependency to the pom and restart Gride.</p>
+    when running Grade. The change of package loader is persistent so add any required dependency to the pom and restart Grade.</p>
     <p>In many case this is just as convenient as using AetherPackageLoader (ClasspathPackageLoader + use pom + "add build dir").
         At the very least, this is very useful when moving from development to test to make sure dependencies are correct
     prior to integration testing in embedded mode on e.g. an app server. In the Packages tab you can see
@@ -65,10 +65,10 @@
     This describes how many character that are allowed in the console. After the limit is reaches no console output will
     be written.
     <h5>Style theme</h5>
-    Gride comes with 3 predefined styles. Blue, Dark and Bright. The Bright Theme is more or less the Java FX default theme but
+    Grade comes with 3 predefined styles. Blue, Dark and Bright. The Bright Theme is more or less the Java FX default theme but
     most care has gone into making the Blue Theme a pleasant coloring theme for R development.
     <h5>Use pom classpath</h5>
-    Use a classpath based on the pom.xml (with the system classpath as the parent) for running groovy code in Gride.
+    Use a classpath based on the pom.xml (with the system classpath as the parent) for running groovy code in Grade.
     <h5>Add build dir to classpath</h5>
     Will also add the target/classes and target/test-classes dirs to the classpath
     <h5>Restart session after maven build</h5>
@@ -78,7 +78,7 @@
     <h5>Enable git integration</h5>
     Whether to use git integration (git commands, syntax highlighting in the file view etc.) or not.
     <h5>Run global autorun.groovy on session init</h5>
-    Enable to run a file called autorun.R (if it exists) from the Gride install dir each time a session (re)starts.
+    Enable to run a file called autorun.R (if it exists) from the Grade install dir each time a session (re)starts.
     It is just a normal R script enabling you to set up session variables, define functions, read in rData files etc.
     Note that executing the script will give no output (unless there is some problem with the script) so print, cat etc will
     not produce anything that can be seen.
@@ -89,7 +89,7 @@
 <h4 id="tools-running_the_repl_console">Tools -> Run REPL in console</h4>
 <div>
     <p>The menu option "Tools" -> "Run REPL in console" is a convenient way to to run the Renjin repl (in a new Session).
-    Its main purpose is to make it possible to verify that code that does not work is not due to some quirk in Gride but
+    Its main purpose is to make it possible to verify that code that does not work is not due to some quirk in Grade but
         is actually a Renjin bug i.e. to help determine bugs in Renjin.</p>
     <p>
     After you have selected the menu option you will find the repl running in the console that started Renjin.

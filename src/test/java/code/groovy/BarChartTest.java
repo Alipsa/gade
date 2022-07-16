@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.tablesaw.api.*;
 import tech.tablesaw.columns.numbers.*;
-import se.alipsa.gride.chart.*;
+import se.alipsa.grade.chart.*;
 
 import java.io.FileNotFoundException;
 
@@ -34,7 +34,7 @@ public class BarChartTest {
         var chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.VERTICAL, scaleColumn,
             summaryTable.column("sum [log injuries]"),
             summaryTable.column("Sum [Fatalities]"));
-        var figure = se.alipsa.gride.chart.Plot.jsPlot(chart);
+        var figure = se.alipsa.grade.chart.Plot.jsPlot(chart);
         assertNotNull(figure);
     }
 }

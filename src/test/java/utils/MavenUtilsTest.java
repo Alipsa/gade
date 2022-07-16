@@ -16,7 +16,7 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.repository.LocalRepository;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.Test;
-import se.alipsa.gride.utils.FileUtils;
+import se.alipsa.grade.utils.FileUtils;
 import se.alipsa.maven.MavenUtils;
 
 import java.io.File;

@@ -2,7 +2,7 @@ package tree;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import se.alipsa.gride.inout.FileItem;
+import se.alipsa.grade.inout.FileItem;
 
 import java.io.File;
 

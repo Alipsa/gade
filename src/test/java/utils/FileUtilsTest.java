@@ -2,7 +2,7 @@ package utils;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import se.alipsa.gride.utils.FileUtils;
+import se.alipsa.grade.utils.FileUtils;
 
 public class FileUtilsTest {
 

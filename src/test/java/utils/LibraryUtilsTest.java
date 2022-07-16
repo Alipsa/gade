@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import se.alipsa.gride.model.Library;
-import se.alipsa.gride.utils.LibraryUtils;
+import se.alipsa.grade.model.Library;
+import se.alipsa.grade.utils.LibraryUtils;
 
 import java.io.IOException;
 import java.util.Set;
