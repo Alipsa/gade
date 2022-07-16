@@ -15,7 +15,7 @@ see variables created, syntax highlighting for XML, SQL, Java, Groovy, Javascrip
 It also has wizards to create Groovy applications or Libraries and of course, integrated support 
 for git and maven making it a very convenient development environment for analytics and data science.
 
-![Screenshot](/perNyfelt/grade/master/docs/Screenshot.png "Screenshot")
+![Screenshot](https://raw.githubusercontent.com/perNyfelt/grade/master/docs/Screenshot.png "Screenshot")
 
 ### Installing and Running Grade
 Go to the releases tab and expand the assets section at the bottom of the release.
