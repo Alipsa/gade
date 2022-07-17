@@ -1,0 +1,303 @@
+<html lang="en">
+<head>
+   <title>Interacting with Grade</title>
+</head>
+<body>
+<h1>Interacting with Grade</h1>
+Grade injects an io component into the session.<br/>
+<br/>
+run io.help() for a description of each method. Some highligts are:<br/>
+
+<h4>Files and folders</h4>
+<div class="codeblock">
+   <div class="comment">
+      /** Return the current project dir (The root of the file tree in the Files tab) */
+   </div>
+   File projectDir();<br/>
+</div>
+<div class="codeblock">
+   <div class="comment">
+      /** Return a File relative to the current project dir */
+   </div>
+   File projectFile(String relativePath);<br/>
+</div>
+<div class="codeblock">
+   <div class="comment">
+      /** Return the current active script file or null if is has not been saved yet */
+   </div>
+   File scriptFile();<br/>
+</div>
+<div class="codeblock">
+   <div class="comment">
+      /** Return the current active script dir or the project dir if the script has not been saved yet */
+   </div>
+   File scriptDir();<br/>
+</div>
+Here is an example:<br/>
+<div class="codeblock"><pre>
+file = io.projectFile(<span class="string">"test.csv"</span>)
+Table.read().csv(file)
+</pre>
+</div>
+
+<h4>Display images and charts in the Plot tab</h4>
+<div class="codeblock">
+   <div class="comment">
+      /**<br/>
+      * display a javafx Node in the Plot tab<br/>
+      */
+   </div>
+   <span class="keyword">void</span> display(Node node, String... title);<br/>
+</div>
+Example:
+<div class="codeblock"><pre>
+<span class="keyword">import</span> tech.tablesaw.api.*
+<span class="keyword">import</span> se.alipsa.grade.chart.*
+
+<span class="comment">// read a csv file into a table</span>
+table = Table.read().csv(io.projectFile(<span class="string">"/data/sessions.csv"</span>))<br/>
+chart = AreaChart.create(
+    <span class="string">"dbsessions"</span>,
+    table.column(<span class="string">"user_name"</span>),
+    table.column(<span class="string">"sessions"</span>)
+)
+io.display(chart, <span class="string">"Sessions"</span>)
+</pre>
+</div>
+
+<div class="codeblock">
+   <div class="comment">
+      /**<br/>
+      * display an image in the Plot tab<br/>
+      */
+   </div>
+   <span class="keyword">void</span> display(Image img, String... title);<br/>
+</div>
+Example:<br/>
+<div class="codeblock"><pre>
+svgFile = new File(io.projectDir(), <span class="string">"svgplot.svg"</span>).getAbsolutePath()
+<span class="comment">// convert the image to a javafx Image and display it in the plots tab,
+// the second argument is the title of the window (optional)</span>
+io.display(svgFile, <span class="string">"sin -&pi;"</span>)
+</pre>
+</div>
+Note on SVG files: when you are using display(file name, title) Grade will use a webview to render the svg image.
+This is consistent with how the svg file will look in chrome and firefox but not 100% spec compliant.
+E.g. sometimes Y-axis and/or Y-axis label on a plot are not shown.
+An alternative is to use readImage() to convert the svg to a bitmap first e.g. <br/>
+<div class="codeblock">
+   io.display(io.readImage(svgFile), <span class="string">"svgplot"</span>)
+</div>
+readImage is using the fxsvgimage library to convert the svg file. In many cases this will produce a better
+result than the web view but not always. The fxsvgimage is in pretty early stages of development so
+in the future Grade will switch to using it always but for now, you have these two ways of displaying the image
+that you can use depending on what gives the best result.
+<br/>
+<br/>
+
+<h4>Display tabular data in the View tab</h4>
+<div class="codeblock">
+   <div class="comment">
+      /**<br/>
+      * display data in the Viewer tab, e.g. Table, List, 2D Array<br/>
+      */
+   </div>
+   <span class="keyword">void</span> view(Table table, String... title)<br/>
+</div>
+Here is an example:<br/>
+<div class="codeblock"><pre>
+<span class="keyword">import</span> tech.tablesaw.api.*
+
+<span class="comment">// read a csv file into a table</span>
+table = Table.read().csv(io.projectFile(<span class="string">"data/boston-robberies.csv"</span>))<br/>
+io.view(table)
+</pre>
+</div>
+
+<h4>Display html in the View tab</h4>
+<div class="codeblock">
+   <div class="comment">
+      /**<br/>
+      * display html in the Viewer tab<br/>
+      */
+   </div>
+   <span class="keyword">void</span> view(String html, String... title);<br/>
+</div>
+Here is an example:<br/>
+<div class="codeblock">
+   io.view(<span class="string">"&lt;h1&gt;Hello world3&lt;/h1&gt;"</span>, <span class="string">"viewHtml"</span>)<br/>
+</div>
+Note: viewer is an alternative. You can pass an url, file or html content to the viewer function. E.g:
+<div class="codeblock">
+   io.view(<span class="string">"http://www.alipsa.se"</span>, <span class="string">"view url"</span>)<br/>
+   io.view(io.projectFile(<span class="string">"data/hello.html"</span>), <span class="string">"view file"</span>)<br/>
+   io.view(<span class="string">"&lt;h1&gt;Hello world2&lt;/h1&gt;"</span>, <span class="string">"view htmlcontent"</span>)
+</div>
+
+<h4>Show help</h4>
+The io.help() function can be used to display info about an object or a class.
+<div class="codeblock">
+   help(myModel)<br />
+   help(String.class)
+</div>
+
+<h4>Use the connections defined in the connections tab</h4>
+<div class="codeblock">
+   <div class="comment">/** Return a table from a query using a connection defined in the Connections tab */</div>
+   Table select(String connectionName, String sqlQuery)<br/>
+   <div class="comment">/** Run an insert query and return the number of rows affected */</div>
+   int rowsInserted insert(String connectionName, String sqlQuery)<br/>
+   <div class="comment">/** Run an update query and return the number of rows affected */</div>
+   int rowsUpdated update(String connectionName, String sqlQuery)<br/>
+   <div class="comment">/** Run a delete query and return the number of rows affected */</div>
+   int rowsDeleted delete(String connectionName, String sqlQuery)<br/>
+</div>
+
+Here are some examples:<br/>
+<div class="codeblock"><pre>
+table <- io$select(<span class="string">"test"</span>, <span class="string">"select * from mytable"</span>)
+
+<span class="keyword">int</span> rowsAffected = io.insert(<span class="string">"test"</span>, <span class="string">"insert into mytable (name, id) values ('bar', 123"</span>)
+
+<span class="keyword">int</span> rowsAffected = io.update(<span class="string">"test"</span>, <span class="string">"update mytable set name = 'foo' where id = 123"</span>)
+
+<span class="keyword">int</span> rowsAffected = io.delete(<span class="string">"test"</span>, <span class="string">"delete from mytable where id = 123"</span>)
+</pre>
+</div>
+
+<hr/>
+<h2>User input</h2>
+It is also possible to do simple gui input interaction with the user running the R script using rideutils. There are
+3 methods available:
+<ol>
+   <li><b>prompt</b> - Pops up a dialog prompting for a text input</li>
+   <li><b>promptPassword</b> - Pops up a dialog prompting for a password input (input hidden and replaced with a *</li>
+   <li><b>promptSelect</b> - Pops up a dialog prompting the user to select from a combobox/li>
+   <li><b>prompt</b> - Pops up a dialog prompting for a date</li>
+   <li><b>promptYearMonth</b> - Pops up a dialog asking the user to select a year month</li>
+   <li><b>chooseFile</b> - Opens a file chooser dialog</li>
+   <li><b>chooseDir</b> - Opens a directory chooser dialog</li>
+</ol>
+
+Here is an example:
+<div class="codeblock"><pre>
+  <br/>
+  fileType = io.prompt(title = <span class="string">"What kind of filetype?"</span>, message = <span class="string">"Enter the extension here"</span>)<br/>
+  println(<span class="string">"Filetype is "</span> + fileType)
+
+  file = io.chooseFile(
+    <span class="string">"pick a file"</span>,
+    <span class="string">"."</span>,
+    fileType,
+    <span class="string">"*."</span> + fileType.toLowerCase(),
+    <span class="string">"*."</span> + fileType.toUpperCase()
+  )<br/>
+  println(<span class="string">"File chosen was"</span> + file)
+
+  dir = io.chooseDir(<span class="string">"Select output dir"</span>, <span class="string">"."</span>)
+  println(<span class="string">"Output dir set to"</span> + dir)
+</pre>
+</div>
+
+They are defined as follows:
+
+<h3>prompt</h3>
+Allows a user to enter string input which we can use in subsequent code. It is defined as follows:
+<div class="codeblock">
+   String prompt(String title, String headerText, String message, String defaultValue)
+</div>
+Two simpler versions exists;
+<div class="codeblock">
+   String prompt(String message)<br/>
+   String prompt(String message)
+</div>
+<br/>
+The following example:
+
+
+<h3>chooseFile</h3>
+Allows a user to pick a file. it is defined as follows:
+<div class="codeblock">
+   File chooseFile(String title, String initialDir, String description, String... extensions)
+</div>
+The extensions parameter (String...) are the allowed file patterns (typically extensions) that the user can pick.<br/>
+<br/>
+The following example:
+<div class="codeblock">
+   file = io.chooseFile(<br/>
+   <span class="string">"Choose the forecast excel for previous month"</span>,<br/>
+   <span class="string">"."</span>,<br/>
+   <span class="string">"Excel files"</span>,<br/>
+   <span class="string">"*.xls"</span>, <span class="string">"*.xlsx"</span><br/>
+   )
+</div>
+Will result in the following (blocking) pop up:<br/>
+<img src="chooseFile.png" alt="chooseFile screenshot" width="500">
+
+<h3>chooseDir</h3>
+Allows a user to pick a directory. It is defined as follows:
+<div class="codeblock">
+   File chooseDir(String title, String initialDir)
+</div>
+<br/>
+The following example:
+<div class="codeblock">
+   dir = chooseDir(<span class="string">"Select output dir"</span>, <span class="string">"."</span>)
+</div>
+Will result in the following (blocking) pop up:<br/>
+<img src="chooseDir.png" alt="chooseFile screenshot" width="500">
+
+<h3>promptDate</h3>
+Pops up a date picker dialog allowing the user to pick a date. It is defined as follows:
+<div class="codeblock">promptDate (String title, String message, String outputFormat)</div>
+
+<h4>Parameters:</h4>
+<ul>
+   <li><strong>outputFormat</strong> - determines the format of the picked date in the dialog as well as in the
+      return value</li>
+</ul>
+
+<strong>return value:</strong> a character string formatted according to the outputFormat param or
+in the format "yyyy-MM-dd" if no outputFormat is given.
+Example:
+<div class="codeblock">
+   <span class="keyword">import</span> java.time.*
+
+   date2 = io.promptDate(
+      <span class="string">"Date"</span>,
+      <span class="string">"Another date"</span>,
+      LocalDate.now()
+   )<br/>
+   println(<span class="string">"Date is"</span> + date2)
+</div>
+
+<h3>promptYearMonth</h3>
+<div class="codeblock">promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial)</div>
+
+<h4>Parameters:</h4>
+<ul>
+   <li><strong>from</strong> - a character string with the start year month than can be chosen in the format "yyyy-MM".
+      Default value NA will be converted to the initial date minus 3 years</li>
+
+   <li><strong>to</strong> - a character string with the en year month than can be chosen in the format "yyyy-MM"
+      Default value NA will be converted to the initial date plus 3 years</li>
+
+   <li><strong>initial</strong> - the initial (default) value in the format "yyyy-MM"
+      Default value NA will be converted to current year month.</li>
+</ul>
+
+<div class="codeblock"><pre>
+   import java.time.*
+
+   fileType = io.promptYearMonth(
+      "Enter start period",
+      "What year month to begin with (yyyy-MM)?",
+      YearMonth.of(1970, 1), YearMonth.now().plusYears(10), YearMonth.now()
+   )
+   </pre>
+</div>
+Will result in the following (blocking) pop up:<br/>
+<img src="prompt.png" alt="prompt screenshot" width="400">
+
+</body>
+</html>

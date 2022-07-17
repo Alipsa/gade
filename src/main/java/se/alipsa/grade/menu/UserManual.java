@@ -40,7 +40,7 @@ public class UserManual {
     borderPane.setCenter(browser);
     borderPane.getStylesheets().addAll(gui.getStyleSheets());
     String cssPath = gui.getStyleSheets().get(0);
-    log.debug("Adding style sheet {}", cssPath);
+    log.trace("Adding style sheet {}", cssPath);
     webEngine.setUserStyleSheetLocation(cssPath);
     browser.getStylesheets().addAll(gui.getStyleSheets());
 
@@ -48,7 +48,7 @@ public class UserManual {
     borderPane.setTop(linkPane);
 
     featuresUrl = FileUtils.getResourceUrl("manual/features.html");
-    URL interactionUrl = FileUtils.getResourceUrl("manual/InteractingWithGrade.html");
+    URL interactionUrl = FileUtils.getResourceUrl("manual/guiInteraction.html");
     URL shortcutsUrl = FileUtils.getResourceUrl("manual/KeyBoardShortcuts.html");
     URL examplesUrl = FileUtils.getResourceUrl("manual/examples.html");
     URL packagesUrl = FileUtils.getResourceUrl("manual/packages.html");

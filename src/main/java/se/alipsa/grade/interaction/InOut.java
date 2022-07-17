@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -137,6 +138,10 @@ public class InOut implements GuiInteraction {
     return gui.getInoutComponent().projectDir();
   }
 
+  public File projectFile(String relativePath) {
+    return new File(gui.getInoutComponent().projectDir(), relativePath);
+  }
+
   public void display(Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     display(Plot.jfx(chart), title);
@@ -213,6 +218,18 @@ public class InOut implements GuiInteraction {
     gui.getInoutComponent().viewHtml(html, title);
   }
 
+  public void view(File file, String... title) {
+    if (file == null) {
+      gui.getConsoleComponent().addWarning("view file", "File argument cannot be null", true);
+      return;
+    }
+    try {
+      gui.getInoutComponent().viewHtml(file.toURI().toURL().toExternalForm(), title);
+    } catch (MalformedURLException e) {
+      gui.getInoutComponent().viewHtml(file.getAbsolutePath(), title);
+    }
+  }
+
   public Stage getStage() {
     return gui.getStage();
   }
@@ -221,6 +238,9 @@ public class InOut implements GuiInteraction {
     return dialogs.prompt(title, headerText, message, defaultValue);
   }
 
+  public String prompt(String title, String message) throws ExecutionException, InterruptedException {
+    return dialogs.prompt(title, "", message, "");
+  }
   public String prompt(String message) throws ExecutionException, InterruptedException {
     return dialogs.prompt("", "", message, "");
   }
@@ -255,6 +275,10 @@ public class InOut implements GuiInteraction {
 
   public Image readImage(String filePath) throws IOException {
     return readImage.read(filePath);
+  }
+
+  public Image readImage(File file) throws IOException {
+    return readImage.read(file.toURI().toURL().toExternalForm());
   }
 
   public String getContentType(String fileName) throws IOException {
