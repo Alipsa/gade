@@ -1,12 +1,10 @@
 package se.alipsa.grade.menu;
 
-import se.alipsa.grade.model.Repo;
 
 import java.util.HashMap;
-import java.util.List;
 
 public class GlobalOptions extends HashMap<String, Object> {
-  public static final String REMOTE_REPOSITORIES = "RemoteRepositories";
+
   public static final String CONSOLE_MAX_LENGTH_PREF = "ConsoleTextArea.MaxLength";
   public static final String MAVEN_HOME = "GlobalOptions.MavenHome";
   public static final String USE_MAVEN_CLASSLOADER = "GlobalOptions.UseMavenClassloader";
@@ -40,10 +38,5 @@ public class GlobalOptions extends HashMap<String, Object> {
     } else {
       return Boolean.parseBoolean(val.toString());
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  public List<Repo> getRepoList(String key) {
-    return (List<Repo>)get(key);
   }
 }

@@ -4,20 +4,11 @@ import static se.alipsa.grade.Constants.*;
 import static se.alipsa.grade.console.ConsoleTextArea.CONSOLE_MAX_LENGTH_DEFAULT;
 import static se.alipsa.grade.menu.GlobalOptions.*;
 
-import javafx.beans.binding.Bindings;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
-import org.jetbrains.annotations.NotNull;
 import se.alipsa.grade.Grade;
-import se.alipsa.grade.console.ConsoleComponent;
-import se.alipsa.grade.model.Repo;
 import se.alipsa.grade.utils.ExceptionAlert;
 import se.alipsa.grade.utils.GuiUtils;
 import se.alipsa.grade.utils.IntField;
@@ -26,7 +17,6 @@ import java.util.*;
 
 class GlobalOptionsDialog extends Dialog<GlobalOptions> {
 
-  private TableView<Repo> reposTable;
   private IntField intField;
   private ComboBox<String> themes;
   private ComboBox<String> locals;
@@ -50,65 +40,6 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       grid.setVgap(15);
       grid.setPadding(new Insets(10, 15, 10, 10));
       getDialogPane().setContent(grid);
-
-      Label reposLabel = new Label("Remote Repositories");
-      grid.add(reposLabel, 0, 1);
-
-      reposTable = new TableView<>();
-      reposTable.setContextMenu(getContextMenu());
-      List<Repo> repos = gui.getConsoleComponent().getRemoteRepositories();
-
-      TableColumn<Repo, String> idCol = new TableColumn<>("id");
-      idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-      idCol.setCellFactory(TextFieldTableCell.forTableColumn());
-      idCol.setOnEditCommit(t ->
-          (t.getTableView().getItems().get(t.getTablePosition().getRow()))
-              .setId(t.getNewValue())
-      );
-
-      TableColumn<Repo, String> typeCol = new TableColumn<>("type");
-      typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-      typeCol.setCellFactory(TextFieldTableCell.forTableColumn());
-      typeCol.setOnEditCommit(t ->
-          (t.getTableView().getItems().get(t.getTablePosition().getRow()))
-              .setType(t.getNewValue())
-      );
-
-      TableColumn<Repo, String> urlCol = new TableColumn<>("url");
-      urlCol.setCellValueFactory(new PropertyValueFactory<>("url"));
-      urlCol.setCellFactory(TextFieldTableCell.forTableColumn());
-      urlCol.setOnEditCommit(t ->
-          (t.getTableView().getItems().get(t.getTablePosition().getRow()))
-              .setUrl(t.getNewValue())
-      );
-
-      reposTable.setRowFactory(tableView -> {
-        final TableRow<Repo> row = new TableRow<>();
-        final ContextMenu contextMenu = getContextMenu();
-        final MenuItem removeMenuItem = new MenuItem("delete row");
-        removeMenuItem.setOnAction(event -> reposTable.getItems().remove(row.getItem()));
-        contextMenu.getItems().add(removeMenuItem);
-
-        // Set context menu on row, but use a binding to make it only show for non-empty rows:
-        row.contextMenuProperty().bind(
-            Bindings.when(row.emptyProperty())
-                .then((ContextMenu) null)
-                .otherwise(contextMenu)
-        );
-        return row;
-      });
-
-
-      urlCol.setMinWidth(450);
-      reposTable.getColumns().add(idCol);
-      reposTable.getColumns().add(typeCol);
-      reposTable.getColumns().add(urlCol);
-
-
-      reposTable.setItems(createObservable(repos));
-      reposTable.setEditable(true);
-
-      grid.add(reposTable, 1, 1, 3, 5);
 
       Label consoleMaxSizeLabel = new Label("Console max size");
       grid.add(consoleMaxSizeLabel, 0, 6);
@@ -225,38 +156,8 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     }
   }
 
-  @NotNull
-  private ContextMenu getContextMenu() {
-    final ContextMenu contextMenu = new ContextMenu();
-    final MenuItem addMenuItem = new MenuItem("add row");
-    addMenuItem.setOnAction(event -> addRepositoryRow(new Repo()));
-
-    final Menu addDefault = new Menu("add default");
-    final MenuItem addMavenCentral = new MenuItem("Maven Central");
-    addMavenCentral.setOnAction(this::addMvnCentralRepo);
-    addDefault.getItems().addAll(addMavenCentral);
-    contextMenu.getItems().addAll(addMenuItem, addDefault);
-    return contextMenu;
-  }
-
-  private void addRepositoryRow(Repo repo) {
-    reposTable.getItems().add(repo);
-  }
-
-  private void addMvnCentralRepo(ActionEvent actionEvent) {
-    addRepositoryRow(ConsoleComponent.MVN_CENTRAL_REPO);
-  }
-
-  private ObservableList<Repo> createObservable(List<Repo> repos) {
-    if (repos == null) {
-      return FXCollections.emptyObservableList();
-    }
-    return FXCollections.observableArrayList(repos);
-  }
-
   private GlobalOptions createResult() {
     GlobalOptions result = new GlobalOptions();
-    result.put(REMOTE_REPOSITORIES, reposTable.getItems());
     result.put(CONSOLE_MAX_LENGTH_PREF, intField.getValue());
     result.put(THEME, themes.getValue());
     result.put(DEFAULT_LOCALE, locals.getValue());

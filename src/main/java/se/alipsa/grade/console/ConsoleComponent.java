@@ -33,9 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import se.alipsa.grade.Constants;
 import se.alipsa.grade.Grade;
 import se.alipsa.grade.TaskListener;
-import se.alipsa.grade.code.groovytab.GroovyTab;
 import se.alipsa.grade.environment.EnvironmentComponent;
-import se.alipsa.grade.model.Repo;
 import se.alipsa.grade.utils.Alerts;
 import se.alipsa.grade.utils.ExceptionAlert;
 import se.alipsa.grade.utils.FileUtils;
@@ -48,33 +46,25 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ConsoleComponent extends BorderPane {
 
-  public static final String REMOTE_REPOSITORIES_PREF = "ConsoleComponent.RemoteRepositories";
-  public static final String PACKAGE_LOADER_PREF = "ConsoleComponent.PackageLoader";
   private static final Image IMG_RUNNING = new Image(Objects.requireNonNull(FileUtils
       .getResourceUrl("image/running.png")).toExternalForm(), ICON_WIDTH, ICON_HEIGHT, true, true);
   private static final Image IMG_WAITING = new Image(Objects.requireNonNull(FileUtils
       .getResourceUrl("image/waiting.png")).toExternalForm(), ICON_WIDTH, ICON_HEIGHT, true, true);
   private static final String DOUBLE_INDENT = INDENT + INDENT;
   private static final Logger log = LogManager.getLogger(ConsoleComponent.class);
-  public static final Repo MVN_CENTRAL_REPO = new Repo("central", "default", "https://repo1.maven.org/maven2/");
   private final ImageView runningView;
   private final Button statusButton;
   private final ConsoleTextArea console;
   private final Grade gui;
-  private List<RemoteRepository> remoteRepositories;
-  //private ClassLoader classLoader = ConsoleComponent.class.getClassLoader();
   private GroovyClassLoader classLoader;
 
   private Thread runningThread;
-  private File workingDir;
   private final Map<Thread, String> threadMap = new HashMap<>();
   private final MavenUtils mavenUtils;
   private ScriptEngine engine;
@@ -109,14 +99,13 @@ public class ConsoleComponent extends BorderPane {
     setCenter(vPane);
   }
 
-  private static Repo asRepo(RemoteRepository repo) {
-    return new Repo(repo.getId(), repo.getContentType(), repo.getUrl());
-  }
 
+
+  /* not used to commented out
   public void initGroovy(ClassLoader parentClassLoader, boolean... sync) {
     if (sync.length > 0 && sync[0]) {
       try {
-        resetClassloaderAndGroovy(getStoredRemoteRepositories(), parentClassLoader);
+        resetClassloaderAndGroovy(parentClassLoader);
         printVersionInfoToConsole();
         autoRunScripts();
         updateEnvironment();
@@ -124,16 +113,17 @@ public class ConsoleComponent extends BorderPane {
         ExceptionAlert.showAlert("Failed to reset classloader and Groovy, please report this!", e);
       }
     } else {
-      Platform.runLater(() -> initGroovy(getStoredRemoteRepositories(), parentClassLoader));
+      Platform.runLater(() -> initGroovy(parentClassLoader));
     }
   }
+   */
 
-  private void initGroovy(List<Repo> repos, ClassLoader parentClassLoader, boolean... skipMavenClassloading) {
+  public void initGroovy(ClassLoader parentClassLoader, boolean... skipMavenClassloading) {
     Task<Void> initTask = new Task<>() {
 
       @Override
       protected Void call() throws Exception {
-        return resetClassloaderAndGroovy(repos, parentClassLoader, skipMavenClassloading);
+        return resetClassloaderAndGroovy(parentClassLoader, skipMavenClassloading);
       }
     };
     initTask.setOnSucceeded(e -> {
@@ -165,10 +155,8 @@ public class ConsoleComponent extends BorderPane {
   }
 
   @Nullable
-  private Void resetClassloaderAndGroovy(List<Repo> repos, ClassLoader parentClassLoader, boolean... skipMavenClassloading) throws Exception {
+  private Void resetClassloaderAndGroovy(ClassLoader parentClassLoader, boolean... skipMavenClassloading) throws Exception {
     try {
-      remoteRepositories = new ArrayList<>();
-      remoteRepositories.addAll(asRemoteRepositories(repos));
 
       if (gui.getInoutComponent() == null) {
         log.warn("InoutComponent is null, timing is off");
@@ -267,56 +255,6 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
-  private List<RemoteRepository> asRemoteRepositories(List<Repo> items) {
-    List<RemoteRepository> list = new ArrayList<>();
-    for (Repo repo : items) {
-      list.add(new RemoteRepository.Builder(repo.getId(), repo.getType(), repo.getUrl()).build());
-    }
-    return list;
-  }
-
-  private List<Repo> asRepos(List<RemoteRepository> repositories) {
-    List<Repo> list = new ArrayList<>();
-    for (RemoteRepository repo : repositories) {
-      list.add(asRepo(repo));
-    }
-    return list;
-  }
-
-  private List<Repo> getStoredRemoteRepositories() {
-    List<Repo> list = new ArrayList<>();
-    String remotes = gui.getPrefs().get(REMOTE_REPOSITORIES_PREF, null);
-    log.debug("Remotes from prefs are: {}", remotes);
-    if (remotes == null) {
-      log.info("No stored prefs for remote repos, adding defaults");
-      addDefaultRepos(list);
-      return list;
-    }
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      list = mapper.readValue(remotes, new TypeReference<>() {
-      });
-    } catch (InvalidDefinitionException e) {
-      e.printStackTrace();
-      log.warn("Something is wrong with the pref key {}, deleting it to start fresh", REMOTE_REPOSITORIES_PREF);
-      gui.getPrefs().remove(REMOTE_REPOSITORIES_PREF);
-      addDefaultRepos(list);
-    } catch (IOException e) {
-      e.printStackTrace();
-      addDefaultRepos(list);
-    }
-    return list;
-  }
-
-  private void addDefaultRepos(List<Repo> list) {
-    log.info("add local repo");
-    String localRepoPath = System.getProperty("localRepository"); // c:/Users/blah/.m2/repository
-    Repo local = new Repo("local", "default", "file:" + localRepoPath);
-    list.add(local);
-    log.trace("add maven central repo");
-    list.add(MVN_CENTRAL_REPO);
-  }
-
   private String getStars(int length) {
     return "*".repeat(Math.max(0, length));
   }
@@ -324,7 +262,7 @@ public class ConsoleComponent extends BorderPane {
   public void restartGroovy() {
     console.append("Restarting Groovy..\n");
     //initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
-    initGroovy(getStoredRemoteRepositories(), gui.dynamicClassLoader);
+    initGroovy(gui.dynamicClassLoader);
     gui.getEnvironmentComponent().clearEnvironment();
   }
 
@@ -355,10 +293,14 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
+  /*
   public Object runScript(String script) throws Exception {
     return runScript(script, null);
   }
 
+   */
+
+  /*
   public void addVariableToSession(String key, Object val) {
     engine.put(key, val);
   }
@@ -367,28 +309,33 @@ public class ConsoleComponent extends BorderPane {
     engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
   }
 
+
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
     if (engine == null) {
       Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
       return null;
     }
     //log.info("engine is {}, gui is {}", engine, gui);
-    gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
+    gui.guiInteractions.forEach(this::addVariableToSession);
     if (additionalParams != null) {
       for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
-        engine.put(entry.getKey(), entry.getValue());
+        addVariableToSession(entry.getKey(), entry.getValue());
       }
     }
-    var result = engine.eval(script);
-    return result;
+    return engine.eval(script);
   }
 
+   */
+
+  /*
   public Object runScriptSilent(String script, Map<String, Object> additionalParams) throws Exception {
     for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
-      engine.put(entry.getKey(), entry.getValue());
+      addVariableToSession(entry.getKey(), entry.getValue());
     }
     return runScriptSilent(script);
   }
+
+   */
 
   public Object runScriptSilent(String script) throws Exception {
     try (PrintWriter out = new PrintWriter(System.out);
@@ -411,12 +358,15 @@ public class ConsoleComponent extends BorderPane {
     return engine.get(varName);
   }
 
+  /*
   public void runScriptAsync(String script, String title, TaskListener taskListener, Map<String, Object> additionalParams) {
     for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
-      engine.put(entry.getKey(), entry.getValue());
+      addVariableToSession(entry.getKey(), entry.getValue());
     }
     runScriptAsync(script, title, taskListener);
   }
+
+   */
 
   public void runScriptAsync(String script, String title, TaskListener taskListener) {
 
@@ -524,12 +474,11 @@ public class ConsoleComponent extends BorderPane {
 
   public Map<String, Object> getContextObjects() {
     Map<String, Object> contextObjects = new HashMap<>();
-    for (Map.Entry<String, Object> entry : engine.getBindings(ScriptContext.ENGINE_SCOPE).entrySet()) {
-      contextObjects.put(entry.getKey(), entry.getValue());
-    }
+    contextObjects.putAll(engine.getBindings(ScriptContext.ENGINE_SCOPE));
     return contextObjects;
   }
 
+  /*
   private void runTests(GroovyTab rTab) {
     running();
     String script = rTab.getTextContent();
@@ -553,7 +502,7 @@ public class ConsoleComponent extends BorderPane {
       public Void call() {
         ((TaskListener) rTab).taskStarted();
         start = System.currentTimeMillis();
-        gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
+        gui.guiInteractions.forEach((k,v) -> addVariableToSession(k, v));
         List<TestResult> results = new ArrayList<>();
         try (StringWriter out = new StringWriter();
              StringWriter err = new StringWriter();
@@ -562,13 +511,13 @@ public class ConsoleComponent extends BorderPane {
         ) {
           engine.getContext().setWriter(outputWriter);
           engine.getContext().setErrorWriter(errWriter);
-          /* TODO not sure how to handle working dir
-          FileObject orgWd = session.getWorkingDirectory();
-          File scriptDir = file.getParentFile();
-          console.appendFx(DOUBLE_INDENT + "- Setting working directory to " + scriptDir, true);
-          session.setWorkingDirectory(scriptDir);
+          //TODO not sure how to handle working dir
+          //FileObject orgWd = session.getWorkingDirectory();
+          //File scriptDir = file.getParentFile();
+          //console.appendFx(DOUBLE_INDENT + "- Setting working directory to " + scriptDir, true);
+          //session.setWorkingDirectory(scriptDir);
 
-           */
+
 
           TestResult result = runTest(script, title);
           // TODO: working dir
@@ -645,6 +594,9 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
+   */
+
+  /*
   private String prefixLines(StringWriter out, String prefix) {
     StringBuilder buf = new StringBuilder();
     String lines = out == null ? "" : out.toString();
@@ -654,7 +606,9 @@ public class ConsoleComponent extends BorderPane {
     return prefix + buf.toString().trim();
   }
 
+   */
 
+  /*
   private TestResult runTest(String script, String title, String... indentOpt) {
     String indent = INDENT;
     if (indentOpt.length > 0) {
@@ -684,9 +638,14 @@ public class ConsoleComponent extends BorderPane {
     return result;
   }
 
+   */
+
+  /*
   private String formatMessage(final Throwable error) {
     return error.getMessage().trim().replace("\n", ", ");
   }
+
+   */
 
   private void executeScriptAndReport(String script, String title) throws Exception {
 
@@ -743,28 +702,6 @@ public class ConsoleComponent extends BorderPane {
     } else {
       scrollToEnd();
     }
-  }
-
-  public List<Repo> getRemoteRepositories() {
-    return asRepos(remoteRepositories);
-  }
-
-  /**
-   * this should be called last as the Session is reinitialized at the end
-   */
-  public void setRemoteRepositories(List<Repo> repos, ClassLoader cl) {
-    ObjectMapper mapper = new ObjectMapper();
-    StringWriter writer = new StringWriter();
-    try {
-      mapper.writeValue(writer, repos);
-      String r = writer.toString();
-      log.debug("Writing repos to prefs as: {}", r);
-      gui.getPrefs().put(REMOTE_REPOSITORIES_PREF, r);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    log.info("initializing Groovy with {} repos", repos.size());
-    initGroovy(repos, cl);
   }
 
   public void running() {

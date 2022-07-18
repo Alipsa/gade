@@ -36,7 +36,6 @@ import se.alipsa.grade.UnStyledCodeArea;
 import se.alipsa.grade.code.CodeTextArea;
 import se.alipsa.grade.code.CodeType;
 import se.alipsa.grade.code.TextAreaTab;
-import se.alipsa.grade.model.Repo;
 import se.alipsa.grade.utils.*;
 import se.alipsa.grade.utils.git.GitUtils;
 
@@ -596,21 +595,6 @@ public class MainMenu extends MenuBar {
     if (mavenHome != null && !mavenHome.isBlank()) {
       System.setProperty("MAVEN_HOME", mavenHome);
       gui.getPrefs().put(MAVEN_HOME, mavenHome);
-    }
-
-    List<Repo> selectedRepos = result.getRepoList(GlobalOptions.REMOTE_REPOSITORIES);
-    Collections.sort(selectedRepos);
-    List<Repo> currentRepos = gui.getConsoleComponent().getRemoteRepositories();
-    Collections.sort(currentRepos);
-
-    if (!currentRepos.equals(selectedRepos)) {
-      log.info("Remote repositories changed, restarting Groovy session");
-      log.info("selectedRepos = {}\n currentRepos = {}", selectedRepos, currentRepos);
-      gui.getConsoleComponent().setRemoteRepositories(
-         selectedRepos,
-         //gui.getClass().getClassLoader()
-         gui.dynamicClassLoader
-      );
     }
 
     int consoleMaxLength = result.getInt(CONSOLE_MAX_LENGTH_PREF);
