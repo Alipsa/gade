@@ -29,65 +29,86 @@ Here is an example:
     <span class="keyword">select</span> * <span class="keyword">from</span> someTable
 </div>
 <h4>Now you can use this query as follows:</h4>
-<div class="codeblock">
-    <span class="keyword">@Grab</span>(<span class="string">'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17'</span>)<br/>
-    <span class="keyword">@Grab</span>(<span class="string">'se.alipsa.groovy:data-utils:1.0-SNAPSHOT'</span>)<br/><br/>
-    <span class="keyword">import</span> se.alipsa.groovy.datautil.SqlUtil
-    <span class="keyword">import</span> tech.tablesaw.api.Table
-    <br/>
-    String readFile <span class="keyword">readFile</span>(String fileName) {<br/>
-        &nbsp;&nbsp;return new File(fileName).text<br/>
-    }<br/>
-    <br/>
-    drv <- <span class="string">"com.microsoft.sqlserver.jdbc.SQLServerDriver"</span><br/>
+<div class="codeblock"><pre>
+<span class="keyword">@Grab</span>(<span class="string">'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17'</span>)
+<span class="keyword">@Grab</span>(<span class="string">'se.alipsa.groovy:data-utils:1.0.0'</span>)
 
-    sql <- SqlUtil.newInstance(
-    &nbsp;&nbsp;, url=<span class="string">"jdbc:sqlserver://mydbserver:1433;databaseName=fancy;"</span><br/>
-    &nbsp;&nbsp;, user=<span class="string">"mmbla"</span><br/>
-    &nbsp;&nbsp;, password=<span class="string">"s3cretpassword"</span><br/>
-    &nbsp;&nbsp;, drv
-    )<br/>
-    <br/>
-    <span class="comment"># Read the sql file:</span><br/>
-    fancyQuery <- readFile(<span class="string">"fancy.sql"</span>)<br/>
-    <br/>
-    <span class="comment"># Execute the query:</span><br/>
-    fancyTable <- dbGetQuery(fancyCon, fancyQuery)<br/>
-    dbDisconnect(fancyCon)<br/>
-    <br/>
-    <span class="comment"># Do some stuff with the data frame:</span><br/>
-    str(fancyDf)<br/>
-    m_fancyDf <- colMeans(fancyDf)<br/>
-    View(m_fancyDf, <span class="string">"fancyDf"</span>)<br/>
+<span class="keyword">import</span> se.alipsa.groovy.datautil.SqlUtil
+<span class="keyword">import</span> tech.tablesaw.api.Table
+
+<span class="comment">// Read the sql file:</span>
+fancyQuery = io.projectFile(<span class="string">"fancy.sql"</span>).text
+<span class="comment">// Run the query and store the result in the fancyDf Table:</span>
+SqlUtil.withInstance(
+  <span class="string">"jdbc:sqlserver://someserver:1433;databaseName=mydb;integratedSecurity=true"</span>,
+  <span class="string">""</span>,
+  <span class="string">""</span>,
+  <span class="string">"com.microsoft.sqlserver.jdbc.SQLServerDriver"</span>
+) { sql ->
+  sql.query(fancyQuery) {
+    rs -> fancyDf = Table.read().db(rs)
+  }
+}<br/>
+<br/>
+<span class="comment">// Do some stuff with the data frame:</span>
+fancyDf.structure()
+latest = fancyDf.column(3).max()
+println(<span class="string">"Latest is "</span> + latest)
+io.view(m_fancyDf, <span class="string">"fancy"</span>)
+</pre>
 </div>
 
 <h3>Parameterized queries</h3>
-A simple trick is to use ?1, ?2 etc for replaceable parameters, e.g.
+A simple trick is to use @1, @2 etc for replaceable parameters, e.g.
 <div class="codeblock">
-    <span class="keyword">select</span> * <span class="keyword">from</span> someTable <span class="keyword">where</span> name = <span class="string">'?1'</span>
+    <span class="keyword">select</span> * <span class="keyword">from</span> someTable <span class="keyword">where</span> name = <span class="string">'@1'</span>
 </div>
-<br/>
+
 I like to save these kind of queries with the extension psql (parameterized sql) so it is easy to spot them later, e.g.
-<div class="codeblock">
-    <span class="comment"># Read the sql file containing the SQL code above:</span><br/>
-    fancyQuery <- readFile(<span class="string">"fancy.psql"</span>)<br/>
-    <br/>
-    <span class="comment"># Set the first parameter:</span><br/>
-    fancyQuery <- gsub(<span class="string">"?1"</span>, <span class="string">"Per"</span>, fancyQuery, fixed=<span class="keyword">TRUE</span>)
+<div class="codeblock"><pre>
+<span class="comment">// Read the sql file containing the SQL code above:</span>
+fancyQuery = io.projectFile(<span class="string">"fancy.psql"</span>).text
+    .replaceAll(<span class="string">"@1"</span>, <span class="string">"Per"</span>)
+</pre>
 </div>
 
 <h2 id="reusing_code">Reusing code</h2>
 Perhaps the simplest way to reuse code is to put utility functions or other code that you want to reuse multiple times
-in a separate file and then load them using source. If you do this, then you may want to make sure to only load it once; one way is to look for something unique such as a
-variable or function with exists. E.g:
-<div class="codeblock">
-    <span class="keyword">if</span>(<span class="keyword">!</span>exists(<span class="string">"repairDf"</span>)) source(<span class="string">"R/repairEvents.R"</span>)<br/>
-    <br/>
-    <span class="comment"># same thing but for a function</span><br/>
-    <span class="keyword">if</span>(<span class="keyword">!</span>exists(<span class="string">"readParamSql"</span>, mode=<span class="string">"function"</span>)) source(<span class="string">"some/path/utils.R"</span>)<br/>
+in a separate file and then load them using evaluate. E.g:
+<br/>
+Define a scrip with the following content
+<div class="codeblock"><pre>
+class Tools {
+  def meaningOfLife = 42
+
+  String speak(String answer) {
+    return <span class="string">"The true value of life is ${answer}"</span>
+  }
+
+  String toString() {
+    return <span class="string">"Common tools"</span>
+  }
+}
+
+return <span class="keyword">new</span> Tools()
+</pre>
 </div>
 
-A more proper way to reuse code is to create a package. How to do that is described in <a href="http://docs.renjin.org/en/latest/writing-renjin-extensions.html">the documentation</a>.<br/>
+Then you can reuse this code in other scripts as follows:
+<div class="codeblock">
+    def tools = evaluate(new File(<span class="string">"/some/path/utils.groovy"</span>))<br/>
+    println "The Meaning of life is ${tools.meaningOfLife}"
+    println tools.speak("to do good")
+</div>
+Which will print the following in the Grade console:
+<pre><code>
+The Meaning of life is 42
+The true value of life is to do good
+</code>
+</pre>
+
+A more proper way to reuse code is to create a package that you publish to a Nexus server so that anyone using @Grab
+can easily use it.<br/>
 <br/>
 Grade has a wizard that helps you create the structure and all the boilerplate code needed (Code -> Create package project).
 </body>

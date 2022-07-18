@@ -4,7 +4,8 @@
 </head>
 <body>
 <h1>Interacting with Grade</h1>
-Grade injects an io component into the session.<br/>
+Grade injects an io component into the session to enable user interaction as well as access
+to Grade contexts such as the current project directory etc.<br/>
 <br/>
 run io.help() for a description of each method. Some highligts are:<br/>
 
@@ -137,8 +138,8 @@ Note: viewer is an alternative. You can pass an url, file or html content to the
 <h4>Show help</h4>
 The io.help() function can be used to display info about an object or a class.
 <div class="codeblock">
-   help(myModel)<br />
-   help(String.class)
+   io.help(myModel)<br />
+   io.help(String.class)
 </div>
 
 <h4>Use the connections defined in the connections tab</h4>
@@ -167,8 +168,8 @@ table <- io$select(<span class="string">"test"</span>, <span class="string">"sel
 
 <hr/>
 <h2>User input</h2>
-It is also possible to do simple gui input interaction with the user running the R script using rideutils. There are
-3 methods available:
+It is also possible to do simple gui input interaction with the user. There are
+several methods available in the io object:
 <ol>
    <li><b>prompt</b> - Pops up a dialog prompting for a text input</li>
    <li><b>promptPassword</b> - Pops up a dialog prompting for a password input (input hidden and replaced with a *</li>
@@ -189,8 +190,7 @@ Here is an example:
     <span class="string">"pick a file"</span>,
     <span class="string">"."</span>,
     fileType,
-    <span class="string">"*."</span> + fileType.toLowerCase(),
-    <span class="string">"*."</span> + fileType.toUpperCase()
+    <span class="string">"*."</span> + fileType.toLowerCase(), <span class="string">"*."</span> + fileType.toUpperCase()
   )<br/>
   println(<span class="string">"File chosen was"</span> + file)
 
@@ -208,7 +208,7 @@ Allows a user to enter string input which we can use in subsequent code. It is d
 </div>
 Two simpler versions exists;
 <div class="codeblock">
-   String prompt(String message)<br/>
+   String prompt(String title, String message)<br/>
    String prompt(String message)
 </div>
 <br/>
