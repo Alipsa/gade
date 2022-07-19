@@ -3,6 +3,7 @@ plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.25.0'
+    id "com.github.spotbugs" version "5.0.9"
     id 'maven-publish'
 }
 
@@ -92,4 +93,20 @@ publishing {
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+}
+
+/* 4.7.1 is the default version for plugin version 5.09
+spotbugs {
+    toolVersion = '4.7.1'
+}
+ */
+
+spotbugsMain {
+    reports {
+        html {
+            required = true
+            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+            stylesheet = 'fancy-hist.xsl'
+        }
+    }
 }
