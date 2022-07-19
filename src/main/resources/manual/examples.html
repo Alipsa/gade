@@ -29,8 +29,8 @@ Here is an example:
     <span class="keyword">select</span> * <span class="keyword">from</span> someTable
 </div>
 <h4>Now you can use this query as follows:</h4>
-<div class="codeblock"><pre>
-<span class="keyword">@Grab</span>(<span class="string">'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17'</span>)
+<div class="codeblock">
+<pre><span class="keyword">@Grab</span>(<span class="string">'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17'</span>)
 <span class="keyword">@Grab</span>(<span class="string">'se.alipsa.groovy:data-utils:1.0.0'</span>)
 
 <span class="keyword">import</span> se.alipsa.groovy.datautil.SqlUtil
@@ -48,14 +48,13 @@ SqlUtil.withInstance(
   sql.query(fancyQuery) {
     rs -> fancyDf = Table.read().db(rs)
   }
-}<br/>
-<br/>
+}
+
 <span class="comment">// Do some stuff with the data frame:</span>
 fancyDf.structure()
 latest = fancyDf.column(3).max()
 println(<span class="string">"Latest is "</span> + latest)
-io.view(m_fancyDf, <span class="string">"fancy"</span>)
-</pre>
+io.view(m_fancyDf, <span class="string">"fancy"</span>)</pre>
 </div>
 
 <h3>Parameterized queries</h3>

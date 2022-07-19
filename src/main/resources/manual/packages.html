@@ -5,59 +5,50 @@
 <body>
 <h2>Loading packages</h2>
 <p>
-Since Renjin is a JVM implementation of R, Java classloading mechanisms apply to loading packages. This means that R packages
+Since Groovy is running in a JVM, Java classloading mechanisms apply to loading packages. This means that Groovy packages
 (libraries) need to be repackaged into jar files and made available to the classloader (i.e. made part of the classpath) when
-running Renjin. There are some tools in Renjin that makes that feasible. The gnur-compile goal of the renjin-maven-plugin
-can compile c and fortran code into jvm bytecode making it possible to convert GNU R packages into Renjin packages. Bedatadriven
-who are the creators and maintainers of Renjin have set up a job that automatically converts all packages available on CRAN and
-Bioconductor into Renjin packages and make them available on the
-<a href="https://nexus.bedatadriven.com/content/groups/public/">Bedatadriven Nexus</a>.</p>
+running Groovy.
 <p>
-    When using Grade you have three options to make a Renjin package available to the ScriptEngine so that you can load packages
-    with <span class="code"><span class="keyword">library</span>(<span class="string">"yourpackage"</span>)</span>
+    When using Grade you have three options to make a Groovy package available to the ScriptEngine so that you can load packages:</span>
     <ol>
-        <li>Add the dependency to the pom.xml used to start Grade</li>
-        <li>Use the AetherPackageLoader</li>
-        <li>Create a maven project with your own pom.xml</li>
+        <li>Publish the package to a Nexus server and use <span class="code"><span class="keyword">@Grab(</span> <span class="string">"yourpackage"</span>)</span></li>
+        <li>Add the dependency to the pom.xml used in your project (you need to enable the "use maven classloader" setting for this to work), no need for @Grab in this case.</li>
+        <li>Copy the jar file to the Gradle lib dir (making the package part of the system classpath)</li>
     </ol>
 
-<h3>Add the dependency to the pom.xml used to start Grade</h3>
-This is a simple thing to do. Lets say you need to read a json file. You go to the <a href="http://packages.renjin.org/">Renjin packages list</a>
-and look up rjson. You will see that the dependency information for rjson is
+<h3>Use @Grab</h3>
+If the package you want to use is an open source library published to maven central, you can just @Grab it directly.
+If the package is published to some other Nexus server, you need to tell Grape where @Grab can find it:<br/>
+<code>Grape.addResolver(name:<span class="string">'myNexus'</span>, root:<span class="string">'http://nexus.somecompany.com/'</span>)</code>
+
+
+<h3>Add the dependency to the pom.xml In your project</h3>
+This is a simple thing to do. Lets say you need to get data from MongoDb. You go to the <a href=https://mvnrepository.com>Maven Repository</a> search
+    and look up mongodb. You will see that the dependency information is
 <div class="codeblock">
     &lt;dependency&gt;<br/>
-    &nbsp;&nbsp;&lt;groupId&gt;org.renjin.cran&lt;/groupId&gt;<br/>
-    &nbsp;&nbsp;&lt;artifactId&gt;rjson&lt;/artifactId&gt;<br/>
-    &nbsp;&nbsp;&lt;version&gt;0.2.15-renjin-21&lt;/version&gt;<br/>
+    &nbsp;&nbsp;&lt;groupId&gt;org.mongodb&lt;/groupId&gt;<br/>
+    &nbsp;&nbsp;&lt;artifactId&gt;mongodb-driver-sync&lt;/artifactId&gt;<br/>
+    &nbsp;&nbsp;&lt;version&gt;4.6.1&lt;/version&gt;<br/>
     &lt;/dependency&gt;
 </div>
-You just need to go the the dependencies section in the Grade pom.xml and add the dependency and restart Grade and you are good to go.
-</p>
-
-<h3>Use the AetherPackageLoader</h3>
-Another way is to use the AetherPackageLoader. This is basically a maven aware classloader that will dynamically look for,
-download and add packages to the classpath. It is very convenient to use when prototyping and truing out various packages since you
-do not need to restart sessions or Grade to make a new package available. There are some downsides with it however. AetherPackageLoader
-is similar to package loading in GNU R in the sense that it will download the latest version available which may or may not work with your code
-so this is likely not something you want to use in production. You enable the AetherPackageLoader by going to "Tools" -&gt; "Global Options"
-and changing the package loader from ClasspathPackageLoader to AetherPackageLoader.
-
-<h3>Create a maven project with your own pom.xml</h3>
-There is a project wizard that help you create a maven project
+You just need to go the dependencies section in the projects' pom.xml and add the dependency there.<br/>
+<br/>
+There is a project wizard that help you create a maven project,
 but you can easily create your ow maven project from scratch if you are familiar with maven. If you have enabled the Global Option
-"Use pom classpath" Grade will parse the pom.xml and use that classpath when running your R code. You need to be aware that the way
+"Use pom classpath" Grade will parse the pom.xml and use that classpath when running your Groovy code. You need to be aware that the way
 this is done is by creating a new classloader with the Grade classloader as the parent. This means that if a dependency is already defined in Grade
-this is the version that will be used regardless of what you specify in your pom. E.g. it is not possible to define another version of Renjin
-in your pom and expect Grade to hinor that version when you run your Groovy code. However Grade also support running maven directly and when you do that
-only the dependencies of your pom.xml are honored so it is still possible to execute tests etc to verify that your project works without surprises
-before integrating it with your application server of choice to run your code. Take a look at the <a href="https://github.com/Alipsa/collaborative-analytics-example">
-collaborative-analytics-example</a> for an example of a custom renjin package, a maven project using the package and a spring boot application using this project.
+this is the version that will be used regardless of what you specify in your pom. E.g. it is not possible to define another version of Groovy
+in your pom and expect Grade to honor that version when you run your Groovy code. However, Grade also support running maven directly and when you do that
+only the dependencies of your pom.xml are honored, so it is still possible to execute tests etc to verify that your project works without surprises
+before integrating it with your application server of choice to run your code. Take a look at the <a href="https://github.com/perNyfelt/grade/wiki">
+collaborative-analytics-example in the Wiki</a> for an example of a custom Groovy package, a maven project using the package and a spring boot application using this project.
 
 <h2 id="using_packages">Using Packages</h2>
-Since the renjin gcc compiler bridge is not 100% complete there are many packages that does not work in Renjin yet.
-You can get some idea of support from <a href="http://packages.renjin.org/">Renjin packages list</a> but this will
-only give you a hint.<br/>
-<br/>
+There are millions (at the moment of writing this, 28.9 Million) of packages available on Maven Central. There is a
+    package that enables or simplifies pretty much anything you want to do. THere is also a lot of packages doing basically the same thing
+    and the quality varies.<br />
+
 Some of the basic packages that works flawlessly from my own personal experience are listed below.<br/>
 
 <table width="100%" border="1">
@@ -79,100 +70,49 @@ Some of the basic packages that works flawlessly from my own personal experience
         <td>talk to a relational database</td>
         <td>se.alipsa.groovy:data-utils
         </td>
-        <td>Use 1.0-SNAPSHOT</td>
+        <td>Use 1.0.0</td>
         <td>See the "Examples" tab</td>
     </tr>
     <tr>
-        <td>import/export spreadsheets (excel or open/libre office calc)</td>
-        <td>se.alipsa:spreadsheets</td>
-        <td>Use version 1.0</td>
-        <td><div class="codeblock"><span class="keyword">library</span>("se.alipsa:spreadsheets")<br/>
-            <span class="comment"># Read </span><br/>
-            sheetIndex <- 2<br/>
-            excelDf <- importSpreadsheet(
-            filePath = file,
-            sheet = sheetIndex,
-            startRow = 1,
-            endRow = 7,
-            startColumn = <span class="string">"A"</span>,
-            endColumn = <span class="string">"F"</span>,
-            firstRowAsColumnNames = <span class="keyword">TRUE</span>
-            )<br/>
-            <span class="comment"># Write</span><br/>
-            exportSpreadsheet(
-            df = someDf,
-            filePath = <span class="string">"data_sum.xlsx"</span>,
-            sheet = <span class="string">"Sheet1"</span>
-            )<br/>
-        </div></td>
-    </tr>
-    <tr>
-        <td>import excel files (alternative to the above)</td>
-        <td>org.renjin.cran:xlsx</td>
-        <td>Used version 0.6.1-b7</td>
-        <td><div class="codeblock"><span class="keyword">library</span>(xlsx)<br/>
-            <span class="comment"># Read </span><br/>
-            sheetIndex <- 2<br/>
-            excelDf <- read.xlsx(
-                file,
-                sheetIndex,
-                header=<span class="keyword">TRUE</span>,
-                colClasses=<span class="keyword">NA</span>,
-                stringsAsFactors=<span class="keyword">FALSE</span>
-            )<br/>
-            <span class="comment"># Write</span><br/>
-            write.xlsx(
-                someDf,
-                file = <span class="string">"data_sum.xlsx"</span>,
-                sheetName = <span class="string">"Sheet1"</span>
-            )<br/>
-            <span class="comment"># Alternatively</span><br/>
-            write.xlsx2(
-                result,
-                outfile,
-                sheetName=name,
-                col.names=<span class="keyword">TRUE</span>,
-                row.names=<span class="keyword">FALSE</span>,
-                append=<span class="keyword">TRUE</span>
-            )
+        <td>import excel spreadsheets</td>
+        <td>tech.tablesaw:tablesaw-excel</td>
+        <td></td>
+        <td><div class="codeblock">
+            <pre><span class="keyword">@Grab</span>(<span class="string">'tech.tablesaw:tablesaw-excel:0.43.1'</span>)
+            <span class="keyword">import</span> tech.tablesaw.api.Table
+            <span class="keyword">import</span> tech.tablesaw.io.xlsx.XlsxReadOptions
+            <span class="keyword">import</span> tech.tablesaw.io.xlsx.XlsxReader
+
+            XlsxReadOptions options = XlsxReadOptions.builder(<span class="string">"myexcel.xlsx"</span>).build()
+            XlsxReader xlsxReader = new XlsxReader()
+            List&lt;Table&gt; tables = xlsxReader.readMultiple(options)</pre>
         </div></td>
     </tr>
     <tr>
         <td>Import csv files</td>
-        <td>Base R, no additional package required</td>
+        <td>Tablesaw core, built into Grade.</td>
         <td></td>
-        <td><div class="codeblock">customerData <- read.csv(file=<span class="string">"some/path/input.csv"</span>, header=<span class="keyword">TRUE</span>, sep=<span class="string">","</span>)</div></td>
+        <td><div class="codeblock">
+            <pre><span class="keyword">import</span> tech.tablesaw.api.Table
+            customerData <- Table.read().csv(<span class="string">"some/path/input.csv"</span>)</pre>
+        </div></td>
     </tr>
     <tr>
         <td>Handle json</td>
-        <td>org.renjin.cran:rjson</td>
-        <td>Used version 0.2.15-renjin-21</td>
-        <td><div class="codeblock"><span class="keyword">library</span>(<span class="string">'org.renjin.cran:rjson'</span>)<br/>
-            myJson <- fromJSON(someJsonString)
+        <td>Groovy core functionality</td>
+        <td></td>
+        <td><div class="codeblock">
+            <pre><span class="keyword">def</span> jsonSlurper = <span class="keyword">new</span> groovy.json.JsonSlurper()
+            <span class="keyword">def calculatedScore</span> = jsonSlurper.parseText(json)</pre>
         </div>
         </td>
     </tr>
     <tr>
-        <td>Handle XML: several alternatives</td>
-        <td>org.renjin.cran:xml2<br/>
-            org.renjin.cran:xmlr<br/>
-            org.renjin.cran:XiMpLe
-        </td>
-        <td>xml2 ver: 1.2-renjin-10<br/>
-            xmlr ver: 0.1.2<br/>
-            XiMpLe ver: 0.10-2-b6</td>
+        <td>Handle XML</td>
+        <td>built into Groovy</td>
+        <td></td>
         <td><div class="codeblock">
-            <span class="keyword">library</span>(<span class="string">'org.renjin.cran:xmlr'</span>)<br/>
-            doc <- Document$new()<br/>
-            root <- Element$new(<span class="string">"table"</span>)
-            root$setAttribute(<span class="string">"xmlns"</span>, <span class="string">"http://www.w3.org/TR/html4/"</span>)
-
-            root$addContent(
-            Element$new(<span class="string">"tr"</span>)
-            $addContent(Element$new(<span class="string">"td"</span>)$setText(<span class="string">"Apples"</span>))
-            $addContent(Element$new(<span class="string">"td"</span>)$setText(<span class="string">"Bananas"</span>))
-            )
-            doc$setRootElement(root)
+            def list = new groovy.xml.XmlSlurper().parseText(text)
         </div>
         </td>
     </tr>

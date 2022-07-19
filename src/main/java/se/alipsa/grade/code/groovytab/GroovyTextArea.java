@@ -32,7 +32,7 @@ public class GroovyTextArea extends CodeTextArea {
           "def", "default", "do", "double",
           "else", "enum", "extends",
           "false", "final", "finally", "float", "for",
-          "goto",
+          "goto", "@Grab",
           "if", "implements", "import", "in", "instanceof", "int", "interface",
           "long",
           "native", "new", "null",
