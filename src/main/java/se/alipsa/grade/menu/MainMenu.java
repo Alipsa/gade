@@ -690,6 +690,11 @@ public class MainMenu extends MenuBar {
     content.append(formatNumber(Math.round((double)freeMem / 1024 / 1024))).append(" MB");
     content.append("\n Maximum allowed memory: ");
     content.append(formatNumber(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024))).append(" MB");
+
+    content.append("\n\n Java Runtime Version: ")
+        .append(System.getProperty("java.runtime.version"))
+        .append(" (").append(System.getProperty("os.arch")).append(")")
+        .append("\n Groovy version: ").append(GroovySystem.getVersion());
     showInfoAlert("Session info", content, 600, 300);
   }
 
