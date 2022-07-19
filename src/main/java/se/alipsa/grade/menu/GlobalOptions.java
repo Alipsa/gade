@@ -7,9 +7,14 @@ public class GlobalOptions extends HashMap<String, Object> {
 
   public static final String CONSOLE_MAX_LENGTH_PREF = "ConsoleTextArea.MaxLength";
   public static final String MAVEN_HOME = "GlobalOptions.MavenHome";
+  public static final String GRADLE_HOME = "GlobalOptions.GradleHome";
   public static final String USE_MAVEN_CLASSLOADER = "GlobalOptions.UseMavenClassloader";
+
+  public static final String USE_GRADLE_CLASSLOADER = "GlobalOptions.UseGradleClassloader";
   public static final String ADD_BUILDDIR_TO_CLASSPATH = "GlobalOptions.AddBuildDirToClasspath";
   public static final String RESTART_SESSION_AFTER_MVN_RUN = "GlobalOptions.restartSessionAfterMavenBuild";
+
+  public static final String RESTART_SESSION_AFTER_GRADLE_RUN = "GlobalOptions.restartSessionAfterGradleBuild";
   public static final String ENABLE_GIT = "GlobalOptions.EnableGit";
   public static final String AUTORUN_GLOBAL = "GlobalOptions.AutoRunGlobal";
   public static final String AUTORUN_PROJECT = "GlobalOptions.AutoRunProject";
