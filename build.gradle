@@ -12,6 +12,10 @@ javafx {
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
 }
 
+application {
+    mainClass = 'se.alipsa.grade.Grade'
+}
+
 /*
 jlink {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
