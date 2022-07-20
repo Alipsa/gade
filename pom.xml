@@ -44,7 +44,6 @@
         <javafx.version>18.0.1</javafx.version>
         <jersey.version>3.0.4</jersey.version>
         <gradle.tooling.version>7.5</gradle.tooling.version>
-        <gradle.version>7.4.2</gradle.version>
     </properties>
 
     <repositories>
@@ -349,35 +348,6 @@
             <artifactId>gradle-tooling-api</artifactId>
             <version>${gradle.tooling.version}</version>
         </dependency>
-        <!--dependency>
-            <groupId>org.gradle</groupId>
-            <artifactId>gradle-core</artifactId>
-            <version>${gradle.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.gradle</groupId>
-            <artifactId>gradle-resources</artifactId>
-            <version>${gradle.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.gradle</groupId>
-            <artifactId>gradle-messaging</artifactId>
-            <version>${gradle.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.gradle</groupId>
-            <artifactId>gradle-base-services</artifactId>
-            <version>${gradle.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.gradle</groupId>
-            <artifactId>gradle-wrapper</artifactId>
-            <version>${gradle.version}</version>
-            <scope>runtime</scope>
-        </dependency-->
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>

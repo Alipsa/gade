@@ -6,8 +6,9 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import se.alipsa.grade.utils.git.GitUtils;
+import se.alipsa.grade.utils.git.SshTransportConfigCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,17 +23,20 @@ public class GitTest {
   @Test
   public void testGitFetch() throws IOException, URISyntaxException, GitAPIException {
     File curDir = new File(".");
-    while (!curDir.getName().equals("ride") && curDir.getParentFile() != null) {
+    while (!curDir.getName().equals("grade") && curDir.getParentFile() != null) {
       curDir = curDir.getParentFile();
     }
     File gradeDir = curDir;
     Git git = Git.open(gradeDir);
+
     String url = git.getRepository().getConfig().getString("remote", "origin", "url");
     log.info("remote origin Url is " + url);
     log.info("Getting credentials");
+    SshTransportConfigCallback sshTransportConfigCallback = new SshTransportConfigCallback(url);
     CredentialsProvider credentialsProvider = GitUtils.getStoredCredentials(url);
     log.info("Fetching...");
-    FetchCommand fetchCommand = git.fetch();
+    FetchCommand fetchCommand = git.fetch()
+        .setTransportConfigCallback(sshTransportConfigCallback);
     if (credentialsProvider != null) {
       fetchCommand.setCredentialsProvider(credentialsProvider);
     }
@@ -51,6 +55,7 @@ public class GitTest {
     }
     File gradeDir = curDir;
     Git git = Git.open(gradeDir);
+
     String url = git.getRepository().getConfig().getString("remote", "origin", "url");
 
     Thread runningThread = new Thread(() -> {
@@ -60,7 +65,10 @@ public class GitTest {
         log.info("Getting credentials in thread");
         CredentialsProvider credentialsProvider = GitUtils.getStoredCredentials(url);
         log.info("Fetching in thread...");
-        FetchResult fetchResult = git.fetch().setCredentialsProvider(credentialsProvider).call();
+        SshTransportConfigCallback sshTransportConfigCallback = new SshTransportConfigCallback(url);
+        FetchResult fetchResult = git.fetch()
+            .setTransportConfigCallback(sshTransportConfigCallback)
+            .setCredentialsProvider(credentialsProvider).call();
         log.info("Messages: {}", fetchResult.getMessages());
         log.info("Tracking refs: {}", fetchResult.getTrackingRefUpdates().stream().map(r -> r.toString()).collect(Collectors.joining(", ")));
       } catch (Exception e) {

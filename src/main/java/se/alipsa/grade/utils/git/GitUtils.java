@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 public class GitUtils {
 
@@ -98,6 +99,11 @@ public class GitUtils {
    }
 
    public static CredentialsProvider getStoredCredentials(String url) throws IOException, URISyntaxException {
+      var userPwd = findUserNamePassword(url);
+      return userPwd == null ? null : new UsernamePasswordCredentialsProvider(userPwd.get("username"), userPwd.get("password"));
+   }
+
+   public static Map<String,String> findUserNamePassword(String url) throws IOException, URISyntaxException {
       File gitCredentials = getCredentialsFile();
       if (!gitCredentials.exists()) {
          log.info("No credentials file ({}) found", CREDENTIALS_FILENAME);
@@ -108,6 +114,7 @@ public class GitUtils {
       }
       URIish remoteUri = new URIish(url);
       List<String> lines = Files.readAllLines(gitCredentials.toPath());
+
       for (String line : lines) {
          if (line == null || line.trim().equals("") || line.trim().startsWith("#")) {
             continue;
@@ -117,21 +124,24 @@ public class GitUtils {
          String remotePath = remoteUri.getPath();
          // if uri.getPath() == null it should always match, see https://git-scm.com/docs/gitcredentials
          if (uriPath == null) {
-           uriPath = "";
-           remotePath = "";
+            uriPath = "";
+            remotePath = "";
          }
+         // Convert null to "null" so equals is safe
+         String scheme = String.valueOf(uri.getScheme());
+         String remoteScheme = String.valueOf(remoteUri.getScheme());
 
-         if (uri.getScheme().equals(remoteUri.getScheme())
-            && uri.getHost().equals(remoteUri.getHost())
-            && uriPath.equals(remotePath)) {
+         if (scheme.equals(remoteScheme)
+             && uri.getHost().equals(remoteUri.getHost())
+             && uriPath.equals(remotePath)) {
 
-            return new UsernamePasswordCredentialsProvider(uri.getUser(), uri.getPass());
+            return Map.of("username", uri.getUser(), "password", uri.getPass());
          }
       }
       return null;
    }
 
-   private static File getCredentialsFile() {
+   public static File getCredentialsFile() {
       return new File(FileUtils.getUserHome(), CREDENTIALS_FILENAME);
    }
 
@@ -160,7 +170,10 @@ public class GitUtils {
            remotePath = "";
         }
 
-        if (uri.getScheme().equals(remoteUri.getScheme())
+        String scheme = String.valueOf(uri.getScheme());
+        String remoteScheme = String.valueOf(remoteUri.getScheme());
+
+        if (scheme.equals(remoteScheme)
             && uri.getHost().equals(remoteUri.getHost())
             && uriPath.equals(remotePath)) {
 
