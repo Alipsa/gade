@@ -2,8 +2,7 @@ package se.alipsa.grade;
 
 import static se.alipsa.grade.Constants.BRIGHT_THEME;
 import static se.alipsa.grade.Constants.THEME;
-import static se.alipsa.grade.menu.GlobalOptions.DEFAULT_LOCALE;
-import static se.alipsa.grade.menu.GlobalOptions.MAVEN_HOME;
+import static se.alipsa.grade.menu.GlobalOptions.*;
 
 import groovy.lang.GroovyClassLoader;
 import javafx.application.Application;
@@ -25,7 +24,7 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.grade.interaction.*;
-import se.alipsa.maven.MavenUtils;
+import se.alipsa.grade.utils.gradle.GradleUtils;
 import se.alipsa.grade.code.CodeComponent;
 import se.alipsa.grade.console.ConsoleComponent;
 import se.alipsa.grade.environment.EnvironmentComponent;
@@ -80,10 +79,10 @@ public class Grade extends Application {
 
     Locale.setDefault(Locale.forLanguageTag(getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag())));
 
-    // Allow global option for MAVEN_HOME to override system settings.
-    String mavenHome = getPrefs().get(MAVEN_HOME, MavenUtils.locateMavenHome());
-    if (mavenHome != null && !mavenHome.isBlank()) {
-      System.setProperty("MAVEN_HOME", mavenHome);
+    // Allow global option for GRADLE_HOME to override system settings.
+    String gradleHome = getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome());
+    if (gradleHome != null && !gradleHome.isBlank()) {
+      System.setProperty("GRADLE_HOME", gradleHome);
     }
     BorderPane root = new BorderPane();
     VBox main = new VBox();

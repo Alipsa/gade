@@ -8,11 +8,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.DirectoryChooser;
 import se.alipsa.grade.Grade;
 import se.alipsa.grade.utils.ExceptionAlert;
 import se.alipsa.grade.utils.GuiUtils;
 import se.alipsa.grade.utils.IntField;
 
+import java.io.File;
 import java.util.*;
 
 class GlobalOptionsDialog extends Dialog<GlobalOptions> {
@@ -20,9 +22,6 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
   private IntField intField;
   private ComboBox<String> themes;
   private ComboBox<String> locals;
-  private CheckBox useMavenFileClasspath;
-  private TextField mavenHome;
-  private CheckBox restartSessionAfterMvnRun;
   private TextField gradleHome;
   private CheckBox useGradleFileClasspath;
   private CheckBox restartSessionAfterGradleRun;
@@ -69,63 +68,35 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       locals.getSelectionModel().select(gui.getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag()));
       grid.add(locals, 3, 1);
 
-      FlowPane cpPane = new FlowPane();
-      grid.add(cpPane, 0,2, 4, 1);
-
-      Label useMavenFileClasspathLabel = new Label("Use pom classpath");
-      useMavenFileClasspathLabel.setTooltip(new Tooltip("Use classpath from pom.xml (if available) when running Groovy code"));
-      useMavenFileClasspathLabel.setPadding(new Insets(0, 37, 0, 0));
-      cpPane.getChildren().add(useMavenFileClasspathLabel);
-      useMavenFileClasspath = new CheckBox();
-      useMavenFileClasspath.setSelected(gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false));
-      cpPane.getChildren().add(useMavenFileClasspath);
-
-      Label addBuildDirToClasspathLabel = new Label("Add build dir to classpath");
-      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 70));
-      addBuildDirToClasspathLabel.setTooltip(new Tooltip("Add target/classes and target/test-classes to classpath"));
-      cpPane.getChildren().add(addBuildDirToClasspathLabel);
-      addBuildDirToClasspath = new CheckBox();
-      addBuildDirToClasspath.setSelected(gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true));
-      cpPane.getChildren().add(addBuildDirToClasspath);
-
-      // When developing packages we need to reload the session after mvn has been run
-      // so that new definitions can be picked up from target/classes.
-      Label restartSessionAfterMvnRunLabel = new Label("Restart session after mvn build");
-      restartSessionAfterMvnRunLabel.setPadding(new Insets(0, 27, 0, 27));
-      restartSessionAfterMvnRunLabel.setTooltip(new Tooltip("When developing packages we need to reload the session after mvn has been run\nso that new definitions can be picked up from target/classes"));
-      cpPane.getChildren().add(restartSessionAfterMvnRunLabel);
-      restartSessionAfterMvnRun = new CheckBox();
-      restartSessionAfterMvnRun.setSelected(gui.getPrefs().getBoolean(RESTART_SESSION_AFTER_MVN_RUN, true));
-      cpPane.getChildren().add(restartSessionAfterMvnRun);
-
-      Label mavenHomeLabel = new Label("MAVEN_HOME");
-      mavenHomeLabel.setTooltip(new Tooltip("The location of your maven installation directory"));
-      //mavenHomeLabel.setPadding(new Insets(0, 27, 0, 0));
-      grid.add(mavenHomeLabel, 0,3);
-
-      HBox mavenHomePane = new HBox();
-      mavenHomePane.setAlignment(Pos.CENTER_LEFT);
-      mavenHome = new TextField();
-      HBox.setHgrow(mavenHome, Priority.ALWAYS);
-      mavenHome.setText(gui.getPrefs().get(MAVEN_HOME, System.getProperty("MAVEN_HOME", System.getenv("MAVEN_HOME"))));
-      mavenHomePane.getChildren().add(mavenHome);
-      grid.add(mavenHomePane, 1,3,3, 1);
 
       Label gradleHomeLabel = new Label("GRADLE_HOME");
-      mavenHomeLabel.setTooltip(new Tooltip("The location of your gradle installation directory"));
+      gradleHomeLabel.setTooltip(new Tooltip("The location of your gradle installation directory"));
       //mavenHomeLabel.setPadding(new Insets(0, 27, 0, 0));
-      grid.add(gradleHomeLabel, 0,4);
+      grid.add(gradleHomeLabel, 0,2);
 
       HBox gradleHomePane = new HBox();
       gradleHomePane.setAlignment(Pos.CENTER_LEFT);
       gradleHome = new TextField();
       HBox.setHgrow(gradleHome, Priority.ALWAYS);
-      gradleHome.setText(gui.getPrefs().get(GRADLE_HOME, System.getProperty("GRADLE_HOME", System.getenv("GRADLE_HOME"))));
+      var defaultGradleHome = gui.getPrefs().get(GRADLE_HOME, System.getProperty("GRADLE_HOME", System.getenv("GRADLE_HOME")));
+      gradleHome.setText(defaultGradleHome);
       gradleHomePane.getChildren().add(gradleHome);
-      grid.add(gradleHomePane, 1,4,3, 1);
+      Button browseGradleHomeButton = new Button("...");
+      browseGradleHomeButton.setOnAction(a -> {
+        DirectoryChooser chooser = new DirectoryChooser();
+        String initial = defaultGradleHome == null || "".equals(defaultGradleHome) ? "." : defaultGradleHome;
+        chooser.setInitialDirectory(new File(initial));
+        chooser.setTitle("Select Gradle home dir");
+        File dir = chooser.showDialog(gui.getStage());
+        if (dir != null) {
+          gradleHome.setText(dir.getAbsolutePath());
+        }
+      });
+      gradleHomePane.getChildren().add(browseGradleHomeButton);
+      grid.add(gradleHomePane, 1,2,3, 1);
 
       FlowPane gradlePane = new FlowPane();
-      grid.add(gradlePane, 0,5, 4, 1);
+      grid.add(gradlePane, 0,3, 4, 1);
 
       Label useGradleFileClasspathLabel = new Label("Use build.gradle classpath");
       useGradleFileClasspathLabel.setTooltip(new Tooltip("Use classpath from build.gradle (if available) when running Groovy code"));
@@ -134,6 +105,14 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       useGradleFileClasspath = new CheckBox();
       useGradleFileClasspath.setSelected(gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
       gradlePane.getChildren().add(useGradleFileClasspath);
+
+      Label addBuildDirToClasspathLabel = new Label("Add build dir to classpath");
+      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 70));
+      addBuildDirToClasspathLabel.setTooltip(new Tooltip("Add target/classes and target/test-classes to classpath"));
+      gradlePane.getChildren().add(addBuildDirToClasspathLabel);
+      addBuildDirToClasspath = new CheckBox();
+      addBuildDirToClasspath.setSelected(gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true));
+      gradlePane.getChildren().add(addBuildDirToClasspath);
 
       // When developing packages we need to reload the session after mvn has been run
       // so that new definitions can be picked up from target/classes.
@@ -153,7 +132,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       enableGit = new CheckBox();
       enableGit.setSelected(gui.getPrefs().getBoolean(ENABLE_GIT, true));
       gitOptionPane.getChildren().add(enableGit);
-      grid.add(gitOptionPane, 0, 6, 2, 1);
+      grid.add(gitOptionPane, 0, 4, 2, 1);
 
       FlowPane autoRunPane = new FlowPane();
       Label autoRunGlobalLabel = new Label("Run global autorun.groovy on session init");
@@ -170,7 +149,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       autoRunProject.setSelected(gui.getPrefs().getBoolean(AUTORUN_PROJECT, false));
       autoRunPane.getChildren().addAll(autoRunProjectLabel, autoRunProject);
 
-      grid.add(autoRunPane, 0,7, 4, 1);
+      grid.add(autoRunPane, 0,5, 4, 1);
 
       FlowPane executionPane = new FlowPane();
       Label addImportsLabel = new Label("Add imports when running Groovy snippets");
@@ -179,9 +158,9 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       addImports = new CheckBox();
       addImports.setSelected(gui.getPrefs().getBoolean(ADD_IMPORTS, gui.getPrefs().getBoolean(ADD_IMPORTS, true)));
       executionPane.getChildren().add(addImports);
-      grid.add(executionPane, 0, 8,4, 1);
+      grid.add(executionPane, 0, 6,4, 1);
 
-      getDialogPane().setPrefSize(800, 530);
+      getDialogPane().setPrefSize(800, 300);
       getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
       setResizable(true);
 
@@ -198,9 +177,10 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     result.put(CONSOLE_MAX_LENGTH_PREF, intField.getValue());
     result.put(THEME, themes.getValue());
     result.put(DEFAULT_LOCALE, locals.getValue());
-    result.put(USE_MAVEN_CLASSLOADER, useMavenFileClasspath.isSelected());
+    result.put(USE_GRADLE_CLASSLOADER, useGradleFileClasspath.isSelected());
+    result.put(GRADLE_HOME, gradleHome.getText());
     result.put(ADD_BUILDDIR_TO_CLASSPATH, addBuildDirToClasspath.isSelected());
-    result.put(RESTART_SESSION_AFTER_MVN_RUN, restartSessionAfterMvnRun.isSelected());
+    result.put(RESTART_SESSION_AFTER_GRADLE_RUN, restartSessionAfterGradleRun.isSelected());
     result.put(ENABLE_GIT, enableGit.isSelected());
     result.put(AUTORUN_GLOBAL, autoRunGlobal.isSelected());
     result.put(AUTORUN_PROJECT, autoRunProject.isSelected());

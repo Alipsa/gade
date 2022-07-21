@@ -4,8 +4,8 @@ import static se.alipsa.grade.Constants.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.maven.model.Dependency;
 import se.alipsa.grade.Grade;
+import se.alipsa.grade.model.Dependency;
 
 import java.io.File;
 

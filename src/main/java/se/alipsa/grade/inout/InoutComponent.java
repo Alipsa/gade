@@ -1,7 +1,6 @@
 package se.alipsa.grade.inout;
 
-import static se.alipsa.grade.menu.GlobalOptions.ENABLE_GIT;
-import static se.alipsa.grade.menu.GlobalOptions.USE_MAVEN_CLASSLOADER;
+import static se.alipsa.grade.menu.GlobalOptions.*;
 import static se.alipsa.grade.utils.TableUtils.transpose;
 
 import javafx.application.Platform;
@@ -140,7 +139,7 @@ public class InoutComponent extends TabPane  {
   public void changeRootDir(File dir) {
     if (!dir.equals(projectDir())) {
       fileTree.refresh(dir);
-      if (gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false)) {
+      if (gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false)) {
         //gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
         gui.getConsoleComponent().initGroovy(gui.dynamicClassLoader);
       }

@@ -1,6 +1,5 @@
 package se.alipsa.grade.inout;
 
-import static org.apache.maven.shared.utils.StringUtils.isBlank;
 import static se.alipsa.grade.Constants.REPORT_BUG;
 import static se.alipsa.grade.utils.git.GitUtils.asRelativePath;
 
@@ -15,7 +14,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.TreeItem;
 import org.apache.commons.io.output.WriterOutputStream;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.CommitCommand;
@@ -44,10 +42,7 @@ import se.alipsa.grade.inout.git.ConfigResult;
 import se.alipsa.grade.inout.git.CredentialsDialog;
 import se.alipsa.grade.inout.git.GitConfigureDialog;
 import se.alipsa.grade.inout.git.GitStatusDialog;
-import se.alipsa.grade.utils.Alerts;
-import se.alipsa.grade.utils.ExceptionAlert;
-import se.alipsa.grade.utils.FileUtils;
-import se.alipsa.grade.utils.GuiUtils;
+import se.alipsa.grade.utils.*;
 import se.alipsa.grade.utils.git.GitUtils;
 
 import java.io.File;
@@ -278,7 +273,7 @@ public class DynamicContextMenu extends ContextMenu {
          gitBranchMenu.getItems().add(gitBranchMergeMI);
 
          // Remote sub menu
-         boolean haveRemote = !isBlank(getRemoteGitUrl());
+         boolean haveRemote = !StringUtils.isBlank(getRemoteGitUrl());
          Menu gitRemoteMenu = new Menu("Remote");
          gitMenu.getItems().add(gitRemoteMenu);
 

@@ -72,9 +72,17 @@ public class MavenRepoLookup {
     return versionList;
   }
 
+  public static String artifactUrl(String groupId, String artifactId, String version, String repositoryUrl) {
+    return repositoryUrl + groupUrlPart(groupId) + artifactId + "/" + version + "/"
+        + artifactId + "-" + version + ".jar";
+  }
+
+  public static String groupUrlPart(String groupId) {
+    return groupId.replace('.', '/') + "/";
+  }
+
   public static String metaDataUrl(String groupId, String artifactId, String repositoryUrl) {
-    String groupUrlPart = groupId.replace('.', '/') + "/";
-    return repositoryUrl + groupUrlPart + artifactId + "/maven-metadata.xml";
+    return repositoryUrl + groupUrlPart(groupId) + artifactId + "/maven-metadata.xml";
   }
 
   public static String toShortDependency(String groupId, String artifactId, String version) {

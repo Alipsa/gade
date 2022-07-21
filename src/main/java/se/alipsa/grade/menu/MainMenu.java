@@ -582,7 +582,7 @@ public class MainMenu extends MenuBar {
   private void handleGlobalOptions(ActionEvent actionEvent) {
     GlobalOptionsDialog dialog = new GlobalOptionsDialog(gui);
     Optional<GlobalOptions> res = dialog.showAndWait();
-    boolean shouldRestartR = false;
+    boolean shouldRestart = false;
 
     if (res.isEmpty()) {
       return;
@@ -591,10 +591,10 @@ public class MainMenu extends MenuBar {
     gui.setWaitCursor();
     GlobalOptions result = res.get();
 
-    String mavenHome = result.getString(MAVEN_HOME);
-    if (mavenHome != null && !mavenHome.isBlank()) {
-      System.setProperty("MAVEN_HOME", mavenHome);
-      gui.getPrefs().put(MAVEN_HOME, mavenHome);
+    String gradleHome = result.getString(GRADLE_HOME);
+    if (gradleHome != null && !gradleHome.isBlank()) {
+      System.setProperty("GRADLE_HOME", gradleHome);
+      gui.getPrefs().put(GRADLE_HOME, gradleHome);
     }
 
     int consoleMaxLength = result.getInt(CONSOLE_MAX_LENGTH_PREF);
@@ -612,21 +612,21 @@ public class MainMenu extends MenuBar {
 
     Locale.setDefault(Locale.forLanguageTag(result.getString(DEFAULT_LOCALE)));
 
-    boolean useMavenClassLoader = result.getBoolean(USE_MAVEN_CLASSLOADER);
-    if (useMavenClassLoader != gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, !useMavenClassLoader)) {
-      log.info("useMavenClassLoader changed, restarting Groovy session");
-      gui.getPrefs().putBoolean(USE_MAVEN_CLASSLOADER, useMavenClassLoader);
-      shouldRestartR = true;
+    boolean useGradleClassLoader = result.getBoolean(USE_GRADLE_CLASSLOADER);
+    if (useGradleClassLoader != gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, !useGradleClassLoader)) {
+      log.info("useGradleClassLoader changed, restarting Groovy session");
+      gui.getPrefs().putBoolean(USE_GRADLE_CLASSLOADER, useGradleClassLoader);
+      shouldRestart = true;
     }
 
-    boolean restartSessionAfterMaven = result.getBoolean(RESTART_SESSION_AFTER_MVN_RUN);
-    gui.getPrefs().putBoolean(RESTART_SESSION_AFTER_MVN_RUN, restartSessionAfterMaven);
+    boolean restartSessionAfterGradle = result.getBoolean(RESTART_SESSION_AFTER_GRADLE_RUN);
+    gui.getPrefs().putBoolean(RESTART_SESSION_AFTER_GRADLE_RUN, restartSessionAfterGradle);
 
     boolean addBuildDirToClasspath = result.getBoolean(ADD_BUILDDIR_TO_CLASSPATH);
     if (addBuildDirToClasspath != gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, !addBuildDirToClasspath)) {
       log.info("addBuildDirToClasspath changed, restarting Groovy session");
       gui.getPrefs().putBoolean(ADD_BUILDDIR_TO_CLASSPATH, addBuildDirToClasspath);
-      shouldRestartR = true;
+      shouldRestart = true;
     }
 
     boolean enableGit = result.getBoolean(ENABLE_GIT);
@@ -645,7 +645,7 @@ public class MainMenu extends MenuBar {
 
     gui.getPrefs().putBoolean(ADD_IMPORTS, result.getBoolean(ADD_IMPORTS));
 
-    if (shouldRestartR) {
+    if (shouldRestart) {
       restartR();
     }
 

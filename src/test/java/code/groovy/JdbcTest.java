@@ -1,5 +1,6 @@
 package code.groovy;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
@@ -22,6 +23,7 @@ import java.util.Scanner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SuppressFBWarnings()
 public class JdbcTest {
 
   private static final String dbDriver = "org.h2.Driver";

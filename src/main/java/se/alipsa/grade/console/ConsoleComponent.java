@@ -2,14 +2,9 @@ package se.alipsa.grade.console;
 
 import static se.alipsa.grade.Constants.*;
 import static se.alipsa.grade.menu.GlobalOptions.*;
-import static se.alipsa.grade.utils.StringUtils.format;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
-import io.github.classgraph.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -23,11 +18,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
-import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.Nullable;
 import se.alipsa.grade.Constants;
@@ -37,8 +30,7 @@ import se.alipsa.grade.environment.EnvironmentComponent;
 import se.alipsa.grade.utils.Alerts;
 import se.alipsa.grade.utils.ExceptionAlert;
 import se.alipsa.grade.utils.FileUtils;
-import se.alipsa.maven.DependenciesResolveException;
-import se.alipsa.maven.MavenUtils;
+import se.alipsa.grade.utils.gradle.GradleUtils;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -66,12 +58,10 @@ public class ConsoleComponent extends BorderPane {
 
   private Thread runningThread;
   private final Map<Thread, String> threadMap = new HashMap<>();
-  private final MavenUtils mavenUtils;
   private ScriptEngine engine;
 
   public ConsoleComponent(Grade gui) {
     this.gui = gui;
-    mavenUtils = new MavenUtils();
     console = new ConsoleTextArea(gui);
     console.setEditable(false);
 
@@ -163,13 +153,13 @@ public class ConsoleComponent extends BorderPane {
         throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
       }
 
-      log.info("USE_MAVEN_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false));
+      log.info("USE_GRADLE_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
 
       classLoader = new GroovyClassLoader(parentClassLoader);
 
       boolean useMavenClassloader = skipMavenClassloading.length > 0
           ? !skipMavenClassloading[0]
-          : gui.getPrefs().getBoolean(USE_MAVEN_CLASSLOADER, false);
+          : gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
 
 
       if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
@@ -196,27 +186,28 @@ public class ConsoleComponent extends BorderPane {
         }
 
         if (useMavenClassloader) {
-          File pomFile = new File(gui.getInoutComponent().projectDir(), "pom.xml");
-          if (pomFile.exists()) {
-            log.debug("Parsing pom to use maven classloader");
-            console.appendFx("* Parsing pom to create maven classloader...", true);
+          File projectDir = gui.getInoutComponent().projectDir();
+          File gradleHome = new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome()));
+          File gradleFile = new File(projectDir, "build.gradle");
+          if (gradleFile.exists() && gradleHome.exists()) {
+            log.debug("Parsing build.gradle to use gradle classloader");
+            console.appendFx("* Parsing build.gradle to create Gradle classloader...", true);
             try {
-              classLoader = new GroovyClassLoader(mavenUtils.getMavenDependenciesClassloader(pomFile, classLoader));
+              var gradleUtils = new GradleUtils(gui);
+              classLoader = new GroovyClassLoader(gradleUtils.createGradleCLassLoader(classLoader));
             } catch (Exception e) {
-              if (e instanceof DependenciesResolveException) {
-                Platform.runLater(() -> ExceptionAlert.showAlert("Failed to resolve maven dependency: " + e.getMessage(), e));
-                log.info("Initializing groovy without maven...");
+              if (e instanceof MalformedURLException) {
+                Platform.runLater(() -> ExceptionAlert.showAlert("Failed to resolve gradle dependency: " + e.getMessage(), e));
+                log.info("Initializing groovy without Gradle...");
               } else {
                 throw e;
               }
             }
           } else {
-            log.info("Use maven class loader is set but pomfile {} does not exist", pomFile);
+            log.info("Use gradle class loader is set but gradle build file {} does not exist", gradleFile);
           }
         }
       }
-      // TODO do something with the classloader
-      //engine = new GroovyScriptEngineImpl(gui.dynamicClassLoader);
       engine = new GroovyScriptEngineImpl(classLoader);
       gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
       return null;
@@ -819,10 +810,6 @@ public class ConsoleComponent extends BorderPane {
   public ClassLoader getGroovyClassLoader() {
     // TODO find a proper way
     return engine.getContext().getClass().getClassLoader();
-  }
-
-  public MavenUtils getMavenUtils() {
-    return mavenUtils;
   }
 
   public ClassLoader getClassLoader() {

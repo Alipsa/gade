@@ -1,6 +1,5 @@
 package se.alipsa.grade.utils.git;
 
-import static org.apache.maven.shared.utils.StringUtils.isBlank;
 import static se.alipsa.grade.Constants.GitStatus.GIT_ADDED;
 import static se.alipsa.grade.Constants.GitStatus.GIT_CHANGED;
 import static se.alipsa.grade.Constants.GitStatus.GIT_CONFLICT;
@@ -9,6 +8,7 @@ import static se.alipsa.grade.Constants.GitStatus.GIT_MODIFIED;
 import static se.alipsa.grade.Constants.GitStatus.GIT_NONE;
 import static se.alipsa.grade.Constants.GitStatus.GIT_UNCOMITTED_CHANGE;
 import static se.alipsa.grade.Constants.GitStatus.GIT_UNTRACKED;
+import static se.alipsa.grade.utils.StringUtils.isBlank;
 
 import javafx.scene.control.TreeItem;
 import org.apache.logging.log4j.LogManager;
