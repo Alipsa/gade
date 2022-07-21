@@ -2,15 +2,14 @@ package utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.maven.settings.building.SettingsBuildingException;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.junit.jupiter.api.Test;
+import se.alipsa.grade.model.Dependency;
 import se.alipsa.grade.utils.FileUtils;
 import se.alipsa.grade.utils.gradle.GradleUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Objects;
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,23 +37,17 @@ public class GradleUtilsTest {
   }
 
   @Test
-  public void testDownloadArtifact() throws SettingsBuildingException, ArtifactResolutionException {
-    File localRepo = GradleUtils.getLocalRepository().getBasedir();
-    assertNotNull(localRepo);
-    File artifactDir = new File(localRepo, "org/slf4j/slf4j-api/1.7.32");
+  public void testDownloadArtifact() throws IOException {
+    Dependency dependency = new Dependency("org.slf4j:slf4j-api:1.7.36");
+    File artifactDir = GradleUtils.cachedFile(dependency);
     if (artifactDir.exists()) {
       log.info("Deleting files in {} to ensure remote download works", artifactDir.getAbsolutePath());
-      for (File file : Objects.requireNonNull(artifactDir.listFiles())) {
-        if ("slf4j-api-1.7.32.jar".equals(file.getName()) || "slf4j-api-1.7.32.jar.sha1".equals(file.getName())) {
-          log.info("Deleting {}", file.getName());
-          assertTrue(file.delete(), "Failed to delete " + file.getAbsolutePath());
-        }
-      }
+      GradleUtils.purgeCache(dependency);
     } else {
       log.info("{} does not exist: no problem, we are going to fetch it!", artifactDir.getAbsolutePath());
     }
-    File file = GradleUtils.resolveArtifact("org.slf4j", "slf4j-api", null, "jar", "1.7.32");
+    File file = GradleUtils.downloadArtifact(dependency);
     assertTrue(file.exists(), "File does not exist");
-    assertEquals("slf4j-api-1.7.32.jar", file.getName(), "File name is wrong");
+    assertEquals("slf4j-api-1.7.36.jar", file.getName(), "File name is wrong");
   }
 }

@@ -95,15 +95,7 @@ dependencies {
     implementation 'se.alipsa.groovy:data-utils:1.0.0'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
-    // TODO: All of these to be able to resolve a single artifact (GradleUtils.resolveArtifact()), find a better way!
-    implementation 'org.apache.maven.resolver:maven-resolver-impl:1.8.1'
-    implementation 'org.apache.maven:maven-resolver-provider:3.8.6'
-    implementation 'org.apache.maven.resolver:maven-resolver-connector-basic:1.8.1'
-    implementation 'org.apache.maven.resolver:maven-resolver-transport-file:1.8.1'
-    implementation 'org.apache.maven.resolver:maven-resolver-transport-http:1.8.1'
-    implementation 'org.apache.maven:maven-settings:3.8.6'
-    implementation 'org.apache.maven:maven-settings-builder:3.8.6'
-
+    implementation 'org.apache.maven:maven-artifact:3.8.6'
     testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.18.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'net.jodah:concurrentunit:0.4.6'

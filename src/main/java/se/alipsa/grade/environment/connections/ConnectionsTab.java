@@ -27,21 +27,20 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.maven.settings.building.SettingsBuildingException;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.grade.Constants;
 import se.alipsa.grade.Grade;
 import se.alipsa.grade.UnStyledCodeArea;
 import se.alipsa.grade.code.CodeType;
 import se.alipsa.grade.code.groovytab.GroovyTextArea;
+import se.alipsa.grade.model.Dependency;
 import se.alipsa.grade.model.TableMetaData;
 import se.alipsa.grade.utils.*;
 import se.alipsa.grade.utils.gradle.GradleUtils;
 import tech.tablesaw.api.Table;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -805,10 +804,9 @@ public class ConnectionsTab extends Tab {
     Driver driver;
 
     try {
-      GradleUtils gradleUtils = new GradleUtils(gui);
-      String[] dep = ci.getDependency().split(":");
+      Dependency dep = new Dependency(ci.getDependency());
       log.info("Resolving dependency {}", ci.getDependency());
-      File jar = gradleUtils.resolveArtifact(dep[0], dep[1], null, "jar", dep[2]);
+      File jar = GradleUtils.downloadArtifact(dep);
       URL url = jar.toURI().toURL();
       URL[] urls = new URL[]{url};
       log.info("Dependency url is {}", urls[0]);
@@ -822,7 +820,7 @@ public class ConnectionsTab extends Tab {
         gui.dynamicClassLoader.addURL(url);
       }
 
-    } catch (ArtifactResolutionException | MalformedURLException | SettingsBuildingException | FileNotFoundException e) {
+    } catch (IOException e) {
       Platform.runLater(() ->
           ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
       );
@@ -864,9 +862,7 @@ public class ConnectionsTab extends Tab {
         }
       }
     }
-    if (gui != null) {
-      gui.setNormalCursor();
-    }
+    gui.setNormalCursor();
     return driver.connect(ci.getUrl(), props);
   }
 
