@@ -5,10 +5,7 @@ import static se.alipsa.grade.menu.GlobalOptions.GRADLE_HOME;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.gradle.tooling.BuildLauncher;
-import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.ProgressListener;
-import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.*;
 import org.gradle.tooling.model.GradleProject;
 import org.gradle.tooling.model.GradleTask;
 import org.gradle.tooling.model.Task;
@@ -18,6 +15,8 @@ import org.gradle.tooling.model.idea.IdeaProject;
 import org.gradle.tooling.model.idea.IdeaSingleEntryLibraryDependency;
 import org.gradle.util.GradleVersion;
 import se.alipsa.grade.Grade;
+import se.alipsa.grade.console.ConsoleComponent;
+import se.alipsa.grade.console.ConsoleTextArea;
 import se.alipsa.grade.model.Dependency;
 import se.alipsa.grade.utils.FileUtils;
 import se.alipsa.grade.utils.MavenRepoLookup;
@@ -103,9 +102,21 @@ public class GradleUtils {
   }
 
   public void buildProject(String... tasks) {
-    buildProject(null, tasks);
+    ProgressListener listener = new ProgressListener() {
+      final ConsoleTextArea console = Grade.instance().getConsoleComponent().getConsole();
+      @Override
+      public void statusChanged(ProgressEvent progressEvent) {
+        console.appendFx(progressEvent.getDescription(), true);
+      }
+    };
+    buildProject(listener, tasks);
   }
 
+  /**
+   *
+   * @param progressListener may be null
+   * @param tasks the tasks to run e.g. clean build
+   */
   public void buildProject(ProgressListener progressListener, String... tasks) {
     try(ProjectConnection connection = connector.connect()) {
       BuildLauncher build = connection.newBuild();
