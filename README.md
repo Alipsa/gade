@@ -36,14 +36,18 @@ properly, e.g.
 ```shell script
 #!/usr/bin/env bash
 
-# Java is managed by SDK, load it
-source ~/.sdkman/bin/sdkman-init.sh
-# Specify the java version to use
-sdk use 17.0.3.1.fx-librca
+# Add some additional memory
 # Scale the application 200% as we have a Hi-DPI screen, see https://wiki.archlinux.org/index.php/HiDPI#Java_applications
-JAVA_OPTS="-Dglass.gtk.uiScale=200%"
+# use the Marlin java2d rendering engine
+JAVA_OPTS="-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine"
 ```
-The last setting (JAVA_OPTS) is a special variable to add system properties (-D values) to java starting up.
+JAVA_OPTS is a special variable to add system properties (-D values) to java starting up.
+
+On Windows, you can run in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
+in the env.cmd i.e:
+```shell
+SET JAVA_CMD=java
+```
 
 ### A SQL script screenshot
 Showing the result of a select query in the viewer tab and the connection view that is shown when you right-click
