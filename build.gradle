@@ -1,11 +1,19 @@
+// Run `gradle runtimeZip` to create the distributions
 plugins {
     id 'java'
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.13'
-    id 'org.beryx.jlink' version '2.25.0'
+    id 'org.beryx.runtime' version '1.12.7'
     //id "com.github.spotbugs" version "5.0.9"
     id 'maven-publish'
 }
+
+group = 'se.alipsa'
+version = '1.0.0-SNAPSHOT'
+description = 'Grade, A Groovy Analytics Development Environment'
+java.sourceCompatibility = JavaVersion.VERSION_17
+ext.jarName="${rootProject.name}-${version}.jar"
+ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 javafx {
     version = "18.0.1"
@@ -16,14 +24,6 @@ application {
     mainClass = 'se.alipsa.grade.Grade'
 }
 
-/*
-jlink {
-    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-    launcher {
-        name = 'grade'
-    }
-}
- */
 
 repositories {
     //mavenLocal() // Slows down the build, use only if local SNAPSHOTS are needed
@@ -45,25 +45,6 @@ dependencies {
     def tikaVersion = "2.4.1"
     def jgitVersion = "6.2.0.202206071550-r"
     def tablesawVersion = "0.43.1"
-
-    implementation "org.openjfx:javafx-base:${javafx.version}:win"
-    implementation "org.openjfx:javafx-base:${javafx.version}:linux"
-    implementation "org.openjfx:javafx-base:${javafx.version}:mac"
-    implementation "org.openjfx:javafx-controls:${javafx.version}:win"
-    implementation "org.openjfx:javafx-controls:${javafx.version}:linux"
-    implementation "org.openjfx:javafx-controls:${javafx.version}:mac"
-    implementation "org.openjfx:javafx-web:${javafx.version}:win"
-    implementation "org.openjfx:javafx-web:${javafx.version}:linux"
-    implementation "org.openjfx:javafx-web:${javafx.version}:mac"
-    implementation "org.openjfx:javafx-media:${javafx.version}:win"
-    implementation "org.openjfx:javafx-media:${javafx.version}:linux"
-    implementation "org.openjfx:javafx-media:${javafx.version}:mac"
-    implementation "org.openjfx:javafx-swing:${javafx.version}:win"
-    implementation "org.openjfx:javafx-swing:${javafx.version}:linux"
-    implementation "org.openjfx:javafx-swing:${javafx.version}:mac"
-    implementation "org.openjfx:javafx-graphics:${javafx.version}:win"
-    implementation "org.openjfx:javafx-graphics:${javafx.version}:linux"
-    implementation "org.openjfx:javafx-graphics:${javafx.version}:mac"
 
     implementation 'org.jsoup:jsoup:1.15.2'
     implementation 'org.webjars:bootstrap:5.1.3'
@@ -96,23 +77,137 @@ dependencies {
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
     implementation 'org.apache.maven:maven-artifact:3.8.6'
-    testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.18.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.18.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
 
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
 }
 
-group = 'se.alipsa'
-version = '1.0.0-SNAPSHOT'
-description = 'Grade'
-java.sourceCompatibility = JavaVersion.VERSION_17
+processResources.doLast {
+    ant.propertyfile(file: "${projectDir}/version.properties") {
+        ant.entry(key: "version", value: "${project.version}")
+        ant.entry(key: "jar.name", value: "${jarName}")
+        ant.entry(key: "release.tag", value: "${releaseTag}")
+    }
+    ant.copy(file: "${projectDir}/version.properties", todir: "${buildDir}/resources/main" )
+}
 
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
 
 test {
     useJUnitPlatform()
 }
 
+javadoc {
+    source = sourceSets.main.allJava
+}
+
+tasks.register('javadocJar', Jar) {
+    from javadoc
+    archiveClassifier = 'javadoc'
+}
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+runtime {
+    //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
+               'java.management', 'java.sql', 'java.naming']
+    launcher {
+        noConsole = true
+    }
+
+    targetPlatform("linux") {
+        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.4+8/bellsoft-jdk17.0.4+8-linux-amd64-full.tar.gz") {
+            downloadDir = "$projectDir/platform/linux"
+        }
+    }
+    targetPlatform("win") {
+        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.4+8/bellsoft-jdk17.0.4+8-windows-amd64-full.zip") {
+            downloadDir = "$projectDir/platform/win"
+        }
+    }
+    targetPlatform("mac") {
+        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.4+8/bellsoft-jdk17.0.4+8-macos-amd64-full.zip") {
+            downloadDir = "$projectDir/platform/mac"
+        }
+    }
+}
+
+tasks.runtime.doLast {
+    copy {
+        from("$projectDir/src/bin/")
+        into("$buildDir/image/grade-linux/")
+        include 'createLauncher.sh'
+        include '*.png'
+    }
+    copy {
+        from("$projectDir/src/bin/cponly")
+        into("$buildDir/image/grade-linux/")
+        include '*.sh'
+    }
+
+    copy {
+        from("$projectDir/src/bin/")
+        into("$buildDir/image/grade-mac/")
+        include '*.png'
+    }
+    copy {
+        from("$projectDir/src/bin/cponly")
+        into("$buildDir/image/grade-mac/")
+        include '*.sh'
+    }
+
+    copy {
+        from("$projectDir/src/bin/")
+        into("$buildDir/image/grade-win/")
+        include '*.ico'
+        include '*.ps1'
+    }
+    copy {
+        from("$projectDir/src/bin/cponly")
+        into("$buildDir/image/grade-win/")
+    }
+
+    copy {
+        from("$projectDir")
+        into("$buildDir/image/grade-linux/")
+        include 'version.properties'
+    }
+    copy {
+        from("$projectDir")
+        into("$buildDir/image/grade-mac/")
+        include 'version.properties'
+    }
+    copy {
+        from("$projectDir")
+        into("$buildDir/image/grade-win/")
+        include 'version.properties'
+    }
+}
+
+tasks.runtimeZip.doLast {
+    ant.move(todir:"$buildDir") {
+        ant.fileset(dir: "$buildDir") {
+            include(name: "image-*.zip")
+        }
+        ant.mapper(type: "glob", from: "image-*.zip", to: "grade-*-${version}.zip")
+    }
+}
+
+/*
 publishing {
     publications {
         maven(MavenPublication) {
@@ -120,10 +215,7 @@ publishing {
         }
     }
 }
-
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-}
+ */
 
 /* 4.7.1 is the default version for plugin version 5.09
 spotbugs {

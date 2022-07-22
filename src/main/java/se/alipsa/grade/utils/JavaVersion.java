@@ -10,7 +10,7 @@ public final class JavaVersion {
   /**
    *
    * @return the java version currently running
-   * for java < 9 the right-hand side will be returned e.g 1.8 will become 8
+   * for java less than 9 the right-hand side will be returned e.g 1.8 will become 8
    */
   public static int specVersion() {
     double jvmVersion = Double.parseDouble(System.getProperty("java.specification.version"));

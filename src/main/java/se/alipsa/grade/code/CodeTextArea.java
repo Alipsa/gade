@@ -191,6 +191,11 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     moveTo(caretPos);
   }
 
+  /**
+   *
+   * @param selected the selected text
+   * @return the text moved back
+   */
   protected String backIndentText(String selected) {
     String[] lines = selected.split("\n");
     List<String> untabbed = new ArrayList<>();
@@ -216,6 +221,11 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     return String.join("\n", tabbed);
   }
 
+  /**
+   *
+   * @param text the text to style
+   * @return the style spans (highlights)
+   */
   protected abstract StyleSpans<Collection<String>> computeHighlighting(String text);
 
   @Override
@@ -264,6 +274,10 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     }
   }
 
+  /**
+   *
+   * @return the atb containing this text area
+   */
   public TextAreaTab getParentTab() {
     return parentTab;
   }

@@ -1,7 +1,5 @@
 package se.alipsa.grade.code.xmltab;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.grade.Grade;
 import se.alipsa.grade.code.CodeTextArea;

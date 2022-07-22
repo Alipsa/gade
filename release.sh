@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
-mvn clean package site
+gradle clean build runtimeZip
 
-#mvn site
+echo "Release files are:"
+echo "******************"
+ls -1 -r build/libs/*.jar
+ls -1 -r build/*.zip

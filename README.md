@@ -61,7 +61,14 @@ For any issues or feature request etc. on Grade please use the [github issue fea
 
 # Building and compiling
 
-To build Grade, simply do `mvn clean install`
+To build Grade, simply do `gradle build`
+
+A quick development run is simply `gradle run`
+
+To create multi-platform distributions do `gradle clean build runtimeZip`
+You will find the zip distros (gradle-*.zip) in the build dir, and the source jar and javadoc jar in build/libs
+
+If gradle is not your thing and maven is, you can do `mvn package` instead. 
 
 ## 3:rd party software used
 Note: only direct dependencies are listed below.

@@ -9,14 +9,12 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 import se.alipsa.grade.Grade;
 import se.alipsa.grade.code.CodeComponent;
 import se.alipsa.grade.code.CodeTextArea;
-import se.alipsa.grade.console.ConsoleComponent;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static se.alipsa.grade.menu.GlobalOptions.ADD_IMPORTS;
 

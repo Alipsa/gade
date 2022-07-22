@@ -15,7 +15,6 @@ import org.gradle.tooling.model.idea.IdeaProject;
 import org.gradle.tooling.model.idea.IdeaSingleEntryLibraryDependency;
 import org.gradle.util.GradleVersion;
 import se.alipsa.grade.Grade;
-import se.alipsa.grade.console.ConsoleComponent;
 import se.alipsa.grade.console.ConsoleTextArea;
 import se.alipsa.grade.model.Dependency;
 import se.alipsa.grade.utils.FileUtils;
