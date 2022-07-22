@@ -31,8 +31,7 @@ Where D:\whatever is the path to your git for windows installation
 Also set the working dir in the shortcut to wherever you installed Grade.
 
 If you want to override or customize startup options you can create a file called env.sh (or env.cmd) in the base directory
-where you installed (unzipped) Grade. An example would be to set the right java environment variables so the launcher works
-properly, e.g.
+where you installed (unzipped) Grade, e.g:
 ```shell script
 #!/usr/bin/env bash
 
@@ -43,7 +42,7 @@ JAVA_OPTS="-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.renderer=sun.java2d.mar
 ```
 JAVA_OPTS is a special variable to add system properties (-D values) to java starting up.
 
-On Windows, you can run in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
+On Windows, you can run Grade in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
 in the env.cmd i.e:
 ```shell
 SET JAVA_CMD=java
