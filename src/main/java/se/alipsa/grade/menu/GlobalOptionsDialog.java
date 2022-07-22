@@ -95,34 +95,36 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       gradleHomePane.getChildren().add(browseGradleHomeButton);
       grid.add(gradleHomePane, 1,2,3, 1);
 
-      FlowPane gradlePane = new FlowPane();
-      grid.add(gradlePane, 0,3, 4, 1);
+      FlowPane useCpPane = new FlowPane();
+      grid.add(useCpPane, 0,3, 4, 1);
 
       Label useGradleFileClasspathLabel = new Label("Use build.gradle classpath");
       useGradleFileClasspathLabel.setTooltip(new Tooltip("Use classpath from build.gradle (if available) when running Groovy code"));
-      useGradleFileClasspathLabel.setPadding(new Insets(0, 37, 0, 0));
-      gradlePane.getChildren().add(useGradleFileClasspathLabel);
+      useGradleFileClasspathLabel.setPadding(new Insets(0, 26, 0, 0));
+      useCpPane.getChildren().add(useGradleFileClasspathLabel);
       useGradleFileClasspath = new CheckBox();
       useGradleFileClasspath.setSelected(gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
-      gradlePane.getChildren().add(useGradleFileClasspath);
+      useCpPane.getChildren().add(useGradleFileClasspath);
 
       Label addBuildDirToClasspathLabel = new Label("Add build dir to classpath");
-      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 70));
+      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 20));
       addBuildDirToClasspathLabel.setTooltip(new Tooltip("Add target/classes and target/test-classes to classpath"));
-      gradlePane.getChildren().add(addBuildDirToClasspathLabel);
+      useCpPane.getChildren().add(addBuildDirToClasspathLabel);
       addBuildDirToClasspath = new CheckBox();
       addBuildDirToClasspath.setSelected(gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true));
-      gradlePane.getChildren().add(addBuildDirToClasspath);
+      useCpPane.getChildren().add(addBuildDirToClasspath);
 
       // When developing packages we need to reload the session after mvn has been run
       // so that new definitions can be picked up from target/classes.
-      Label restartSessionAfterGradleRunLabel = new Label("Restart session after gradle build");
-      restartSessionAfterGradleRunLabel.setPadding(new Insets(0, 27, 0, 27));
+      FlowPane restartPane = new FlowPane();
+      grid.add(restartPane, 0,4, 4, 1);
+      Label restartSessionAfterGradleRunLabel = new Label("Restart session after build");
+      restartSessionAfterGradleRunLabel.setPadding(new Insets(0, 27, 0, 0));
       restartSessionAfterGradleRunLabel.setTooltip(new Tooltip("When developing packages we need to reload the session after gradle has been run\nso that new definitions can be picked up from the build dir"));
-      gradlePane.getChildren().add(restartSessionAfterGradleRunLabel);
+      restartPane.getChildren().add(restartSessionAfterGradleRunLabel);
       restartSessionAfterGradleRun = new CheckBox();
       restartSessionAfterGradleRun.setSelected(gui.getPrefs().getBoolean(RESTART_SESSION_AFTER_GRADLE_RUN, true));
-      gradlePane.getChildren().add(restartSessionAfterGradleRun);
+      restartPane.getChildren().add(restartSessionAfterGradleRun);
 
       FlowPane gitOptionPane = new FlowPane();
       Label enableGitLabel = new Label("Enable git integration");
@@ -132,24 +134,24 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       enableGit = new CheckBox();
       enableGit.setSelected(gui.getPrefs().getBoolean(ENABLE_GIT, true));
       gitOptionPane.getChildren().add(enableGit);
-      grid.add(gitOptionPane, 0, 4, 2, 1);
+      grid.add(gitOptionPane, 0, 5, 2, 1);
 
-      FlowPane autoRunPane = new FlowPane();
-      Label autoRunGlobalLabel = new Label("Run global autorun.groovy on session init");
+      HBox autoRunPane = new HBox();
+      Label autoRunGlobalLabel = new Label("Run global autorun.groovy on init");
       autoRunGlobalLabel.setTooltip(new Tooltip("Run autorun.groovy from Grade install dir each time a session (re)starts."));
       autoRunGlobalLabel.setPadding(new Insets(0, 20, 0, 0));
       autoRunGlobal = new CheckBox();
       autoRunGlobal.setSelected(gui.getPrefs().getBoolean(AUTORUN_GLOBAL, false));
       autoRunPane.getChildren().addAll(autoRunGlobalLabel, autoRunGlobal);
 
-      Label autoRunProjectLabel = new Label("Run project autorun.groovy on session init");
+      Label autoRunProjectLabel = new Label("Run project autorun.groovy on init");
       autoRunProjectLabel.setTooltip(new Tooltip("Run autorun.groovy from the project dir (working dir) each time a session (re)starts"));
       autoRunProjectLabel.setPadding(new Insets(0, 20, 0, 20));
       autoRunProject = new CheckBox();
       autoRunProject.setSelected(gui.getPrefs().getBoolean(AUTORUN_PROJECT, false));
       autoRunPane.getChildren().addAll(autoRunProjectLabel, autoRunProject);
 
-      grid.add(autoRunPane, 0,5, 4, 1);
+      grid.add(autoRunPane, 0,6, 4, 1);
 
       FlowPane executionPane = new FlowPane();
       Label addImportsLabel = new Label("Add imports when running Groovy snippets");
@@ -158,9 +160,9 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       addImports = new CheckBox();
       addImports.setSelected(gui.getPrefs().getBoolean(ADD_IMPORTS, gui.getPrefs().getBoolean(ADD_IMPORTS, true)));
       executionPane.getChildren().add(addImports);
-      grid.add(executionPane, 0, 6,4, 1);
+      grid.add(executionPane, 0, 7,4, 1);
 
-      getDialogPane().setPrefSize(800, 300);
+      getDialogPane().setPrefSize(760, 350);
       getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
       setResizable(true);
 

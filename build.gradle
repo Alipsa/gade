@@ -123,8 +123,9 @@ artifacts {
 
 runtime {
     //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
-               'java.management', 'java.sql', 'java.naming']
+               'java.management', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs']
     launcher {
         noConsole = true
     }
