@@ -286,6 +286,9 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     this.parentTab = parentTab;
   }
 
+  /**
+   * Attempt to figure out what the user meant and provide suggestions for completion
+   */
   public void autoComplete() {
     // do nothing per default
   }

@@ -10,6 +10,10 @@ public interface TabTextArea {
 
   String getTextContent();
 
+  /**
+   *
+   * @return the entire text from the TabTextArea
+   */
   String getAllTextContent();
 
   void replaceContentText(String content, boolean isReadFromFile);

@@ -3,9 +3,9 @@
 
 Grade started off as a fork of [Ride](/alipsa/ride) but I wanted a simpler, more integrated set-up for Groovy based Data Science work. 
 Since there is no equivalent to a data.frame OOTB in Java or Groovy, I decided to use [Tablesaw](/jtablesaw/tablesaw) 
-and integrate it as much as possible to get a similar experience as in R.
+and integrate it as much as possible to get a similarly convenient experience as in R.
 
-The purpose of this ODE is to provide a groovy development environment for data analysis, visualization, model building, and machine learning. 
+The purpose of this IDE is to provide a groovy development environment for data analysis, visualization, model building, and machine learning. 
 It runs Groovy code in the Groovy ScriptEngine thus allowing you to be conveniently used for ad-hoc work as well as for creating
 packages that can easily be integrated into a larger JVM based context (e.g Spring Boot, Grails, Play etc.).
 
@@ -19,15 +19,11 @@ for git and maven making it a very convenient development environment for analyt
 
 ### Installing and Running Grade
 Go to the releases tab and expand the assets section at the bottom of the release.
-Unzip the zip file grade-<version>-dist.zip e.g. grade-1.0.0-dist.zip into a directory of choice.
+Unzip the zip file grade-<platform>-<version>.zip e.g. grade-linux-1.0.0.zip into a directory of choice.
 
 There are icons for windows and Linux in the base folder of the unpacked zip that can be used to create a desktop shortcut/launcher.
 
-Use grade.cmd or grade.sh to start Grade. There is also an (experimental) executable for Windows aimed to
-provide a slightly more "integrated" experience. To run it, make sure you have JAVA_HOME and path set to
-s java 17 version that includes javafx. I have seen some issues running with OpenJDK which seems to be
-related to not setting registry values in the same way as the Oracle JDK. The workaround to this would be to
-bundle the entire JDK which is not something I want to do so if the exe is not working for you, use the cmd script.
+Use grade.cmd or grade.sh to start Grade.
 
 If you want to run the bash script from windows git bash (msys), create a shortcut with the comment
 `D:\whatever\Git\bin\bash.exe ./grade.sh`
@@ -50,7 +46,7 @@ JAVA_OPTS="-Dglass.gtk.uiScale=200%"
 The last setting (JAVA_OPTS) is a special variable to add system properties (-D values) to java starting up.
 
 ### A SQL script screenshot
-Showing the result of a select query in the viewer tab and the connection view that is shown when you right click
+Showing the result of a select query in the viewer tab and the connection view that is shown when you right-click
 a connection and choose "view connection".
 
 ![SQL Screenshot](https://raw.githubusercontent.com/perNyfelt/grade/master/docs/SQLScreenshot.png "SQL Screenshot")
@@ -67,8 +63,6 @@ A quick development run is simply `gradle run`
 
 To create multi-platform distributions do `gradle clean build runtimeZip`
 You will find the zip distros (gradle-*.zip) in the build dir, and the source jar and javadoc jar in build/libs
-
-If gradle is not your thing and maven is, you can do `mvn package` instead. 
 
 ## 3:rd party software used
 Note: only direct dependencies are listed below.

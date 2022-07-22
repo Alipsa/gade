@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+source ~/.sdkman/bin/sdkman-init.sh
+source jdk17
 
 gradle clean build runtimeZip
 
