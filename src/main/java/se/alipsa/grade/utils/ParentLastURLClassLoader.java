@@ -2,8 +2,6 @@ package se.alipsa.grade.utils;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 
 public class ParentLastURLClassLoader extends ClassLoader {
@@ -13,22 +11,29 @@ public class ParentLastURLClassLoader extends ClassLoader {
 
   public ParentLastURLClassLoader(URL[] classpath, ClassLoader parent) {
     super(parent);
+    childClassLoader = new ChildURLClassLoader(classpath, new FindClassClassLoader(this.getParent()));
+    /*
     AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
       childClassLoader = new ChildURLClassLoader(classpath, new FindClassClassLoader(this.getParent()));
       return null;
     });
+     */
   }
 
 
   public ParentLastURLClassLoader(List<URL> classpath) {
     super(Thread.currentThread().getContextClassLoader());
 
-    URL[] urls = classpath.toArray(new URL[classpath.size()]);
+    URL[] urls = classpath.toArray(new URL[0]);
 
+    childClassLoader = new ChildURLClassLoader(urls, new FindClassClassLoader(this.getParent()));
+
+    /*
     AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
       childClassLoader = new ChildURLClassLoader(urls, new FindClassClassLoader(this.getParent()));
       return null;
     });
+     */
   }
 
   @Override

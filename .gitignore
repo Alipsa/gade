@@ -7,3 +7,6 @@
 /*.trace.db
 /build/
 /.gradle/
+!gradle-wrapper.jar
+.gradletasknamecache
+/platform
