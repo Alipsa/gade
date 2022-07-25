@@ -5,9 +5,21 @@ SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ~/.sdkman/bin/sdkman-init.sh
 source jdk17
 
+function platform {
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "linux"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "mac"
+  else
+    echo "win"
+  fi
+}
+PREF_TARGET="${1:-$HOME/programs/}"
+PLATFORM="${2:-$(platform)}"
+
 cd "${SCRIPT_DIR}" || exit
 echo "- Building Grade"
-./gradlew clean runtime || exit 1
+#./gradlew clean runtime || exit 1
 
 PROPERTY_FILE=version.properties
 
@@ -21,43 +33,40 @@ function getProperty {
 #JAR_NAME=$(getProperty "jar.name")
 RELEASE_TAG=$(getProperty "release.tag")
 
-if [[ -z "${1}" ]]; then
-  TARGET_DIR="$HOME/programs/grade-${RELEASE_TAG}"
-else
-  TARGET_DIR="${1}"
-fi
 
+TARGET_DIR="${PREF_TARGET}/grade-${RELEASE_TAG}"
 
-if ls "$TARGET_DIR"/env.* 1> /dev/null 2>&1; then
+LINK_DIR=$(dirname "${TARGET_DIR}")/grade
+
+if ls "$LINK_DIR"/env.* 1> /dev/null 2>&1; then
   echo "- Saving env files"
   tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX) || exit
-  cp "$TARGET_DIR"/env.* "${tmp_dir}/" || exit
+  cp "$LINK_DIR"/env.* "${tmp_dir}/" || exit
 fi
+
 if [[ -d "$TARGET_DIR" ]]; then
   echo "- Remove existing grade installation"
   rm -rf "$TARGET_DIR" || exit
 fi
-
 mkdir -p "$TARGET_DIR" || exit
 
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  echo "- Copy linux dist"
-  cp -r build/image/grade-linux/. "$TARGET_DIR" || exit
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "- Copy mac dist"
-  cp -r build/image/grade-mac/. "$TARGET_DIR" || exit
-else
-  echo "- Copy windows dist"
-  cp -r build/image/grade-win/. "$TARGET_DIR" || exit
-fi
+echo "- Copy ${PLATFORM} dist"
+cp -r "build/image/grade-${PLATFORM}/." "$TARGET_DIR" || exit
 
-LINK_DIR=$(dirname "${TARGET_DIR}")/grade
-if [[ -d "${LINK_DIR}" ]]; then
+if [[ -d "${LINK_DIR}" || -L "${LINK_DIR}" ]]; then
   echo "- Remove existing dir link (or dir)"
   rm -rf "${LINK_DIR}" || exit
 fi
 echo "- Create dir link"
-ln -s "${TARGET_DIR}" "${LINK_DIR}" || exit
+if [[ "$PLATFORM" == "win" ]]; then
+  srcDir="$(wslpath -w "${TARGET_DIR}")"
+  lnkBase="$(dirname "${LINK_DIR}")"
+  lnkDir="$(wslpath -w "$lnkBase")\\grade"
+  # echo "creating junction to $lnkDir from $srcDir"
+  cmd.exe /c "mklink /J $lnkDir $srcDir"
+else
+  ln -sf "${TARGET_DIR}" "${LINK_DIR}" || exit
+fi
 
 if [[ -d "${tmp_dir}" ]]; then
   echo "- Restore env files"
