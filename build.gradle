@@ -73,6 +73,7 @@ dependencies {
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.1'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
+    implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
     implementation 'se.alipsa.groovy:data-utils:1.0.0'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
