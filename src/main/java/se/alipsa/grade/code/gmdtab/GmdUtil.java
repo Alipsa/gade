@@ -111,19 +111,29 @@ public class GmdUtil {
         + "\n</html>";
   }
 
-  public static void saveMdrAsPdf2(Grade gui, File target, String textContent) {
+  /**
+   * Straightforward but highlightJs has no effect.
+   * @param gui the Grade instance
+   * @param target the target pdf file
+   * @param textContent the content to write
+   */
+  public static void saveGmdAsPdf2(Grade gui, File target, String textContent) {
     String html = decorate(convertGmdToHtml(textContent), false, true);
-    // TODO publish a new version of gmd
-    //gmd.htmlToPdf(html, target);
-    gui.getConsoleComponent().addWarning("saveGmd","gmd.htmlToPdf(html, target) not yeat available", true);
+    gmd.htmlToPdf(html, target);;
     try {
       FileUtils.writeToFile(new File(target.getParent(), target.getName() + ".html"), html);
     } catch (FileNotFoundException e) {
       log.warn("Failed to save html", e);
     }
-    gui.getConsoleComponent().addWarning("saveMdrAsPdf", "\nPDF rendering is not faithful to the html\n", true);
+    gui.getConsoleComponent().addWarning("saveGmdAsPdf2", "\nPDF rendering is not faithful to the html\n", true);
   }
 
+  /**
+   * A little better. Highlight js stuff works but special characters still do not work.
+   * @param gui the Grade instance
+   * @param target the target pdf file
+   * @param textContent the content to write
+   */
   public static void saveGmdAsPdf(Grade gui, File target, String textContent) {
     String html = decorate(convertGmdToHtml(textContent), true, true);
 
@@ -142,23 +152,16 @@ public class GmdUtil {
               String viewContent = toString(doc);
 
               // For some reason the raw DOM document does not work, we have to parse it again with jsoup to get
-              // something that the PdfRendererBuilder understands
+              // something that the PdfRendererBuilder (used in gmd) understands
               org.jsoup.nodes.Document doc2 = Jsoup.parse(viewContent);
               doc2.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
                   .escapeMode(Entities.EscapeMode.extended)
                   .charset(StandardCharsets.UTF_8)
                   .prettyPrint(false);
               Document doc3 = new W3CDom().fromJsoup(doc2);
-              /* TODO: Fixme
-              PdfRendererBuilder builder = new PdfRendererBuilder()
-                  .withW3cDocument(doc3, new File(".").toURI().toString())
-                  .toStream(os);
-              builder.run();
-
-               */
-
+              gmd.htmlToPdf(doc3, os);
               FileUtils.writeToFile(new File(target.getParent(), target.getName() + ".html"), toString(doc3));
-              gui.getConsoleComponent().addWarning("saveMdrAsPdf", "\nNote: PDF rendering has issues with non-latin1 characters and margins in code blocks\n", true);
+              gui.getConsoleComponent().addWarning("saveGmdAsPdf", "\nNote: PDF rendering has issues with non-latin1 characters and margins in code blocks\n", true);
             } catch (Exception e) {
               ExceptionAlert.showAlert("Failed to create PDF", e);
             }
