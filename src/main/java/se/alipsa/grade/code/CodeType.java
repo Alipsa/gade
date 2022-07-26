@@ -4,6 +4,7 @@ public enum CodeType {
   TXT("Text file"),
   XML("Xml file"),
   SQL("SQL script"),
+  GMD("Groovy Markdown"),
   MD("Markdown file"),
   JAVA("Java code"),
   GROOVY("Groovy code"),

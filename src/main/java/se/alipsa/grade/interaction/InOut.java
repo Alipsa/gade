@@ -220,11 +220,7 @@ public class InOut implements GuiInteraction {
       gui.getConsoleComponent().addWarning("view file", "File argument cannot be null", true);
       return;
     }
-    try {
-      gui.getInoutComponent().viewHtml(file.toURI().toURL().toExternalForm(), title);
-    } catch (MalformedURLException e) {
-      gui.getInoutComponent().viewHtml(file.getAbsolutePath(), title);
-    }
+    gui.getInoutComponent().viewHtml(file.getAbsolutePath(), title);
   }
 
   public Stage getStage() {

@@ -7,6 +7,7 @@ import javafx.scene.layout.BorderPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.grade.Grade;
+import se.alipsa.grade.code.gmdtab.GmdTab;
 import se.alipsa.grade.code.groovytab.GroovyTab;
 import se.alipsa.grade.code.javatab.JavaTab;
 import se.alipsa.grade.code.jstab.JsTab;
@@ -42,6 +43,7 @@ public class CodeComponent extends BorderPane {
       case JAVA -> new JavaTab(type.getDisplayValue(), gui);
       case XML -> new XmlTab(type.getDisplayValue(), gui);
       case SQL -> new SqlTab(type.getDisplayValue(), gui);
+      case GMD -> new GmdTab(type.getDisplayValue(), gui);
       case MD -> new MdTab(type.getDisplayValue(), gui);
       case GROOVY -> new GroovyTab(type.getDisplayValue(), gui);
       case JAVA_SCRIPT -> new JsTab(type.getDisplayValue(), gui);
@@ -84,9 +86,9 @@ public class CodeComponent extends BorderPane {
   public TextAreaTab addTab(File file, CodeType type) {
     TextAreaTab tab;
     String title = file.getName();
-    boolean addContent = true;
     tab = switch (type) {
       case MD -> new MdTab(title, gui);
+      case GMD -> new GmdTab(title, gui);
       case XML -> new XmlTab(title, gui);
       case JAVA -> new JavaTab(title, gui);
       case SQL -> new SqlTab(title, gui);
@@ -95,12 +97,10 @@ public class CodeComponent extends BorderPane {
       //case TXT -> new TxtTab(title, gui);
       default -> new TxtTab(title, gui);
     };
-    if (addContent) {
-      try {
-        tab.loadFromFile(file);
-      } catch (IOException e) {
-        ExceptionAlert.showAlert("Failed to read content of file " + file, e);
-      }
+    try {
+      tab.loadFromFile(file);
+    } catch (IOException e) {
+      ExceptionAlert.showAlert("Failed to read content of file " + file, e);
     }
     return addTabAndActivate(tab);
   }

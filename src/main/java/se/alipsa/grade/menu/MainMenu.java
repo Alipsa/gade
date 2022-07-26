@@ -721,21 +721,17 @@ public class MainMenu extends MenuBar {
     nGroovy.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.GROOVY));
     fileMenu.getItems().add(nGroovy);
 
-    MenuItem nJava = new MenuItem("Java");
-    nJava.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.JAVA));
-    fileMenu.getItems().add(nJava);
+    MenuItem nSql = new MenuItem("SQL");
+    nSql.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.SQL));
+    fileMenu.getItems().add(nSql);
 
-    MenuItem nJs = new MenuItem("Javascript");
-    nJs.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.JAVA_SCRIPT));
-    fileMenu.getItems().add(nJs);
+    MenuItem gMarkdown = new MenuItem("Groovy Markdown");
+    gMarkdown.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.GMD));
+    fileMenu.getItems().add(gMarkdown);
 
     MenuItem nMarkdown = new MenuItem("Markdown");
     nMarkdown.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.MD));
     fileMenu.getItems().add(nMarkdown);
-
-    MenuItem nSql = new MenuItem("SQL");
-    nSql.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.SQL));
-    fileMenu.getItems().add(nSql);
 
     MenuItem nText = new MenuItem("Text");
     nText.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.TXT));
@@ -744,6 +740,14 @@ public class MainMenu extends MenuBar {
     MenuItem nXml = new MenuItem("Xml");
     nXml.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.XML));
     fileMenu.getItems().add(nXml);
+
+    MenuItem nJs = new MenuItem("Javascript");
+    nJs.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.JAVA_SCRIPT));
+    fileMenu.getItems().add(nJs);
+
+    MenuItem nJava = new MenuItem("Java");
+    nJava.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.JAVA));
+    fileMenu.getItems().add(nJava);
 
     MenuItem save = new MenuItem("Save  ctrl+S");
     save.setOnAction(this::saveContent);

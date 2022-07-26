@@ -29,7 +29,7 @@ public class FileOpener {
     final boolean allowOpenExternal = openExternalIfUnknownType.length <= 0 || openExternalIfUnknownType[0];
 
     String type = guessContentType(file);
-    log.debug("File ContentType for {} detected as {}", file.getName(), type);
+    log.info("File ContentType for {} detected as {}", file.getName(), type);
     if (file.isFile()) {
       String fileNameLower = file.getName().toLowerCase();
       if ( strEquals(type, "application/xml", "text/xml", "text/html")
@@ -51,6 +51,9 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".js")
           || strEquals(type, "application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript")) {
         return codeComponent.addTab(file, CodeType.JAVA_SCRIPT);
+      }
+      if (strEndsWith(fileNameLower, ".gmd")) {
+        return codeComponent.addTab(file, CodeType.GMD);
       }
       if (strEndsWith(fileNameLower, ".md") || strEndsWith(fileNameLower, ".rmd")) {
         return codeComponent.addTab(file, CodeType.MD);

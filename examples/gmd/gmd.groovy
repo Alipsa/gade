@@ -18,3 +18,6 @@ io.view(html , "gmd->html" )
 file = new File(io.scriptDir(), "test.gmd")
 html2 = gmd.gmdToHtml(file.text)
 io.view(html2 , "gmd file ->html" )
+
+
+io.view(io.projectFile("/gmd/test.html"))
