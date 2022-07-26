@@ -52,7 +52,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
   }
 
   private void viewMdr(ActionEvent actionEvent) {
-    GmdUtil.viewMdr(gui, getTitle(), getTextContent());
+    GmdUtil.viewGmd(gui, getTitle(), getTextContent());
   }
 
   private void exportToPdf(ActionEvent actionEvent) {

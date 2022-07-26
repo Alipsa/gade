@@ -90,7 +90,7 @@ public class GmdUtil {
         + ".hljs-built_in { color: Maroon } .hljs-literal { color: MidnightBlue }</style>\n";
   }
 
-  public static void viewMdr(Grade gui, String title, String textContent) {
+  public static void viewGmd(Grade gui, String title, String textContent) {
     gui.getInoutComponent().viewHtmlWithBootstrap(convertGmdToHtml(textContent), title);
   }
 
