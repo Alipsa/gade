@@ -19,7 +19,7 @@ PLATFORM="${2:-$(platform)}"
 
 cd "${SCRIPT_DIR}" || exit
 echo "- Building Grade"
-#./gradlew clean runtime || exit 1
+./gradlew clean runtime || exit 1
 
 PROPERTY_FILE=version.properties
 
