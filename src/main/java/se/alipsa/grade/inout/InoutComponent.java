@@ -245,8 +245,12 @@ public class InoutComponent extends TabPane  {
 
   public void viewHtml(String html, String... title) {
     Platform.runLater(() -> {
-      viewer.viewHtml(html, title);
-      gui.getInoutComponent().getSelectionModel().select(viewer);
+      try {
+        viewer.viewHtml(html, title);
+        gui.getInoutComponent().getSelectionModel().select(viewer);
+      } catch (Throwable e) {
+        ExceptionAlert.showAlert("Failed to view html", e);
+      }
     });
   }
 

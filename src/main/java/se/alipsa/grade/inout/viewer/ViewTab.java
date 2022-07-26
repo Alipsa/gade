@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -350,12 +351,14 @@ public class ViewTab extends Tab {
           webEngine.load(path);
           createContextMenu(browser, path, true);
         } else {
-          log.info("url {} is not a http url nor a local path, assuming it is content...", url);
+          log.info("url is not a http url nor a local path, assuming it is content...");
           webEngine.loadContent(url);
           createContextMenu(browser, url);
         }
-      } catch (MalformedURLException e) {
-        ExceptionAlert.showAlert("Failed to transform the path to an URL", e);
+      } catch (MalformedURLException | InvalidPathException e) {
+        log.info("url is not a http url nor a local path, assuming it is content...");
+        webEngine.loadContent(url);
+        createContextMenu(browser, url);
       }
     }
     tab.setContent(browser);
