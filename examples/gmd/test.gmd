@@ -9,10 +9,11 @@ for (i in 1..a) {
 
 - first 
 - second
-- third
 
-```
+```groovy
 def q = 213
+println("q is \${q}")
 ``` 
 X = &sum;(&radic;2&pi; + &#8731;3)
+X = ∑(√2π + ∛3)
 

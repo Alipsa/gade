@@ -26,18 +26,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+import static se.alipsa.grade.utils.HtmlDecorator.*;
+
 public class GmdUtil {
 
   private static final Logger log = LogManager.getLogger();
-
-  private static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.css";
-  private static final String HIGHLIGHT_JS_SCRIPT_PATH = "highlightJs/highlight.pack.js";
-  private static final String BOOTSTRAP_CSS_PATH = "META-INF/resources/webjars/bootstrap/5.1.3/css/bootstrap.css";
-  private static final String HIGHLIGHT_JS_INIT = "\n<script>hljs.initHighlightingOnLoad();</script>\n";
-  // The highlightJs stuff is in the mdr package
-  public static final String HIGHLIGHT_JS_CSS = "\n<link rel='stylesheet' href='" + resourceUrlExternalForm(HIGHLIGHT_JS_CSS_PATH) + "'>\n";
-  public static final String HIGHLIGHT_JS_SCRIPT = "\n<script src='" + resourceUrlExternalForm(HIGHLIGHT_JS_SCRIPT_PATH) + "'></script>\n";
-  public static final String BOOTSTRAP_CSS = resourceUrlExternalForm(BOOTSTRAP_CSS_PATH);
 
   static Gmd gmd = new Gmd();
 
@@ -98,24 +91,6 @@ public class GmdUtil {
     return gmd.gmdToHtml(textContent);
   }
 
-  // TODO: add fonts that can handle non latin characters,
-  //  see https://github.com/vsch/flexmark-java/blob/master/flexmark-java-samples/src/com/vladsch/flexmark/java/samples/PdfConverter.java
-  //  and https://github.com/vsch/flexmark-java/wiki/PDF-Renderer-Converter
-  public static String decorate(String html, boolean withMargin, boolean embed) {
-    return "<!DOCTYPE html PUBLIC\n" +
-        "\"-//OPENHTMLTOPDF//MATH XHTML Character Entities With MathML 1.0//EN\" \"\">\n"
-        + "<html>\n<head>\n<meta charset=\"UTF-8\">\n"
-        + getHighlightStyle(true)
-        + getBootstrapStyle(true)
-        + getHighlightCustomStyle()
-        // + fonts()
-        + (withMargin ? "\n</head>\n<body style='margin-left: 15px; margin-right: 15px'>\n" : "\n</head>\n<body>\n")
-        + html
-        + "\n</body>\n"
-        + getHighlightJs(true)
-        + getHighlightInitScript()
-        + "\n</html>";
-  }
 
   /**
    * Straightforward but highlightJs has no effect.

@@ -10,14 +10,64 @@ public class HtmlDecorator {
 
   private static final Logger log = LogManager.getLogger();
 
-  private static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.css";
-  private static final String HIGHLIGHT_JS_SCRIPT_PATH = "highlightJs/highlight.pack.js";
-  private static final String BOOTSTRAP_CSS_PATH = "META-INF/resources/webjars/bootstrap/5.1.3/css/bootstrap.css";
-  private static final String HIGHLIGHT_JS_INIT = "\n<script>hljs.initHighlightingOnLoad();</script>\n";
+  public static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.min.css";
+  public static final String HIGHLIGHT_JS_SCRIPT_PATH = "highlightJs/highlight.min.js";
+  public static final String BOOTSTRAP_CSS_PATH = "META-INF/resources/webjars/bootstrap/5.1.3/css/bootstrap.css";
+  public static final String HIGHLIGHT_JS_INIT = "\n<script>hljs.initHighlightingOnLoad();</script>\n";
   // The highlightJs stuff is in the mdr package
   public static final String HIGHLIGHT_JS_CSS = "\n<link rel='stylesheet' href='" + resourceUrlExternalForm(HIGHLIGHT_JS_CSS_PATH) + "'>\n";
   public static final String HIGHLIGHT_JS_SCRIPT = "\n<script src='" + resourceUrlExternalForm(HIGHLIGHT_JS_SCRIPT_PATH) + "'></script>\n";
   public static final String BOOTSTRAP_CSS = resourceUrlExternalForm(BOOTSTRAP_CSS_PATH);
+
+  public static final String unicodeFonts = """
+      <style>
+      
+        @font-face {
+          font-family: 'unicode';
+          src: url('@unicodeUrl@/DejaVuSans.ttf');
+          font-weight: normal;
+          font-style: normal;
+        }
+        
+        @font-face {
+          font-family: 'noto-cjk';
+          src: url('@arialuniUrl@/ArialUnicodeMS.ttf');
+          font-weight: normal;
+          font-style: normal;
+        }
+        
+        @font-face {
+          font-family: 'Roboto';
+          src: url('@robotoUrl@/Roboto-Regular.ttf');
+          font-weight: normal;
+          font-style: normal;
+        }
+        
+        @font-face {
+          font-family: 'noto-mono';
+          src: url('@courierPrimeUrl@/CourierPrime-Regular.ttf');
+          font-weight: normal;
+          font-style: normal;
+        }
+              
+        body {
+            font-family: 'Roboto', 'unicode', 'noto-cjk', sans-serif;
+            overflow: hidden;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+              
+        var,
+        code,
+        kbd,
+        pre {
+            font: 0.9em 'noto-mono', Consolas, \\"Liberation Mono\\", Menlo, Courier, monospace;
+        }
+      </style>
+      """.replaceAll("@robotoUrl@", resourceUrlExternalForm("fonts/roboto"))
+      .replaceAll("@arialuniUrl@/", resourceUrlExternalForm("fonts/arialuni"))
+      .replaceAll("@courierPrimeUrl@", resourceUrlExternalForm("fonts/courierprime"))
+      .replaceAll("@unicodeUrl@", resourceUrlExternalForm("fonts/DejaVu_Sans"));
 
   private static String resourceUrlExternalForm(String resource) {
     URL url = FileUtils.getResourceUrl(resource);
@@ -25,10 +75,13 @@ public class HtmlDecorator {
   }
 
   public static String decorate(String html, boolean withMargin, boolean embed) {
-    return "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n"
+    return "<!DOCTYPE html PUBLIC\n" +
+        "\"-//OPENHTMLTOPDF//MATH XHTML Character Entities With MathML 1.0//EN\" \"\">\n"
+        + "<html>\n<head>\n<meta charset=\"UTF-8\">\n"
         + getHighlightStyle(true)
         + getBootstrapStyle(true)
         + getHighlightCustomStyle()
+        + unicodeFonts
         + (withMargin ? "\n</head>\n<body style='margin-left: 15px; margin-right: 15px'>\n" : "\n</head>\n<body>\n")
         + html
         + "\n</body>\n"
