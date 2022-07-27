@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.net.URL;
 
+// TODO: consider moving this to the gmd package and make decorate take config options for what to include
+//  maybe by switching to a builder structure.
 public class HtmlDecorator {
 
   private static final Logger log = LogManager.getLogger();
@@ -19,6 +21,8 @@ public class HtmlDecorator {
   public static final String HIGHLIGHT_JS_SCRIPT = "\n<script src='" + resourceUrlExternalForm(HIGHLIGHT_JS_SCRIPT_PATH) + "'></script>\n";
   public static final String BOOTSTRAP_CSS = resourceUrlExternalForm(BOOTSTRAP_CSS_PATH);
 
+  public static final String HTML5_DECLARATION = "<!DOCTYPE html>\n";
+  public static final String OPENHTMLTOPDF_DECLARATION = "<!DOCTYPE html PUBLIC\n\"-//OPENHTMLTOPDF//MATH XHTML Character Entities With MathML 1.0//EN\" \"\">\n";
   public static final String unicodeFonts = """
       <style>
       
@@ -75,8 +79,7 @@ public class HtmlDecorator {
   }
 
   public static String decorate(String html, boolean withMargin, boolean embed) {
-    return "<!DOCTYPE html PUBLIC\n" +
-        "\"-//OPENHTMLTOPDF//MATH XHTML Character Entities With MathML 1.0//EN\" \"\">\n"
+    return OPENHTMLTOPDF_DECLARATION
         + "<html>\n<head>\n<meta charset=\"UTF-8\">\n"
         + getHighlightStyle(true)
         + getBootstrapStyle(true)
