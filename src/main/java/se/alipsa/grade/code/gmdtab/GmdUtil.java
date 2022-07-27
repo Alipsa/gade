@@ -98,11 +98,17 @@ public class GmdUtil {
     return gmd.gmdToHtml(textContent);
   }
 
+  // TODO: add fonts that can handle non latin characters,
+  //  see https://github.com/vsch/flexmark-java/blob/master/flexmark-java-samples/src/com/vladsch/flexmark/java/samples/PdfConverter.java
+  //  and https://github.com/vsch/flexmark-java/wiki/PDF-Renderer-Converter
   public static String decorate(String html, boolean withMargin, boolean embed) {
-    return "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n"
+    return "<!DOCTYPE html PUBLIC\n" +
+        "\"-//OPENHTMLTOPDF//MATH XHTML Character Entities With MathML 1.0//EN\" \"\">\n"
+        + "<html>\n<head>\n<meta charset=\"UTF-8\">\n"
         + getHighlightStyle(true)
         + getBootstrapStyle(true)
         + getHighlightCustomStyle()
+        // + fonts()
         + (withMargin ? "\n</head>\n<body style='margin-left: 15px; margin-right: 15px'>\n" : "\n</head>\n<body>\n")
         + html
         + "\n</body>\n"

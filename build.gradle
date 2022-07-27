@@ -25,7 +25,7 @@ application {
 
 
 repositories {
-    //mavenLocal() // Slows down the build, use only if local SNAPSHOTS are needed
+    mavenLocal() // Slows down the build, use only if local SNAPSHOTS are needed
     maven {
         url = uri('https://repo.gradle.org/gradle/libs-releases')
     }
@@ -79,7 +79,7 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
     implementation 'se.alipsa.groovy:data-utils:1.0.1'
-    implementation 'se.alipsa.groovy:gmd:1.0.2'
+    implementation 'se.alipsa.groovy:gmd:1.0.3-SNAPSHOT'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'

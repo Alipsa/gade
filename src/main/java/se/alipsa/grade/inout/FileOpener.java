@@ -32,13 +32,6 @@ public class FileOpener {
     log.info("File ContentType for {} detected as {}", file.getName(), type);
     if (file.isFile()) {
       String fileNameLower = file.getName().toLowerCase();
-      if ( strEquals(type, "application/xml", "text/xml", "text/html")
-                 || strEndsWith(type, "+xml")
-                  // in case an xml declaration was omitted or empty file:
-                 || strEndsWith(fileNameLower,".xml")
-                 || strEndsWith(fileNameLower,".html")){
-        return codeComponent.addTab(file, CodeType.XML);
-      }
       if (strEndsWith(fileNameLower, ".java")) {
         return codeComponent.addTab(file, CodeType.JAVA);
       }
@@ -57,6 +50,13 @@ public class FileOpener {
       }
       if (strEndsWith(fileNameLower, ".md") || strEndsWith(fileNameLower, ".rmd")) {
         return codeComponent.addTab(file, CodeType.MD);
+      }
+      if ( strEquals(type, "application/xml", "text/xml", "text/html")
+          || strEndsWith(type, "+xml")
+          // in case an xml declaration was omitted or empty file:
+          || strEndsWith(fileNameLower,".xml")
+          || strEndsWith(fileNameLower,".html")){
+        return codeComponent.addTab(file, CodeType.XML);
       }
       if (strStartsWith(type, "text")
                  || strEquals(type, "application/x-bat",
