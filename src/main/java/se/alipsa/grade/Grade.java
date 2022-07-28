@@ -195,7 +195,7 @@ public class Grade extends Application {
 
   public void endProgram() {
     Platform.exit();
-    // Allow some time before calling system exist so stop() can be used to do stuff if neeed
+    // Allow some time before calling system exist so stop() can be used to do stuff if needed
     Timer timer = new Timer();
     TimerTask task = new TimerTask() {
       public void run() {

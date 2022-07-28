@@ -22,7 +22,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
@@ -34,57 +33,9 @@ public class GmdUtil {
 
   static Gmd gmd = new Gmd();
 
-  private static String resourceUrlExternalForm(String resource) {
-    URL url = FileUtils.getResourceUrl(resource);
-    return url == null ? "" : url.toExternalForm();
-  }
-
-  public static String getBootstrapStyle(boolean embed) {
-    if (embed) {
-      try {
-        // @charset directive is not allowed when embedding the stylesheet
-        String css = FileUtils.readContent(BOOTSTRAP_CSS_PATH).replace("@charset \"UTF-8\";", "\n");
-        return "\n<style>\n" + css + "\n</style>\n";
-      } catch (IOException e) {
-        log.warn("Failed to read content to embed, resort to external ref instead", e);
-      }
-    }
-    return "<link rel='stylesheet' href='" + BOOTSTRAP_CSS + "'>";
-  }
-
-  public static String getHighlightStyle(boolean embed) {
-    if (embed) {
-      try {
-        return "\n<style>\n" + FileUtils.readContent(HIGHLIGHT_JS_CSS_PATH) + "\n</style>\n";
-      } catch (IOException e) {
-        log.warn("Failed to get content of highlight css, falling back to external link.", e);
-      }
-    }
-    return HIGHLIGHT_JS_CSS;
-  }
-
-  public static String getHighlightJs(boolean embed) {
-    if (embed) {
-      try {
-        return "\n<script>" + FileUtils.readContent(HIGHLIGHT_JS_SCRIPT_PATH) + "</script>\n";
-      } catch (IOException e) {
-        log.warn("Failed to get content of highlight js, falling back to external link.", e);
-      }
-    }
-    return HIGHLIGHT_JS_SCRIPT;
-  }
-
-  public static String getHighlightInitScript() {
-    return HIGHLIGHT_JS_INIT;
-  }
-
-  public static String getHighlightCustomStyle() {
-    return "\n<style>code { color: black } .hljs-string { color: DarkGreen } .hljs-number { color: MidnightBlue } "
-        + ".hljs-built_in { color: Maroon } .hljs-literal { color: MidnightBlue }</style>\n";
-  }
 
   public static void viewGmd(Grade gui, String title, String textContent) {
-    gui.getInoutComponent().viewHtmlWithBootstrap(convertGmdToHtml(textContent), title);
+    gui.getInoutComponent().decorateAndViewHtml(convertGmdToHtml(textContent), title);
   }
 
   private static String convertGmdToHtml(String textContent) {
@@ -99,7 +50,7 @@ public class GmdUtil {
    * @param textContent the content to write
    */
   public static void saveGmdAsPdf2(Grade gui, File target, String textContent) {
-    String html = decorate(convertGmdToHtml(textContent), false, true);
+    String html = decorate(convertGmdToHtml(textContent), false);
     gmd.htmlToPdf(html, target);;
     try {
       FileUtils.writeToFile(new File(target.getParent(), target.getName() + ".html"), html);
@@ -116,7 +67,7 @@ public class GmdUtil {
    * @param textContent the content to write
    */
   public static void saveGmdAsPdf(Grade gui, File target, String textContent) {
-    String html = decorate(convertGmdToHtml(textContent), true, true);
+    String html = decorate(convertGmdToHtml(textContent), true);
 
     // We load the html into a web view so that the highlight javascript properly add classes to code parts
     // then we extract the DOM from the web view and use that to produce the PDF
@@ -168,7 +119,7 @@ public class GmdUtil {
   public static void saveMdrAsHtml(Grade gui, File target, String textContent) {
     try {
       String html = convertGmdToHtml(textContent);
-      FileUtils.writeToFile(target, decorate(html, true, true));
+      FileUtils.writeToFile(target, decorate(html, true));
     } catch (FileNotFoundException e) {
       ExceptionAlert.showAlert(e.getMessage(), e);
     }

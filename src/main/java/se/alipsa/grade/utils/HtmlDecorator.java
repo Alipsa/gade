@@ -23,7 +23,7 @@ public class HtmlDecorator {
 
   public static final String HTML5_DECLARATION = "<!DOCTYPE html>\n";
   public static final String OPENHTMLTOPDF_DECLARATION = "<!DOCTYPE html PUBLIC\n\"-//OPENHTMLTOPDF//MATH XHTML Character Entities With MathML 1.0//EN\" \"\">\n";
-  public static final String unicodeFonts = """
+  public static final String UNICODE_FONTS = """
       <style>
       
         @font-face {
@@ -73,12 +73,35 @@ public class HtmlDecorator {
       .replaceAll("@courierPrimeUrl@", resourceUrlExternalForm("fonts/courierprime"))
       .replaceAll("@unicodeUrl@", resourceUrlExternalForm("fonts/DejaVu_Sans"));
 
+  private static final String HIGHLIGHT_CUSTOM_STYLE = """
+      <style>
+        code { color: black }
+        .hljs-string { color: DarkGreen }
+        .hljs-number { color: MidnightBlue }
+        .hljs-built_in { color: Maroon }
+        .hljs-literal { color: MidnightBlue }
+      </style>
+      """;
+  private static final String HIGHLIGHT_JS = getHighlightJs(true);
+  private static final String BOOTSTRAP_STYLE = getBootstrapStyle(true);
+
+  private static String HIGHLIGHT_STYLE = getHighlightStyle(true);
+
   private static String resourceUrlExternalForm(String resource) {
     URL url = FileUtils.getResourceUrl(resource);
     return url == null ? "" : url.toExternalForm();
   }
 
-  public static String decorate(String html, boolean withMargin, boolean embed) {
+  public static String decorate(String html, boolean withMargin) {
+    return decorate(
+        html,
+        OPENHTMLTOPDF_DECLARATION,
+        withMargin,
+        true,
+        true,
+        true
+    );
+    /*
     return OPENHTMLTOPDF_DECLARATION
         + "<html>\n<head>\n<meta charset=\"UTF-8\">\n"
         + getHighlightStyle(true)
@@ -91,9 +114,37 @@ public class HtmlDecorator {
         + getHighlightJs(true)
         + getHighlightInitScript()
         + "\n</html>";
+
+     */
   }
 
-  public static String getHighlightStyle(boolean embed) {
+  public static String decorate(String html, String docType, boolean withMargin, boolean withUnicodeFonts, boolean withHighlight, boolean withBootstrap) {
+    StringBuilder sb = new StringBuilder(docType).append("<html>\n<head>\n<meta charset=\"UTF-8\">\n");
+        if (withHighlight) {
+          sb.append(HIGHLIGHT_STYLE)
+              .append(HIGHLIGHT_CUSTOM_STYLE);
+        }
+        if (withBootstrap) {
+          sb.append(BOOTSTRAP_STYLE);
+        }
+        if (withUnicodeFonts) {
+          sb.append(UNICODE_FONTS);
+        }
+        if (withMargin) {
+          sb.append("\n</head>\n<body style='margin-left: 15px; margin-right: 15px'>\n");
+        } else {
+          sb.append("\n</head>\n<body>\n");
+        }
+        sb.append(html).append("\n</body>\n");
+        if (withHighlight) {
+          sb.append(HIGHLIGHT_JS)
+              .append(HIGHLIGHT_JS_INIT);
+        }
+        sb.append("\n</html>");
+        return sb.toString();
+  }
+
+  private static String getHighlightStyle(boolean embed) {
     if (embed) {
       try {
         return "\n<style>\n" + FileUtils.readContent(HIGHLIGHT_JS_CSS_PATH) + "\n</style>\n";
@@ -104,7 +155,7 @@ public class HtmlDecorator {
     return HIGHLIGHT_JS_CSS;
   }
 
-  public static String getHighlightJs(boolean embed) {
+  private static String getHighlightJs(boolean embed) {
     if (embed) {
       try {
         return "\n<script>" + FileUtils.readContent(HIGHLIGHT_JS_SCRIPT_PATH) + "</script>\n";
@@ -115,7 +166,7 @@ public class HtmlDecorator {
     return HIGHLIGHT_JS_SCRIPT;
   }
 
-  public static String getBootstrapStyle(boolean embed) {
+  private static String getBootstrapStyle(boolean embed) {
     if (embed) {
       try {
         // @charset directive is not allowed when embedding the stylesheet
@@ -128,12 +179,4 @@ public class HtmlDecorator {
     return "<link rel='stylesheet' href='" + BOOTSTRAP_CSS + "'>";
   }
 
-  public static String getHighlightCustomStyle() {
-    return "\n<style>code { color: black } .hljs-string { color: DarkGreen } .hljs-number { color: MidnightBlue } "
-        + ".hljs-built_in { color: Maroon } .hljs-literal { color: MidnightBlue }</style>\n";
-  }
-
-  public static String getHighlightInitScript() {
-    return HIGHLIGHT_JS_INIT;
-  }
 }

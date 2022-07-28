@@ -225,7 +225,7 @@ public class ViewTab extends Tab {
     }
   }
 
-  public void viewHtmlWithBootstrap(String content, String... title) {
+  public void decorateAndViewHtml(String content, String... title) {
     Tab tab = new Tab();
     if (title.length > 0) {
       tab.setText(title[0]);
@@ -235,7 +235,7 @@ public class ViewTab extends Tab {
     browser.setContextMenuEnabled(false);
 
     WebEngine webEngine = browser.getEngine();
-    String html = decorate(content, true, false);
+    String html = decorate(content, true);
     webEngine.loadContent(html);
     createContextMenu(browser, html);
     tab.setContent(browser);

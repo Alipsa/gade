@@ -5,9 +5,13 @@ text = """\
 
 3 + 7 = **<%= 3+7 %>**
 
-how about _that_?
+```groovy 
+def X = Math.sqrt(2* Math.PI) + Math.cbrt(3)
+```
 
-X = &sum;(&radic;2&pi; + &#8731;3)
+X = &sum;(&radic;2&pi; + &#8731;3) = <%=Math.sqrt(2* Math.PI) + Math.cbrt(3)%>
+
+how about _that_?
 """
 
 gmd = new Gmd()
@@ -15,9 +19,14 @@ gmd = new Gmd()
 html = gmd.gmdToHtml(text)
 io.view(html , "gmd->html" )
 
-file = new File(io.scriptDir(), "test.gmd")
+file = io.projectFile("text.gmd")
+file.write text
 html2 = gmd.gmdToHtml(file.text)
-io.view(html2 , "gmd file ->html" )
-
-
-io.view(io.projectFile("/gmd/test.html"))
+file.delete()
+io.view(html2 , "gmd file ->html" ) 
+file = io.projectFile("text.html")
+println(html2)
+file.write html2
+// html2 is not decorated so will not view equation properly
+io.view(file)
+file.deleteOnExit()
