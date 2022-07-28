@@ -5,16 +5,7 @@ String text = """\
 X = &sum;(&radic;2&pi; + &#8731;3)
 """.stripIndent()
 def gmd = new Gmd()
-def html = """\
-    ${Gmd.XHTML_MATHML_DOCTYPE}
-    <html>
-    <head>
-      <meta charset="UTF-8">
-    </head>
-    <body>
-      ${gmd.gmdToHtml(text)}
-    </body></html>
-    """.stripIndent()
+def html = gmd.gmdToHtml(text)
 println html
 io.view(html)
 

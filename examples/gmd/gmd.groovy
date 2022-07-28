@@ -16,12 +16,12 @@ how about _that_?
 
 gmd = new Gmd()
 
-html = gmd.gmdToHtml(text)
+html = gmd.gmdToHtmlDoc(text)
 io.view(html , "gmd->html" )
 
 file = io.projectFile("text.gmd")
 file.write text
-html2 = gmd.gmdToHtml(file.text)
+html2 = gmd.gmdToHtmlDoc(file.text)
 file.delete()
 io.view(html2 , "gmd file ->html" ) 
 file = io.projectFile("text.html")

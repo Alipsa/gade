@@ -254,13 +254,14 @@ public class InoutComponent extends TabPane  {
     });
   }
 
+  /*
   public void decorateAndViewHtml(String html, String... title) {
     Platform.runLater(() -> {
       viewer.decorateAndViewHtml(html, title);
       getSelectionModel().select(viewer);
     });
   }
-
+ */
   public void viewHelp(String title, String text) {
     Platform.runLater(() -> {
       helpTab.showText(text, title);

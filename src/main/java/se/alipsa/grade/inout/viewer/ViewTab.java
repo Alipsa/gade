@@ -1,7 +1,6 @@
 package se.alipsa.grade.inout.viewer;
 
 import static se.alipsa.grade.Constants.KEY_CODE_COPY;
-import static se.alipsa.grade.utils.HtmlDecorator.decorate;
 import static se.alipsa.grade.utils.TableUtils.toRowList;
 
 import javafx.beans.binding.Bindings;
@@ -225,6 +224,7 @@ public class ViewTab extends Tab {
     }
   }
 
+  /*
   public void decorateAndViewHtml(String content, String... title) {
     Tab tab = new Tab();
     if (title.length > 0) {
@@ -241,6 +241,8 @@ public class ViewTab extends Tab {
     tab.setContent(browser);
     viewPane.getSelectionModel().select(tab);
   }
+
+   */
 
   private void createContextMenu(WebView browser, String content, boolean... useLoadOpt) {
     boolean useLoad = useLoadOpt.length > 0 && useLoadOpt[0];
