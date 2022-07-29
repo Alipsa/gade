@@ -57,6 +57,11 @@ a connection and choose "view connection".
 # Issues and Feature requests
 For any issues or feature request etc. on Grade please use the [github issue feature](https://github.com/perNyfelt/grade/issues)
 
+# Examples
+In the [examples](https://github.com/perNyfelt/grade/tree/main/examples) dir you can find a lot of examples of using Grade.
+Many of them are taken from Paul Kings [groovy-data-science](https://github.com/paulk-asert/groovy-data-science) project at Github
+and modified slightly to work interactively in Grade.
+
 
 # Building and compiling
 
@@ -66,6 +71,8 @@ A quick development run is simply `gradle run`
 
 To create multi-platform distributions do `gradle clean build runtimeZip`
 You will find the zip distros (gradle-*.zip) in the build dir, and the source jar and javadoc jar in build/libs
+
+The install.sh script is an example of how to automate installation of the platform specific build on your machine.
 
 ## 3:rd party software used
 Note: only direct dependencies are listed below.
@@ -78,9 +85,12 @@ Apache Software License, Version 2.0.
 tools for working with tables and columns with the ability to create statistical models and visualizations.
 Apache License, Version 2.0
 
-### org.fxmisc.richtext:richtextfx
-Used to color (syntax highlight) code.
+### io.github.classgraph:classgraph
+Very fast class and module loader scanning library. Used for autocompletion among other things.
+MIT License
 
+### org.fxmisc.richtext:richtextfx
+Base for all code editors. Used to color (syntax highlight) code etc.
 Copyright (c) 2013-2017, Tomas Mikula and contributors under BSD 2-Clause "Simplified" License
 
 ### org.girod:fxsvgimage
@@ -112,17 +122,24 @@ Used for reading files content
 Apache 2.0 license.
 
 ###  com.github.jsqlparser:jsqlparser
-Used to validate and analyse SQL code. Apache Software License, Version 2.0.
+Used to validate and analyse SQL code. 
+Apache Software License, Version 2.0.
 
-### org.apache.maven.shared:maven-invoker,maven-shared-utils
-Used to run maven (run pom.xml files). Apache Software License, Version 2.0.
+### org.apache.maven:maven-artifact
+Used to do semantic version comparisons. 
+Apache Software License, Version 2.0.
 
 ### org.eclipse.jgit:org.eclipse.jgit
-Used to provide git support. Eclipse Distribution License v1.0
+Used to provide git support. 
+Eclipse Distribution License v1.0
 
-### io.github.classgraph:classgraph
-Very fast class and module loader scanning library. Used for autocompletion among other things.
-MIT License
+### se.alipsa.groovy:data-utils
+Makes it possible to load jdbc drivers without having to resort to the system classloader.
+MIT license.
+
+### se.alipsa.groovy:gmd
+Provides support for processing Groovy Markdown (gmd).
+MIT license.
 
 # Contributing
 If you are interested in helping out, reporting issues, creating tests or implementing new features
