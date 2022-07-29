@@ -1,7 +1,7 @@
-# Grade
+# Gade
 ## A Groovy based Analytics Development Environment for Analysts and Data Scientists 
 
-Grade started off as a fork of [Ride](/alipsa/ride) but I wanted a simpler, more integrated set-up for Groovy based Data Science work. 
+Gade started off as a fork of [Ride](/alipsa/ride) but I wanted a simpler, more integrated set-up for Groovy based Data Science work. 
 Since there is no equivalent to a data.frame OOTB in Java or Groovy, I decided to use [Tablesaw](/jtablesaw/tablesaw) 
 and integrate it as much as possible to get a similarly convenient experience as in R.
 
@@ -15,23 +15,23 @@ see variables created, syntax highlighting for XML, SQL, Java, Groovy, Javascrip
 It also has wizards to create Groovy applications or Libraries and of course, integrated support 
 for git and maven making it a very convenient development environment for analytics and data science.
 
-![Screenshot](https://raw.githubusercontent.com/perNyfelt/grade/master/docs/Screenshot.png "Screenshot")
+![Screenshot](https://raw.githubusercontent.com/perNyfelt/gade/master/docs/Screenshot.png "Screenshot")
 
-### Installing and Running Grade
+### Installing and Running Gade
 Go to the releases tab and expand the assets section at the bottom of the release.
-Unzip the zip file grade-<platform>-<version>.zip e.g. grade-linux-1.0.0.zip into a directory of choice.
+Unzip the zip file gade-<platform>-<version>.zip e.g. gade-linux-1.0.0.zip into a directory of choice.
 
 There are icons for windows and Linux in the base folder of the unpacked zip that can be used to create a desktop shortcut/launcher.
 
-Use grade.cmd or grade.sh to start Grade.
+Use gade.cmd or gade.sh to start Gade.
 
 If you want to run the bash script from windows git bash (msys), create a shortcut with the comment
-`D:\whatever\Git\bin\bash.exe ./grade.sh`
+`D:\whatever\Git\bin\bash.exe ./gade.sh`
 Where D:\whatever is the path to your git for windows installation
-Also set the working dir in the shortcut to wherever you installed Grade.
+Also set the working dir in the shortcut to wherever you installed Gade.
 
 If you want to override or customize startup options you can create a file called env.sh (or env.cmd) in the base directory
-where you installed (unzipped) Grade, e.g:
+where you installed (unzipped) Gade, e.g:
 ```shell script
 #!/usr/bin/env bash
 
@@ -42,7 +42,7 @@ JAVA_OPTS="-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.renderer=sun.java2d.mar
 ```
 JAVA_OPTS is a special variable to add system properties (-D values) to java starting up.
 
-On Windows, you can run Grade in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
+On Windows, you can run Gade in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
 in the env.cmd i.e:
 ```shell
 SET JAVA_CMD=java
@@ -52,20 +52,20 @@ SET JAVA_CMD=java
 Showing the result of a select query in the viewer tab and the connection view that is shown when you right-click
 a connection and choose "view connection".
 
-![SQL Screenshot](https://raw.githubusercontent.com/perNyfelt/grade/master/docs/SQLScreenshot.png "SQL Screenshot")
+![SQL Screenshot](https://raw.githubusercontent.com/perNyfelt/gade/master/docs/SQLScreenshot.png "SQL Screenshot")
 
 # Issues and Feature requests
-For any issues or feature request etc. on Grade please use the [github issue feature](https://github.com/perNyfelt/grade/issues)
+For any issues or feature request etc. on Gade please use the [github issue feature](https://github.com/perNyfelt/gade/issues)
 
 # Examples
-In the [examples](https://github.com/perNyfelt/grade/tree/main/examples) dir you can find a lot of examples of using Grade.
+In the [examples](https://github.com/perNyfelt/gade/tree/main/examples) dir you can find a lot of examples of using Gade.
 Many of them are taken from Paul Kings [groovy-data-science](https://github.com/paulk-asert/groovy-data-science) project at Github
-and modified slightly to work interactively in Grade.
+and modified slightly to work interactively in Gade.
 
 
 # Building and compiling
 
-To build Grade, simply do `gradle build`
+To build Gade, simply do `gradle build`
 
 A quick development run is simply `gradle run`
 

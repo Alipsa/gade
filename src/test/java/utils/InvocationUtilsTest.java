@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import javafx.scene.control.Dialog;
 import org.junit.jupiter.api.Test;
-import se.alipsa.grade.utils.GuiUtils;
-import se.alipsa.grade.utils.InvocationUtils;
+import se.alipsa.gade.utils.GuiUtils;
+import se.alipsa.gade.utils.InvocationUtils;
 
 public class InvocationUtilsTest {
 

@@ -5,37 +5,37 @@
       <!--PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n" /-->
       <PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} %c:%L - %msg%n" />
     </Console>
-    <File name="GradeLog" fileName="grade.log">
+    <File name="GadeLog" fileName="gade.log">
       <PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} %c:%L - %msg%n"/>
     </File>
   </Appenders>
   <Loggers>
     <Root level="info" additivity="false">
       <AppenderRef ref="console" />
-      <AppenderRef ref="GradeLog" level="debug"/>
+      <AppenderRef ref="GadeLog" level="debug"/>
     </Root>
     <logger name="org.apache" level="info" additivity="false">
       <AppenderRef ref="console"/>
-      <AppenderRef ref="GradeLog"/>
+      <AppenderRef ref="GadeLog"/>
     </logger>
     <logger name="org.apache.commons" level="warn" additivity="false">
       <AppenderRef ref="console"/>
-      <AppenderRef ref="GradeLog"/>
+      <AppenderRef ref="GadeLog"/>
     </logger>
     <logger name="org.apache.commons" level="warn" additivity="false">
       <AppenderRef ref="console"/>
-      <AppenderRef ref="GradeLog"/>
+      <AppenderRef ref="GadeLog"/>
     </logger>
     <logger name="se.alipsa" level="info" additivity="false">
       <AppenderRef ref="console"/>
-      <AppenderRef ref="GradeLog"/>
+      <AppenderRef ref="GadeLog"/>
     </logger>
-    <logger name="se.alipsa.grade.console" level="info" additivity="false">
+    <logger name="se.alipsa.gade.console" level="info" additivity="false">
       <AppenderRef ref="console"/>
-      <AppenderRef ref="GradeLog"/>
+      <AppenderRef ref="GadeLog"/>
     </logger>
     <!-- uncomment to see package loading out put etc. -->
-    <!--logger name="se.alipsa.grade.console.ConsoleComponent" level="debug" additivity="false">
+    <!--logger name="se.alipsa.gade.console.ConsoleComponent" level="debug" additivity="false">
       <AppenderRef ref="console"/>
     </logger-->
   </Loggers>

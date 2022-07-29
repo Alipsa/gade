@@ -3,7 +3,7 @@ package tree;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.css.PseudoClass;
-import se.alipsa.grade.inout.FileItem;
+import se.alipsa.gade.inout.FileItem;
 
 import java.io.File;
 import java.util.Arrays;

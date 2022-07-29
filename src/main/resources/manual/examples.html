@@ -13,7 +13,7 @@
 
 <h2 id="querying_db">Querying a database</h2>
 You can of course use any Groovy or Java library to work with a database.
-Grade comes with data-utils, a layer on top of groovy.sql.Sql that makes things work more like normal Groovy code.
+Gade comes with data-utils, a layer on top of groovy.sql.Sql that makes things work more like normal Groovy code.
 When pulling a jdbc Driver using @Grab and then loading it you easily end up in classLoader issues but data-utils
 fixes that for you so you do not need to worry about that.
 
@@ -99,7 +99,7 @@ Then you can reuse this code in other scripts as follows:
     println "The Meaning of life is ${tools.meaningOfLife}"
     println tools.speak("to do good")
 </div>
-Which will print the following in the Grade console:
+Which will print the following in the Gade console:
 <pre><code>
 The Meaning of life is 42
 The true value of life is to do good
@@ -109,6 +109,6 @@ The true value of life is to do good
 A more proper way to reuse code is to create a package that you publish to a Nexus server so that anyone using @Grab
 can easily use it.<br/>
 <br/>
-Grade has a wizard that helps you create the structure and all the boilerplate code needed (Code -> Create package project).
+Gade has a wizard that helps you create the structure and all the boilerplate code needed (Code -> Create package project).
 </body>
 </html>

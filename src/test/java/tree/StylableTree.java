@@ -10,7 +10,7 @@ import javafx.scene.control.TreeItem.TreeModificationEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import se.alipsa.grade.inout.FileItem;
+import se.alipsa.gade.inout.FileItem;
 
 import java.io.File;
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 /version.properties
 /target
 /.idea
-/grade.log
+/gade.log
 /nnDeploy.sh
 /*.mv.db
 /*.trace.db

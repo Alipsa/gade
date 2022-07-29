@@ -11,7 +11,7 @@ plugins {
 
 group = 'se.alipsa'
 version = '1.0.0-SNAPSHOT'
-description = 'Grade, A Groovy Analytics Development Environment'
+description = 'Gade, A Groovy Analytics Development Environment'
 java.sourceCompatibility = JavaVersion.VERSION_17
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
@@ -22,7 +22,7 @@ javafx {
 }
 
 application {
-    mainClass = 'se.alipsa.grade.Grade'
+    mainClass = 'se.alipsa.gade.Gade'
 }
 
 
@@ -156,51 +156,51 @@ runtime {
 tasks.runtime.doLast {
     copy {
         from("$projectDir/src/bin/")
-        into("$buildDir/image/grade-linux/")
+        into("$buildDir/image/gade-linux/")
         include 'createLauncher.sh'
         include '*.png'
     }
     copy {
         from("$projectDir/src/bin/cponly")
-        into("$buildDir/image/grade-linux/")
+        into("$buildDir/image/gade-linux/")
         include '*.sh'
     }
 
     copy {
         from("$projectDir/src/bin/")
-        into("$buildDir/image/grade-mac/")
+        into("$buildDir/image/gade-mac/")
         include '*.png'
     }
     copy {
         from("$projectDir/src/bin/cponly")
-        into("$buildDir/image/grade-mac/")
+        into("$buildDir/image/gade-mac/")
         include '*.sh'
     }
 
     copy {
         from("$projectDir/src/bin/")
-        into("$buildDir/image/grade-win/")
+        into("$buildDir/image/gade-win/")
         include '*.ico'
         include '*.ps1'
     }
     copy {
         from("$projectDir/src/bin/cponly")
-        into("$buildDir/image/grade-win/")
+        into("$buildDir/image/gade-win/")
     }
 
     copy {
         from("$projectDir")
-        into("$buildDir/image/grade-linux/")
+        into("$buildDir/image/gade-linux/")
         include 'version.properties'
     }
     copy {
         from("$projectDir")
-        into("$buildDir/image/grade-mac/")
+        into("$buildDir/image/gade-mac/")
         include 'version.properties'
     }
     copy {
         from("$projectDir")
-        into("$buildDir/image/grade-win/")
+        into("$buildDir/image/gade-win/")
         include 'version.properties'
     }
 }
@@ -210,7 +210,7 @@ tasks.runtimeZip.doLast {
         ant.fileset(dir: "$buildDir") {
             include(name: "image-*.zip")
         }
-        ant.mapper(type: "glob", from: "image-*.zip", to: "grade-*-${version}.zip")
+        ant.mapper(type: "glob", from: "image-*.zip", to: "gade-*-${version}.zip")
     }
 }
 

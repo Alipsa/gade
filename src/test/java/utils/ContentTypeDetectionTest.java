@@ -1,7 +1,7 @@
 package utils;
 
 import org.junit.jupiter.api.Test;
-import se.alipsa.grade.utils.TikaUtils;
+import se.alipsa.gade.utils.TikaUtils;
 
 import java.io.File;
 import java.io.IOException;

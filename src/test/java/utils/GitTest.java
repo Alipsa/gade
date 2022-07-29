@@ -7,8 +7,8 @@ import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.*;
 import org.junit.jupiter.api.Test;
-import se.alipsa.grade.utils.git.GitUtils;
-import se.alipsa.grade.utils.git.SshTransportConfigCallback;
+import se.alipsa.gade.utils.git.GitUtils;
+import se.alipsa.gade.utils.git.SshTransportConfigCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,11 +23,11 @@ public class GitTest {
   @Test
   public void testGitFetch() throws IOException, URISyntaxException, GitAPIException {
     File curDir = new File(".");
-    while (!curDir.getName().equals("grade") && curDir.getParentFile() != null) {
+    while (!curDir.getName().equals("gade") && curDir.getParentFile() != null) {
       curDir = curDir.getParentFile();
     }
-    File gradeDir = curDir;
-    Git git = Git.open(gradeDir);
+    File gadeDir = curDir;
+    Git git = Git.open(gadeDir);
 
     String url = git.getRepository().getConfig().getString("remote", "origin", "url");
     log.info("remote origin Url is " + url);
@@ -50,11 +50,11 @@ public class GitTest {
     final Waiter waiter = new Waiter();
 
     File curDir = new File(".");
-    while (!curDir.getName().equals("grade") && curDir.getParentFile() != null) {
+    while (!curDir.getName().equals("gade") && curDir.getParentFile() != null) {
       curDir = curDir.getParentFile();
     }
-    File gradeDir = curDir;
-    Git git = Git.open(gradeDir);
+    File gadeDir = curDir;
+    Git git = Git.open(gadeDir);
 
     String url = git.getRepository().getConfig().getString("remote", "origin", "url");
 

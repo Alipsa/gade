@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.junit.jupiter.api.TestInstance;
-import se.alipsa.grade.utils.TikaUtils;
+import se.alipsa.gade.utils.TikaUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

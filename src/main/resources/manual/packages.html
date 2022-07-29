@@ -9,7 +9,7 @@ Since Groovy is running in a JVM, Java classloading mechanisms apply to loading 
 (libraries) need to be repackaged into jar files and made available to the classloader (i.e. made part of the classpath) when
 running Groovy.
 <p>
-    When using Grade you have three options to make a Groovy package available to the ScriptEngine so that you can load packages:</span>
+    When using Gade, you have three options to make a Groovy package available to the ScriptEngine so that you can load packages:</span>
     <ol>
         <li>Publish the package to a Nexus server and use <span class="code"><span class="keyword">@Grab(</span> <span class="string">"yourpackage"</span>)</span></li>
         <li>Add the dependency to the pom.xml used in your project (you need to enable the "use maven classloader" setting for this to work), no need for @Grab in this case.</li>
@@ -36,12 +36,12 @@ You just need to go the dependencies section in the projects' pom.xml and add th
 <br/>
 There is a project wizard that help you create a maven project,
 but you can easily create your ow maven project from scratch if you are familiar with maven. If you have enabled the Global Option
-"Use pom classpath" Grade will parse the pom.xml and use that classpath when running your Groovy code. You need to be aware that the way
-this is done is by creating a new classloader with the Grade classloader as the parent. This means that if a dependency is already defined in Grade
+"Use pom classpath" Gade will parse the pom.xml and use that classpath when running your Groovy code. You need to be aware that the way
+this is done is by creating a new classloader with the Gade classloader as the parent. This means that if a dependency is already defined in Gade
 this is the version that will be used regardless of what you specify in your pom. E.g. it is not possible to define another version of Groovy
-in your pom and expect Grade to honor that version when you run your Groovy code. However, Grade also support running maven directly and when you do that
+in your pom and expect Gade to honor that version when you run your Groovy code. However, Gade also support running maven directly and when you do that
 only the dependencies of your pom.xml are honored, so it is still possible to execute tests etc to verify that your project works without surprises
-before integrating it with your application server of choice to run your code. Take a look at the <a href="https://github.com/perNyfelt/grade/wiki">
+before integrating it with your application server of choice to run your code. Take a look at the <a href="https://github.com/perNyfelt/gade/wiki">
 collaborative-analytics-example in the Wiki</a> for an example of a custom Groovy package, a maven project using the package and a spring boot application using this project.
 
 <h2 id="using_packages">Using Packages</h2>
@@ -90,7 +90,7 @@ Some of the basic packages that works flawlessly from my own personal experience
     </tr>
     <tr>
         <td>Import csv files</td>
-        <td>Tablesaw core, built into Grade.</td>
+        <td>Tablesaw core, built into Gade.</td>
         <td></td>
         <td><div class="codeblock">
             <pre><span class="keyword">import</span> tech.tablesaw.api.Table

@@ -50,10 +50,10 @@
     This describes how many character that are allowed in the console. After the limit is reaches no console output will
     be written.
     <h5>Style theme</h5>
-    Grade comes with 3 predefined styles. Blue, Dark and Bright. The Bright Theme is more or less the Java FX default theme but
+    Gade comes with 3 predefined styles. Blue, Dark and Bright. The Bright Theme is more or less the Java FX default theme but
     most care has gone into making the Blue Theme a pleasant coloring theme for Groovy development.
     <h5>Use pom classpath</h5>
-    Use a classpath based on the pom.xml (with the system classpath as the parent) for running Groovy code in Grade.
+    Use a classpath based on the pom.xml (with the system classpath as the parent) for running Groovy code in Gade.
     <h5>Add build dir to classpath</h5>
     Will also add the target/classes and target/test-classes dirs to the classpath
     <h5>Restart session after maven build</h5>
@@ -63,7 +63,7 @@
     <h5>Enable git integration</h5>
     Whether to use git integration (git commands, syntax highlighting in the file view etc.) or not.
     <h5>Run global autorun.groovy on session init</h5>
-    Enable to run a file called autorun.groovy (if it exists) from the Grade install dir each time a session (re)starts.
+    Enable to run a file called autorun.groovy (if it exists) from the Gade install dir each time a session (re)starts.
     It is just a normal Groovy script enabling you to set up session variables, define functions, read in data files etc.
     Note that executing the script will give no output (unless there is some problem with the script) so print etc will
     not produce anything that can be seen.
@@ -72,7 +72,7 @@
     dir.
     <h5>Add imports when running Groovy snippets</h5>
     In Groovy, imports are not part of the engine session so when executing code line by line or marking an area and run it
-    will be problematic due to missing imports (Classes will not be found). When checked, Grade will add the import lines to the
+    will be problematic due to missing imports (Classes will not be found). When checked, Gade will add the import lines to the
     code that is selected (or to the single line executed) so that the context for the classes is there. If you do not have this checked,
     then you must use fully qualified class names if you want to be able to run single lines or sections of your code.
 </div>

@@ -18,7 +18,7 @@ PREF_TARGET="${1:-$HOME/programs/}"
 PLATFORM="${2:-$(platform)}"
 
 cd "${SCRIPT_DIR}" || exit
-echo "- Building Grade"
+echo "- Building Gade"
 ./gradlew clean runtime || exit 1
 
 PROPERTY_FILE=version.properties
@@ -34,9 +34,9 @@ function getProperty {
 RELEASE_TAG=$(getProperty "release.tag")
 
 
-TARGET_DIR="${PREF_TARGET}/grade-${RELEASE_TAG}"
+TARGET_DIR="${PREF_TARGET}/gade-${RELEASE_TAG}"
 
-LINK_DIR=$(dirname "${TARGET_DIR}")/grade
+LINK_DIR=$(dirname "${TARGET_DIR}")/gade
 
 if ls "$LINK_DIR"/env.* 1> /dev/null 2>&1; then
   echo "- Saving env files"
@@ -45,13 +45,13 @@ if ls "$LINK_DIR"/env.* 1> /dev/null 2>&1; then
 fi
 
 if [[ -d "$TARGET_DIR" ]]; then
-  echo "- Remove existing grade installation"
+  echo "- Remove existing Gade installation"
   rm -rf "$TARGET_DIR" || exit
 fi
 mkdir -p "$TARGET_DIR" || exit
 
 echo "- Copy ${PLATFORM} dist"
-cp -r "build/image/grade-${PLATFORM}/." "$TARGET_DIR" || exit
+cp -r "build/image/gade-${PLATFORM}/." "$TARGET_DIR" || exit
 
 if [[ -d "${LINK_DIR}" || -L "${LINK_DIR}" ]]; then
   echo "- Remove existing dir link (or dir)"
@@ -61,7 +61,7 @@ echo "- Create dir link"
 if [[ "$PLATFORM" == "win" ]]; then
   srcDir="$(wslpath -w "${TARGET_DIR}")"
   lnkBase="$(dirname "${LINK_DIR}")"
-  lnkDir="$(wslpath -w "$lnkBase")\\grade"
+  lnkDir="$(wslpath -w "$lnkBase")\\gade"
   # echo "creating junction to $lnkDir from $srcDir"
   cmd.exe /c "mklink /J $lnkDir $srcDir"
 else

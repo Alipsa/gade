@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-import se.alipsa.grade.utils.SemanticVersion;
+import se.alipsa.gade.utils.SemanticVersion;
 
 public class SemanticVersionTest {
 

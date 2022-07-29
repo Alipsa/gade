@@ -1,11 +1,11 @@
 <html lang="en">
 <head>
-   <title>Interacting with Grade</title>
+   <title>Interacting with Gade</title>
 </head>
 <body>
-<h1>Interacting with Grade</h1>
-Grade injects an io component into the session to enable user interaction as well as access
-to Grade contexts such as the current project directory etc.<br/>
+<h1>Interacting with Gade</h1>
+Gade injects an io component into the session to enable user interaction as well as access
+to Gade contexts such as the current project directory etc.<br/>
 <br/>
 run io.help() for a description of each method. Some highligts are:<br/>
 
@@ -53,7 +53,7 @@ Table.read().csv(file)
 Example:
 <div class="codeblock"><pre>
 <span class="keyword">import</span> tech.tablesaw.api.*
-<span class="keyword">import</span> se.alipsa.grade.chart.*
+<span class="keyword">import</span> se.alipsa.gade.chart.*
 
 <span class="comment">// read a csv file into a table</span>
 table = Table.read().csv(io.projectFile(<span class="string">"/data/sessions.csv"</span>))<br/>
@@ -82,7 +82,7 @@ svgFile = new File(io.projectDir(), <span class="string">"svgplot.svg"</span>).g
 io.display(svgFile, <span class="string">"sin -&pi;"</span>)
 </pre>
 </div>
-Note on SVG files: when you are using display(file name, title) Grade will use a webview to render the svg image.
+Note on SVG files: when you are using display(file name, title) Gade will use a webview to render the svg image.
 This is consistent with how the svg file will look in chrome and firefox but not 100% spec compliant.
 E.g. sometimes Y-axis and/or Y-axis label on a plot are not shown.
 An alternative is to use readImage() to convert the svg to a bitmap first e.g. <br/>
@@ -91,7 +91,7 @@ An alternative is to use readImage() to convert the svg to a bitmap first e.g. <
 </div>
 readImage is using the fxsvgimage library to convert the svg file. In many cases this will produce a better
 result than the web view but not always. The fxsvgimage is in pretty early stages of development so
-in the future Grade will switch to using it always but for now, you have these two ways of displaying the image
+in the future Gade will switch to using it always but for now, you have these two ways of displaying the image
 that you can use depending on what gives the best result.
 <br/>
 <br/>

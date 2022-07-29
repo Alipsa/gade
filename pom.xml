@@ -5,17 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>se.alipsa</groupId>
-    <artifactId>grade</artifactId>
+    <artifactId>gade</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Grade</name>
+    <name>Gade</name>
     <description>Java FX GUI for Groovy based data science analysis and applications</description>
-    <url>https://github.com/pernNyfelt/grade</url>
+    <url>https://github.com/pernNyfelt/gade</url>
     <licenses>
         <license>
             <name>MIT License</name>
-            <url>https://raw.githubusercontent.com/perNyfelt/grade/master/LICENSE</url>
+            <url>https://raw.githubusercontent.com/perNyfelt/gade/master/LICENSE</url>
         </license>
     </licenses>
     <developers>
@@ -27,9 +27,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/perNyfelt/grade.git</connection>
-        <developerConnection>scm:git:https://github.com/perNyfelt/grade.git</developerConnection>
-        <url>https://github.com/perNyfelt/grade/tree/master</url>
+        <connection>scm:git:https://github.com/perNyfelt/gade.git</connection>
+        <developerConnection>scm:git:https://github.com/perNyfelt/gade.git</developerConnection>
+        <url>https://github.com/perNyfelt/gade/tree/master</url>
     </scm>
 
     <properties>
@@ -554,7 +554,7 @@ release.tag=${release.tag}
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>se.alipsa.grade.Grade</mainClass>
+                    <mainClass>se.alipsa.gade.Gade</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -607,7 +607,7 @@ release.tag=${release.tag}
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>se.alipsa.grade.Grade</mainClass>
+                    <mainClass>se.alipsa.gade.Gade</mainClass>
                     <includeProjectDependencies>true</includeProjectDependencies>
                     <systemProperties>
                         <systemProperty>

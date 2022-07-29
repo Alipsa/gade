@@ -1,6 +1,6 @@
 # Using JFreeChart for graphics
 
-An alternative to using the Grade chart abstraction to create javafx charts or Plotly charts is to use the JFreeCharts
+An alternative to using the Gade chart abstraction to create javafx charts or Plotly charts is to use the JFreeCharts
 library.
 (sample adopted from [PieChartFXDemo1](https://github.com/jfree/jfree-fxdemos/blob/master/src/main/java/org/jfree/chart/fx/demo/PieChartFXDemo1.java))
 ```groovy
@@ -70,10 +70,10 @@ source.setPosition(RectangleEdge.BOTTOM)
 source.setHorizontalAlignment(HorizontalAlignment.RIGHT)
 chart.addSubtitle(source)
 viewer = new ChartViewer(chart)
-// Show the chart in the Grade plots tab
+// Show the chart in the Gade plots tab
 io.display(viewer, "Smart Phones")
 ```
-![Screenshot](https://raw.githubusercontent.com/perNyfelt/grade/master/docs/FreeChartsPie.png)
+![Screenshot](https://raw.githubusercontent.com/perNyfelt/gade/master/docs/FreeChartsPie.png)
 
 
 

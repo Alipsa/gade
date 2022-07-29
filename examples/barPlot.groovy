@@ -1,7 +1,7 @@
 import static tech.tablesaw.aggregate.AggregateFunctions.*
 import tech.tablesaw.api.*
 import tech.tablesaw.columns.numbers.*
-import se.alipsa.grade.chart.*
+import se.alipsa.gade.chart.*
 
 Table table = Table.read().csv(new File(io.scriptDir(), "/data/tornadoes_1950-2014.csv"))
 NumericColumn<Number> logNInjuries = table.numberColumn("injuries").add(1).logN()
@@ -25,7 +25,7 @@ chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.HORI
 io.display(chart)
 
 
-figure = se.alipsa.grade.chart.Plot.jsPlot(chart)
+figure = se.alipsa.gade.chart.Plot.jsPlot(chart)
 io.display(figure, "plotly")
 
 /*
