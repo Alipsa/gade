@@ -66,6 +66,7 @@ if [[ "$PLATFORM" == "win" ]]; then
   cmd.exe /c "mklink /J $lnkDir $srcDir"
 else
   ln -sf "${TARGET_DIR}" "${LINK_DIR}" || exit
+  chmod +x "${LINK_DIR}/*.sh"
 fi
 
 if [[ -d "${tmp_dir}" ]]; then
