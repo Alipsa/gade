@@ -307,7 +307,7 @@
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
-            <version>4.4</version>
+            <version>4.5</version>
         </dependency>
         <!-- Git integration Core Library -->
         <dependency>
@@ -391,7 +391,7 @@
         <dependency>
             <groupId>se.alipsa.groovy</groupId>
             <artifactId>gmd</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.3</version>
         </dependency>
         <dependency>
             <groupId>se.alipsa</groupId>
@@ -407,7 +407,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.8.2</version>
+            <version>5.9.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

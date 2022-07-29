@@ -5,6 +5,8 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.runtime' version '1.12.7'
     //id "com.github.spotbugs" version "5.0.9"
+    // Allows us to do gradle dependencyUpdates -Drevision=release
+    id "com.github.ben-manes.versions" version "0.42.0"
 }
 
 group = 'se.alipsa'
@@ -15,7 +17,7 @@ ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 javafx {
-    version = "18.0.1"
+    version = "18.0.2"
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
 }
 
@@ -65,7 +67,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation 'commons-io:commons-io:2.11.0'
-    implementation 'com.github.jsqlparser:jsqlparser:4.4'
+    implementation 'com.github.jsqlparser:jsqlparser:4.5'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
@@ -78,10 +80,10 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
     implementation 'se.alipsa.groovy:data-utils:1.0.1'
-    implementation 'se.alipsa.groovy:gmd:1.0.3-SNAPSHOT'
+    implementation 'se.alipsa.groovy:gmd:1.0.3'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
 
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
@@ -128,7 +130,8 @@ runtime {
     //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
-               'java.management', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs']
+               'java.management', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs', 'java.xml',
+               'java.scripting']
     launcher {
         noConsole = true
     }

@@ -71,7 +71,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
     if (outFile == null) {
       return;
     }
-    GmdUtil.saveGmdAsPdf(gui, outFile, getTextContent());
+    GmdUtil.saveGmdAsPdf(getTextContent(), outFile);
   }
 
   private void exportToHtml(ActionEvent actionEvent) {
