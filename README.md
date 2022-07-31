@@ -19,7 +19,7 @@ for git and maven making it a very convenient development environment for analyt
 
 ### Installing and Running Gade
 Go to the releases tab and expand the assets section at the bottom of the release.
-Unzip the zip file gade-<platform>-<version>.zip e.g. gade-linux-1.0.0.zip into a directory of choice.
+Unzip the zip file gade-platform-version.zip e.g. gade-linux-1.0.0.zip into a directory of choice.
 
 There are icons for windows and Linux in the base folder of the unpacked zip that can be used to create a desktop shortcut/launcher.
 
