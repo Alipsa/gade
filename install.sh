@@ -65,8 +65,8 @@ if [[ "$PLATFORM" == "win" ]]; then
   # echo "creating junction to $lnkDir from $srcDir"
   cmd.exe /c "mklink /J $lnkDir $srcDir"
 else
+  chmod +x "${TARGET_DIR}"/*.sh  || exit
   ln -sf "${TARGET_DIR}" "${LINK_DIR}" || exit
-  chmod +x "${LINK_DIR}/*.sh"
 fi
 
 if [[ -d "${tmp_dir}" ]]; then

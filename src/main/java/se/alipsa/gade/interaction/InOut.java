@@ -14,6 +14,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.chart.Chart;
 import se.alipsa.gade.chart.Plot;
 import se.alipsa.gade.environment.connections.ConnectionInfo;
+import se.alipsa.gade.inout.viewer.ViewHelper;
 import se.alipsa.gade.utils.*;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;

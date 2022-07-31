@@ -1,6 +1,7 @@
 package se.alipsa.gade.inout.viewer;
 
 import static se.alipsa.gade.Constants.KEY_CODE_COPY;
+import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 import static se.alipsa.gade.utils.TableUtils.toRowList;
 
 import javafx.beans.binding.Bindings;
@@ -222,107 +223,6 @@ public class ViewTab extends Tab {
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to create csv", e);
     }
-  }
-
-  /*
-  public void decorateAndViewHtml(String content, String... title) {
-    Tab tab = new Tab();
-    if (title.length > 0) {
-      tab.setText(title[0]);
-    }
-    viewPane.getTabs().add(tab);
-    WebView browser = new WebView();
-    browser.setContextMenuEnabled(false);
-
-    WebEngine webEngine = browser.getEngine();
-    String html = decorate(content, true);
-    webEngine.loadContent(html);
-    createContextMenu(browser, html);
-    tab.setContent(browser);
-    viewPane.getSelectionModel().select(tab);
-  }
-
-   */
-
-  private void createContextMenu(WebView browser, String content, boolean... useLoadOpt) {
-    boolean useLoad = useLoadOpt.length > 0 && useLoadOpt[0];
-    ContextMenu contextMenu = new ContextMenu();
-    WebEngine webEngine = browser.getEngine();
-
-    MenuItem reloadMI = new MenuItem("Reload");
-    reloadMI.setOnAction(e -> webEngine.reload());
-
-    MenuItem originalPageMI = new MenuItem("Original page");
-    // history only updates for external urls, so we add original back as a fallback
-    // e.g when going from a local file to an external link
-    originalPageMI.setOnAction(e -> {
-      if (useLoad) {
-        webEngine.load(content);
-      } else {
-        webEngine.loadContent(content);
-      }
-    });
-
-    MenuItem goBackMI = new MenuItem("Go back");
-    goBackMI.setOnAction(e -> goBack(webEngine));
-
-    MenuItem goForwardMI = new MenuItem("Go forward");
-    goForwardMI.setOnAction(a -> goForward(webEngine));
-
-    MenuItem viewSourceMI = new MenuItem("View source");
-
-    viewSourceMI.setOnAction(a -> viewSource(webEngine, null));
-
-    contextMenu.getItems().addAll(reloadMI, originalPageMI, goBackMI, goForwardMI, viewSourceMI);
-    browser.setOnMousePressed(e -> {
-      if (e.getButton() == MouseButton.SECONDARY) {
-        contextMenu.show(browser, e.getScreenX(), e.getScreenY());
-      } else {
-        contextMenu.hide();
-      }
-    });
-  }
-
-  public static void viewSource(WebEngine webEngine, TextAreaTab parent) {
-    Document doc = webEngine.getDocument();
-    try (StringWriter writer = new StringWriter()){
-      Transformer transformer = TransformerFactory.newInstance().newTransformer();
-      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-      transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-      transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-      transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-      transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-
-      transformer.transform(new DOMSource(doc), new StreamResult(writer));
-      Alert alert = new Alert(Alert.AlertType.INFORMATION);
-      alert.setTitle(webEngine.getTitle());
-      alert.setHeaderText(null);
-      XmlTextArea xmlTextArea = new XmlTextArea(parent);
-      xmlTextArea.replaceContentText(0,0, writer.toString());
-      alert.getDialogPane().setContent(xmlTextArea);
-      alert.setResizable(true);
-      alert.getDialogPane().setPrefSize(800, 600);
-      GuiUtils.addStyle(Gade.instance(), alert);
-      alert.showAndWait();
-      //Alerts.info(webEngine.getTitle(), writer.toString());
-    } catch (TransformerException | IOException e) {
-      ExceptionAlert.showAlert("Failed to read DOM", e);
-    }
-  }
-
-  private void goBack(WebEngine webEngine) {
-    final WebHistory history = webEngine.getHistory();
-    ObservableList<WebHistory.Entry> entryList = history.getEntries();
-    int currentIndex = history.getCurrentIndex();
-    int backOffset= entryList.size() > 1 && currentIndex > 0 ? -1 : 0;
-    history.go(backOffset);
-  }
-
-  private void goForward(WebEngine webEngine) {
-    final WebHistory history = webEngine.getHistory();
-    ObservableList<WebHistory.Entry> entryList = history.getEntries();
-    int currentIndex = history.getCurrentIndex();
-    history.go(entryList.size() > 1 && currentIndex < entryList.size() - 1 ? 1 : 0);
   }
 
   public void viewHtml(String url, String... title) {

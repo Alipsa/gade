@@ -1,0 +1,70 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+apply plugin: 'groovy'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.apache.groovy:groovy:$groovy4Version"
+    implementation "nz.ac.waikato.cms.weka:weka-dev:$wekaVersion"
+    implementation "com.opencsv:opencsv:$opencsvVersion"
+    implementation "org.apache.commons:commons-csv:$commonsCsvVersion"
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    implementation 'sh.joinery:joinery-dataframe:1.10'
+    implementation "org.knowm.xchart:xchart:$knowmXchartVersion"
+    // https://web.archive.org/web/20140415021609/http://xeiam.com:80/xchart.jsp
+    runtimeOnly 'com.xeiam.xchart:xchart:2.5.1' // older version of org.knowm.xchart:xchart
+    implementation "tech.tablesaw:tablesaw-core:$tablesawVersion"
+    implementation "tech.tablesaw:tablesaw-aggregate:$tablesawVersion"
+//    runtime 'com.github.fommil.netlib:all:1.1.2'
+    implementation "com.github.haifengl:smile-core:$smileVersion"
+    implementation "com.github.haifengl:smile-math:$smileVersion"
+    implementation "com.github.haifengl:smile-io:$smileVersion"
+    implementation "com.github.haifengl:smile-plot:$smileVersion"
+    implementation "org.tribuo:tribuo-regression-libsvm:$tribuoVersion"
+    implementation "org.tribuo:tribuo-regression-sgd:$tribuoVersion"
+    implementation "org.tribuo:tribuo-regression-tree:$tribuoVersion"
+    implementation "org.tribuo:tribuo-anomaly-libsvm:$tribuoVersion"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$jacksonVersion"
+    runtimeOnly "org.slf4j:slf4j-jdk14:$slf4jVersion"
+    runtimeOnly "org.bytedeco:openblas-platform:$openblasPlatformVersion"
+}
+
+tasks.register('versionInfo') {
+    doLast {
+        File javaHome = new File(System.getProperty('java.home'))
+        logger.lifecycle "Using Java from $javaHome (version ${JavaVersion.current()})"
+    }
+}
+
+tasks.register('checkJdk17Compatibility') {
+    doLast {
+        assert JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17), "JDK17+ is required but found ${JavaVersion.current()}!"
+    }
+}
+
+FileUtil.baseNames(sourceSets.main.allSource.files).each { name ->
+    tasks.register("run$name", JavaExec) {
+        group 'Application'
+        description "Run ${name}.groovy as a JVM application/Groovy script"
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = name
+        dependsOn versionInfo
+        if (name.endsWith('JDK17')) dependsOn checkJdk17Compatibility
+    }
+}
