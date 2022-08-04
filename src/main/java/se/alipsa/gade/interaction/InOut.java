@@ -1,5 +1,6 @@
 package se.alipsa.gade.interaction;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
@@ -15,7 +16,8 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.chart.Chart;
 import se.alipsa.gade.chart.Plot;
 import se.alipsa.gade.environment.connections.ConnectionInfo;
-import se.alipsa.gade.inout.viewer.ViewHelper;
+import se.alipsa.gade.model.Dependency;
+import se.alipsa.gade.model.centralsearch.CentralSearchResult;
 import se.alipsa.gade.utils.*;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
@@ -175,9 +177,9 @@ public class InOut implements GuiInteraction {
     display(node, title);
   }
 
-  public void display(JPanel swingPanel, String... title) {
+  public void display(JComponent swingComponent, String... title) {
     SwingNode swingNode = new SwingNode();
-    swingNode.setContent(swingPanel);
+    swingNode.setContent(swingComponent);
     display(swingNode, title);
   }
 
@@ -316,6 +318,9 @@ public class InOut implements GuiInteraction {
                 
         void display(Figure figure, String... titleOpt)
           Show the figure in the plots tab
+          
+        void display(JComponent swingPanel, String... titleOpt)
+          Show a swing component in the plots tab, useful for swing chart libraries e.g. xchart
                 
         void view(Table table, String... title)
           display data in the Viewer tab
@@ -401,7 +406,21 @@ public class InOut implements GuiInteraction {
           shows useful info about the class i.e. available methods in the help tab.
                 
         void help(Object obj, String... title)
-          shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.   
+          shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.
+          
+        void javadoc(String groupId, String artifactId)
+          displays javadoc for the latest version fot the artifact in the help tab   
+        
+        void javadoc(String groupId, String artifactId, String version)
+          displays javadoc in the help tab for the version of the artifact specified     
+          
+        void javadoc(String dependencyString)
+          displays javadoc in the help tab for the version of the artifact specified   
+          dependencyString is in the format groupId:artifactId:version e.g. "org.knowm.xchart:xchart:3.8.1"  
+
+        void javadoc(Class clazz)
+          displays javadoc in the help tab for class specified, looks up the class in maven central search and tries to
+          make a somewhat educated guess for which artifact it should be                
         """;
   }
 
@@ -481,6 +500,65 @@ public class InOut implements GuiInteraction {
     return helpText(obj.getClass(), false)
         + "\n"
         + StringUtils.maxLengthString(obj.toString(), 300);
+  }
+
+  /**
+   * Display javadoc in the help tab
+   *
+   * @param groupId the group id e.g: org.knowm.xchart
+   * @param artifactId the artifact id, e.g. xchart
+   * @param version the semantic version e.g. 3.8.1
+   */
+  public void javadoc(String groupId, String artifactId, String version) {
+    String url = "https://javadoc.io/doc/" + groupId + "/" + artifactId + "/" + version;
+    gui.getInoutComponent().viewHtml(
+        url, artifactId
+    );
+  }
+
+  /**
+   * Display javadoc in the help tab
+   *
+   * @param groupId the group id e.g: org.knowm.xchart
+   * @param artifactId the artifact id, e.g. xchart
+   */
+  public void javadoc(String groupId, String artifactId) {
+    javadoc(groupId, artifactId, "latest");
+  }
+
+  /**
+   * Display javadoc in the help tab
+   * @param dependencyString in the format groupId:artifactId:version, e.g. "org.knowm.xchart:xchart:3.8.1"
+   */
+  public void javadoc(String dependencyString) {
+    var dep = new Dependency(dependencyString);
+    javadoc(dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+  }
+
+  public void javadoc(Class<?> clazz) throws IOException {
+    // https://search.maven.org/solrsearch/select?q=fc:tech.tablesaw.columns.Column
+    var url = "https://search.maven.org/solrsearch/select?q=fc:" + clazz.getName() + "&rows=10&wt=json";
+    var pkgName = clazz.getPackageName();
+    var searchResult = new ObjectMapper().readValue(new URL(url), CentralSearchResult.class);
+    if (searchResult == null || searchResult.response == null || searchResult.response.docs == null || searchResult.response.docs.isEmpty()) {
+      Alerts.warn("Failed to find suitable artifact", "The search result from maven central did not contain anything useful");
+      return;
+    }
+    var doc = searchResult.response.docs.stream()
+        .filter(d -> pkgName.startsWith(d.g))
+        .findFirst()
+        .orElse(searchResult.response.docs.get(0));
+
+    //https://javadoc.io/doc/tech.tablesaw/tablesaw-core/latest/tech/tablesaw/columns/Column.html
+    String groupId = doc.g;
+    String artifactId = doc.a;
+    String packageName = pkgName.replaceAll("\\.", "/");
+    String jdocUrl = "https://javadoc.io/doc/" + groupId + "/" + artifactId + "/latest/"
+        + packageName + "/" + clazz.getSimpleName() + ".html";
+    log.info("Showing {} in help tab", jdocUrl);
+    gui.getInoutComponent().viewHtml(
+        jdocUrl, doc.a
+    );
   }
 
 

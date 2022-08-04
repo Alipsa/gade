@@ -1,0 +1,621 @@
+{
+  "responseHeader": {
+    "status": 0,
+    "QTime": 210,
+    "params": {
+      "q": "fc:tech.tablesaw.columns.Column",
+      "hl.snippets": "3",
+      "core": "",
+      "hl": "true",
+      "indent": "off",
+      "fl": "id,g,a,v,p,ec,timestamp,tags",
+      "start": "",
+      "sort": "score desc,timestamp desc,g asc,a asc,v desc",
+      "hl.fl": "fch",
+      "rows": "20",
+      "wt": "json",
+      "version": "2.2"
+    }
+  },
+  "response": {
+    "numFound": 31,
+    "start": 0,
+    "docs": [
+      {
+        "id": "org.matheclipse:matheclipse-io:2.0.0",
+        "g": "org.matheclipse",
+        "a": "matheclipse-io",
+        "v": "2.0.0",
+        "p": "jar",
+        "timestamp": 1647088594000,
+        "ec": [
+          "-sources.jar",
+          ".pom",
+          "-javadoc.jar",
+          ".jar"
+        ],
+        "tags": [
+          "symja",
+          "module"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.12.0",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.12.0",
+        "p": "jar",
+        "timestamp": 1520487866000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.9",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.9",
+        "p": "jar",
+        "timestamp": 1518931420000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.8",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.8",
+        "p": "jar",
+        "timestamp": 1518679850000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.7",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.7",
+        "p": "jar",
+        "timestamp": 1518655794000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.6",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.6",
+        "p": "jar",
+        "timestamp": 1518496886000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.5",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.5",
+        "p": "jar",
+        "timestamp": 1518378621000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.4",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.4",
+        "p": "jar",
+        "timestamp": 1514399721000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.3",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.3",
+        "p": "jar",
+        "timestamp": 1514228319000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.2",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.2",
+        "p": "jar",
+        "timestamp": 1512105563000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.1",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.1",
+        "p": "jar",
+        "timestamp": 1512014470000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.11.0",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.11.0",
+        "p": "jar",
+        "timestamp": 1510969348000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.10.0",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.10.0",
+        "p": "jar",
+        "timestamp": 1504885229000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.9.5",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.9.5",
+        "p": "jar",
+        "timestamp": 1504194219000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.9.4",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.9.4",
+        "p": "jar",
+        "timestamp": 1504145188000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.9.3",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.9.3",
+        "p": "jar",
+        "timestamp": 1503952902000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.9.2",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.9.2",
+        "p": "jar",
+        "timestamp": 1503884548000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.9.1",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.9.1",
+        "p": "jar",
+        "timestamp": 1503856237000,
+        "ec": [
+          "-sources.jar",
+          "-javadoc.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.9.0",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.9.0",
+        "p": "jar",
+        "timestamp": 1503473166000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          ".jar",
+          "-tests.jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      },
+      {
+        "id": "tech.tablesaw:tablesaw-core:0.8.0",
+        "g": "tech.tablesaw",
+        "a": "tablesaw-core",
+        "v": "0.8.0",
+        "p": "jar",
+        "timestamp": 1502842303000,
+        "ec": [
+          "-javadoc.jar",
+          "-sources.jar",
+          "-tests.jar",
+          ".jar",
+          ".pom"
+        ],
+        "tags": [
+          "integrated",
+          "with",
+          "columnar",
+          "performance",
+          "dataframe",
+          "java",
+          "high",
+          "storage"
+        ]
+      }
+    ]
+  },
+  "highlighting": {
+    "org.matheclipse:matheclipse-io:2.0.0": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.12.0": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.9": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.8": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.7": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.6": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.5": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.4": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.3": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.2": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.1": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.11.0": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.10.0": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.9.5": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.9.4": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.9.3": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.9.2": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.9.1": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.9.0": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    },
+    "tech.tablesaw:tablesaw-core:0.8.0": {
+      "fch": [
+        "<em>tech<\/em>.<em>tablesaw<\/em>.<em>columns<\/em>.<em>Column<\/em>"
+      ]
+    }
+  }
+}

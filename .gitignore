@@ -10,3 +10,5 @@
 !gradle-wrapper.jar
 .gradletasknamecache
 /platform
+/examples/candles/.gradle/
+/examples/candles/build/

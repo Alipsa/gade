@@ -18,27 +18,19 @@
 
 import tech.tablesaw.api.*
 import tech.tablesaw.plotly.api.*
-import org.apache.commons.math3.random.EmpiricalDistribution
 import org.knowm.xchart.CategoryChartBuilder
 import org.knowm.xchart.Histogram
-import org.knowm.xchart.SwingWrapper
+import org.knowm.xchart.internal.chartpart.Chart
+import org.knowm.xchart.XChartPanel
+import javax.swing.JPanel
 
-def binCount = 50
+binCount = 50
 table = Table.read().csv(new File(io.scriptDir(), "../data/kc_house_data.csv"))
 
-// TODO: fix from here
-//def price = table.select{ values -> values[3] < 30 }.retain("price")
 price = table.where(table.column("bedrooms").isLessThan(30)).column("price")
-dist = new EmpiricalDistribution(binCount).tap{ load(price.asDoubleArray?()) }
-def hist1 = new DataFrame("idx", "price")
-dist.binStats.withIndex().each { v, i -> hist1.append([i, v.n]) }
-hist1 = hist1.retain("price")
-hist1.plot(DataFrame.PlotType.BAR)
+println price.summary()
 
-// hist.plot use an older version of xchart under the covers
-// we can also use xchart directly (using new version shown)
-
-def hist2 = new Histogram(price.collect{ it[0] }, binCount)
+def hist2 = new Histogram(price.asList(), binCount)
 def chart = new CategoryChartBuilder().width(900).height(450)
         .title("Price Histogram").xAxisTitle("Price").yAxisTitle("Count").build()
 chart.addSeries("Price", hist2.xAxisData, hist2.yAxisData)
@@ -48,4 +40,7 @@ chart.styler.with {
     XAxisMin = 0
     XAxisMax = 8_000_000
 }
-new SwingWrapper(chart).displayChart()
+
+JPanel chartPanel = new XChartPanel<Chart>(chart);
+io.display(chartPanel, "Price histogram")
+//new SwingWrapper(chart).displayChart()
