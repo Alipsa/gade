@@ -1,6 +1,7 @@
 package se.alipsa.gade.interaction;
 
 import javafx.application.Platform;
+import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
@@ -37,6 +38,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 import static se.alipsa.gade.utils.FileUtils.removeExt;
+
+import javax.swing.*;
 
 public class InOut implements GuiInteraction {
 
@@ -170,6 +173,12 @@ public class InOut implements GuiInteraction {
   public void display(Image img, String... title) {
     ImageView node = new ImageView(img);
     display(node, title);
+  }
+
+  public void display(JPanel swingPanel, String... title) {
+    SwingNode swingNode = new SwingNode();
+    swingNode.setContent(swingPanel);
+    display(swingNode, title);
   }
 
   public void display(String fileName, String... title) {
