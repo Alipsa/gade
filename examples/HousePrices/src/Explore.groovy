@@ -17,7 +17,6 @@
 import static tech.tablesaw.aggregate.AggregateFunctions.*
 import tech.tablesaw.api.*
 import tech.tablesaw.plotly.api.*
-import groovy.transform.BaseScript
 
 helper = evaluate(new File(io.scriptDir(), 'tablesawUtil.groovy'))
 helper.setIo(io)
