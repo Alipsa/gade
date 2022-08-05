@@ -84,6 +84,9 @@ public class InOut implements GuiInteraction {
   }
   
   public Table select(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
+      sqlQuery = "select " + sqlQuery;
+    }
     try(Connection con = connect(connectionName);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
@@ -94,7 +97,11 @@ public class InOut implements GuiInteraction {
   public int update(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = connect(connectionName);
         Statement stm = con.createStatement()) {
-      return stm.executeUpdate(sqlQuery);
+      if (sqlQuery.trim().toLowerCase().startsWith("update ")) {
+        return stm.executeUpdate(sqlQuery);
+      } else {
+        return stm.executeUpdate("update " + sqlQuery);
+      }
     }
   }
 
@@ -107,7 +114,11 @@ public class InOut implements GuiInteraction {
   }
 
   public int insert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
-    return update(connectionName, sqlQuery);
+    if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
+      return update(connectionName, sqlQuery);
+    } else {
+      return update(connectionName, "insert into " + sqlQuery);
+    }
   }
 
   public int insert(String connectionName, Row row) {
@@ -127,7 +138,11 @@ public class InOut implements GuiInteraction {
   }
 
   public int delete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
-    return update(connectionName, sqlQuery);
+    if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
+      return update(connectionName, sqlQuery);
+    } else {
+      return update(connectionName, "delete from " + sqlQuery);
+    }
   }
 
   /**
