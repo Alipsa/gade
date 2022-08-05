@@ -19,6 +19,7 @@ import se.alipsa.gade.environment.connections.ConnectionInfo;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.model.centralsearch.CentralSearchResult;
 import se.alipsa.gade.utils.*;
+import tech.tablesaw.api.Row;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 import tech.tablesaw.plotly.components.Page;
@@ -97,8 +98,32 @@ public class InOut implements GuiInteraction {
     }
   }
 
+  public int update(String connectionName, Row row, String primaryKeyName) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  public int update(String connectionName, Table table, String primaryKeyName) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
   public int insert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     return update(connectionName, sqlQuery);
+  }
+
+  public int insert(String connectionName, Row row) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  public int insert(String connectionName, Table table) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  public int upsert(String connectionName, Row row, String primaryKeyName) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  public int upsert(String connectionName, Table table, String primaryKeyName) {
+    throw new RuntimeException("Not yet implemented");
   }
 
   public int delete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
