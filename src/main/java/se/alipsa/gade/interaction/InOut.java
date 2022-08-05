@@ -38,6 +38,7 @@ import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 
 import static se.alipsa.gade.utils.FileUtils.removeExt;
 
@@ -528,17 +529,28 @@ public class InOut implements GuiInteraction {
 
   /**
    * Display javadoc in the help tab
-   * @param dependencyString in the format groupId:artifactId:version, e.g. "org.knowm.xchart:xchart:3.8.1"
+   * @param dependencyStringOrFcqn in the format groupId:artifactId:version, e.g. "org.knowm.xchart:xchart:3.8.1"
+   *                               OR the fully qualified classname, e.g. "org.apache.commons.io.input.CharSequenceReader"
    */
-  public void javadoc(String dependencyString) {
-    var dep = new Dependency(dependencyString);
-    javadoc(dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+  public void javadoc(String dependencyStringOrFcqn) throws IOException {
+    if (dependencyStringOrFcqn == null) {
+      return;
+    }
+    if (dependencyStringOrFcqn.contains(":")) {
+      var dep = new Dependency(dependencyStringOrFcqn);
+      javadoc(dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+    } else {
+      javadocForFcqn(dependencyStringOrFcqn.substring(0, dependencyStringOrFcqn.lastIndexOf('.')),
+          dependencyStringOrFcqn.substring(dependencyStringOrFcqn.lastIndexOf('.') + 1));
+    }
   }
 
   public void javadoc(Class<?> clazz) throws IOException {
-    // https://search.maven.org/solrsearch/select?q=fc:tech.tablesaw.columns.Column
-    var url = "https://search.maven.org/solrsearch/select?q=fc:" + clazz.getName() + "&rows=10&wt=json";
-    var pkgName = clazz.getPackageName();
+    javadocForFcqn(clazz.getPackageName(), clazz.getSimpleName());
+  }
+  private void javadocForFcqn(String pkgName, String className) throws IOException {
+    // https://search.maven.org/solrsearch/select?q=fc:tech.tablesaw.columns.Columnt&rows=20&wt=json
+    var url = "https://search.maven.org/solrsearch/select?q=fc:" + pkgName + "." + className + "&rows=20&wt=json";
     var searchResult = new ObjectMapper().readValue(new URL(url), CentralSearchResult.class);
     if (searchResult == null || searchResult.response == null || searchResult.response.docs == null || searchResult.response.docs.isEmpty()) {
       Alerts.warn("Failed to find suitable artifact", "The search result from maven central did not contain anything useful");
@@ -547,18 +559,41 @@ public class InOut implements GuiInteraction {
     var doc = searchResult.response.docs.stream()
         .filter(d -> pkgName.startsWith(d.g))
         .findFirst()
-        .orElse(searchResult.response.docs.get(0));
+        .orElse(null);
+
+    String groupId;
+    String artifactId;
+    if (doc == null) {
+      List<Object> groupIds = searchResult.response.docs.stream().map(d -> d.g + ":" + d.a)
+          .distinct()
+          .collect(Collectors.toList());
+      try {
+        var grpArt = promptSelect("Class " + className + " exists in many artifacts",
+            "No obvious match found for " + className + ",\nselect the groupId:artifact you want to view",
+            "groupId:artifact",
+            groupIds,
+            groupIds.get(0));
+        if (grpArt == null || String.valueOf(grpArt).isBlank()) {
+          return;
+        }
+        var ga = String.valueOf(grpArt).split(":");
+        groupId = ga[0];
+        artifactId = ga[1];
+      } catch (ExecutionException | InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      groupId = doc.g;
+      artifactId = doc.a;
+    }
 
     //https://javadoc.io/doc/tech.tablesaw/tablesaw-core/latest/tech/tablesaw/columns/Column.html
-    String groupId = doc.g;
-    String artifactId = doc.a;
+
     String packageName = pkgName.replaceAll("\\.", "/");
     String jdocUrl = "https://javadoc.io/doc/" + groupId + "/" + artifactId + "/latest/"
-        + packageName + "/" + clazz.getSimpleName() + ".html";
+        + packageName + "/" + className + ".html";
     log.info("Showing {} in help tab", jdocUrl);
-    gui.getInoutComponent().viewHtml(
-        jdocUrl, doc.a
-    );
+    gui.getInoutComponent().viewHtml(jdocUrl, artifactId);
   }
 
 
