@@ -42,7 +42,10 @@ public class TableMetaData {
     setOrdinalPosition(row.getInt(3)); // Usually an int but on hsqldb this is a double
     setIsNullable(row.getString(4));
     setDataType(String.valueOf(row.getObject(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
-    setCharacterMaximumLength(row.getInt(6));
+    // On h2 this is a Long, on most other db's it is an int
+    Object maxLengthObj = row.getObject(6);
+    Integer maxLength = maxLengthObj == null ? null : Long.valueOf(String.valueOf(maxLengthObj)).intValue();
+    setCharacterMaximumLength(maxLength);
     setNumericPrecision(toInteger(row.getObject(7))); // On SQL Server, NUMERIC_PRECISION is of type SHORT and cannot be cast to INTEGER
     setNumericScale(row.getInt(8));
     setCollationName(row.getString(9));

@@ -26,10 +26,11 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+import static se.alipsa.gade.utils.DocUtil.saveHtmlAsPdf;
+
 public class GmdUtil {
 
   private static final Logger log = LogManager.getLogger();
-  private static Transformer transformer;
   static Gmd gmd = new Gmd();
 
 
@@ -46,58 +47,10 @@ public class GmdUtil {
    * @param textContent the content to write
    */
   public static void saveGmdAsPdf(String textContent, File target) {
-    String html = convertGmdToHtml(textContent);
-
-    // We load the html into a web view so that the highlight javascript properly add classes to code parts
-    // then we extract the DOM from the web view and use that to produce the PDF
-    WebView webview = new WebView();
-    final WebEngine webEngine = webview.getEngine();
-    webEngine.setJavaScriptEnabled(true);
-    webEngine.setUserStyleSheetLocation(HtmlDecorator.BOOTSTRAP_CSS);
-    webEngine.getLoadWorker().stateProperty().addListener(
-        (ov, oldState, newState) -> {
-          if (newState == Worker.State.SUCCEEDED) {
-            Document doc = webEngine.getDocument();
-
-            try(OutputStream os = Files.newOutputStream(target.toPath()))  {
-              String viewContent = toString(doc);
-
-              // The raw DOM document does not work, we have to parse it again with jsoup to get
-              // something that the PdfRendererBuilder (used in gmd) understands
-              org.jsoup.nodes.Document doc2 = Jsoup.parse(viewContent);
-              doc2.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
-                  .escapeMode(Entities.EscapeMode.extended)
-                  .charset(StandardCharsets.UTF_8)
-                  .prettyPrint(false);
-              Document doc3 = new W3CDom().fromJsoup(doc2);
-              gmd.htmlToPdf(doc3, os);
-              if (log.isDebugEnabled()) {
-                FileUtils.writeToFile(new File(target.getParent(), target.getName() + ".html"), toString(doc3));
-              }
-            } catch (Exception e) {
-              ExceptionAlert.showAlert("Failed to create PDF", e);
-            }
-          }
-        });
-    webEngine.loadContent(html);
+    saveHtmlAsPdf(convertGmdToHtml(textContent), target);
   }
 
-  @NotNull
-  private static String toString(Document doc) throws TransformerException {
-    if (transformer == null) {
-      transformer = TransformerFactory.newInstance().newTransformer();
-      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-      transformer.setOutputProperty(OutputKeys.METHOD, "html");
-      transformer.setOutputProperty(OutputKeys.INDENT, "no");
-      transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-    }
-    StringWriter sw = new StringWriter();
-    transformer.transform(new DOMSource(doc), new StreamResult(sw));
-    return sw.toString();
-  }
-
-
-  public static void saveGmdAsHtml(Gade gui, File target, String textContent) {
+  public static void saveGmdAsHtml(File target, String textContent) {
     try {
       String html = convertGmdToHtml(textContent);
       FileUtils.writeToFile(target, html);

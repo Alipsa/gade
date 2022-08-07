@@ -12,6 +12,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.chart.Chart;
 import se.alipsa.gade.chart.Plot;
@@ -19,6 +20,7 @@ import se.alipsa.gade.environment.connections.ConnectionInfo;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.model.centralsearch.CentralSearchResult;
 import se.alipsa.gade.utils.*;
+import tech.tablesaw.api.ColumnType;
 import tech.tablesaw.api.Row;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
@@ -40,7 +42,10 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static se.alipsa.gade.chart.DataType.isCharacter;
+import static se.alipsa.gade.chart.DataType.sqlType;
 import static se.alipsa.gade.utils.FileUtils.removeExt;
 
 import javax.swing.*;
@@ -105,12 +110,77 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int update(String connectionName, Row row, String primaryKeyName) {
-    throw new RuntimeException("Not yet implemented");
+  public int update(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+    String sql = createUpdateSql(tableName, row, matchColumnName);
+    return update(connectionName, sql);
   }
 
-  public int update(String connectionName, Table table, String primaryKeyName) {
-    throw new RuntimeException("Not yet implemented");
+  @NotNull
+  private String createUpdateSql(String tableName, Row row, String[] matchColumnName) {
+    String sql = "update " + tableName + " set ";
+    List<String> columnNames = new ArrayList<>(row.columnNames());
+    columnNames.removeAll(List.of(matchColumnName));
+    List<String> setValues = new ArrayList<>();
+    columnNames.forEach(n -> {
+      setValues.add(n + " = " + quoteIfString(row, n));
+    });
+    sql += String.join(", ", setValues);
+    sql += " where ";
+    List<String> conditions = new ArrayList<>();
+    for (String condition : matchColumnName) {
+      conditions.add(condition + " = " + quoteIfString(row, condition));
+    }
+    sql += String.join(" and ", conditions);
+    log.info("Executing update query: {}", sql);
+    return sql;
+  }
+
+  private String quoteIfString(Row row, String columnName) {
+    ColumnType type = row.getColumnType(columnName);
+    if (isCharacter(type)) {
+      return "'" + row.getString(columnName) + "'";
+    }
+    return String.valueOf(row.getObject(columnName));
+  }
+
+  public int update(String connectionName, Table table, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = connect(connectionName);
+        Statement stm = con.createStatement()) {
+      for (Row row : table) {
+        stm.addBatch(createUpdateSql(table.name(), row, matchColumnName));
+      }
+      int[] results = stm.executeBatch();
+      return IntStream.of(results).sum();
+    }
+  }
+
+  /**
+   * create table and insert the table data.
+   *
+   * @param connectionName the name of the connection defined in the Connections tab
+   * @param table the table to copy to the db
+   * @param primaryKey name(s) of the primary key columns
+   */
+  public void create(String connectionName, Table table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
+    String sql = "create table " + table.name() + "(\n";
+
+    List<String> columns = new ArrayList<>();
+    int i = 0;
+    List<ColumnType> types = table.types();
+    for (String name : table.columnNames()) {
+      String column = name + " " + sqlType(types.get(i++));
+      columns.add(column);
+    }
+    sql += String.join(",\n", columns);
+    sql += "CONSTRAINT pk_" + table.name() + " PRIMARY KEY (" + String.join(", ", primaryKey) + ")";
+    sql += "\n);";
+
+    try(Connection con = connect(connectionName);
+        Statement stm = con.createStatement()) {
+      log.info("Creating table using DDL: {}", sql);
+      stm.execute(sql);
+      insert(con, table);
+    }
   }
 
   public int insert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
@@ -121,19 +191,48 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int insert(String connectionName, Row row) {
+  public int insert(String connectionName, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
+    String sql = createInsertSql(tableName, row);
+    log.info("Executing insert query: {}", sql);
+    return insert(connectionName, sql);
+  }
+
+  private String createInsertSql(String tableName, Row row) {
+    String sql = "insert into " + tableName + " ( ";
+    List<String> columnNames = row.columnNames();
+    sql += String.join(", ", columnNames);
+    sql += " ) values ( ";
+
+    List<String> values = new ArrayList<>();
+    columnNames.forEach(n -> {
+      values.add(quoteIfString(row, n));
+    });
+    sql += String.join(", ", values);
+    sql += " ); ";
+    return sql;
+  }
+
+  public int insert(String connectionName, Table table) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = connect(connectionName)) {
+      return insert(con, table);
+    }
+  }
+
+  public int insert(Connection con, Table table) throws SQLException {
+    try(Statement stm = con.createStatement()) {
+      for (Row row : table) {
+        stm.addBatch(createInsertSql(table.name(), row));
+      }
+      int[] results = stm.executeBatch();
+      return IntStream.of(results).sum();
+    }
+  }
+
+  public int upsert(String connectionName, Row row, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
-  public int insert(String connectionName, Table table) {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  public int upsert(String connectionName, Row row, String primaryKeyName) {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  public int upsert(String connectionName, Table table, String primaryKeyName) {
+  public int upsert(String connectionName, Table table, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
@@ -142,6 +241,27 @@ public class InOut implements GuiInteraction {
       return update(connectionName, sqlQuery);
     } else {
       return update(connectionName, "delete from " + sqlQuery);
+    }
+  }
+
+  /**
+   *
+   * @param connectionName the name of the connection defined in the connection tab
+   * @param sql the sql string to execute
+   * @return if the sql returns a result set, a Table containing the data is returned, else the number of rows affected is returned
+   * @throws SQLException if there is something wrong with the sql
+   * @throws ExecutionException if it was not possible to connect
+   * @throws InterruptedException if the thread was interrupted during execution
+   */
+  public Object executeSql(String connectionName, String sql) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = connect(connectionName);
+        Statement stm = con.createStatement()) {
+      boolean hasResultSet = stm.execute(sql);
+      if (hasResultSet) {
+        return Table.read().db(stm.getResultSet());
+      } else {
+        return stm.getUpdateCount();
+      }
     }
   }
 

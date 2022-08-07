@@ -90,7 +90,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
     if (outFile == null) {
       return;
     }
-    GmdUtil.saveGmdAsHtml(gui, outFile, getTextContent());
+    GmdUtil.saveGmdAsHtml(outFile, getTextContent());
   }
 
   @Override
