@@ -217,32 +217,7 @@ public class ConnectionsTab extends Tab {
         Alerts.info("MySQL and multiple query statements", msg);
       }
       ConnectionInfo con = new ConnectionInfo(name.getValue(), dependencyText.getText(), driverText.getText(), urlText.getText(), userText.getText(), passwordField.getText());
-      try {
-        log.info("Connecting to " + urlString);
-        Connection connection = connect(con);
-        if (connection == null) {
-          boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
-              "Do you still want to save this connection?");
-          if (dontSave) {
-            return;
-          }
-        }
-        if (connection != null) {
-          connection.close();
-        }
-        log.info("Connection created successfully, all good!");
-      } catch (SQLException ex) {
-        Exception exceptionToShow = ex;
-        try {
-          JdbcUrlParser.validate(driverText.getText(), urlText.getText());
-        } catch (MalformedURLException exc) {
-          exceptionToShow = exc;
-        }
-        ExceptionAlert.showAlert("Failed to connect to database: " + exceptionToShow, ex);
-        return;
-      }
-      addConnection(con);
-      saveConnection(con);
+      if (validateAndAddConnection(con)) return;
       connectionsTable.getSelectionModel().select(connectionsTable.getItems().indexOf(con));
     });
     /*VBox buttonBox = new VBox();
@@ -260,6 +235,36 @@ public class ConnectionsTab extends Tab {
     wizardButton.setPadding(btnInsets);
     buttonInputPane.setSpacing(10);
     buttonInputPane.getChildren().addAll(newButton, addButton, wizardButton, deleteButton);
+  }
+
+  public boolean validateAndAddConnection(ConnectionInfo con) {
+    try {
+      log.info("Connecting to " + con.getUrl());
+      Connection connection = connect(con);
+      if (connection == null) {
+        boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
+            "Do you still want to save this connection?");
+        if (dontSave) {
+          return false;
+        }
+      }
+      if (connection != null) {
+        connection.close();
+      }
+      log.info("Connection created successfully, all good!");
+    } catch (SQLException ex) {
+      Exception exceptionToShow = ex;
+      try {
+        JdbcUrlParser.validate(driverText.getText(), urlText.getText());
+      } catch (MalformedURLException exc) {
+        exceptionToShow = exc;
+      }
+      ExceptionAlert.showAlert("Failed to connect to database: " + exceptionToShow, ex);
+      return false;
+    }
+    addConnection(con);
+    saveConnection(con);
+    return true;
   }
 
   private void addConnection(ConnectionInfo con) {

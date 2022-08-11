@@ -65,12 +65,33 @@ public class InOut implements GuiInteraction {
     urlUtil = new UrlUtil();
   }
 
-  public ConnectionInfo connection(String name) {
-    return gui.getEnvironmentComponent().getConnections().stream()
+  /**
+   * Create and save a connection in the Environments section, Connections tab
+   */
+  public void dbCreateConnection(String name, String dependency, String driver, String url, String user, String password) {
+    ConnectionInfo ci = new ConnectionInfo(name, dependency, driver, url, user, password);
+    if (dbConnection(name) != null) {
+      Alerts.warnFx("Cannot create connection", "A connection named " + name + " already exists");
+      return;
+    }
+    gui.getEnvironmentComponent().addConnection(ci);
+  }
+
+  public ConnectionInfo dbGetOrAddConnection(String name, String dependency, String driver, String url, String user, String password) {
+    ConnectionInfo ci = dbConnection(name);
+    if (ci != null) {
+      return ci;
+    }
+    dbCreateConnection(name, dependency, driver, url, user, password);
+    return dbConnection(name);
+  }
+
+  public ConnectionInfo dbConnection(String name) {
+    return gui.getEnvironmentComponent().getDefinedConnections().stream()
         .filter(ci -> ci.getName().equals(name)).findAny().orElse(null);
   }
 
-  public Connection connect(String name) throws SQLException, ExecutionException, InterruptedException {
+  public Connection dbConnect(String name) throws SQLException, ExecutionException, InterruptedException {
     ConnectionInfo ci = gui.getEnvironmentComponent().getDefinedConnections().stream()
         .filter(c -> c.getName().equals(name)).findAny().orElse(null);
     if (ci == null) {
@@ -79,44 +100,74 @@ public class InOut implements GuiInteraction {
     if (ci.getUrl() == null) {
       throw new RuntimeException("Connection url is missing");
     }
-    //ci = new ConnectionInfo(ci);
+    return dbConnect(ci);
+  }
+
+  public Connection dbConnect(ConnectionInfo ci) throws SQLException, ExecutionException, InterruptedException {
     String url = ci.getUrl().toLowerCase();
     if (StringUtils.isBlank(ci.getPassword()) && !url.contains("passw") && !url.contains("integratedsecurity=true")) {
-      String pwd = promptPassword("Password required", "Enter password to " + name + " for " + ci.getUser());
+      String pwd = promptPassword("Password required", "Enter password to " + ci.getName() + " for " + ci.getUser());
       ci.setPassword(pwd);
     }
     return gui.getEnvironmentComponent().connect(ci);
   }
   
-  public Table select(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  public Table dbSelect(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
-    try(Connection con = connect(connectionName);
+    try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
       return Table.read().db(rs);
     }
   }
 
-  public int update(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
-    try(Connection con = connect(connectionName);
-        Statement stm = con.createStatement()) {
-      if (sqlQuery.trim().toLowerCase().startsWith("update ")) {
-        return stm.executeUpdate(sqlQuery);
-      } else {
-        return stm.executeUpdate("update " + sqlQuery);
-      }
+  public Table dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
+      sqlQuery = "select " + sqlQuery;
+    }
+    try(Connection con = dbConnect(ci);
+        Statement stm = con.createStatement();
+        ResultSet rs = stm.executeQuery(sqlQuery)) {
+      return Table.read().db(rs);
     }
   }
 
-  public int update(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
-    String sql = createUpdateSql(tableName, row, matchColumnName);
-    return update(connectionName, sql);
+  public int dbUpdate(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(connectionName);
+        Statement stm = con.createStatement()) {
+      return dbExecuteUpdate(stm, sqlQuery);
+    }
+  }
+
+  public int dbUpdate(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(ci);
+        Statement stm = con.createStatement()) {
+      return dbExecuteUpdate(stm, sqlQuery);
+    }
+  }
+
+  private int dbExecuteUpdate(Statement stm, String sqlQuery) throws SQLException {
+    if (sqlQuery.trim().toLowerCase().startsWith("update ")) {
+      return stm.executeUpdate(sqlQuery);
+    } else {
+      return stm.executeUpdate("update " + sqlQuery);
+    }
+  }
+
+  public int dbUpdate(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+    String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
+    return dbUpdate(connectionName, sql);
+  }
+
+  public int dbUpdate(ConnectionInfo ci, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+    String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
+    return dbUpdate(ci, sql);
   }
 
   @NotNull
-  private String createUpdateSql(String tableName, Row row, String[] matchColumnName) {
+  private String dbCreateUpdateSql(String tableName, Row row, String[] matchColumnName) {
     String sql = "update " + tableName + " set ";
     List<String> columnNames = new ArrayList<>(row.columnNames());
     columnNames.removeAll(List.of(matchColumnName));
@@ -143,64 +194,121 @@ public class InOut implements GuiInteraction {
     return String.valueOf(row.getObject(columnName));
   }
 
-  public int update(String connectionName, Table table, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
-    try(Connection con = connect(connectionName);
+  public int dbUpdate(String connectionName, Table table, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+    return dbExecuteBatchUpdate(table, dbConnect(connectionName), matchColumnName);
+  }
+
+  public int dbUpdate(ConnectionInfo ci, Table table, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+    return dbExecuteBatchUpdate(table, dbConnect(ci), matchColumnName);
+  }
+
+  private int dbExecuteBatchUpdate(Table table, Connection connect, String[] matchColumnName) throws SQLException {
+    try(Connection con = connect;
         Statement stm = con.createStatement()) {
       for (Row row : table) {
-        stm.addBatch(createUpdateSql(table.name(), row, matchColumnName));
+        stm.addBatch(dbCreateUpdateSql(table.name(), row, matchColumnName));
       }
       int[] results = stm.executeBatch();
       return IntStream.of(results).sum();
     }
   }
 
+  public boolean dbTableExists(String connectionName, String tableName) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(connectionName)) {
+      return dbTableExists(con, tableName);
+    }
+  }
+
+  public boolean dbTableExists(ConnectionInfo connectioInfo, String tableName) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(connectioInfo)) {
+      return dbTableExists(con, tableName);
+    }
+  }
+
+  public boolean dbTableExists(Connection con, String tableName) throws SQLException {
+    var rs = con.getMetaData().getTables(null, null, tableName.toUpperCase(), null);
+    return rs.next();
+  }
+
+
+  public void dbCreate(String connectionName, Table table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
+    dbCreate(dbConnection(connectionName), table, primaryKey);
+  }
   /**
    * create table and insert the table data.
    *
-   * @param connectionName the name of the connection defined in the Connections tab
+   * @param connectionInfo the connection info defined in the Connections tab
    * @param table the table to copy to the db
    * @param primaryKey name(s) of the primary key columns
    */
-  public void create(String connectionName, Table table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
-    String sql = "create table " + table.name() + "(\n";
+  public void dbCreate(ConnectionInfo connectionInfo, Table table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
+
+    var tableName = table.name()
+        .replaceAll("\\.", "_")
+        .replaceAll("-", "_")
+        .replaceAll("\\*", "");
+
+
+    String sql = "create table " + tableName + "(\n";
 
     List<String> columns = new ArrayList<>();
     int i = 0;
     List<ColumnType> types = table.types();
     for (String name : table.columnNames()) {
-      String column = name + " " + sqlType(types.get(i++));
+      String column = "\"" + name + "\" " + sqlType(types.get(i++));
       columns.add(column);
     }
     sql += String.join(",\n", columns);
-    sql += "CONSTRAINT pk_" + table.name() + " PRIMARY KEY (" + String.join(", ", primaryKey) + ")";
+    if (primaryKey.length > 0) {
+      sql += "\n , CONSTRAINT pk_" + table.name() + " PRIMARY KEY (\"" + String.join("\", \"", primaryKey) + "\")";
+    }
     sql += "\n);";
 
-    try(Connection con = connect(connectionName);
+    try(Connection con = dbConnect(connectionInfo);
         Statement stm = con.createStatement()) {
+      if (dbTableExists(con, tableName)) {
+        Alerts.warnFx("Table " + tableName + " already exists", "Cannot create " + tableName + " since it already exists, no data copied to db");
+        return;
+      }
       log.info("Creating table using DDL: {}", sql);
       stm.execute(sql);
-      insert(con, table);
+      dbInsert(con, table);
     }
   }
 
-  public int insert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  public int dbInsert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
-      return update(connectionName, sqlQuery);
+      return (int)dbExecuteSql(connectionName, sqlQuery);
     } else {
-      return update(connectionName, "insert into " + sqlQuery);
+      return (int)dbExecuteSql(connectionName, "insert into " + sqlQuery);
     }
   }
 
-  public int insert(String connectionName, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
+  public int dbInsert(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
+      return (int)dbExecuteSql(ci, sqlQuery);
+    } else {
+      return (int)dbExecuteSql(ci, "insert into " + sqlQuery);
+    }
+  }
+
+  public int dbInsert(String connectionName, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
     String sql = createInsertSql(tableName, row);
     log.info("Executing insert query: {}", sql);
-    return insert(connectionName, sql);
+    return dbInsert(connectionName, sql);
+  }
+
+  public int dbInsert(ConnectionInfo ci, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
+    String sql = createInsertSql(tableName, row);
+    log.info("Executing insert query: {}", sql);
+    return dbInsert(ci, sql);
   }
 
   private String createInsertSql(String tableName, Row row) {
     String sql = "insert into " + tableName + " ( ";
     List<String> columnNames = row.columnNames();
-    sql += String.join(", ", columnNames);
+
+    sql += "\"" + String.join("\", \"", columnNames) + "\"";
     sql += " ) values ( ";
 
     List<String> values = new ArrayList<>();
@@ -212,13 +320,19 @@ public class InOut implements GuiInteraction {
     return sql;
   }
 
-  public int insert(String connectionName, Table table) throws SQLException, ExecutionException, InterruptedException {
-    try(Connection con = connect(connectionName)) {
-      return insert(con, table);
+  public int dbInsert(String connectionName, Table table) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(connectionName)) {
+      return dbInsert(con, table);
     }
   }
 
-  public int insert(Connection con, Table table) throws SQLException {
+  public int dbInsert(ConnectionInfo ci, Table table) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(ci)) {
+      return dbInsert(con, table);
+    }
+  }
+
+  public int dbInsert(Connection con, Table table) throws SQLException {
     try(Statement stm = con.createStatement()) {
       for (Row row : table) {
         stm.addBatch(createInsertSql(table.name(), row));
@@ -228,19 +342,27 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int upsert(String connectionName, Row row, String... primaryKeyName) {
+  public int dbUpsert(String connectionName, Row row, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
-  public int upsert(String connectionName, Table table, String... primaryKeyName) {
+  public int dbUpsert(String connectionName, Table table, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
-  public int delete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  public int dbDelete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
-      return update(connectionName, sqlQuery);
+      return (int)dbExecuteSql(connectionName, sqlQuery);
     } else {
-      return update(connectionName, "delete from " + sqlQuery);
+      return (int)dbExecuteSql(connectionName, "delete from " + sqlQuery);
+    }
+  }
+
+  public int dbDelete(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+    if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
+      return (int)dbExecuteSql(ci, sqlQuery);
+    } else {
+      return (int)dbExecuteSql(ci, "delete from " + sqlQuery);
     }
   }
 
@@ -253,8 +375,20 @@ public class InOut implements GuiInteraction {
    * @throws ExecutionException if it was not possible to connect
    * @throws InterruptedException if the thread was interrupted during execution
    */
-  public Object executeSql(String connectionName, String sql) throws SQLException, ExecutionException, InterruptedException {
-    try(Connection con = connect(connectionName);
+  public Object dbExecuteSql(String connectionName, String sql) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(connectionName);
+        Statement stm = con.createStatement()) {
+      boolean hasResultSet = stm.execute(sql);
+      if (hasResultSet) {
+        return Table.read().db(stm.getResultSet());
+      } else {
+        return stm.getUpdateCount();
+      }
+    }
+  }
+
+  public Object dbExecuteSql(ConnectionInfo ci, String sql) throws SQLException, ExecutionException, InterruptedException {
+    try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
