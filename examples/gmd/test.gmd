@@ -1,5 +1,10 @@
+<!-- 
+gmd or Groovy Markdown is basically markdown where groovy code can used to 
+create dynamic content. The process is gmd - md - html - pdf 
+-->
 # Test
 
+<!-- By enclosing groovy code in scriptlet tags, it can be used to create markdown, e.g: -->
 <%
 def a = 3
 for (i in 1..a) {
@@ -10,10 +15,14 @@ for (i in 1..a) {
 - first 
 - second
 
+<!-- some care needs to be taken when groovy code should just be rendered e.g:
+variable references in text i.e. ${} must be excaped as below -->
 ```groovy
 def q = 213
 println("q is \${q}")
 ``` 
+<!-- We can use entities -->
 X = &sum;(&radic;2&pi; + &#8731;3)
+<!-- and since we are in UTF-8 world, we can just write special characters directly -->
 X = ∑(√2π + ∛3)
 

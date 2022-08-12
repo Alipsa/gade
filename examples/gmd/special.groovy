@@ -6,7 +6,11 @@ X = &sum;(&radic;2&pi; + &#8731;3)
 """.stripIndent()
 def gmd = new Gmd()
 def html = gmd.gmdToHtml(text)
-println html
+//println html
+
+// This prints well to html
 io.view(html)
 
-gmd.htmlToPdf(html, io.projectFile("/gmd/special.pdf"))
+// But if we wnt to save it as pdf then we must use the full ...Doc method to 
+// get the fonts and style right
+gmd.htmlToPdf(gmd.gmdToHtmlDoc(text), io.projectFile("/gmd/special.pdf"))

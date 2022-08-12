@@ -25,8 +25,7 @@ html2 = gmd.gmdToHtmlDoc(file.text)
 file.delete()
 io.view(html2 , "gmd file ->html" ) 
 file = io.projectFile("text.html")
-println(html2)
+// println(html2)
 file.write html2
-// html2 is not decorated so will not view equation properly
 io.view(file)
 file.deleteOnExit()
