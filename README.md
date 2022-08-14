@@ -57,6 +57,12 @@ a connection and choose "view connection".
 # Issues and Feature requests
 For any issues or feature request etc. on Gade please use the [github issue feature](https://github.com/perNyfelt/gade/issues)
 
+# Documentation
+ - [Cookbook](cookbook.md) - an introduction to use Gade to solve common Data Scientist tasks.
+ - [Freecharts](FreeCharts.md) - A short description on how to use the Freecharts library with Gade
+ - User Manual - can be found in Gade (Help -> User Manual)
+ - [Wiki](https://github.com/perNyfelt/gade/wiki) - Wiki pages on various topics related to Gade
+
 # Examples
 In the [examples](https://github.com/perNyfelt/gade/tree/main/examples) dir you can find a lot of examples of using Gade.
 Many of them are taken from Paul Kings [groovy-data-science](https://github.com/paulk-asert/groovy-data-science) project at Github

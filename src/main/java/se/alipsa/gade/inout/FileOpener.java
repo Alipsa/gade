@@ -42,7 +42,7 @@ public class FileOpener {
         return codeComponent.addTab(file, CodeType.SQL);
       }
       if (strEndsWith(fileNameLower, ".js")
-          || strEquals(type, "application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript")) {
+          || strEquals(type, "application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript", "application/json")) {
         return codeComponent.addTab(file, CodeType.JAVA_SCRIPT);
       }
       if (strEndsWith(fileNameLower, ".gmd")) {
@@ -60,7 +60,7 @@ public class FileOpener {
       }
       if (strStartsWith(type, "text")
                  || strEquals(type, "application/x-bat",
-          "application/x-sh", "application/json", "application/x-sas")
+          "application/x-sh", "application/x-sas")
                  || "namespace".equals(fileNameLower)
                  || "description".equals(fileNameLower)
                  || strEndsWith(fileNameLower, ".txt", ".csv", ".gitignore", ".properties", "props")) {

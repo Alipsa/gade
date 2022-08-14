@@ -84,25 +84,28 @@ public class CodeComponent extends BorderPane {
   }
 
   public TextAreaTab addTab(File file, CodeType type) {
-    TextAreaTab tab;
-    String title = file.getName();
-    tab = switch (type) {
-      case MD -> new MdTab(title, gui);
-      case GMD -> new GmdTab(title, gui);
-      case XML -> new XmlTab(title, gui);
-      case JAVA -> new JavaTab(title, gui);
-      case SQL -> new SqlTab(title, gui);
-      case GROOVY -> new GroovyTab(title, gui);
-      case JAVA_SCRIPT -> new JsTab(title, gui);
-      //case TXT -> new TxtTab(title, gui);
-      default -> new TxtTab(title, gui);
-    };
+    log.trace("Opening {} as type {}", file, type);
     try {
+      TextAreaTab tab;
+      String title = file.getName();
+      tab = switch (type) {
+        case MD -> new MdTab(title, gui);
+        case GMD -> new GmdTab(title, gui);
+        case XML -> new XmlTab(title, gui);
+        case JAVA -> new JavaTab(title, gui);
+        case SQL -> new SqlTab(title, gui);
+        case GROOVY -> new GroovyTab(title, gui);
+        case JAVA_SCRIPT -> new JsTab(title, gui);
+        //case TXT -> new TxtTab(title, gui);
+        default -> new TxtTab(title, gui);
+      };
       tab.loadFromFile(file);
-    } catch (IOException e) {
+      return addTabAndActivate(tab);
+    } catch (Throwable e) {
+      log.warn("Failed to open {} as type {}", file, type);
       ExceptionAlert.showAlert("Failed to read content of file " + file, e);
     }
-    return addTabAndActivate(tab);
+    return null;
   }
 
   public void fileSaved(File file) {

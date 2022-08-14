@@ -78,14 +78,14 @@ Some of the basic packages that works flawlessly from my own personal experience
         <td>tech.tablesaw:tablesaw-excel</td>
         <td></td>
         <td><div class="codeblock">
-            <pre><span class="keyword">@Grab</span>(<span class="string">'tech.tablesaw:tablesaw-excel:0.43.1'</span>)
-            <span class="keyword">import</span> tech.tablesaw.api.Table
-            <span class="keyword">import</span> tech.tablesaw.io.xlsx.XlsxReadOptions
-            <span class="keyword">import</span> tech.tablesaw.io.xlsx.XlsxReader
+<pre>
+<span class="keyword">import</span> tech.tablesaw.api.Table
+<span class="keyword">import</span> tech.tablesaw.io.xlsx.XlsxReadOptions
+<span class="keyword">import</span> tech.tablesaw.io.xlsx.XlsxReader
 
-            XlsxReadOptions options = XlsxReadOptions.builder(<span class="string">"myexcel.xlsx"</span>).build()
-            XlsxReader xlsxReader = new XlsxReader()
-            List&lt;Table&gt; tables = xlsxReader.readMultiple(options)</pre>
+XlsxReadOptions options = XlsxReadOptions.builder(<span class="string">"myexcel.xlsx"</span>).build()
+XlsxReader xlsxReader = new XlsxReader()
+List&lt;Table&gt; tables = xlsxReader.readMultiple(options)</pre>
         </div></td>
     </tr>
     <tr>
@@ -93,8 +93,8 @@ Some of the basic packages that works flawlessly from my own personal experience
         <td>Tablesaw core, built into Gade.</td>
         <td></td>
         <td><div class="codeblock">
-            <pre><span class="keyword">import</span> tech.tablesaw.api.Table
-            customerData <- Table.read().csv(<span class="string">"some/path/input.csv"</span>)</pre>
+<pre><span class="keyword">import</span> tech.tablesaw.api.Table
+customerData = Table.read().csv(<span class="string">"some/path/input.csv"</span>)</pre>
         </div></td>
     </tr>
     <tr>
@@ -102,8 +102,8 @@ Some of the basic packages that works flawlessly from my own personal experience
         <td>Groovy core functionality</td>
         <td></td>
         <td><div class="codeblock">
-            <pre><span class="keyword">def</span> jsonSlurper = <span class="keyword">new</span> groovy.json.JsonSlurper()
-            <span class="keyword">def calculatedScore</span> = jsonSlurper.parseText(json)</pre>
+<pre><span class="keyword">def</span> jsonSlurper = <span class="keyword">new</span> groovy.json.JsonSlurper()
+<span class="keyword">def calculatedScore</span> = jsonSlurper.parseText(json)</pre>
         </div>
         </td>
     </tr>

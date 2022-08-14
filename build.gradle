@@ -79,6 +79,9 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
+    implementation "tech.tablesaw:tablesaw-json:${tablesawVersion}"
+    implementation "tech.tablesaw:tablesaw-html:${tablesawVersion}"
+    implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
     implementation 'se.alipsa.groovy:data-utils:1.0.1'
     implementation 'se.alipsa.groovy:gmd:1.0.4-SNAPSHOT'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
@@ -132,7 +135,7 @@ runtime {
     // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
                'java.management', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs', 'java.xml',
-               'java.scripting', 'java.desktop']
+               'java.scripting', 'java.desktop', 'jdk.dynalink']
     launcher {
         noConsole = true
     }
