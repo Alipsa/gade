@@ -41,9 +41,9 @@
         <!--jgit 6 and up requires java 11-->
         <jgit.version>6.2.0.202206071550-r</jgit.version>
         <tika.version>2.4.1</tika.version>
-        <javafx.version>18.0.1</javafx.version>
+        <javafx.version>18.0.2</javafx.version>
         <jersey.version>3.0.4</jersey.version>
-        <gradle.tooling.version>7.5</gradle.tooling.version>
+        <gradle.tooling.version>7.5.1</gradle.tooling.version>
     </properties>
 
     <repositories>
@@ -324,7 +324,7 @@
         <dependency>
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>4.0.3</version>
+            <version>4.0.4</version>
             <type>pom</type>
         </dependency>
         <!-- enable @Grab to work in groovy -->
@@ -506,7 +506,7 @@ release.tag=${release.tag}
                     <dependency>
                         <groupId>org.junit.jupiter</groupId>
                         <artifactId>junit-jupiter-engine</artifactId>
-                        <version>5.8.2</version>
+                        <version>5.9.0</version>
                     </dependency>
                 </dependencies>
             </plugin>

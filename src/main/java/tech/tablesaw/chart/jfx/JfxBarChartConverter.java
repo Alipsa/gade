@@ -1,14 +1,14 @@
-package se.alipsa.gade.chart.jfx;
+package tech.tablesaw.chart.jfx;
 
 import javafx.scene.chart.*;
-import se.alipsa.gade.chart.ChartDirection;
-import se.alipsa.gade.chart.ChartType;
+import tech.tablesaw.chart.ChartDirection;
+import tech.tablesaw.chart.ChartType;
 
-import static se.alipsa.gade.chart.jfx.ConverterUtil.*;
+import static tech.tablesaw.chart.jfx.ConverterUtil.*;
 
 public class JfxBarChartConverter {
 
-  public static XYChart<?,?> convert(se.alipsa.gade.chart.BarChart chart) {
+  public static XYChart<?,?> convert(tech.tablesaw.chart.BarChart chart) {
 
     Axis<?> xAxis = new CategoryAxis();
     Axis<?> yAxis = new NumberAxis();

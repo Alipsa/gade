@@ -1,4 +1,4 @@
-package se.alipsa.gade.chart;
+package tech.tablesaw.chart;
 
 public enum ChartType {
   STACKED,

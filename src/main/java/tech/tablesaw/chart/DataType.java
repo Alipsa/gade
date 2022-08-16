@@ -1,4 +1,4 @@
-package se.alipsa.gade.chart;
+package tech.tablesaw.chart;
 
 import tech.tablesaw.api.ColumnType;
 import tech.tablesaw.columns.Column;

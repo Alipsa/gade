@@ -14,8 +14,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.chart.Chart;
-import se.alipsa.gade.chart.Plot;
+import tech.tablesaw.chart.Chart;
+import tech.tablesaw.chart.Plot;
 import se.alipsa.gade.environment.connections.ConnectionInfo;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.model.centralsearch.CentralSearchResult;
@@ -44,8 +44,8 @@ import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static se.alipsa.gade.chart.DataType.isCharacter;
-import static se.alipsa.gade.chart.DataType.sqlType;
+import static tech.tablesaw.chart.DataType.isCharacter;
+import static tech.tablesaw.chart.DataType.sqlType;
 import static se.alipsa.gade.utils.FileUtils.removeExt;
 
 import javax.swing.*;

@@ -1,6 +1,6 @@
-package se.alipsa.gade.chart.plotly;
+package tech.tablesaw.chart.plotly;
 
-import se.alipsa.gade.chart.Chart;
+import tech.tablesaw.chart.Chart;
 import tech.tablesaw.api.Table;
 
 public class PlotlyConverterUtil {

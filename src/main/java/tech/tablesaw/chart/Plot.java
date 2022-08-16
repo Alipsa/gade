@@ -1,9 +1,9 @@
-package se.alipsa.gade.chart;
+package tech.tablesaw.chart;
 
-import se.alipsa.gade.chart.jfx.JfxAreaChartConverter;
-import se.alipsa.gade.chart.jfx.JfxBarChartConverter;
-import se.alipsa.gade.chart.plotly.PlotlyAreaChartConverter;
-import se.alipsa.gade.chart.plotly.PlotlyBarChartConverter;
+import tech.tablesaw.chart.jfx.JfxAreaChartConverter;
+import tech.tablesaw.chart.jfx.JfxBarChartConverter;
+import tech.tablesaw.chart.plotly.PlotlyAreaChartConverter;
+import tech.tablesaw.chart.plotly.PlotlyBarChartConverter;
 import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;

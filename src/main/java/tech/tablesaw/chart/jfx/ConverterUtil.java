@@ -1,10 +1,11 @@
-package se.alipsa.gade.chart.jfx;
+package tech.tablesaw.chart.jfx;
 
 import javafx.scene.chart.*;
+import tech.tablesaw.chart.Chart;
 
 public class ConverterUtil {
 
-  public static void populateVerticalSeries(XYChart<?,?> fxChart, se.alipsa.gade.chart.Chart data) {
+  public static void populateVerticalSeries(XYChart<?,?> fxChart, Chart data) {
     var series = data.getValueSeries();
     var categories = data.getCategorySeries();
     for (var column : series) {
@@ -17,7 +18,7 @@ public class ConverterUtil {
     }
   }
 
-  public static void populateHorizontalSeries(XYChart<?,?> fxChart, se.alipsa.gade.chart.Chart data) {
+  public static void populateHorizontalSeries(XYChart<?,?> fxChart, Chart data) {
     var series = data.getValueSeries();
     var categories = data.getCategorySeries();
     for (var column : series) {

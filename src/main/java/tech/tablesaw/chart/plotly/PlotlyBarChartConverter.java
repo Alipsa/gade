@@ -1,17 +1,15 @@
-package se.alipsa.gade.chart.plotly;
+package tech.tablesaw.chart.plotly;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import se.alipsa.gade.chart.BarChart;
-import se.alipsa.gade.chart.ChartDirection;
-import se.alipsa.gade.chart.ChartType;
+import tech.tablesaw.chart.BarChart;
+import tech.tablesaw.chart.ChartDirection;
+import tech.tablesaw.chart.ChartType;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.api.HorizontalBarPlot;
 import tech.tablesaw.plotly.api.VerticalBarPlot;
 import tech.tablesaw.plotly.components.Figure;
 import tech.tablesaw.plotly.components.Layout;
-
-import static se.alipsa.gade.chart.plotly.PlotlyConverterUtil.mergeColumns;
 
 public class PlotlyBarChartConverter {
 
@@ -25,7 +23,7 @@ public static Figure convert(BarChart chart) {
       barMode = Layout.BarMode.STACK;
     }
     var categoryColumn = chart.getCategorySeries();
-    Table merged = mergeColumns(chart);
+    Table merged = PlotlyConverterUtil.mergeColumns(chart);
     String[] valueNames = merged.rejectColumns(0).columnNames().toArray(new String[0]);
     if (ChartDirection.HORIZONTAL.equals(chart.getDirection())) {
       return HorizontalBarPlot.create(

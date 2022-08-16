@@ -3,5 +3,5 @@
  * It describes a higher level of abstraction compared to jsplot and enables a chart to be
  * rendered in various formats e.g as an image, plot.ly javascript, javafx component, pdf etc.
  */
-package se.alipsa.gade.chart;
+package tech.tablesaw.chart;
 

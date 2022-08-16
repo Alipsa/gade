@@ -7,8 +7,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.tablesaw.api.*;
+import tech.tablesaw.chart.BarChart;
+import tech.tablesaw.chart.ChartDirection;
+import tech.tablesaw.chart.ChartType;
+import tech.tablesaw.chart.Plot;
 import tech.tablesaw.columns.numbers.*;
-import se.alipsa.gade.chart.*;
 
 import java.io.FileNotFoundException;
 
@@ -17,7 +20,7 @@ public class BarChartTest {
     private static final Logger log = LogManager.getLogger();
 
     @Test
-    public void testJsTransform() throws FileNotFoundException {
+    public void testJsTransform() {
         Table table = Table.read().csv(getClass().getResource("/data/tornadoes_1950-2014.csv"));
         NumericColumn<?> logNInjuries = table.numberColumn("injuries").add(1).logN();
         logNInjuries.setName("log injuries");
@@ -34,7 +37,7 @@ public class BarChartTest {
         var chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.VERTICAL, scaleColumn,
             summaryTable.column("sum [log injuries]"),
             summaryTable.column("Sum [Fatalities]"));
-        var figure = se.alipsa.gade.chart.Plot.jsPlot(chart);
+        var figure = Plot.jsPlot(chart);
         assertNotNull(figure);
     }
 }

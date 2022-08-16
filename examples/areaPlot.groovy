@@ -1,5 +1,5 @@
 import tech.tablesaw.api.Table
-import se.alipsa.gade.chart.AreaChart
+import tech.tablesaw.chart.AreaChart
 
 robberies = Table.read().csv(new File(io.scriptDir(), "/data/boston-robberies.csv"));
 robberies.setName("Boston Robberies by month: Jan 1966-Oct 1975")

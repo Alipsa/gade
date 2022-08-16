@@ -100,6 +100,10 @@ public class ConnectionInfo implements Comparable<ConnectionInfo> {
     this.password.setValue(password);
   }
 
+  public ConnectionInfo withPassword(String password) {
+    this.password.setValue(password);
+    return this;
+  }
   @Override
   public int compareTo(ConnectionInfo obj) {
       return this.toString().compareTo(obj.toString());

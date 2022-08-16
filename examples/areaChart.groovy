@@ -1,5 +1,5 @@
 import tech.tablesaw.api.*
-import se.alipsa.gade.chart.*
+import tech.tablesaw.chart.*
 
 table = Table.read().csv(new File(io.projectDir(), "/data/sessions.csv"))
 table.setName("Full")
