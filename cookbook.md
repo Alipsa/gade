@@ -16,7 +16,11 @@ I highly recommend you to read all of these after reading this cookbook to go de
   - [Import from other sources and formats](#importOther)
 - [Explore](#explore)
   - [Table info](#tableInfo)
-
+  - [Frequency tables](#frequencyTables)
+  - [Histograms](#histograms)
+  - [Scatter Plots](#scatterPlots)
+  - [Clean, merge and transform](#cleanMergeTransform)
+  - 
 # <a id="gather" />Gather
 In "the real world", the data that you need to do analysis typically comes from a few different 
 sources, usually some relational database and spreadsheets. In order to be able to combine
@@ -203,12 +207,12 @@ A Tablesaw Table has support for basic summaries built in:
 You will notice that print samples data from both head and tail of the table. 
 To print only the first 10 rows use `println glaciers.first(10)`
 
-## Frequency tables
+## <a id="frequencyTables"/>Frequency tables
 
-## Histograms
-## Scatter plots
+## <a id="histograms"/>Histograms
+## <a id="scatterPlots"/>Scatter plots
 
-# Clean, merge and transform
+# <a id ="cleanMergeTransform"/>Clean, merge and transform
 ## Sort
 ## Remove missing
 ## Remove outliers
