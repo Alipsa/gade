@@ -8,7 +8,16 @@ presentation as well as his excellent [groovy.data-science](https://github.com/p
 The other major inspiration comes from the [Tablesaw documentation](https://jtablesaw.github.io/tablesaw/).
 I highly recommend you to read all of these after reading this cookbook to go deeper into the details.
 
-# Gather
+# Table of content
+- [Gather](#gather)
+  - [Import from CSV](#importCsv)
+  - [Import from Excel](#importExcel)
+  - [Import from database](#importDb)
+  - [Import from other sources and formats](#importOther)
+- [Explore](#explore)
+  - [Table info](#tableInfo)
+
+# <a id="gather" />Gather
 In "the real world", the data that you need to do analysis typically comes from a few different 
 sources, usually some relational database and spreadsheets. In order to be able to combine
 such data you need them to be in a format that allows you to treat it in a similar way. There are 
@@ -25,7 +34,7 @@ and [Tablesaw](/jtablesaw/tablesaw). Of the two Gade provides a lot of convenien
 Tablesaw, but you can certainly use Joinery instead of you prefer. At the core of the Tablesaw api is
 the Table class which gives you similar power to manipulate data as you have with SQL in a relational database.
 
-## Import a csv file
+## <a id="importCsv" />Import a csv file
 Importing a csv file could typically be as simple as:
 ```groovy
 import tech.tablesaw.api.*
@@ -48,17 +57,17 @@ import tech.tablesaw.api.*
 import tech.tablesaw.io.csv.*
 
 CsvReadOptions.Builder builder = CsvReadOptions.builder("myFile.csv")
-  .separator('\t')										   // table is tab-delimited
-  .header(false)											   // no header
-  .dateFormat("yyyy.MM.dd")  				     // the date format to use. 
+  .separator('\t')                       // table is tab-delimited
+  .header(false)                         // no header
+  .dateFormat("yyyy.MM.dd")              // the date format to use. 
   .skipRowsWithInvalidColumnCount(true)  // skip incorrect rows
-  .missingValueIndicator("", "N/A")      // missing is either an empty string or the string N/A
+  .missingValueIndicator("", "N/A")      // missing is represented either an empty string or the string N/A
 CsvReadOptions options = builder.build();
 
 table = Table.read().usingOptions(options);
 ```
 
-## Import an excel file
+## <a id="importExcel"/>Import an excel file
 The Excel import is somewhat crude in the sense that the sheet you import should be pretty much only the 
 tabular data you want to import. Any extra header texts besides just the column names will make the sheet
 impossible to import. Hence, you might need to massage the excel file a bit e.g. before importing it.
@@ -77,7 +86,7 @@ XlsxReader xlsxReader = new XlsxReader()
 glaciers = xlsxReader.read(options)
 ```
 
-## Import data from a relational database
+## <a id="importDb"/>Import data from a relational database
 
 Groovy has excellent built-in support for reading from relational databases in the Sql class. 
 There is a snag when using @Grab however. The Sql class uses DriverManager to get the connection which 
@@ -120,16 +129,16 @@ connectionInfo = io.dbConnection("mydatabase").withPassword(getDbPasswdFromSomew
 table = io.dbSelect(connectionInfo, "select * from mytable")
 ```
 
-## Other data sources and formats
-It is also possible to import json, xml, and Open Office Calc spreadsheets. See the [examples/importData](examples/importData)
+## <a id="importOther"/>Other data sources and formats
+It is also possible to import json, xml, and Open Office Calc spreadsheets. See the [examples/importData/src](examples/importData/src)
 for some simple examples how to do that.
 
-# Explore
+# <a id="explore"/>Explore
 
 By exploring I mean getting a basic understanding of the data e.g. what kind of columns are in a table, how are values distributed,
 etc.
 
-## Table info (summaries)
+## <a id="tableInfo"/>Table info (summaries)
 A Tablesaw Table has support for basic summaries built in:
 - shape() tells how many rows and columns this table has, example:
   ```groovy
@@ -142,7 +151,7 @@ A Tablesaw Table has support for basic summaries built in:
 - structure() return a table with 3 columns describing the column index, name and type. Example:
   ```groovy
   glaciers.structure()
-  // if you have many columns you probably want to do table.structure().printAll() instead
+  // note: if you have many columns you probably want to do table.structure().printAll() instead
   ```
   output:
   ```
