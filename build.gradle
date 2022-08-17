@@ -83,7 +83,7 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-json:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-html:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
-    implementation 'se.alipsa.groovy:data-utils:1.0.1'
+    implementation 'se.alipsa.groovy:data-utils:1.0.2'
     implementation 'se.alipsa.groovy:gmd:1.0.4'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     //implementation 'se.alipsa:simple-rest:1.0.3'

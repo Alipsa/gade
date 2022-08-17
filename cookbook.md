@@ -137,7 +137,7 @@ SqlUtil.withInstance(dbUrl, dbUser, dbPasswd, dbDriver) { sql ->
         table = Table.read().db(rs)
     }
 }
-// do something with table
+// do something with the table
 ```
 
 Since querying a relational database is such a frequent task, the io object that is inserted into the 
@@ -229,7 +229,39 @@ You will notice that print samples data from both the head and the tail of the t
 To print the first 10 rows only, use `println glaciers.first(10)`
 
 ## <a id="frequencyTables"/>Frequency tables
+The se.alipsa.groovy:data-utils library (included in Gade) has a TableUtil class that we can use to create frequency tables:
 
+```groovy
+import se.alipsa.groovy.datautil.TableUtil
+
+TableUtil.frequency(glaciers, "Number of observations")
+```
+output:
+```
+      Number of observations       
+ Value  |  Frequency  |  Percent  |
+-----------------------------------
+    37  |         31  |    44.29  |
+    32  |          5  |     7.14  |
+     3  |          4  |     5.71  |
+    36  |          4  |     5.71  |
+     7  |          3  |     4.29  |
+    31  |          3  |     4.29  |
+     1  |          3  |     4.29  |
+    22  |          2  |     2.86  |
+     9  |          2  |     2.86  |
+    35  |          2  |     2.86  |
+    24  |          2  |     2.86  |
+    33  |          1  |     1.43  |
+    11  |          1  |     1.43  |
+        |          1  |     1.43  |
+    14  |          1  |     1.43  |
+    15  |          1  |     1.43  |
+    27  |          1  |     1.43  |
+    29  |          1  |     1.43  |
+     6  |          1  |     1.43  |
+    20  |          1  |     1.43  |
+```
 ## <a id="histograms"/>Histograms
 ## <a id="scatterPlots"/>Scatter plots
 
@@ -256,6 +288,8 @@ The formula is:
 
 Z = ( X<sub>i</sub> - μ ) / σ
 
+Where μ is the sample mean, and σ the standard deviation.
+
 ## <a id="merge"/>Merge
 ## <a id="aggregate"/>Aggregate
 
@@ -274,9 +308,12 @@ Z = ( X<sub>i</sub> - μ ) / σ
 # <a id="reporting"/>Reporting
 
 ## <a id="groovyMarkdown"/>Groovy Markdown (gmd)
+Groovy Markdown is basically Markdown with groovy code snippets to dynamically create markdown content.
+The [gmd](https://github.com/perNyfelt/gmd/blob/main/README.md) library combines the Groovy StreamingTemplateEngine
+with the Flexmark Markdown package to create a nice Groovy Markdown processor. 
 
 ## <a id="saveToSpreadsheets"/>Save to a spreadsheet
 
-## <a id ="saveToPresentations"/>Save to a presentation (Powerpoint or Impress)
+## <a id ="saveToPresentations"/>Save to a presentation (PowerPoint or Impress)
 
 # <a id="creatingLibraries"/>Creating libraries
