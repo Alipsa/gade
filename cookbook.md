@@ -126,14 +126,83 @@ for some simple examples how to do that.
 
 # Explore
 
-## Summaries
+By exploring I mean getting a basic understanding of the data e.g. what kind of columns are in a table, how are values distributed,
+etc.
+
+## Table info (summaries)
+A Tablesaw Table has support for basic summaries built in:
+- shape() tells how many rows and columns this table has, example:
+  ```groovy
+  glaciers.shape()
+  ```
+  output:
+  ```
+  glaciers: 70 rows X 3 cols
+  ```
+- structure() return a table with 3 columns describing the column index, name and type. Example:
+  ```groovy
+  glaciers.structure()
+  // if you have many columns you probably want to do table.structure().printAll() instead
+  ```
+  output:
+  ```
+                  Structure of glaciers                
+  Index  |          Column Name           |  Column Type  |
+  ----------------------------------------------------------
+      0  |        Number of observations  |      INTEGER  |
+      1  |                          Year  |      INTEGER  |
+      2  |  Mean cumulative mass balance  |       DOUBLE  |
+  ```
+- summary() returns a table containing summary statistics for the columns in the table; example:
+  ```groovy
+  glaciers.summary()
+  ```
+  output:
+  ```
+  Summary  |  Number of observations  |         Year         |  Mean cumulative mass balance  |
+  -----------------------------------------------------------------------------------------------
+    Count  |                      70  |                  70  |                            70  |
+      sum  |                          |              138565  |            -898.9509999999998  |
+     Mean  |                          |              1979.5  |           -12.842157142857143  |
+      Min  |                       1  |                1945  |                       -28.652  |
+      Max  |                      37  |                2014  |                             0  |
+    Range  |                      36  |                  69  |                        28.652  |
+  Variance |                          |   414.1666666666667  |             43.28931022132505  |
+  Std. Dev |                          |  20.351085147152883  |             6.579461240962291  |
+  ```
+- print(maxRows) return a pretty-printed' string representation of at most maxRows rows.
+  ```groovy
+  glaciers.print(10)
+  ```
+  output:
+  ```
+                           glaciers                            
+  Number of observations  |  Year  |  Mean cumulative mass balance  |
+  --------------------------------------------------------------------
+                          |  1945  |                             0  |
+                       1  |  1946  |                         -1.13  |
+                       1  |  1947  |                         -3.19  |
+                       1  |  1948  |                         -3.19  |
+                       3  |  1949  |                         -3.82  |
+                     ...  |   ...  |                           ...  |
+                      37  |  2010  |                       -25.158  |
+                      37  |  2011  |                       -26.294  |
+                      36  |  2012  |                        -26.93  |
+                      31  |  2013  |                       -27.817  |
+                      24  |  2014  |                       -28.652  |
+  ```
+You will notice that print samples data from both head and tail of the table. 
+To print only the first 10 rows use `println glaciers.first(10)`
+
 ## Frequency tables
+
 ## Histograms
 ## Scatter plots
 
 # Clean, merge and transform
-
+## Sort
 ## Remove missing
+## Remove outliers
 ## Adjust scales
 ## Merge
 ## Aggregate
