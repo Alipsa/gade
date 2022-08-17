@@ -19,8 +19,29 @@ I highly recommend you to read all of these after reading this cookbook to go de
   - [Frequency tables](#frequencyTables)
   - [Histograms](#histograms)
   - [Scatter Plots](#scatterPlots)
-  - [Clean, merge and transform](#cleanMergeTransform)
-  - 
+- [Clean, merge and transform](#cleanMergeTransform)
+  - [Sort](#sort)
+  - [Remove Missing](#removeMissing)
+  - [Remove Outliers](#removeOutliers)
+  - [Adjust Scales](#adjustScales)
+  - [Merge](#merge)
+  - [Aggregate](#aggregate)
+- [Analyze](#analyze)
+- [Visualize](#visualize)
+- [Machine learning, modelling and regressions](#modelling)
+  - [Linear regression](#linearRegression)
+  - [Logistic regression](#logisticRegression)
+  - [Poisson Regression](#poissonRegression)
+  - [Decision tree regression](#decisionTreeRegression)
+  - [Random forest](#randomForest)
+  - [K means clustering](#kMeansClustering)
+  - [Neural networks](#neuralNetworks)
+- [Reporting](#reporting)
+  - [Groovy Markdown](#groovyMarkdown)
+  - [Save to a spreadsheet](#saveToSpreadsheets)
+  - [Save to a presentation (Powerpoint or Impress)](#saveToPresentations)
+- [Creating libraries](#creatingLibraries)
+
 # <a id="gather" />Gather
 In "the real world", the data that you need to do analysis typically comes from a few different 
 sources, usually some relational database and spreadsheets. In order to be able to combine
@@ -144,7 +165,7 @@ etc.
 
 ## <a id="tableInfo"/>Table info (summaries)
 A Tablesaw Table has support for basic summaries built in:
-- shape() tells how many rows and columns this table has, example:
+- __shape()__ tells how many rows and columns this table has, example:
   ```groovy
   glaciers.shape()
   ```
@@ -152,7 +173,7 @@ A Tablesaw Table has support for basic summaries built in:
   ```
   glaciers: 70 rows X 3 cols
   ```
-- structure() return a table with 3 columns describing the column index, name and type. Example:
+- __structure()__ return a table with 3 columns describing the column index, name and type. Example:
   ```groovy
   glaciers.structure()
   // note: if you have many columns you probably want to do table.structure().printAll() instead
@@ -166,7 +187,7 @@ A Tablesaw Table has support for basic summaries built in:
       1  |                          Year  |      INTEGER  |
       2  |  Mean cumulative mass balance  |       DOUBLE  |
   ```
-- summary() returns a table containing summary statistics for the columns in the table; example:
+- __summary()__ returns a table containing summary statistics for the columns in the table; example:
   ```groovy
   glaciers.summary()
   ```
@@ -183,7 +204,7 @@ A Tablesaw Table has support for basic summaries built in:
   Variance |                          |   414.1666666666667  |             43.28931022132505  |
   Std. Dev |                          |  20.351085147152883  |             6.579461240962291  |
   ```
-- print(maxRows) return a pretty-printed' string representation of at most maxRows rows.
+- __print(maxRows)__ return a pretty-printed' string representation of at most maxRows rows.
   ```groovy
   glaciers.print(10)
   ```
@@ -204,36 +225,58 @@ A Tablesaw Table has support for basic summaries built in:
                       31  |  2013  |                       -27.817  |
                       24  |  2014  |                       -28.652  |
   ```
-You will notice that print samples data from both head and tail of the table. 
-To print only the first 10 rows use `println glaciers.first(10)`
+You will notice that print samples data from both the head and the tail of the table. 
+To print the first 10 rows only, use `println glaciers.first(10)`
 
 ## <a id="frequencyTables"/>Frequency tables
 
 ## <a id="histograms"/>Histograms
 ## <a id="scatterPlots"/>Scatter plots
 
-# <a id ="cleanMergeTransform"/>Clean, merge and transform
-## Sort
-## Remove missing
-## Remove outliers
-## Adjust scales
-## Merge
-## Aggregate
+# <a id="cleanMergeTransform"/>Clean, merge and transform
+## <a id="sort"/>Sort
+## <a id="removeMissing"/>Remove missing
+## <a id="removeOutliers"/>Remove outliers
+## <a id="adjustScales"/>Adjust scales
+### <a id="minMaxScaling"/>Min Max Scaling
+Ranges the data values to be between 0 and 1, the formula is:
 
-# Analyze
+Z<sub>i</sub> = ( X<sub>i</sub> - min(X) ) / ( max(X) - min(X) )
 
-# Visualize
+### <a id="meanNormalization"/>Mean normalization
+Scales the data values to be between (–1, 1), the formula is
 
-# Modelling
+X´ = ( X - μ ) / ( max(X) - min(X) )
 
-# Machine learning
+where X´ is the mean normalized value, μ is the sample mean, and X the observed (original) value
 
-# Report
+### <a id = "standardScaler"/>Standard scaler
+scales the distribution of data values so that the mean of the observed values will be 0 and standard deviation will be 1.
+The formula is:
 
-## Groovy Markdown (gmd)
+Z = ( X<sub>i</sub> - μ ) / σ
 
-## Save to a spreadsheet
+## <a id="merge"/>Merge
+## <a id="aggregate"/>Aggregate
 
-## Save to a presentation (Powerpoint or Impress)
+# <a id="analyze"/>Analyze
 
-# Creating libraries
+# <a id="visualize"/>Visualize
+
+# <a id="modelling"/>Machine learning, modelling and regressions
+## <a id="linearRegression"/>Linear regression
+## <a id="logisticRegression"/>Logistic regression
+## <a id="poissonRegression"/>Poisson Regression
+## <a id="decisionTreeRegression"/>Decision tree regression
+## <a id="randomForest"/>Random forest
+## <a id="kMeansClustering"/>K means clustering
+## <a id="neuralNetworks"/>Neural networks
+# <a id="reporting"/>Reporting
+
+## <a id="groovyMarkdown"/>Groovy Markdown (gmd)
+
+## <a id="saveToSpreadsheets"/>Save to a spreadsheet
+
+## <a id ="saveToPresentations"/>Save to a presentation (Powerpoint or Impress)
+
+# <a id="creatingLibraries"/>Creating libraries
