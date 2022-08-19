@@ -87,6 +87,12 @@ dependencies {
     implementation 'se.alipsa.groovy:gmd:1.0.4'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     //implementation 'se.alipsa:simple-rest:1.0.3'
+
+    // for XlsxWriter, TODO: remove once contributed to tablesaw
+    implementation 'org.apache.poi:poi-ooxml:5.2.2'
+    // for OdsReader and Writer, TODO: remove once contributed to tablesaw
+    implementation 'com.github.miachm.sods:SODS:1.4.0'
+
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
     testImplementation 'net.jodah:concurrentunit:0.4.6'

@@ -1,9 +1,8 @@
 /**************************************** 
- * Simple example fo how to import data
+ * Simple example of how to import data
  * from an excel file
  ****************************************/ 
 
-import tech.tablesaw.api.Table
 import tech.tablesaw.io.xlsx.XlsxReadOptions
 import tech.tablesaw.io.xlsx.XlsxReader
 

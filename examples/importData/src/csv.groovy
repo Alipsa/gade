@@ -14,15 +14,3 @@ CsvReadOptions.Builder builder = CsvReadOptions.builder(csvFile)
   .columnTypes([INTEGER, DOUBLE, INTEGER] as ColumnType[])
 
 glaciers = Table.read().usingOptions(builder.build())
-
-/*
-import tech.tablesaw.io.json.*
-writer = new StringWriter();
-jsonOptions = JsonWriteOptions.builder(writer).asObjects(true).header(true).build()
-glaciers.write()
-  .usingOptions(jsonOptions)
-
-jsonFile = new File(io.scriptDir(), "../data/glaciers.json")
-
-jsonFile.write writer.toString()
-*/
