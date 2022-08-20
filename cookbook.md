@@ -267,7 +267,9 @@ output:
 ```
 ## <a id="distributions"/>Distributions
 
-Frequency diagrams gives you a visual representation of a distribution.
+Frequency diagrams gives you a visual representation of a distribution. As this is at the data 
+exploration stage, colors, fonts and other formatting is not important so I will instead cover those things
+in the [Visualize](#visualize) section. 
 
 ```groovy
 import tech.tablesaw.api.*
@@ -310,7 +312,64 @@ io.display(ScatterPlot.create("Temperature and Ozone", data, "Temp", "Ozone"))
 ![scatterPlot_Temp_Ozone.png](docs/scatterPlot_Temp_Ozone.png "Temperature and Ozone")
 
 # <a id="cleanMergeTransform"/>Clean, merge and transform
+
+Once you have a basic understanding of the data you often need to adjust it in order
+to be able to go deeper into the analysis e.g. by collecting data together into groups (aggregating), 
+comparing variables or merging dataset (tables) together.
+
 ## <a id="sort"/>Sort
+
+There are several methods to sort a Table. Perhaps the simplest and yet quite powerful way is
+the `sortOn()` method. It takes the column name(s) to sort on as argument. If you want to sort descending then 
+prefix the column name with `-`.
+
+```groovy
+import tech.tablesaw.api.*
+import tech.tablesaw.plotly.api.*
+
+data = Table.read().csv(new File(io.scriptDir(), "../../data/airquality.csv"))
+// sort by Month and Day in ascending order, and Temp and Ozone in descending order
+sortedData = data.sortOn("Month", "Day", "-Temp", "-Ozone")
+```
+If you need finer grade of control, you can implement a [Comparator](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Comparator.html)
+and pass it to the sortOn() method. Here is an example:
+
+```groovy
+import tech.tablesaw.api.*
+import tech.tablesaw.plotly.api.*
+
+data = Table.read().csv(new File(io.scriptDir(), "../../data/airquality.csv"))
+
+class FeltTempComparator implements Comparator<Row> {
+  
+  // adjust the temperature depending on the wind to represent "felt" temperature
+  def windChill(temp, wind) {
+    // Formula according to https://www.weather.gov/media/epz/wxcalc/windChill.pdf
+    // 35.74 + 0.6215T – 35.75(V0.16) + 0.4275T(V0.16)
+    
+    // There is no windchill factor for high temp and/or weak winds
+    if (temp >= 50 && wind < 3.0) {
+      return temp
+    }
+    def exponent = 0.16 as double
+    return Math.round(
+      35.74 + 0.6215 * temp 
+      - ( 35.75 * Math.pow(wind, exponent) ) 
+      + ( 0.4275 * temp * Math.pow(wind, exponent))
+    )
+  }
+  
+  @Override
+  public int compare(Row o1, Row o2) {
+    return windChill(o1.getInt("Temp"), o1.getDouble("Wind")) - windChill(o2.getInt("Temp"), o2.getDouble("Wind"));
+  }
+}
+
+comparedData = data.sortOn(new FeltTempComparator())
+```
+Note that in practice you are like better off adding an additional, calculated, column rather
+than doing complex logic in the sort comparator.
+
 ## <a id="removeMissing"/>Remove missing
 ## <a id="removeOutliers"/>Remove outliers
 ## <a id="adjustScales"/>Adjust scales
