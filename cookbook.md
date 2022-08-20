@@ -18,6 +18,8 @@ I highly recommend you to read all of these after reading this cookbook to go de
   - [Table info](#tableInfo)
   - [Frequency tables](#frequencyTables)
   - [Histograms](#histograms)
+  - [Heat maps](#heatMaps)
+  - [Box plots](#boxPlots)
   - [Scatter Plots](#scatterPlots)
 - [Clean, merge and transform](#cleanMergeTransform)
   - [Sort](#sort)
@@ -161,7 +163,8 @@ for some simple examples how to do that.
 # <a id="explore"/>Explore
 
 By exploring I mean getting a basic understanding of the data e.g. what kind of columns are in a table, how are values distributed,
-etc.
+etc. Exploring typically means looking at the variables and their distribution.
+Tablesaw provides many ways to do this.
 
 ## <a id="tableInfo"/>Table info (summaries)
 A Tablesaw Table has support for basic summaries built in:
@@ -262,8 +265,49 @@ output:
      6  |          1  |     1.43  |
     20  |          1  |     1.43  |
 ```
-## <a id="histograms"/>Histograms
+## <a id="distributions"/>Distributions
+
+Frequency diagrams gives you a visual representation of a distribution.
+
+```groovy
+import tech.tablesaw.api.*
+import tech.tablesaw.plotly.api.*
+
+data = Table.read().csv("airquality.csv")
+io.display(Histogram.create("Temperature (°F)", data, "Temp"), "Temperature distribution")
+```
+![Temperature_histogram.png](docs/Temperature_histogram.png "Temperature distribution")
+
+## <a id="heatMaps"/>Heat maps
+```groovy
+import tech.tablesaw.api.*
+import tech.tablesaw.plotly.api.*
+
+data = Table.read().csv("airquality.csv")
+io.display(Histogram2D.create("Distribution of temp and ozone", data, "Temp", "Ozone"), "Temp/Ozone")
+```
+![heatmap_Temp_Ozone.png](docs/heatmap_Temp_Ozone.png "Temperature and Ozone distribution")
+
+### <a id="boxPlots"/>Box plots
+```groovy
+import tech.tablesaw.api.*
+import tech.tablesaw.plotly.api.*
+
+data = Table.read().csv("airquality.csv")
+io.display(BoxPlot.create("Temp by Month", data, "Month", "Temp"), "Temp/Month")
+```
+![boxplot_Temp_Month.png](docs/boxplot_Temp_Month.png "Temperature by month")
+
 ## <a id="scatterPlots"/>Scatter plots
+
+```groovy
+import tech.tablesaw.api.*
+import tech.tablesaw.plotly.api.*
+
+data = Table.read().csv("airquality.csv")
+io.display(ScatterPlot.create("Temperature and Ozone", data, "Temp", "Ozone"))
+```
+![scatterPlot_Temp_Ozone.png](docs/scatterPlot_Temp_Ozone.png "Temperature and Ozone")
 
 # <a id="cleanMergeTransform"/>Clean, merge and transform
 ## <a id="sort"/>Sort
