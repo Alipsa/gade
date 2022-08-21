@@ -340,38 +340,61 @@ import tech.tablesaw.plotly.api.*
 
 data = Table.read().csv(new File(io.scriptDir(), "../../data/airquality.csv"))
 
-class FeltTempComparator implements Comparator<Row> {
-  
-  // adjust the temperature depending on the wind to represent "felt" temperature
-  def windChill(temp, wind) {
-    // Formula according to https://www.weather.gov/media/epz/wxcalc/windChill.pdf
-    // 35.74 + 0.6215T – 35.75(V0.16) + 0.4275T(V0.16)
-    
-    // There is no windchill factor for high temp and/or weak winds
-    if (temp >= 50 && wind < 3.0) {
-      return temp
-    }
-    def exponent = 0.16 as double
-    return Math.round(
-      35.74 + 0.6215 * temp 
-      - ( 35.75 * Math.pow(wind, exponent) ) 
-      + ( 0.4275 * temp * Math.pow(wind, exponent))
-    )
+def windChill(temp, wind) {
+
+  // There is no windchill factor for high temp and/or weak winds
+  if (temp >= 50 && wind < 3.0) {
+    return temp
   }
-  
-  @Override
-  public int compare(Row o1, Row o2) {
-    return windChill(o1.getInt("Temp"), o1.getDouble("Wind")) - windChill(o2.getInt("Temp"), o2.getDouble("Wind"));
-  }
+
+  // Formula according to https://www.weather.gov/media/epz/wxcalc/windChill.pdf
+  // 35.74 + 0.6215T – 35.75(V^0.16) + 0.4275T(V^0.16)
+  return Math.round(
+      35.74 + 0.6215 * temp
+          - ( 35.75 * wind ** 0.16 )
+          + ( 0.4275* temp * wind ** 0.16)
+  )
 }
 
-comparedData = data.sortOn(new FeltTempComparator())
+def comparator = { a,b ->
+  windChill(a.getInt("Temp"), a.getDouble("Wind")) <=> windChill(b.getInt("Temp"), b.getDouble("Wind"))
+} as Comparator
+
+comparedData = data.sortOn(comparator)
 ```
 Note that in practice you are like better off adding an additional, calculated, column rather
 than doing complex logic in the sort comparator.
 
 ## <a id="removeMissing"/>Remove missing
+
+A simple way to remove any row that has a missing value is to use the `table.dropRowsWithMissingValues()` method.
+
+To be more specific, e.g. drop rows where a particular column has missing values, you 
+can use `table.dropWhere(aSelection)` instead. Here is an example
+
+```groovy
+import tech.tablesaw.api.*
+
+data = Table.read().csv(new File(io.scriptDir(), "../../data/airquality.csv"))
+solarData = data.dropWhere(data.column("Solar.R").isMissing())
+```
+
 ## <a id="removeOutliers"/>Remove outliers
+There are two ways to do this. One is to remove rows with excessive data using `dropRows()`, e.g.
+```groovy
+filtered = data.dropWhere(
+    data.numberColumn("Wind").isGreaterThan(20)
+        .and(data.numberColumn("Solar.R").isLessThan(20))
+)
+```
+The other approach is to retain only the value ranges you are interested in using `where()`, e.g:
+```groovy
+filtered2 = data.where(
+    data.numberColumn("Wind").isLessThan(20)
+        .and(data.numberColumn("Solar.R").isGreaterThan(20))
+)
+```
+
 ## <a id="adjustScales"/>Adjust scales
 ### <a id="minMaxScaling"/>Min Max Scaling
 Ranges the data values to be between 0 and 1, the formula is:
