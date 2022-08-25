@@ -3,7 +3,6 @@ package examplepackage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import tech.tablesaw.api.*
-import java.util.List
 
 /**
  * Represents a country with additional ISO code info
@@ -322,7 +321,7 @@ enum Country {
     return numCode
   }
 
-  static final List<Country> COUNTRIES = List.of(Country.values())
+  static final List<Country> COUNTRIES = List.of(values())
 
   /**
    * @param isoNumCode the iso 3166 numeric code, eg 752
@@ -339,7 +338,7 @@ enum Country {
       numCode = "00" + numCode
     }
     final String code = numCode
-    Country country = COUNTRIES.stream().filter(p -> p.numCode.equals(code)).findAny().orElse(null)
+    Country country = COUNTRIES.stream().filter(p -> p.numCode == code).findAny().orElse(null)
     if (country == null) {
       logger.warn("Unknown ISO Number code for country: " + numCode)
       if (logger.isDebugEnabled()) {
@@ -358,7 +357,7 @@ enum Country {
    * @param a2Code the iso 3166 alpha 2 code (e.g. SE)
    * @return the corresponding Country based on iso 3166 alpha 2 code (e.g. SE)
    */
-  public static Country countryForA2Code(String a2Code) {
+  static Country countryForA2Code(String a2Code) {
     Country country =  COUNTRIES.stream().filter(p -> p.a2Code.equals(a2Code)).findAny().orElse(null)
     if (country == null) {
       logger.warn("Unknown ISO a2 code for country: " + a2Code)
@@ -379,7 +378,7 @@ enum Country {
    * @param a3Code the iso 3166 alpha 2 code (e.g. SE)
    * @return the corresponding Country based on iso 3166 alpha 3 code (e.g. SWE)
    */
-  public static Country countryForA3Code(String a3Code) {
+  static Country countryForA3Code(String a3Code) {
     Country country =  COUNTRIES.stream().filter(p -> p.a3Code.equals(a3Code)).findAny().orElse(null)
     if (country == null) {
       logger.warn("Unknown ISO a3 code for country: " + a3Code)
