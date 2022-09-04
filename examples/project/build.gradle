@@ -3,6 +3,7 @@ plugins {
   id 'groovy'
 }
 
+// Set location for groovy source files and tests
 sourceSets {
   main {
     groovy {
@@ -27,26 +28,34 @@ dependencies {
 
   implementation 'tech.tablesaw:tablesaw-core:0.43.1'
   implementation 'org.slf4j:slf4j-api:2.0.0'
-
-  // Provides io functionality and a script launcher for the application
-  implementation 'se.alipsa.groovy:gade-application:1.0.0-SNAPSHOT'
+  implementation 'org.slf4j:slf4j-simple:2.0.0'
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
-  testImplementation 'org.slf4j:slf4j-simple:2.0.0'
 }
 
 tasks.named('test') {
   // Use JUnit Platform for unit tests.
   useJUnitPlatform()
+
+  // Show println in the console
+  testLogging {
+    showStandardStreams = true
+  }
 }
 
+
+// Create a jar with dependencies
 jar {
   manifest {
-    attributes "Main-Class": "se.alipsa.groovy.gadeapp.ScriptLauncher MyScript.groovy"
+    // define the main script to run when executing the jar (java -jar exampleProject.jar)
+    attributes "Main-Class": "MyScript"
   }
+  // If the dependencies have identical files then skip the duplicates
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
   from {
-    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    // THis makes gradle include all dependencies
+    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
   }
 }
 
