@@ -13,6 +13,8 @@ table = Table.create("Books").addColumns(
     LOCAL_DATE.create("checked_out"),
     STRING.create("borrower")
 )
+// Note: by not using "def" or type, variables can be accessed from tests as if we explicitly did
+//binding.setVariable("table", table)
 
 def row = table.appendRow()
 row.setInt("id", 1)
@@ -26,7 +28,5 @@ row.setString("name", "The Analects")
 row.setDate("checked_out", null)
 row.setString("borrower", null)
 
-// set variables we want to be able to test
-binding.setVariable("table", table)
 // Print the result to console
 println table
