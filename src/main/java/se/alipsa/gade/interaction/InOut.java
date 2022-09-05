@@ -839,6 +839,9 @@ public class InOut implements GuiInteraction {
     }
   }
 
+  public void javadoc(Object obj) throws IOException {
+    javadoc(obj.getClass());
+  }
   public void javadoc(Class<?> clazz) throws IOException {
     javadocForFcqn(clazz.getPackageName(), clazz.getSimpleName());
   }

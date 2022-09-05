@@ -37,7 +37,7 @@ run io.help() for a description of each method. Some highligts are:<br/>
 Here is an example:<br/>
 <div class="codeblock"><pre>
 file = io.projectFile(<span class="string">"test.csv"</span>)
-Table.read().csv(file)
+def table = Table.read().csv(file)
 </pre>
 </div>
 
@@ -128,7 +128,7 @@ Here is an example:<br/>
 <div class="codeblock">
    io.view(<span class="string">"&lt;h1&gt;Hello world3&lt;/h1&gt;"</span>, <span class="string">"viewHtml"</span>)<br/>
 </div>
-Note: viewer is an alternative. You can pass an url, file or html content to the viewer function. E.g:
+Note: You can pass an url, file or html content to the view function. E.g:
 <div class="codeblock">
    io.view(<span class="string">"http://www.alipsa.se"</span>, <span class="string">"view url"</span>)<br/>
    io.view(io.projectFile(<span class="string">"data/hello.html"</span>), <span class="string">"view file"</span>)<br/>
@@ -141,28 +141,36 @@ The io.help() function can be used to display info about an object or a class.
    io.help(myModel)<br />
    io.help(String.class)
 </div>
-
+The io.javadoc() function displays java doc for the class if it is an open source class available at javadoc.io.
+You can pass either the class, the fully qualified classname as a string, or the dependency information. Here are some examples
+<div class="codeblock">
+   io.javadoc(myTable)<br />
+   io.javadoc(Table.class)<br />
+   io.javadoc("tech.tablesaw.api.Table")<br />
+   io.javadoc("tech.tablesaw", "tablesaw-core")<br />
+   io.javadoc("tech.tablesaw:tablesaw-core:0.43.1")<br />
+</div>
 <h4>Use the connections defined in the connections tab</h4>
 <div class="codeblock">
    <div class="comment">/** Return a table from a query using a connection defined in the Connections tab */</div>
-   Table select(String connectionName, String sqlQuery)<br/>
+   Table dbSelect(String connectionName, String sqlQuery)<br/>
    <div class="comment">/** Run an insert query and return the number of rows affected */</div>
-   int rowsInserted insert(String connectionName, String sqlQuery)<br/>
+   int rowsInserted dbInsert(String connectionName, String sqlQuery)<br/>
    <div class="comment">/** Run an update query and return the number of rows affected */</div>
-   int rowsUpdated update(String connectionName, String sqlQuery)<br/>
+   int rowsUpdated dbUpdate(String connectionName, String sqlQuery)<br/>
    <div class="comment">/** Run a delete query and return the number of rows affected */</div>
-   int rowsDeleted delete(String connectionName, String sqlQuery)<br/>
+   int rowsDeleted dbDelete(String connectionName, String sqlQuery)<br/>
 </div>
 
 Here are some examples:<br/>
 <div class="codeblock"><pre>
-table <- io$select(<span class="string">"test"</span>, <span class="string">"select * from mytable"</span>)
+table <- io.dbSelect(<span class="string">"test"</span>, <span class="string">"select * from mytable"</span>)
 
-<span class="keyword">int</span> rowsAffected = io.insert(<span class="string">"test"</span>, <span class="string">"insert into mytable (name, id) values ('bar', 123"</span>)
+<span class="keyword">int</span> rowsAffected = io.dbInsert(<span class="string">"test"</span>, <span class="string">"insert into mytable (name, id) values ('bar', 123"</span>)
 
-<span class="keyword">int</span> rowsAffected = io.update(<span class="string">"test"</span>, <span class="string">"update mytable set name = 'foo' where id = 123"</span>)
+<span class="keyword">int</span> rowsAffected = io.dbUpdate(<span class="string">"test"</span>, <span class="string">"update mytable set name = 'foo' where id = 123"</span>)
 
-<span class="keyword">int</span> rowsAffected = io.delete(<span class="string">"test"</span>, <span class="string">"delete from mytable where id = 123"</span>)
+<span class="keyword">int</span> rowsAffected = io.dbDelete(<span class="string">"test"</span>, <span class="string">"delete from mytable where id = 123"</span>)
 </pre>
 </div>
 
@@ -174,7 +182,7 @@ several methods available in the io object:
    <li><b>prompt</b> - Pops up a dialog prompting for a text input</li>
    <li><b>promptPassword</b> - Pops up a dialog prompting for a password input (input hidden and replaced with a *</li>
    <li><b>promptSelect</b> - Pops up a dialog prompting the user to select from a combobox/li>
-   <li><b>prompt</b> - Pops up a dialog prompting for a date</li>
+   <li><b>promptDate</b> - Pops up a dialog prompting for a date</li>
    <li><b>promptYearMonth</b> - Pops up a dialog asking the user to select a year month</li>
    <li><b>chooseFile</b> - Opens a file chooser dialog</li>
    <li><b>chooseDir</b> - Opens a directory chooser dialog</li>
