@@ -86,7 +86,7 @@ public class MainMenu extends MenuBar {
     menu.getItems().add(projectWizard);
 
     MenuItem packageWizard = new MenuItem("Create package project");
-    packageWizard.setOnAction(this::showPackageWizard);
+    packageWizard.setOnAction(this::showLibraryWizard);
     menu.getItems().add(packageWizard);
 
     MenuItem createBasicPomMI = new MenuItem("Create basic pom.xml");
@@ -125,7 +125,7 @@ public class MainMenu extends MenuBar {
     CreateProjectWizardResult res = result.get();
     try {
       String mainProjectScript = camelCasedPackageName(res) + ".groovy";
-      String pomContent = createPom("templates/project-pom.xml", res.groupName, res.projectName, mainProjectScript);
+      String pomContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
       FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
       gui.getInoutComponent().refreshFileTree();
     } catch (IOException e) {
@@ -151,8 +151,8 @@ public class MainMenu extends MenuBar {
 
       String camelCasedPackageName = camelCasedPackageName(res);
       String mainProjectScript = camelCasedPackageName + ".groovy";
-      String pomContent = createPom("templates/project-pom.xml", res.groupName, res.projectName, mainProjectScript);
-      FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
+      String buildScriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
+      FileUtils.writeToFile(new File(res.dir, "build.gradle"), buildScriptContent);
 
       Path mainPath = new File(res.dir, "groovy").toPath();
       Files.createDirectories(mainPath);
@@ -178,8 +178,8 @@ public class MainMenu extends MenuBar {
     }
   }
 
-  private String createPom(String s, String groupName, String projectName, String... mainProjectScript) throws IOException {
-    String content = FileUtils.readContent(s);
+  private String createBuildScript(String filePath, String groupName, String projectName, String... mainProjectScript) throws IOException {
+    String content = FileUtils.readContent(filePath);
     if (mainProjectScript.length > 0) {
       content = content.replace("[mainScriptName]", mainProjectScript[0]);
     }
@@ -190,7 +190,7 @@ public class MainMenu extends MenuBar {
             .replace("[groovyVersion]", GroovySystem.getVersion());
   }
 
-  private void showPackageWizard(ActionEvent actionEvent) {
+  private void showLibraryWizard(ActionEvent actionEvent) {
     CreatePackageWizardDialog dialog = new CreatePackageWizardDialog(gui);
     Optional<CreatePackageWizardResult> result = dialog.showAndWait();
     if (result.isEmpty()) {
@@ -203,14 +203,13 @@ public class MainMenu extends MenuBar {
       String camelCasedPackageName = CaseUtils.toCamelCase(res.packageName, true,
          ' ', '_', '-', ',', '.', '/', '\\');
 
-      String pomContent = createPom("templates/package-pom.xml", res.groupName, res.packageName);
+      String pomContent = createBuildScript("templates/library_build.gradle", res.groupName, res.packageName);
       FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
 
-      FileUtils.copy("templates/NAMESPACE", res.dir);
       Path mainPath = new File(res.dir, "src/main/groovy").toPath();
       Files.createDirectories(mainPath);
-      Path rFile = mainPath.resolve(camelCasedPackageName + ".groovy");
-      Files.createFile(rFile);
+      Path scriptFile = mainPath.resolve(camelCasedPackageName + ".groovy");
+      Files.createFile(scriptFile);
       //FileUtils.writeToFile(rFile.toFile(), "# remember to add export(function name) to NAMESPACE to make them available");
       Path testPath = new File(res.dir, "src/test/groovy").toPath();
       Files.createDirectories(testPath);
@@ -238,7 +237,7 @@ public class MainMenu extends MenuBar {
       case SQL:
         lineComment = "--";
         break;
-      case JAVA:
+      case JAVA, GROOVY:
         lineComment = "//";
         break;
       default:
