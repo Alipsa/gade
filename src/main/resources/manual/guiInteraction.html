@@ -151,6 +151,7 @@ You can pass either the class, the fully qualified classname as a string, or the
    io.javadoc("tech.tablesaw:tablesaw-core:0.43.1")<br />
 </div>
 <h4>Use the connections defined in the connections tab</h4>
+The io object defines the following methods for db interaction:
 <div class="codeblock">
    <div class="comment">/** Return a table from a query using a connection defined in the Connections tab */</div>
    Table dbSelect(String connectionName, String sqlQuery)<br/>
