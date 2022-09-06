@@ -81,16 +81,16 @@ public class MainMenu extends MenuBar {
     SeparatorMenuItem separator = new SeparatorMenuItem();
     menu.getItems().add(separator);
 
-    MenuItem projectWizard = new MenuItem("Create maven project");
+    MenuItem projectWizard = new MenuItem("Create project");
     projectWizard.setOnAction(this::showProjectWizard);
     menu.getItems().add(projectWizard);
 
-    MenuItem packageWizard = new MenuItem("Create package project");
+    MenuItem packageWizard = new MenuItem("Create library");
     packageWizard.setOnAction(this::showLibraryWizard);
     menu.getItems().add(packageWizard);
 
-    MenuItem createBasicPomMI = new MenuItem("Create basic pom.xml");
-    createBasicPomMI.setOnAction(this::createBasicPom);
+    MenuItem createBasicPomMI = new MenuItem("Create build.gradle");
+    createBasicPomMI.setOnAction(this::createGradleBuild);
     menu.getItems().add(createBasicPomMI);
 
     MenuItem cloneProjectMI = new MenuItem("Clone a git project");
@@ -116,8 +116,8 @@ public class MainMenu extends MenuBar {
     }
   }
 
-  private void createBasicPom(ActionEvent actionEvent) {
-    CreateProjectWizardDialog dialog = new CreateProjectWizardDialog(gui, "Create basic pom", false);
+  private void createGradleBuild(ActionEvent actionEvent) {
+    CreateProjectWizardDialog dialog = new CreateProjectWizardDialog(gui, "Create build.gradle", false);
     Optional<CreateProjectWizardResult> result = dialog.showAndWait();
     if (result.isEmpty()) {
       return;
@@ -125,11 +125,11 @@ public class MainMenu extends MenuBar {
     CreateProjectWizardResult res = result.get();
     try {
       String mainProjectScript = camelCasedPackageName(res) + ".groovy";
-      String pomContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
-      FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
+      String scriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
+      FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
       gui.getInoutComponent().refreshFileTree();
     } catch (IOException e) {
-      ExceptionAlert.showAlert("Failed to create basic pom", e);
+      ExceptionAlert.showAlert("Failed to create build.gradle", e);
     }
   }
 
@@ -149,8 +149,8 @@ public class MainMenu extends MenuBar {
     try {
       Files.createDirectories(res.dir.toPath());
 
-      String camelCasedPackageName = camelCasedPackageName(res);
-      String mainProjectScript = camelCasedPackageName + ".groovy";
+      String camelCasedProjectName = camelCasedPackageName(res);
+      String mainProjectScript = camelCasedProjectName + ".groovy";
       String buildScriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
       FileUtils.writeToFile(new File(res.dir, "build.gradle"), buildScriptContent);
 
@@ -160,8 +160,28 @@ public class MainMenu extends MenuBar {
       Files.createFile(rFile);
       Path testPath = new File(res.dir, "tests").toPath();
       Files.createDirectories(testPath);
-      Path testFile = Files.createFile(testPath.resolve(camelCasedPackageName + "Test.groovy"));
-      FileUtils.writeToFile(testFile.toFile(), "library('hamcrest')\n");
+      Path testFile = Files.createFile(testPath.resolve(camelCasedProjectName + "Test.groovy"));
+      FileUtils.writeToFile(testFile.toFile(), """
+          import org.junit.jupiter.api.*
+          import tech.tablesaw.api.*
+          import org.codehaus.groovy.runtime.InvokerHelper
+                  
+          class [className]Test {
+                
+            void test[className]() {
+              // 1. Create a binding, possibly with parameters which will be equivalent to the main args.
+              Binding context = new Binding();
+              // 2. Create and invoke the script
+              Script script = InvokerHelper.createScript([className].class, context);
+              script.run()
+              // 3. Access "global" (@Field) variables from the binding context, e.g:
+              //Table table = context.getVariable("table") as Table
+              
+              //4. Make assertions on these variables as appropriate
+            }
+          }
+          """.replace("[className]", camelCasedProjectName)
+      );
 
 
       Path testResourcePath = new File(res.dir, "tests/resources/").toPath();
@@ -203,8 +223,8 @@ public class MainMenu extends MenuBar {
       String camelCasedPackageName = CaseUtils.toCamelCase(res.packageName, true,
          ' ', '_', '-', ',', '.', '/', '\\');
 
-      String pomContent = createBuildScript("templates/library_build.gradle", res.groupName, res.packageName);
-      FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
+      String scriptContent = createBuildScript("templates/library_build.gradle", res.groupName, res.packageName);
+      FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
 
       Path mainPath = new File(res.dir, "src/main/groovy").toPath();
       Files.createDirectories(mainPath);
