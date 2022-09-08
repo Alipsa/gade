@@ -29,6 +29,7 @@ import org.apache.logging.log4j.core.appender.FileAppender;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+import org.jetbrains.annotations.NotNull;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
@@ -153,38 +154,20 @@ public class MainMenu extends MenuBar {
       String mainProjectScript = camelCasedProjectName + ".groovy";
       String buildScriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
       FileUtils.writeToFile(new File(res.dir, "build.gradle"), buildScriptContent);
+      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("\\[artifactId\\]", res.projectName));
 
-      Path mainPath = new File(res.dir, "groovy").toPath();
+      Path mainPath = new File(res.dir, "src").toPath();
       Files.createDirectories(mainPath);
       Path rFile = mainPath.resolve(mainProjectScript);
       Files.createFile(rFile);
-      Path testPath = new File(res.dir, "tests").toPath();
+      Path testPath = new File(res.dir, "test").toPath();
       Files.createDirectories(testPath);
       Path testFile = Files.createFile(testPath.resolve(camelCasedProjectName + "Test.groovy"));
-      FileUtils.writeToFile(testFile.toFile(), """
-          import org.junit.jupiter.api.*
-          import tech.tablesaw.api.*
-          import org.codehaus.groovy.runtime.InvokerHelper
-                  
-          class [className]Test {
-                
-            void test[className]() {
-              // 1. Create a binding, possibly with parameters which will be equivalent to the main args.
-              Binding context = new Binding();
-              // 2. Create and invoke the script
-              Script script = InvokerHelper.createScript([className].class, context);
-              script.run()
-              // 3. Access "global" (@Field) variables from the binding context, e.g:
-              //Table table = context.getVariable("table") as Table
-              
-              //4. Make assertions on these variables as appropriate
-            }
-          }
-          """.replace("[className]", camelCasedProjectName)
+      FileUtils.writeToFile(testFile.toFile(), createTest(camelCasedProjectName)
       );
 
 
-      Path testResourcePath = new File(res.dir, "tests/resources/").toPath();
+      Path testResourcePath = new File(res.dir, "test/resources/").toPath();
       Files.createDirectories(testResourcePath);
       FileUtils.copy("templates/log4j.properties", testResourcePath.toFile());
 
@@ -196,6 +179,30 @@ public class MainMenu extends MenuBar {
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to create package project", e);
     }
+  }
+
+  @NotNull
+  private String createTest(String camelCasedProjectName) {
+    return """
+        import org.junit.jupiter.api.*
+        import tech.tablesaw.api.*
+        import org.codehaus.groovy.runtime.InvokerHelper
+                
+        class [className]Test {
+              
+          void test[className]() {
+            // 1. Create a binding, possibly with parameters which will be equivalent to the main args.
+            Binding context = new Binding();
+            // 2. Create and invoke the script
+            Script script = InvokerHelper.createScript([className].class, context);
+            script.run()
+            // 3. Access "global" (@Field) variables from the binding context, e.g:
+            //Table table = context.getVariable("table") as Table
+            
+            //4. Make assertions on these variables as appropriate
+          }
+        }
+        """.replace("[className]", camelCasedProjectName);
   }
 
   private String createBuildScript(String filePath, String groupName, String projectName, String... mainProjectScript) throws IOException {
@@ -211,31 +218,31 @@ public class MainMenu extends MenuBar {
   }
 
   private void showLibraryWizard(ActionEvent actionEvent) {
-    CreatePackageWizardDialog dialog = new CreatePackageWizardDialog(gui);
-    Optional<CreatePackageWizardResult> result = dialog.showAndWait();
+    CreateLibraryWizardDialog dialog = new CreateLibraryWizardDialog(gui);
+    Optional<CreateLibraryWizardResult> result = dialog.showAndWait();
     if (result.isEmpty()) {
       return;
     }
-    CreatePackageWizardResult res = result.get();
+    CreateLibraryWizardResult res = result.get();
     try {
       Files.createDirectories(res.dir.toPath());
 
-      String camelCasedPackageName = CaseUtils.toCamelCase(res.packageName, true,
+      String camelCasedLibName = CaseUtils.toCamelCase(res.libName, true,
          ' ', '_', '-', ',', '.', '/', '\\');
 
-      String scriptContent = createBuildScript("templates/library_build.gradle", res.groupName, res.packageName);
+      String scriptContent = createBuildScript("templates/library_build.gradle", res.groupName, res.libName);
       FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
+      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("\\[artifactId\\]", res.libName));
 
-      Path mainPath = new File(res.dir, "src/main/groovy").toPath();
+      Path mainPath = new File(res.dir, "src").toPath();
       Files.createDirectories(mainPath);
-      Path scriptFile = mainPath.resolve(camelCasedPackageName + ".groovy");
+      Path scriptFile = mainPath.resolve(camelCasedLibName + ".groovy");
       Files.createFile(scriptFile);
       //FileUtils.writeToFile(rFile.toFile(), "# remember to add export(function name) to NAMESPACE to make them available");
-      Path testPath = new File(res.dir, "src/test/groovy").toPath();
+      Path testPath = new File(res.dir, "test").toPath();
       Files.createDirectories(testPath);
-      Path testFile = Files.createFile(testPath.resolve(camelCasedPackageName + "Test.groovy"));
-      FileUtils.writeToFile(testFile.toFile(), "library('hamcrest')\nlibrary('"
-         + res.groupName + ":" + res.packageName + "')\n");
+      Path testFile = Files.createFile(testPath.resolve(camelCasedLibName + "Test.groovy"));
+      FileUtils.writeToFile(testFile.toFile(), createTest(camelCasedLibName));
       if (res.changeToDir) {
         gui.getInoutComponent().changeRootDir(res.dir);
       } else {

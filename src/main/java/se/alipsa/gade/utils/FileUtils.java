@@ -18,6 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -139,6 +140,28 @@ public class FileUtils {
 
     String fileName = FilenameUtils.getName(url.getPath());
     return Files.copy(url.openStream(), toDir.toPath().resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  /**
+   * Copy a file to a dir, replacing the content with the values specified
+   *
+   * @param resourcePath  the file to copy
+   * @param toDir the destination dir
+   * @param replacements a map of Strings containing the key to replace and the value to replace it with
+   * @return the copied file
+   * @throws IOException if an IO issue occurs
+   */
+  public static File copy(String resourcePath, File toDir, Map<String, String> replacements) throws IOException {
+    var content = readContent(resourcePath);
+    for (var e : replacements.entrySet()) {
+      content = content.replaceAll(e.getKey(), e.getValue());
+    }
+    if (!toDir.exists()) {
+      toDir.mkdirs();
+    }
+    File destFile = new File(toDir, FilenameUtils.getName(resourcePath));
+    writeToFile(destFile, content);
+    return destFile;
   }
 
   /**

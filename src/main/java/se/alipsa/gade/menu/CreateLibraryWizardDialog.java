@@ -17,7 +17,7 @@ import se.alipsa.gade.utils.GuiUtils;
 
 import java.io.File;
 
-public class CreatePackageWizardDialog extends Dialog<CreatePackageWizardResult> {
+public class CreateLibraryWizardDialog extends Dialog<CreateLibraryWizardResult> {
 
   private static final Logger log = LogManager.getLogger();
 
@@ -31,7 +31,7 @@ public class CreatePackageWizardDialog extends Dialog<CreatePackageWizardResult>
   private final TextField packageDirField;
   private final Node okButton;
 
-  CreatePackageWizardDialog(Gade gui) {
+  CreateLibraryWizardDialog(Gade gui) {
     this.gui = gui;
     //initOwner(gui.getStage());
     setTitle("Create Package Wizard");
@@ -171,10 +171,10 @@ public class CreatePackageWizardDialog extends Dialog<CreatePackageWizardResult>
     }
   }
 
-  private CreatePackageWizardResult createResult() {
-    CreatePackageWizardResult res = new CreatePackageWizardResult();
+  private CreateLibraryWizardResult createResult() {
+    CreateLibraryWizardResult res = new CreateLibraryWizardResult();
     res.groupName = groupNameField.getText();
-    res.packageName = packageNameField.getText();
+    res.libName = packageNameField.getText();
     res.dir = new File(packageDirField.getText().trim());
     res.changeToDir = changeToDir.isSelected();
     return res;
