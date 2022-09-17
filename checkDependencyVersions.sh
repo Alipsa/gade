@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 #mvn versions:display-plugin-updates versions:display-dependency-updates
-./gradlew dependencyUpdates
+./gradlew dependencyUpdates -Drevision=release

@@ -30,7 +30,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
   private CheckBox autoRunGlobal;
   private CheckBox autoRunProject;
   private CheckBox addImports;
-
+  private ComboBox<String> timezone;
 
   GlobalOptionsDialog(Gade gui) {
     try {
@@ -48,15 +48,20 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       intField = new IntField(1000, Integer.MAX_VALUE, gui.getPrefs().getInt(CONSOLE_MAX_LENGTH_PREF, CONSOLE_MAX_LENGTH_DEFAULT));
       grid.add(intField, 1, 0);
 
-      Label styleTheme = new Label("Style theme");
+      Label styleTheme = new Label("Theme");
       grid.add(styleTheme, 0, 1);
+
       themes = new ComboBox<>();
       themes.getItems().addAll(DARK_THEME, BRIGHT_THEME, BLUE_THEME);
       themes.getSelectionModel().select(gui.getPrefs().get(THEME, BRIGHT_THEME));
       grid.add(themes, 1, 1);
 
-      Label defaultLocale = new Label("Default locale");
-      grid.add(defaultLocale, 2, 1);
+      //FlowPane localePane = new FlowPane();
+      //grid.add(localePane, 0, 2, 4, 1);
+
+      Label defaultLocale = new Label("Locale");
+      grid.add(defaultLocale, 0, 2);
+      //localePane.getChildren().add(defaultLocale);
 
       locals = new ComboBox<>();
       Set<String> languageTags = new TreeSet<>();
@@ -66,13 +71,24 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       }
       locals.getItems().addAll(languageTags);
       locals.getSelectionModel().select(gui.getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag()));
-      grid.add(locals, 3, 1);
 
+      grid.add(locals, 1, 2);
+      //localePane.getChildren().add(locals);
+
+      Label timeZoneLabel = new Label("Timezone");
+      grid.add(timeZoneLabel, 2, 2);
+      //localePane.getChildren().add(timeZoneLabel);
+
+      timezone = new ComboBox<>();
+      timezone.getItems().addAll(List.of(TimeZone.getAvailableIDs()));
+      timezone.getSelectionModel().select(gui.getPrefs().get(TIMEZONE, TimeZone.getDefault().getID()));
+      grid.add(timezone, 3, 2);
+      //localePane.getChildren().add(timezone);
 
       Label gradleHomeLabel = new Label("GRADLE_HOME");
       gradleHomeLabel.setTooltip(new Tooltip("The location of your gradle installation directory"));
       //mavenHomeLabel.setPadding(new Insets(0, 27, 0, 0));
-      grid.add(gradleHomeLabel, 0,2);
+      grid.add(gradleHomeLabel, 0,3);
 
       HBox gradleHomePane = new HBox();
       gradleHomePane.setAlignment(Pos.CENTER_LEFT);
@@ -93,10 +109,10 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
         }
       });
       gradleHomePane.getChildren().add(browseGradleHomeButton);
-      grid.add(gradleHomePane, 1,2,3, 1);
+      grid.add(gradleHomePane, 1,3,3, 1);
 
       FlowPane useCpPane = new FlowPane();
-      grid.add(useCpPane, 0,3, 4, 1);
+      grid.add(useCpPane, 0,4, 4, 1);
 
       Label useGradleFileClasspathLabel = new Label("Use build.gradle classpath");
       useGradleFileClasspathLabel.setTooltip(new Tooltip("Use classpath from build.gradle (if available) when running Groovy code"));
@@ -117,7 +133,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       // When developing packages we need to reload the session after mvn has been run
       // so that new definitions can be picked up from target/classes.
       FlowPane restartPane = new FlowPane();
-      grid.add(restartPane, 0,4, 4, 1);
+      grid.add(restartPane, 0,5, 4, 1);
       Label restartSessionAfterGradleRunLabel = new Label("Restart session after build");
       restartSessionAfterGradleRunLabel.setPadding(new Insets(0, 27, 0, 0));
       restartSessionAfterGradleRunLabel.setTooltip(new Tooltip("When developing packages we need to reload the session after gradle has been run\nso that new definitions can be picked up from the build dir"));
@@ -134,7 +150,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       enableGit = new CheckBox();
       enableGit.setSelected(gui.getPrefs().getBoolean(ENABLE_GIT, true));
       gitOptionPane.getChildren().add(enableGit);
-      grid.add(gitOptionPane, 0, 5, 2, 1);
+      grid.add(gitOptionPane, 0, 6, 2, 1);
 
       HBox autoRunPane = new HBox();
       Label autoRunGlobalLabel = new Label("Run global autorun.groovy on init");
@@ -151,7 +167,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       autoRunProject.setSelected(gui.getPrefs().getBoolean(AUTORUN_PROJECT, false));
       autoRunPane.getChildren().addAll(autoRunProjectLabel, autoRunProject);
 
-      grid.add(autoRunPane, 0,6, 4, 1);
+      grid.add(autoRunPane, 0,7, 4, 1);
 
       FlowPane executionPane = new FlowPane();
       Label addImportsLabel = new Label("Add imports when running Groovy snippets");
@@ -160,7 +176,9 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       addImports = new CheckBox();
       addImports.setSelected(gui.getPrefs().getBoolean(ADD_IMPORTS, gui.getPrefs().getBoolean(ADD_IMPORTS, true)));
       executionPane.getChildren().add(addImports);
-      grid.add(executionPane, 0, 7,4, 1);
+      grid.add(executionPane, 0, 8,4, 1);
+
+
 
       getDialogPane().setPrefSize(760, 350);
       getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
@@ -179,6 +197,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     result.put(CONSOLE_MAX_LENGTH_PREF, intField.getValue());
     result.put(THEME, themes.getValue());
     result.put(DEFAULT_LOCALE, locals.getValue());
+    result.put(TIMEZONE, timezone.getValue());
     result.put(USE_GRADLE_CLASSLOADER, useGradleFileClasspath.isSelected());
     result.put(GRADLE_HOME, gradleHome.getText());
     result.put(ADD_BUILDDIR_TO_CLASSPATH, addBuildDirToClasspath.isSelected());

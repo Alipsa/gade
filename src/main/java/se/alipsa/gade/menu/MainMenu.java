@@ -638,6 +638,9 @@ public class MainMenu extends MenuBar {
 
     Locale.setDefault(Locale.forLanguageTag(result.getString(DEFAULT_LOCALE)));
 
+    TimeZone.setDefault(TimeZone.getTimeZone(result.getString(TIMEZONE)));
+    gui.getPrefs().put(TIMEZONE, result.getString(TIMEZONE));
+
     boolean useGradleClassLoader = result.getBoolean(USE_GRADLE_CLASSLOADER);
     if (useGradleClassLoader != gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, !useGradleClassLoader)) {
       log.info("useGradleClassLoader changed, restarting Groovy session");

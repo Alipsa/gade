@@ -15,6 +15,8 @@ public class GlobalOptions extends HashMap<String, Object> {
   public static final String AUTORUN_GLOBAL = "GlobalOptions.AutoRunGlobal";
   public static final String AUTORUN_PROJECT = "GlobalOptions.AutoRunProject";
   public static final String DEFAULT_LOCALE = "GlobalOptions.defaultLocale";
+
+  public static final String TIMEZONE = "GlobalOptions.timezone";
   public static final String ADD_IMPORTS = "GlobalOptions.addImports";
 
   private static final long serialVersionUID = -4781261903018339389L;

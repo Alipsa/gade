@@ -78,6 +78,7 @@ public class Gade extends Application {
     this.primaryStage = primaryStage;
 
     Locale.setDefault(Locale.forLanguageTag(getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag())));
+    TimeZone.setDefault(TimeZone.getTimeZone(getPrefs().get(TIMEZONE, TimeZone.getDefault().getID())));
 
     // Allow global option for GRADLE_HOME to override system settings.
     String gradleHome = getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome());

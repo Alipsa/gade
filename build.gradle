@@ -17,7 +17,7 @@ ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 javafx {
-    version = "18.0.2"
+    version = "19"
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
 }
 
@@ -42,25 +42,25 @@ repositories {
 }
 
 dependencies {
-    def jacksonVersion = "2.13.3"
+    def jacksonVersion = "2.13.4"
     def tikaVersion = "2.4.1"
-    def jgitVersion = "6.2.0.202206071550-r"
+    def jgitVersion = "6.3.0.202209071007-r"
     def tablesawVersion = "0.43.1"
-    def lo4jVersion = "2.18.0"
-    def groovyVersion = "4.0.4"
+    def lo4jVersion = "2.19.0"
+    def groovyVersion = "4.0.5"
 
     implementation 'org.apache.commons:commons-text:1.9'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation 'org.apache.ivy:ivy:2.5.0'
     implementation "org.apache.logging.log4j:log4j-api:${lo4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${lo4jVersion}"
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.18.0'
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${lo4jVersion}"
     implementation 'org.apache.maven:maven-artifact:3.8.6'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'org.jsoup:jsoup:1.15.2'
+    implementation 'org.jsoup:jsoup:1.15.3'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation 'org.fxmisc.richtext:richtextfx:0.10.9'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
@@ -75,7 +75,7 @@ dependencies {
     implementation 'org.gradle:gradle-tooling-api:7.5.1'
     implementation 'org.jetbrains:annotations:23.0.0'
     implementation 'io.github.classgraph:classgraph:4.8.149'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.7.1'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.7.2'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
@@ -216,6 +216,24 @@ tasks.runtimeZip.doLast {
             include(name: "image-*.zip")
         }
         ant.mapper(type: "glob", from: "image-*.zip", to: "gade-*-${version}.zip")
+    }
+}
+
+def isNonStable = { String version ->
+    def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
+    def regex = /^[0-9,.v-]+(-r)?$/
+    return !stableKeyword && !(version ==~ regex)
+}
+// https://github.com/ben-manes/gradle-versions-plugin
+tasks.named("dependencyUpdates").configure {
+    resolutionStrategy {
+        componentSelection {
+            all {
+                if (isNonStable(it.candidate.version) && !isNonStable(it.currentVersion)) {
+                    reject('Release candidate')
+                }
+            }
+        }
     }
 }
 
