@@ -2,8 +2,10 @@ package tech.tablesaw.chart;
 
 import tech.tablesaw.chart.jfx.JfxAreaChartConverter;
 import tech.tablesaw.chart.jfx.JfxBarChartConverter;
+import tech.tablesaw.chart.jfx.JfxPieChartConverter;
 import tech.tablesaw.chart.plotly.PlotlyAreaChartConverter;
 import tech.tablesaw.chart.plotly.PlotlyBarChartConverter;
+import tech.tablesaw.chart.plotly.PlotlyPieChartConverter;
 import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
@@ -48,6 +50,8 @@ public class Plot {
       return JfxAreaChartConverter.convert((AreaChart) chart);
     } else if (chart instanceof BarChart) {
       return JfxBarChartConverter.convert((BarChart) chart);
+    } else if (chart instanceof PieChart) {
+      return JfxPieChartConverter.convert((PieChart) chart);
     }
     throw new RuntimeException(chart.getClass().getSimpleName() + " conversion is not yet implemented");
   }
@@ -74,6 +78,8 @@ public class Plot {
       return PlotlyAreaChartConverter.convert((AreaChart) chart);
     } else if (chart instanceof BarChart) {
       return PlotlyBarChartConverter.convert((BarChart) chart);
+    } else if (chart instanceof PieChart) {
+      return PlotlyPieChartConverter.convert((PieChart) chart);
     }
     throw new RuntimeException(chart.getClass().getSimpleName() + " conversion is not yet implemented");
   }

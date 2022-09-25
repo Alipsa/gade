@@ -24,7 +24,7 @@ chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.HORI
 );
 io.display(chart)
 
-
+//io.help(Plot.class)
 figure = Plot.jsPlot(chart)
 io.display(figure, "plotly")
 
