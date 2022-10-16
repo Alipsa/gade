@@ -43,13 +43,13 @@ repositories {
 
 dependencies {
     def jacksonVersion = "2.13.4"
-    def tikaVersion = "2.4.1"
+    def tikaVersion = "2.5.0"
     def jgitVersion = "6.3.0.202209071007-r"
     def tablesawVersion = "0.43.1"
     def lo4jVersion = "2.19.0"
-    def groovyVersion = "4.0.5"
+    def groovyVersion = "4.0.6"
 
-    implementation 'org.apache.commons:commons-text:1.9'
+    implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation 'org.apache.ivy:ivy:2.5.0'
     implementation "org.apache.logging.log4j:log4j-api:${lo4jVersion}"
@@ -88,7 +88,7 @@ dependencies {
     //implementation 'se.alipsa:simple-rest:1.0.3'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
 
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
