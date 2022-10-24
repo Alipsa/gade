@@ -6,7 +6,7 @@ plugins {
     id 'org.beryx.runtime' version '1.12.7'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.42.0"
+    id "com.github.ben-manes.versions" version "0.43.0"
 }
 
 group = 'se.alipsa'
@@ -75,7 +75,7 @@ dependencies {
     implementation 'org.gradle:gradle-tooling-api:7.5.1'
     implementation 'org.jetbrains:annotations:23.0.0'
     implementation 'io.github.classgraph:classgraph:4.8.149'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.7.2'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
