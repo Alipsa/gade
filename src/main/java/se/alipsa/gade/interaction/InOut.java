@@ -517,6 +517,16 @@ public class InOut implements GuiInteraction {
     gui.getInoutComponent().viewTable(table, tit);
   }
 
+  /**
+   * For ease of portability between R (Ride)
+   * and Groovy (Gade)
+   * @param table the tablesaw table to view
+   * @param title the title for the view tab (optional)
+   */
+  public void View(Table table, String... title) {
+    view(table, title);
+  }
+
   public void view(String html, String... title) {
     gui.getInoutComponent().viewHtml(html, title);
   }
@@ -537,11 +547,39 @@ public class InOut implements GuiInteraction {
     return dialogs.prompt(title, headerText, message, defaultValue);
   }
 
+  public String prompt(String title, String headerText, String message) throws ExecutionException, InterruptedException {
+    return dialogs.prompt(title, headerText, message, "");
+  }
+
   public String prompt(String title, String message) throws ExecutionException, InterruptedException {
     return dialogs.prompt(title, "", message, "");
   }
+
   public String prompt(String message) throws ExecutionException, InterruptedException {
     return dialogs.prompt("", "", message, "");
+  }
+
+  /**
+   * A prompt method with support for named parameters i Groovy.
+   * Example usage:
+   * applicationId =  io.prompt(
+   *    title: "Calculated variables",
+   *    headerText: "Score variables for applicationId",
+   *    message: "applicationId"
+   * )
+   *
+   * @param namedParams a key/value map with the paramater name and its value
+   * @return the user input prompted for
+   * @throws ExecutionException if a threading issue occurs
+   * @throws InterruptedException if a threading interrupt issue occurs
+   */
+  public String prompt(Map<String, Object> namedParams) throws ExecutionException, InterruptedException {
+    return dialogs.prompt(
+        String.valueOf(namedParams.getOrDefault("title", "")),
+        String.valueOf(namedParams.getOrDefault("headerText", "")),
+        String.valueOf(namedParams.getOrDefault("message", "")),
+        String.valueOf(namedParams.getOrDefault("defaultValue", ""))
+    );
   }
 
   public String promptPassword(String title, String message) throws ExecutionException, InterruptedException {
