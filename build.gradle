@@ -6,7 +6,7 @@ plugins {
     id 'org.beryx.runtime' version '1.12.7'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.43.0"
+    id "com.github.ben-manes.versions" version "0.44.0"
 }
 
 group = 'se.alipsa'
@@ -38,7 +38,7 @@ repositories {
 }
 
 dependencies {
-    def jacksonVersion = '2.14.0'
+    def jacksonVersion = '2.14.1'
     def tikaVersion = '2.6.0'
     def jgitVersion = '6.4.0.202211300538-r'
     def tablesawVersion = "0.43.1"
@@ -47,7 +47,7 @@ dependencies {
 
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
-    implementation 'org.apache.ivy:ivy:2.5.0'
+    implementation 'org.apache.ivy:ivy:2.5.1'
     implementation "org.apache.logging.log4j:log4j-api:${lo4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${lo4jVersion}"
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${lo4jVersion}"
@@ -68,7 +68,7 @@ dependencies {
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:7.5.1'
+    implementation 'org.gradle:gradle-tooling-api:7.6'
     implementation 'org.jetbrains:annotations:23.1.0'
     implementation 'io.github.classgraph:classgraph:4.8.152'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
@@ -78,7 +78,7 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-json:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-html:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
-    implementation 'se.alipsa.groovy:data-utils:1.0.3-SNAPSHOT'
+    implementation 'se.alipsa.groovy:data-utils:1.0.3'
     implementation 'se.alipsa.groovy:gmd:1.0.4'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     //implementation 'se.alipsa:simple-rest:1.0.3'
@@ -90,11 +90,18 @@ dependencies {
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
 }
 
+static def getDate() {
+    def date = new Date()
+    def formattedDate = date.format('yyyy-MMM-dd_HH.mm.ss')
+    return formattedDate
+}
+
 processResources.doLast {
     ant.propertyfile(file: "${projectDir}/version.properties") {
         ant.entry(key: "version", value: "${project.version}")
         ant.entry(key: "jar.name", value: "${jarName}")
         ant.entry(key: "release.tag", value: "${releaseTag}")
+        ant.entry(key: "build.date", value: "${getDate()}")
     }
     ant.copy(file: "${projectDir}/version.properties", todir: "${buildDir}/resources/main" )
 }

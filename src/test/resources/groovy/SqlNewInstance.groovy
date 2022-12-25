@@ -1,6 +1,6 @@
 package groovy
 
-@Grab('se.alipsa.groovy:data-utils:1.0.1')
+@Grab('se.alipsa.groovy:data-utils:1.0.3')
 @Grab('com.h2database:h2:2.1.214')
 
 import se.alipsa.groovy.datautil.SqlUtil

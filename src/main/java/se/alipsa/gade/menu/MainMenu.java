@@ -536,10 +536,12 @@ public class MainMenu extends MenuBar {
     Properties props = new Properties();
     String version = "unknown";
     String releaseTag = "unknown";
+    String buildDate = "unknown";
     try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
       props.load(is);
       version = props.getProperty("version");
       releaseTag = props.getProperty("release.tag");
+      buildDate = props.getProperty("build.date");
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to load properties file", e);
     }
@@ -549,6 +551,8 @@ public class MainMenu extends MenuBar {
         .append(version)
         .append("\n Release tag: ")
         .append(releaseTag)
+        .append("\n Build date: ")
+        .append(buildDate)
         .append("\n Java Runtime Version: ")
         .append(System.getProperty("java.runtime.version"))
         .append(" (").append(System.getProperty("os.arch")).append(")")
