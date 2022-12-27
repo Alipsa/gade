@@ -20,6 +20,14 @@ public class GitTest {
 
   private static Logger log = LogManager.getLogger();
 
+  /**
+   * If you have a password for your certificate, you need to add credentionsl to your
+   * ~/.git-credentials file for this test to work.
+   * The format of the string in ~/.git-credentials is:
+   * <pre>
+   * git:myPassword@github.com:perNyfelt/gade.git
+   * </pre>
+   */
   @Test
   public void testGitFetch() throws IOException, URISyntaxException, GitAPIException {
     File curDir = new File(".");

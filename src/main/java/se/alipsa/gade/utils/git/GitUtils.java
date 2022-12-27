@@ -114,7 +114,6 @@ public class GitUtils {
       }
       URIish remoteUri = new URIish(url);
       List<String> lines = Files.readAllLines(gitCredentials.toPath());
-
       for (String line : lines) {
          if (line == null || line.trim().equals("") || line.trim().startsWith("#")) {
             continue;
@@ -133,8 +132,8 @@ public class GitUtils {
 
          if (scheme.equals(remoteScheme)
              && uri.getHost().equals(remoteUri.getHost())
-             && uriPath.equals(remotePath)) {
-
+             && uriPath.equals(remotePath)
+             && uri.getUser().equals(remoteUri.getUser())) {
             return Map.of("username", uri.getUser(), "password", uri.getPass());
          }
       }

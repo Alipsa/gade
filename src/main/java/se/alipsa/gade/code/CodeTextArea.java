@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 */
 public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextArea {
 
+  /** The file this texarea is editing */
   protected File file;
 
   protected boolean blockChange = false;
