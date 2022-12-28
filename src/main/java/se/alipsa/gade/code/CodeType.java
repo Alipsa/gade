@@ -8,7 +8,9 @@ public enum CodeType {
   MD("Markdown file"),
   JAVA("Java code"),
   GROOVY("Groovy code"),
-  JAVA_SCRIPT("Javascript code");
+  JAVA_SCRIPT("Javascript code"),
+  R("R code"),
+  SAS("SAS code");
 
   CodeType(String displayValue) {
     this.displayValue = displayValue;

@@ -15,15 +15,16 @@ public class SqlTextArea extends CodeTextArea {
 
   private static final String[] KEYWORDS = new String[]{
       "absolute", "action", "add", "admin", "after", "aggregate", "alias", "all", "allocate", "alter",
-      "and", "any", "are", "array", "as", "asc", "assertion", "assertion", "at", "atomic",
+      "and", "any", "are", "array", "as", "asc", "assertion", "assertion", "at", "atomic", "authorization",
+      "avg",
 
-      "authorization", "before", "begin", "bigint", "binary", "bit", "blob", "boolean",
+      "before", "begin", "bigint", "binary", "bit", "blob", "boolean",
       "both", "breadth", "by", "call",
 
       "cascade", "cascaded", "case", "cast", "catalog", "char", "character", "check",
       "class", "clob", "close", "collate", "collation", "collect", "column", "commit",
       "completion", "condition", "connect", "connection", "constraint", "constraints", "constructor", "contains",
-      "continue", "corresponding", "create", "cross", "cube", "current", "current_date", "current_path",
+      "continue", "corresponding", "count", "create", "cross", "cube", "current", "current_date", "current_path",
       "current_role", "current_time", "current_timestamp", "current_user", "cursor", "cycle", "data", "datalink",
 
       "date", "day", "deallocate", "dec", "decimal", "declare", "default", "deferrable",
@@ -46,7 +47,7 @@ public class SqlTextArea extends CodeTextArea {
       "language", "large", "last", "lateral", "leading", "leave", "left", "less",
       "level", "like", "limit", "local", "localtime", "localtimestamp", "locator", "loop",
 
-      "match", "member", "meets", "merge", "minute", "modifies", "modify", "module", "month", "multiset",
+      "match", "max", "member", "meets", "merge", "min", "minute", "modifies", "modify", "module", "month", "multiset",
 
       "names", "national", "natural", "nchar", "nclob", "new", "next", "no", "none", "normalize",
       "not", "null", "numeric",

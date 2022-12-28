@@ -12,6 +12,8 @@ import se.alipsa.gade.code.groovytab.GroovyTab;
 import se.alipsa.gade.code.javatab.JavaTab;
 import se.alipsa.gade.code.jstab.JsTab;
 import se.alipsa.gade.code.mdtab.MdTab;
+import se.alipsa.gade.code.rtab.RTab;
+import se.alipsa.gade.code.sastab.SasTab;
 import se.alipsa.gade.code.sqltab.SqlTab;
 import se.alipsa.gade.code.txttab.TxtTab;
 import se.alipsa.gade.code.xmltab.XmlTab;
@@ -47,6 +49,8 @@ public class CodeComponent extends BorderPane {
       case MD -> new MdTab(type.getDisplayValue(), gui);
       case GROOVY -> new GroovyTab(type.getDisplayValue(), gui);
       case JAVA_SCRIPT -> new JsTab(type.getDisplayValue(), gui);
+      case R -> new RTab(type.getDisplayValue(), gui);
+      case SAS -> new SasTab(type.getDisplayValue(), gui);
       default -> throw new RuntimeException("Unknown filetype " + type);
     };
     addTabAndActivate(tab);
@@ -96,6 +100,8 @@ public class CodeComponent extends BorderPane {
         case SQL -> new SqlTab(title, gui);
         case GROOVY -> new GroovyTab(title, gui);
         case JAVA_SCRIPT -> new JsTab(title, gui);
+        case R -> new RTab(title, gui);
+        case SAS -> new SasTab(title, gui);
         //case TXT -> new TxtTab(title, gui);
         default -> new TxtTab(title, gui);
       };

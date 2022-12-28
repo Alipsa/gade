@@ -51,6 +51,12 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".md") || strEndsWith(fileNameLower, ".rmd")) {
         return codeComponent.addTab(file, CodeType.MD);
       }
+      if (strEquals(type, "application/x-sas") || strEndsWith(fileNameLower, ".sas")) {
+        return codeComponent.addTab(file, CodeType.SAS);
+      }
+      if (strEndsWith(fileNameLower, ".r", ".s") || strEquals(type, "text/x-rsrc")) {
+        return codeComponent.addTab(file, CodeType.R);
+      }
       if ( strEquals(type, "application/xml", "text/xml", "text/html")
           || strEndsWith(type, "+xml")
           // in case an xml declaration was omitted or empty file:
@@ -60,7 +66,7 @@ public class FileOpener {
       }
       if (strStartsWith(type, "text")
                  || strEquals(type, "application/x-bat",
-          "application/x-sh", "application/x-sas")
+          "application/x-sh")
                  || "namespace".equals(fileNameLower)
                  || "description".equals(fileNameLower)
                  || strEndsWith(fileNameLower, ".txt", ".csv", ".gitignore", ".properties", "props")) {
