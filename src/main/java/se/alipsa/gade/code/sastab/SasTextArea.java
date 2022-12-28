@@ -25,18 +25,72 @@ public class SasTextArea extends CodeTextArea {
 
   // Since T and F are not true keywords (they can be reassigned e.g. T <- FALSE), they are not included below
   private static final String[] KEYWORDS = new String[]{
-      "access", "aceclus", "allele", "anom", "anova", "append", "arima", "autoreg",
+
+      "_all_",
+
+      "access", "aceclus", "allele", "anom", "anova", "append", "arima", "attrib", "autoreg",
 
       "bom", "boxplot", "btl",
 
-      "calendar", "calis", "callrfc",
+      "calendar", "calis", "callrfc", "cancorr", "candisc", "capability", "casecontrol", "catalog", "catmod", "chart",
+      "cimport", "clear", "clp", "cluster", "compare", "computab", "contents", "convert", "copy", "corr", "corresp",
+      "countreg", "cpm", "cport", "cusum",
 
-      //cancorr candisc capability casecontrol catalog catmod chart cimport clp cluster compare computab contents convert copy corr corresp countreg cpm cport cusum datasets datasource dbf dbload define_event define_tagset dif discrim display distance document dqmatch dqscheme dqsrvadm dqsrvsvc dtree entropy esm expand explode export factex factor family fastclus fcmp fmm fontreg forecast format forms freq fsbrowse fsedit fsletter fslist fsview g3d g3grid ga gam ganno gantt gareabar gbarline gchart gcontour gdevice geneselect genmod geocode gfont gimport ginside gkeymap gkpi glimmix glm glmmod glmpower glmselect gmap goptions gplot gproject gradar greduce gremove greplay groovy gslide gtestit gtile haplotype hpcountreg hpdmdb hpds2 hpf hpfarimaspec hpfdiagnose hpfengine hpfesmspec hpfevents hpfexmspec hpfidmspec hpforest hpfselect hpfucmspec hplmixed hplogistic hpmixed hpneural hpnlin hpreduce hpreg hpsample hpseverity hpsummary htsnp http iml import inbreed infomaps intpoint ishikawa kde krige2d lattice lifereg lifetest loan loess logistic lp macontrol macro mapimport mcmc mdc mds means metadata mi mianalyze migrate mixed modeclus model multtest nested netdraw netflow nlin nlmixed nlp npar1way olap operate optex options optload optlp optmilp optmodel optqp optsave orthoreg panel pareto pdlreg phreg plan plm plot pls pm pmenu power princomp prinqual print printto probit proto prtdef prtexp psmooth pwencode qdevice qlim quantreg rank reg registry reliability report robustreg rsreg scaproc score seqdesign seqtest server severity sgdesign sgpanel sgplot sgrender sgscatter shewhart sim2d similarity simlin simnormal soap sort spectra sql standard statespace statgraph stdize stepdisc stp summary surveyfreq surveylogistic surveymeans surveyphreg surveyreg surveyselect syslin tabulate tcalis template timeid timeplot timeseries tpspline trans transpose transreg trantab tree tscsreg tspl ttest ucm univariate varclus varcomp variogram varmax x11 x12
+      "datasets", "datasource", "dbf", "dbload", "define_event", "define_tagset", "dif", "discrim", "display",
+      "distance", "document", "dqmatch", "dqscheme", "dqsrvadm", "dqsrvsvc", "dtree",
 
-      "nput", "proc", "run", "then", "ods", "options", "var", "excel", "html", "html5", "rtf", "listing", "tagsets",
-      "graphics", "_all_", "clear", "powerpoint", "keep", "drop", "put", "rand", "merge", "table", "tables",
+      "entropy", "esm", "excel", "expand", "explode", "export",
+
+      "factex", "factor", "family", "fastclus", "fcmp", "fmm", "fontreg", "forecast", "format", "forms", "freq",
+      "fsbrowse", "fsedit", "fsletter", "fslist", "fsview",
+
+      "g3d", "g3grid", "ga", "gam", "ganno", "gantt", "gareabar", "gbarline", "gchart", "gcontour", "gdevice",
+      "geneselect", "genmod", "geocode", "gfont", "gimport", "ginside", "gkeymap", "gkpi", "glimmix", "glm", "glmmod",
+      "glmpower", "glmselect", "gmap", "goptions", "gplot", "gproject", "gradar", "graphics", "greduce", "gremove",
+      "greplay", "groovy", "gslide", "gtestit", "gtile",
+
+      "haplotype", "hpcountreg", "hpdmdb", "hpds2", "hpf", "hpfarimaspec", "hpfdiagnose", "hpfengine", "hpfesmspec",
+      "hpfevents", "hpfexmspec", "hpfidmspec", "hpforest", "hpfselect", "hpfucmspec", "hplmixed", "hplogistic",
+      "hpmixed", "hpneural", "hpnlin", "hpreduce", "hpreg", "hpsample", "hpseverity", "hpsummary", "html", "html5",
+      "htsnp", "http",
+
+      "if", "iml", "import", "inbreed", "infomaps", "intpoint", "ishikawa",
+
+      "kde", "keep", "krige2d",
+
+      "lattice", "lifereg", "lifetest", "listing", "loan", "loess", "logistic", "lp",
+
+      "macontrol", "macro", "mapimport", "mcmc", "mdc", "mds", "means", "metadata", "mi", "mianalyze", "migrate",
+      "mixed", "modeclus", "model", "multtest",
+
+      "nested", "netdraw", "netflow", "nlin", "nlmixed", "nlp", "npar1way", "nput",
+
+      "ods", "olap", "operate", "optex", "options", "optload", "optlp", "optmilp", "optmodel", "optqp", "optsave",
+      "orthoreg",
+
+      "panel", "pareto", "pdlreg", "phreg", "plan", "plm", "plot", "pls", "pm", "pmenu", "power", "powerpoint",
+      "princomp", "prinqual", "print", "printto", "probit", "proc", "proto", "prtdef", "prtexp", "psmooth", "pwencode",
+
+      "qdevice", "qlim", "quantreg",
+
+      "rank", "reg", "registry", "reliability", "report", "robustreg", "rsreg", "rtf", "run",
+
+      "scaproc", "score", "seqdesign", "seqtest", "server", "severity", "sgdesign", "sgpanel", "sgplot", "sgrender",
+      "sgscatter", "shewhart", "sim2d", "similarity", "simlin", "simnormal", "soap", "sort", "spectra", "sql",
+      "standard", "statespace", "statgraph", "stdize", "stepdisc", "stp", "summary", "surveyfreq", "surveylogistic",
+      "surveymeans", "surveyphreg", "surveyreg", "surveyselect", "syslin",
+
+      "tagsets", "then",
+
+      "var",
+
+
+      //  tabulate tcalis template timeid timeplot timeseries tpspline trans transpose transreg trantab tree tscsreg tspl ttest ucm univariate varclus varcomp variogram varmax x11 x12
+
+
+      "drop", "put", "rand", "merge", "table", "tables",
       "id", "by", "define", "title", "format", "filename", "goptions", "class", "cards", "cards4", "listing",
-      "footnote", "retain", "close", "unique", "attrib", "set", "alter", "drop", "add", "compute", "endcomp",
+      "footnote", "retain", "close", "unique", "set", "alter", "drop", "add", "compute", "endcomp",
       "edit", "axis", "symbol", "dm", "entry", "entryfootnote", "entrytitle", "continuouslegend", "discretelegend",
       "bandplot", "barchart", "barchartparm", "bihistogram3dparm", "blockplot", "boxplot", "boxplotparm",
       "contourplotparm", "densityplot", "dropline", "ellipse", "ellipseparm", "fringeplot", "histogram",
