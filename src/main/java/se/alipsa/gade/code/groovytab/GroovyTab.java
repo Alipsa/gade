@@ -21,18 +21,20 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
   private final GroovyTextArea groovyTextArea;
 
   private static final Logger log = LogManager.getLogger(GroovyTab.class);
-  private final Button runButton;
+  protected final Button runButton;
 
-  public GroovyTab(String title, Gade gui) {
+  public GroovyTab(String title, Gade gui, boolean... addSessionRestartButton) {
     super(gui, CodeType.GROOVY);
     setTitle(title);
     runButton = new Button("Run");
     runButton.setOnAction(a -> runGroovy());
     buttonPane.getChildren().add(runButton);
 
-    Button resetButton = new Button("Restart session");
-    resetButton.setOnAction(a -> gui.getConsoleComponent().restartGroovy());
-    buttonPane.getChildren().add(resetButton);
+    if (addSessionRestartButton.length <= 0 || addSessionRestartButton[0]) {
+      Button resetButton = new Button("Restart session");
+      resetButton.setOnAction(a -> gui.getConsoleComponent().restartGroovy());
+      buttonPane.getChildren().add(resetButton);
+    }
 
     groovyTextArea = new GroovyTextArea(this);
     VirtualizedScrollPane<GroovyTextArea> javaPane = new VirtualizedScrollPane<>(groovyTextArea);
@@ -44,12 +46,11 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     if (gui.getPrefs().getBoolean(ADD_IMPORTS, true)) {
       code = groovyTextArea.getImports();
     }
-    runGroovy(code + getTextContent());
+    runGroovy(code + "\n" + getTextContent());
   }
 
   public void runGroovy(final String content) {
     ConsoleComponent consoleComponent = gui.getConsoleComponent();
-    final ConsoleTextArea console = consoleComponent.getConsole();
     final String title = getTitle();
     consoleComponent.running();
     consoleComponent.runScriptAsync(content, title, this);

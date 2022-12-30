@@ -35,7 +35,10 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".java")) {
         return codeComponent.addTab(file, CodeType.JAVA);
       }
-      if (strEquals(type, "text/x-groovy") || strEndsWith(fileNameLower, ".groovy", ".gvy", ".gy", ".gsh", ".gradle")) {
+      if (strEndsWith(fileNameLower, ".gradle")) {
+        return codeComponent.addTab(file, CodeType.GRADLE);
+      }
+      if (strEquals(type, "text/x-groovy") || strEndsWith(fileNameLower, ".groovy", ".gvy", ".gy", ".gsh")) {
         return codeComponent.addTab(file, CodeType.GROOVY);
       }
       if (strEquals(type, "text/x-sql", "application/sql") || strEndsWith(fileNameLower, "sql")) {

@@ -3,7 +3,7 @@ plugins {
     id 'java'
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.13'
-    id 'org.beryx.runtime' version '1.12.7'
+    id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
     id "com.github.ben-manes.versions" version "0.44.0"
@@ -27,7 +27,7 @@ application {
 
 
 repositories {
-    mavenLocal() // Slows down the build, use only if local SNAPSHOTS are needed
+    //mavenLocal() // Slows down the build (a lot), use only if local SNAPSHOTS are needed
     mavenCentral()
     maven {
         url = uri('https://repo.gradle.org/gradle/libs-releases')
@@ -42,15 +42,15 @@ dependencies {
     def tikaVersion = '2.6.0'
     def jgitVersion = '6.4.0.202211300538-r'
     def tablesawVersion = "0.43.1"
-    def lo4jVersion = "2.19.0"
-    def groovyVersion = "4.0.6"
+    def log4jVersion = "2.19.0"
+    def groovyVersion = "4.0.7"
 
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation 'org.apache.ivy:ivy:2.5.1'
-    implementation "org.apache.logging.log4j:log4j-api:${lo4jVersion}"
-    implementation "org.apache.logging.log4j:log4j-core:${lo4jVersion}"
-    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${lo4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
     implementation 'org.apache.maven:maven-artifact:3.8.6'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
@@ -70,7 +70,7 @@ dependencies {
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     implementation 'org.gradle:gradle-tooling-api:7.6'
     implementation 'org.jetbrains:annotations:23.1.0'
-    implementation 'io.github.classgraph:classgraph:4.8.152'
+    implementation 'io.github.classgraph:classgraph:4.8.153'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
@@ -144,18 +144,19 @@ runtime {
         noConsole = true
     }
 
+    // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
     targetPlatform("linux") {
-        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.4+8/bellsoft-jdk17.0.4+8-linux-amd64-full.tar.gz") {
+        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.5+8/bellsoft-jdk17.0.5+8-linux-amd64-full.tar.gz") {
             downloadDir = "$projectDir/platform/linux"
         }
     }
     targetPlatform("win") {
-        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.4+8/bellsoft-jdk17.0.4+8-windows-amd64-full.zip") {
+        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.5+8/bellsoft-jdk17.0.5+8-windows-amd64-full.zip") {
             downloadDir = "$projectDir/platform/win"
         }
     }
     targetPlatform("mac") {
-        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.4+8/bellsoft-jdk17.0.4+8-macos-amd64-full.zip") {
+        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.5+8/bellsoft-jdk17.0.5+8-macos-amd64-full.tar.gz") {
             downloadDir = "$projectDir/platform/mac"
         }
     }

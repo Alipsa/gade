@@ -12,7 +12,7 @@ running Groovy.
     When using Gade, you have three options to make a Groovy package available to the ScriptEngine so that you can load packages:</span>
     <ol>
         <li>Publish the package to a Nexus server and use <span class="code"><span class="keyword">@Grab(</span> <span class="string">"yourpackage"</span>)</span></li>
-        <li>Add the dependency to the pom.xml used in your project (you need to enable the "use maven classloader" setting for this to work), no need for @Grab in this case.</li>
+        <li>Add the dependency to the build.gradle used in your project (you need to enable the "use build.gradle classloader" setting for this to work), no need for @Grab in this case.</li>
         <li>Copy the jar file to the Gradle lib dir (making the package part of the system classpath)</li>
     </ol>
 
@@ -22,31 +22,31 @@ If the package is published to some other Nexus server, you need to tell Grape w
 <code>Grape.addResolver(name:<span class="string">'myNexus'</span>, root:<span class="string">'http://nexus.somecompany.com/'</span>)</code>
 
 
-<h3>Add the dependency to the pom.xml In your project</h3>
-This is a simple thing to do. Lets say you need to get data from MongoDb. You go to the <a href=https://mvnrepository.com>Maven Repository</a> search
-    and look up mongodb. You will see that the dependency information is
+<h3>Add the dependency to the build.gradle In your project</h3>
+This is a simple thing to do. Let's say you need to get data from MongoDb.
+You go to the <a href=https://mvnrepository.com>Maven Repository</a> search and look up mongodb.
+You will see that the dependency information for gradle is
 <div class="codeblock">
-    &lt;dependency&gt;<br/>
-    &nbsp;&nbsp;&lt;groupId&gt;org.mongodb&lt;/groupId&gt;<br/>
-    &nbsp;&nbsp;&lt;artifactId&gt;mongodb-driver-sync&lt;/artifactId&gt;<br/>
-    &nbsp;&nbsp;&lt;version&gt;4.6.1&lt;/version&gt;<br/>
-    &lt;/dependency&gt;
+    implementation 'org.mongodb:mongodb-driver-sync:4.8.1'
 </div>
-You just need to go the dependencies section in the projects' pom.xml and add the dependency there.<br/>
+You just need to go the dependencies' section in the projects' build.gradle and add the dependency there.<br/>
 <br/>
-There is a project wizard that help you create a maven project,
-but you can easily create your ow maven project from scratch if you are familiar with maven. If you have enabled the Global Option
-"Use pom classpath" Gade will parse the pom.xml and use that classpath when running your Groovy code. You need to be aware that the way
-this is done is by creating a new classloader with the Gade classloader as the parent. This means that if a dependency is already defined in Gade
-this is the version that will be used regardless of what you specify in your pom. E.g. it is not possible to define another version of Groovy
-in your pom and expect Gade to honor that version when you run your Groovy code. However, Gade also support running maven directly and when you do that
-only the dependencies of your pom.xml are honored, so it is still possible to execute tests etc to verify that your project works without surprises
-before integrating it with your application server of choice to run your code. Take a look at the <a href="https://github.com/perNyfelt/gade/wiki">
-collaborative-analytics-example in the Wiki</a> for an example of a custom Groovy package, a maven project using the package and a spring boot application using this project.
+There is a project wizard that help you create a gradle project,
+but you can easily create your ow gradle project from scratch if you are familiar with Gradle. If you have enabled the Global Option
+"Use build.gradle classpath", Gade will parse the build.gradle and use that classpath when running your Groovy code.
+You need to be aware that the way this is done is by creating a new classloader with the Gade classloader as the parent.
+This means that if a dependency is already defined in Gade this is the version that will be used regardless of what you specify in your build.gradle.
+E.g. it is not possible to define another version of Groovy in your build.gradle and expect Gade to honor that version when you run your Groovy code.
+However, Gade also support running gradle directly and when you do that only the dependencies of your build.gradle are honored,
+so it is still possible to execute tests etc to verify that your project works without surprises
+before integrating it with your application server of choice to run your code.
+Take a look at the <a href="https://github.com/perNyfelt/gade/wiki">
+collaborative-analytics-example in the Wiki</a> for an example of a custom Groovy package,
+a maven project using the package and a spring boot application using this project.
 
 <h2 id="using_packages">Using Packages</h2>
 There are millions (at the moment of writing this, 28.9 Million) of packages available on Maven Central. There is a
-    package that enables or simplifies pretty much anything you want to do. THere is also a lot of packages doing basically the same thing
+    package that enables or simplifies pretty much anything you want to do. There is also a lot of packages doing basically the same thing
     and the quality varies.<br />
 
 Some of the basic packages that works flawlessly from my own personal experience are listed below.<br/>
@@ -71,7 +71,7 @@ Some of the basic packages that works flawlessly from my own personal experience
         <td>se.alipsa.groovy:data-utils
         </td>
         <td>Use 1.0.0</td>
-        <td>See the "Examples" tab</td>
+        <td>See the "Tips and tricks" tab</td>
     </tr>
     <tr>
         <td>import excel spreadsheets</td>

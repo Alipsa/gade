@@ -3,6 +3,7 @@ package se.alipsa.gade.utils.gradle;
 import static se.alipsa.gade.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
 import static se.alipsa.gade.menu.GlobalOptions.GRADLE_HOME;
 
+import javafx.scene.Cursor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gradle.tooling.*;
@@ -17,6 +18,7 @@ import org.gradle.util.GradleVersion;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.model.Dependency;
+import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.MavenRepoLookup;
 
@@ -70,7 +72,7 @@ public class GradleUtils {
     for (String elem : pathElements) {
       File dir = new File(elem);
       if (dir.exists()) {
-        String [] files = dir.list();
+        String[] files = dir.list();
         if (files != null) {
           boolean foundMvn = Arrays.asList(files).contains("gradle");
           if (foundMvn) {
@@ -101,32 +103,53 @@ public class GradleUtils {
   }
 
   public void buildProject(String... tasks) {
-    ProgressListener listener = new ProgressListener() {
-      final ConsoleTextArea console = Gade.instance().getConsoleComponent().getConsole();
-      @Override
-      public void statusChanged(ProgressEvent progressEvent) {
-        console.appendFx(progressEvent.getDescription(), true);
-      }
-    };
-    buildProject(listener, tasks);
+    final ConsoleTextArea console = Gade.instance().getConsoleComponent().getConsole();
+
+    buildProject(console, tasks);
   }
 
   /**
-   *
-   * @param progressListener may be null
-   * @param tasks the tasks to run e.g. clean build
+   * @param console the ConsoleTextArea to use
+   * @param tasks   the tasks to run e.g. clean build
    */
-  public void buildProject(ProgressListener progressListener, String... tasks) {
-    try(ProjectConnection connection = connector.connect()) {
-      BuildLauncher build = connection.newBuild();
-      if (progressListener != null) {
-        build.addProgressListener(progressListener);
+  public void buildProject(ConsoleTextArea console, String... tasks) {
+    final List<String> dontShow = List.of("Run tasks", "Run build", "Build");
+    final ProgressListener listener = progressEvent -> {
+      String description = progressEvent.getDescription();
+      if (!dontShow.contains(description)) {
+        console.appendFx(progressEvent.getDescription(), true);
       }
-      if (tasks.length > 0) {
-        build.forTasks(tasks);
+    };
+    var task = new javafx.concurrent.Task<Void>() {
+      @Override
+      protected Void call() {
+        try (ProjectConnection connection = connector.connect()) {
+          BuildLauncher build = connection.newBuild();
+          build.addProgressListener(listener);
+          if (tasks.length > 0) {
+            build.forTasks(tasks);
+          }
+          build.run();
+        }
+        return null;
       }
-      build.run();
-    }
+    };
+
+    task.setOnSucceeded(e -> {
+      console.appendFx("Build finished!", true);
+    });
+
+    task.setOnFailed(e -> {
+      console.appendWarningFx("Build failed!");
+      Throwable exc = task.getException();
+      String clazz = exc.getClass().getName();
+      String message = exc.getMessage() == null ? "" : "\n" + exc.getMessage();
+      ExceptionAlert.showAlert("Build failed: " + clazz + ": " + message, exc);
+    });
+
+    Thread scriptThread = new Thread(task);
+    scriptThread.setDaemon(false);
+    scriptThread.start();
   }
 
   public List<String> getProjectDependencyNames() {
@@ -179,7 +202,7 @@ public class GradleUtils {
   public static File getCacheDir() {
     File dir = new File(FileUtils.getUserHome(), ".gade/cache");
     if (!dir.exists()) {
-      if(!dir.mkdirs()) {
+      if (!dir.mkdirs()) {
         throw new RuntimeException("Failed to create cache dir " + dir);
       }
     }
@@ -208,7 +231,7 @@ public class GradleUtils {
       throw new IOException("Failed to create file " + cachedFile);
     }
     ReadableByteChannel readableByteChannel = Channels.newChannel(artifactUrl.openStream());
-    try(FileOutputStream fileOutputStream = new FileOutputStream(cachedFile)) {
+    try (FileOutputStream fileOutputStream = new FileOutputStream(cachedFile)) {
       fileOutputStream.getChannel()
           .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
     }

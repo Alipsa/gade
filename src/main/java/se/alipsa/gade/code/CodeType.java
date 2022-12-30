@@ -8,6 +8,8 @@ public enum CodeType {
   MD("Markdown file"),
   JAVA("Java code"),
   GROOVY("Groovy code"),
+
+  GRADLE("Gradle build script"),
   JAVA_SCRIPT("Javascript code"),
   R("R code"),
   SAS("SAS code");

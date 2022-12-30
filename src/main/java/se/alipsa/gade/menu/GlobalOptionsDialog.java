@@ -9,7 +9,10 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.code.gradle.GradleTab;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.GuiUtils;
 import se.alipsa.gade.utils.IntField;
@@ -19,6 +22,7 @@ import java.util.*;
 
 class GlobalOptionsDialog extends Dialog<GlobalOptions> {
 
+  private static final Logger log = LogManager.getLogger(GlobalOptionsDialog.class);
   private IntField intField;
   private ComboBox<String> themes;
   private ComboBox<String> locals;
@@ -99,11 +103,18 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       gradleHomePane.getChildren().add(gradleHome);
       Button browseGradleHomeButton = new Button("...");
       browseGradleHomeButton.setOnAction(a -> {
+        log.info("Browsing for a directory for GRADLE_HOME");
         DirectoryChooser chooser = new DirectoryChooser();
-        String initial = defaultGradleHome == null || "".equals(defaultGradleHome) ? "." : defaultGradleHome;
-        chooser.setInitialDirectory(new File(initial));
+        String initial = "null".equals(String.valueOf(defaultGradleHome)) || defaultGradleHome.isBlank() ? "." : defaultGradleHome;
+        File initialDir = new File(initial);
+        if (!initialDir.exists()) {
+          log.info("Initial value for GRADLE_HOME, {}, does not exists", initialDir);
+          initialDir = new File(".");
+        }
+        chooser.setInitialDirectory(initialDir);
         chooser.setTitle("Select Gradle home dir");
         File dir = chooser.showDialog(gui.getStage());
+        //File dir = chooser.showDialog(null);
         if (dir != null) {
           gradleHome.setText(dir.getAbsolutePath());
         }

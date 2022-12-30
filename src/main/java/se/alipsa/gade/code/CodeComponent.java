@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.gmdtab.GmdTab;
+import se.alipsa.gade.code.gradle.GradleTab;
 import se.alipsa.gade.code.groovytab.GroovyTab;
 import se.alipsa.gade.code.javatab.JavaTab;
 import se.alipsa.gade.code.jstab.JsTab;
@@ -98,6 +99,7 @@ public class CodeComponent extends BorderPane {
         case XML -> new XmlTab(title, gui);
         case JAVA -> new JavaTab(title, gui);
         case SQL -> new SqlTab(title, gui);
+        case GRADLE -> new GradleTab(title, gui);
         case GROOVY -> new GroovyTab(title, gui);
         case JAVA_SCRIPT -> new JsTab(title, gui);
         case R -> new RTab(title, gui);

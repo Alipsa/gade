@@ -782,6 +782,14 @@ public class MainMenu extends MenuBar {
     nJava.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.JAVA));
     fileMenu.getItems().add(nJava);
 
+    MenuItem nSas = new MenuItem("SAS");
+    nSas.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.SAS));
+    fileMenu.getItems().add(nSas);
+
+    MenuItem nR = new MenuItem("R");
+    nR.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.R));
+    fileMenu.getItems().add(nR);
+
     MenuItem save = new MenuItem("Save  ctrl+S");
     save.setOnAction(this::saveContent);
 
