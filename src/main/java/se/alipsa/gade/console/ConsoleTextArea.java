@@ -18,7 +18,7 @@ public class ConsoleTextArea extends UnStyledCodeArea {
   private final StringBuilder buffer = new StringBuilder();
   private final StringBuilder warnBuffer = new StringBuilder();
 
-  private boolean sizeWWarningPrinted = false;
+  private boolean sizeWarningPrinted = false;
 
 
   private ConsoleTextArea() {
@@ -43,7 +43,7 @@ public class ConsoleTextArea extends UnStyledCodeArea {
 
   @Override
   public void clear() {
-    sizeWWarningPrinted = false;
+    sizeWarningPrinted = false;
     super.clear();
   }
 
@@ -51,7 +51,7 @@ public class ConsoleTextArea extends UnStyledCodeArea {
   public void appendText(String text) {
     int textSize = getText().length();
     if (textSize > consoleMaxLength) {
-      if (!sizeWWarningPrinted) {
+      if (!sizeWarningPrinted) {
         printSizeWarning();
       }
       System.out.print(text);
@@ -66,7 +66,7 @@ public class ConsoleTextArea extends UnStyledCodeArea {
     int end = getCaretPosition() + WARN_SIZE_MSG.length();
     super.appendText(WARN_SIZE_MSG);
     setStyleClass(start, end, "warning");
-    sizeWWarningPrinted = true;
+    sizeWarningPrinted = true;
   }
 
   public void append(String text, boolean... addNewline) {
