@@ -37,6 +37,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -816,4 +817,7 @@ public class ConsoleComponent extends BorderPane {
     return classLoader;
   }
 
+  public OutputStream getOutputStream() {
+    return new ConsoleOutputStream(this);
+  }
 }

@@ -3,7 +3,7 @@ package se.alipsa.gade.utils.gradle;
 import static se.alipsa.gade.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
 import static se.alipsa.gade.menu.GlobalOptions.GRADLE_HOME;
 
-import javafx.scene.Cursor;
+import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gradle.tooling.*;
@@ -16,6 +16,7 @@ import org.gradle.tooling.model.idea.IdeaProject;
 import org.gradle.tooling.model.idea.IdeaSingleEntryLibraryDependency;
 import org.gradle.util.GradleVersion;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.utils.ExceptionAlert;
@@ -103,16 +104,19 @@ public class GradleUtils {
   }
 
   public void buildProject(String... tasks) {
-    final ConsoleTextArea console = Gade.instance().getConsoleComponent().getConsole();
+    ConsoleComponent consoleComponent = Gade.instance().getConsoleComponent();
 
-    buildProject(console, tasks);
+    buildProject(consoleComponent, tasks);
   }
 
   /**
-   * @param console the ConsoleTextArea to use
+   * @param consoleComponent the ConsoleComponent to use
    * @param tasks   the tasks to run e.g. clean build
    */
-  public void buildProject(ConsoleTextArea console, String... tasks) {
+  public void buildProject(final ConsoleComponent consoleComponent, String... tasks) {
+    final ConsoleTextArea console = consoleComponent.getConsole();
+    /*
+    // Standard out gives better info, consider using the listener for debug mode
     final List<String> dontShow = List.of("Run tasks", "Run build", "Build");
     final ProgressListener listener = progressEvent -> {
       String description = progressEvent.getDescription();
@@ -120,31 +124,62 @@ public class GradleUtils {
         console.appendFx(progressEvent.getDescription(), true);
       }
     };
+     */
     var task = new javafx.concurrent.Task<Void>() {
       @Override
       protected Void call() {
-        try (ProjectConnection connection = connector.connect()) {
+        try (ProjectConnection connection = connector.connect();
+             OutputStream outputStream = consoleComponent.getOutputStream()) {
           BuildLauncher build = connection.newBuild();
-          build.addProgressListener(listener);
+          //build.addProgressListener(listener);
           if (tasks.length > 0) {
             build.forTasks(tasks);
           }
+          build.setStandardOutput(outputStream);
           build.run();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
         return null;
       }
     };
 
     task.setOnSucceeded(e -> {
-      console.appendFx("Build finished!", true);
+      //console.appendFx("Build finished!", true);
+      Platform.runLater(consoleComponent::promptAndScrollToEnd);
     });
 
     task.setOnFailed(e -> {
-      console.appendWarningFx("Build failed!");
+
       Throwable exc = task.getException();
       String clazz = exc.getClass().getName();
       String message = exc.getMessage() == null ? "" : "\n" + exc.getMessage();
-      ExceptionAlert.showAlert("Build failed: " + clazz + ": " + message, exc);
+      log.warn("Build failed: {}, {}", clazz, message, exc);
+
+      Throwable t = exc.getCause();
+      String previousMsg = null;
+      String msg = "";
+      while ( t != null) {
+        msg = t.getMessage();
+        if (previousMsg != null && previousMsg.equals(msg)) {
+          t = t.getCause();
+          continue;
+        }
+        if (msg.contains("There were failing tests. See the report at:")) {
+          int start = msg.indexOf("file:/");
+          int end = msg.indexOf(".html");
+          if (start > -1 && end > -1) {
+            String url = msg.substring(start);
+            Gade.instance().getInoutComponent().viewHtml(url);
+          }
+        }
+        console.appendWarningFx(msg);
+        t = t.getCause();
+        previousMsg = msg;
+      }
+      console.appendWarningFx("Build failed!");
+      Platform.runLater(consoleComponent::promptAndScrollToEnd);
+      // ExceptionAlert.showAlert("Build failed: " + clazz + ": " + message, exc);
     });
 
     Thread scriptThread = new Thread(task);

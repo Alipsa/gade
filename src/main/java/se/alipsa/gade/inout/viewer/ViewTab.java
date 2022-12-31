@@ -230,6 +230,7 @@ public class ViewTab extends Tab {
       log.warn("url is null, nothing to view");
       return;
     }
+    url = url.trim();
     Tab tab = new Tab();
     if (title.length > 0) {
       tab.setText(title[0]);
@@ -241,7 +242,7 @@ public class ViewTab extends Tab {
     WebView browser = new WebView();
     browser.setContextMenuEnabled(false);
     WebEngine webEngine = browser.getEngine();
-    if (url.startsWith("http")) {
+    if (url.startsWith("http") || url.startsWith("file:")) {
       log.info("Opening {} in view tab", url);
       webEngine.load(url);
       createContextMenu(browser, url, true);
