@@ -40,10 +40,12 @@ public class GradleUtils {
 
   private final GradleConnector connector;
 
+  private final File projectDir;
+
   public GradleUtils(Gade gui) throws FileNotFoundException {
     this(
-        gui.getInoutComponent().projectDir(),
-        new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome()))
+        new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome())),
+        gui.getInoutComponent().projectDir()
     );
   }
 
@@ -57,6 +59,7 @@ public class GradleUtils {
     connector = GradleConnector.newConnector();
     connector.useInstallation(gradleInstallationDir);
     connector.forProjectDirectory(projectDir);
+    this.projectDir = projectDir;
   }
 
   public static String locateGradleHome() {
@@ -217,7 +220,12 @@ public class GradleUtils {
     try (ProjectConnection connection = connector.connect()) {
       IdeaProject project = connection.getModel(IdeaProject.class);
       for (IdeaModule module : project.getModules()) {
-        urls.add(module.getCompilerOutput().getOutputDir().toURI().toURL());
+        File outPutDir = module.getCompilerOutput().getOutputDir();
+        if (outPutDir == null || !outPutDir.exists()) {
+          // TODO find a non hard coded way to retrieve this
+          outPutDir = new File(projectDir, "build/classes/groovy/main/");
+        }
+        urls.add(outPutDir.toURI().toURL());
       }
     }
     return new URLClassLoader(urls.toArray(new URL[0]), parent);
