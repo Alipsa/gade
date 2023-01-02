@@ -579,6 +579,7 @@ public class MainMenu extends MenuBar {
     ta.getStyleClass().add("txtarea");
     ta.setWrapText(true);
     ta.replaceText(content);
+    ta.setEditable(false);
     VirtualizedScrollPane<UnStyledCodeArea> scrollPane = new VirtualizedScrollPane<>(ta);
     alert.getDialogPane().setContent(scrollPane);
     alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
