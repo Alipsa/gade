@@ -39,20 +39,28 @@ public class PlotsTab extends Tab {
     if (title.length > 0) {
       tab.setText(title[0]);
     }
-    tab.setContent(node);
+    if (!(node instanceof ScrollPane)) {
+      ScrollPane scrollPane = new ScrollPane(node);
+      tab.setContent(scrollPane);
+    } else {
+      tab.setContent(node);
+    }
+
     final ContextMenu contextMenu = new ContextMenu();
     final MenuItem item = new MenuItem("save as image file");
     contextMenu.getItems().add(item);
 
-    if (node instanceof ImageView) {
-      var view = (ImageView)node;
+    if (node instanceof ImageView view) {
+      //TODO, not working, we might need to rescale manually
+      view.fitHeightProperty().bind(imageTabPane.heightProperty());
+      view.fitWidthProperty().bind(imageTabPane.widthProperty());
+
       item.setOnAction(a -> promptAndWriteImage(tab.getText(), view.getImage()));
 
       view.setOnContextMenuRequested(e ->
         contextMenu.show(view, e.getScreenX(), e.getScreenY())
       );
-    } else if (node instanceof WebView) {
-      var view = (WebView) node;
+    } else if (node instanceof WebView view) {
       SnapshotParameters param = new SnapshotParameters();
       param.setDepthBuffer(true);
       item.setOnAction(a -> {

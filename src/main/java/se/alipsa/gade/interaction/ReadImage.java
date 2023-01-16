@@ -4,7 +4,7 @@ import javafx.scene.image.Image;
 import org.apache.tika.Tika;
 import org.girod.javafx.svgimage.SVGImage;
 import org.girod.javafx.svgimage.SVGLoader;
-import org.girod.javafx.svgimage.xml.SVGParsingException;
+import org.girod.javafx.svgimage.xml.parsers.SVGParsingException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +40,23 @@ public class ReadImage {
             }
         }
         return new Image(url.toExternalForm());
+    }
+
+    public Image read(File file) throws IOException {
+        if (file == null || !file.exists()) {
+            throw new FileNotFoundException("The file " + file + " does not exist");
+        }
+
+        String contentType = getContentType(file);
+        if ("image/svg+xml".equals(contentType)) {
+            try {
+                SVGImage result = SVGLoader.load(file);
+                return result.toImage();
+            } catch (SVGParsingException e) {
+                throw new IOException("readImage: Failed to read svg image", e);
+            }
+        }
+        return new Image(file.toURI().toURL().toExternalForm());
     }
 
     /**
@@ -83,6 +100,11 @@ public class ReadImage {
 
     public String getContentType(String fileName) throws IOException {
         File file = new File(fileName);
+       return getContentType(file);
+    }
+
+    public String getContentType(File file) throws IOException {
+        String fileName = file.getAbsolutePath();
         if (!file.exists()) {
             URL url = getResourceUrl(fileName);
             if (url != null) {

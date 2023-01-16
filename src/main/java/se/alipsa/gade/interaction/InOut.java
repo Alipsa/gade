@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -478,6 +480,14 @@ public class InOut implements GuiInteraction {
     display(swingNode, title);
   }
 
+  public void display(File file, String... title) {
+    if (file == null || !file.exists()) {
+      Alerts.warn("Cannot display image", "Failed to find " + file);
+      return;
+    }
+    display(file.getAbsolutePath(), title);
+  }
+
   public void display(String fileName, String... title) {
     URL url = FileUtils.getResourceUrl(fileName);
     log.info("Reading image from " + url);
@@ -615,7 +625,7 @@ public class InOut implements GuiInteraction {
   }
 
   public Image readImage(File file) throws IOException {
-    return readImage.read(file.toURI().toURL().toExternalForm());
+    return readImage.read(file);
   }
 
   public String getContentType(String fileName) throws IOException {
@@ -631,6 +641,32 @@ public class InOut implements GuiInteraction {
     return """
         Inout: Providing interaction capabilities between Groovy Code and Gade 
                 
+        File chooseDir(String title, String initialDirectory)
+            asks user to select a dir
+            Return the java.io.File pointing to the directory chosen 
+                            
+        File chooseFile(String title, String initialDirectory, String description, String... extensions)
+            asks user to select a file
+            Returns the java.io.File selected by the user              
+                            
+        public Connection dbConnect(String name)
+          Connect to a database defined in the Connections tab. 
+           
+        ConnectionInfo dbConnection(String name)
+          Return a connection info (object containing the info) for the name defined in the Connections tab.            
+                 
+        Table dbSelect(String connectionName, String sqlQuery)
+          Convenient way to query a database using a connection defined in the Connections tab.
+                  
+        public int dbUpdate(String connectionName, String sqlQuery) 
+          Convenient way to run an update query using a connection defined in the Connections tab. 
+            
+        public int dbInsert(String connectionName, String sqlQuery) 
+          Convenient way to run an insert query using a connection defined in the Connections tab.  
+              
+        public int dbDelete(String connectionName, String sqlQuery) 
+          Convenient way to run a delete query using a connection defined in the Connections tab.  
+          
         void display(Node node, String... title)
            display an image in the Plot tab
            @param node the Node to display
@@ -654,46 +690,34 @@ public class InOut implements GuiInteraction {
           
         void display(JComponent swingPanel, String... titleOpt)
           Show a swing component in the plots tab, useful for swing chart libraries e.g. xchart
-                
-        void view(Table table, String... title)
-          display data in the Viewer tab
-          @param table the tablesaw Table to show
-          @param title an optional title for the component displaying the table
-                
-        void view(String html, String... title)
-          display html in the Viewer tab        
-          @param html a String or similar with the html content to view or a path or url to a file containing the html
-          @param title an optional title for the component displaying the html
 
+        String getContentType(String fileName)
+            makes an educated guess of the content type for the filePath specified  
+                           
         Stage getStage()
           Allows Dialogs and similar in external packages to interact with Ride
-          @return the primary stage
-         
-        public Connection connect(String name)
-          Connect to a database defined in the Connections tab. 
-           
-        ConnectionInfo connection(String name)
-          Return a connection info (object containing the info) for the name defined in the Connections tab.            
-                 
-        Table select(String connectionName, String sqlQuery)
-          Convenient way to query a database using a connection defined in the Connections tab.
-                  
-        public int update(String connectionName, String sqlQuery) 
-          Convenient way to run an update query using a connection defined in the Connections tab. 
-            
-        public int insert(String connectionName, String sqlQuery) 
-          Convenient way to run an insert query using a connection defined in the Connections tab.  
-              
-        public int delete(String connectionName, String sqlQuery) 
-          Convenient way to run a delete query using a connection defined in the Connections tab.  
+          @return the primary stage     
           
-        File scriptFile()
-          return the file from the active tab or null if the active tab has never been saved
+        void help(Class<?> clazz, String... title)
+          shows useful info about the class i.e. available methods in the help tab.
                 
-        File scriptDir()
-          return the dir where the current script resides
-          or the project dir if the active tab has never been saved
-                
+        void help(Object obj, String... title)
+          shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.
+
+        void javadoc(String groupId, String artifactId)
+          displays javadoc for the latest version fot the artifact in the help tab   
+        
+        void javadoc(String groupId, String artifactId, String version)
+          displays javadoc in the help tab for the version of the artifact specified     
+          
+        void javadoc(String dependencyString)
+          displays javadoc in the help tab for the version of the artifact specified   
+          dependencyString is in the format groupId:artifactId:version e.g. "org.knowm.xchart:xchart:3.8.1"  
+
+        void javadoc(Class clazz)
+          displays javadoc in the help tab for class specified, looks up the class in maven central search and tries to
+          make a somewhat educated guess for which artifact it should be  
+          
         File projectDir()
           return the project dir (the root of the file tree)    
           
@@ -718,42 +742,31 @@ public class InOut implements GuiInteraction {
         public YearMonth promptYearMonth(String message)
             quick prompt for a YearMonth
             
-        File chooseFile(String title, String initialDirectory, String description, String... extensions)
-            asks user to select a file
-            Returns the java.io.File selected by the user
-            
-        File chooseDir(String title, String initialDirectory)
-            asks user to select a dir
-            Return the java.io.File pointing to the directory chosen    
-                
         Image readImage(String filePath)
-            create an javafx Image from the url/path specified           
+            create an javafx Image from the url/path specified    
             
-        String getContentType(String fileName)
-            makes an educated guess of the content type for the filePath specified    
-            
+        Image readImage(File file)
+            create an javafx Image from the file specified   
+                           
+        File scriptFile()
+          return the file from the active tab or null if the active tab has never been saved
+                
+        File scriptDir()
+          return the dir where the current script resides
+          or the project dir if the active tab has never been saved
+
         boolean urlExists(String urlString, int timeout)
           attempts to connect to the url specified with a HEAD request to see if it is there or not. 
-          
-        void help(Class<?> clazz, String... title)
-          shows useful info about the class i.e. available methods in the help tab.
+                             
+        void view(Table table, String... title)
+          display data in the Viewer tab
+          @param table the tablesaw Table to show
+          @param title an optional title for the component displaying the table
                 
-        void help(Object obj, String... title)
-          shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.
-          
-        void javadoc(String groupId, String artifactId)
-          displays javadoc for the latest version fot the artifact in the help tab   
-        
-        void javadoc(String groupId, String artifactId, String version)
-          displays javadoc in the help tab for the version of the artifact specified     
-          
-        void javadoc(String dependencyString)
-          displays javadoc in the help tab for the version of the artifact specified   
-          dependencyString is in the format groupId:artifactId:version e.g. "org.knowm.xchart:xchart:3.8.1"  
-
-        void javadoc(Class clazz)
-          displays javadoc in the help tab for class specified, looks up the class in maven central search and tries to
-          make a somewhat educated guess for which artifact it should be                
+        void view(String html, String... title)
+          display html in the Viewer tab        
+          @param html a String or similar with the html content to view or a path or url to a file containing the html
+          @param title an optional title for the component displaying the html                                                                                                                                   
         """;
   }
 

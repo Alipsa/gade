@@ -51,7 +51,9 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
-    implementation 'org.apache.maven:maven-artifact:3.8.6'
+
+    // Used by se.alipsa.gade.utils.SemanticVersion
+    implementation 'org.apache.maven:maven-artifact:3.8.7'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
@@ -69,8 +71,8 @@ dependencies {
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     implementation 'org.gradle:gradle-tooling-api:7.6'
-    implementation 'org.jetbrains:annotations:23.1.0'
-    implementation 'io.github.classgraph:classgraph:4.8.153'
+    implementation 'org.jetbrains:annotations:24.0.0'
+    implementation 'io.github.classgraph:classgraph:4.8.154'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
@@ -83,8 +85,8 @@ dependencies {
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     //implementation 'se.alipsa:simple-rest:1.0.3'
 
-    implementation 'com.github.hervegirod:fxsvgimage:1.0b2'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
+    implementation 'com.github.hervegirod:fxsvgimage:1.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
 
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
