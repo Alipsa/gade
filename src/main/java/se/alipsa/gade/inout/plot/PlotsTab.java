@@ -39,19 +39,15 @@ public class PlotsTab extends Tab {
     if (title.length > 0) {
       tab.setText(title[0]);
     }
-    if (!(node instanceof ScrollPane)) {
-      ScrollPane scrollPane = new ScrollPane(node);
-      tab.setContent(scrollPane);
-    } else {
-      tab.setContent(node);
-    }
+
+    tab.setContent(node);
 
     final ContextMenu contextMenu = new ContextMenu();
     final MenuItem item = new MenuItem("save as image file");
     contextMenu.getItems().add(item);
 
     if (node instanceof ImageView view) {
-      //TODO, not working, we might need to rescale manually
+      view.setPreserveRatio(true);
       view.fitHeightProperty().bind(imageTabPane.heightProperty());
       view.fitWidthProperty().bind(imageTabPane.widthProperty());
 
