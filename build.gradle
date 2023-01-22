@@ -17,7 +17,7 @@ ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 javafx {
-    version = "19"
+    version = "19.0.2.1"
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
 }
 
@@ -43,7 +43,7 @@ dependencies {
     def jgitVersion = '6.4.0.202211300538-r'
     def tablesawVersion = "0.43.1"
     def log4jVersion = "2.19.0"
-    def groovyVersion = "4.0.7"
+    def groovyVersion = "4.0.8"
 
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"

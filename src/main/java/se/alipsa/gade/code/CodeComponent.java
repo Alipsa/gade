@@ -65,16 +65,29 @@ public class CodeComponent extends BorderPane {
     return codeTab;
   }
 
+  /**
+   * Get the name (title) of the active tab.
+   * Used to name view tabs, files etc.
+   */
   public String getActiveScriptName() {
     return getActiveTab().getTitle();
 
   }
 
+  /**
+   * Get the text content from the active tab
+   *
+   * @return the textual content (String) of the active code tab
+   */
   public String getTextFromActiveTab() {
     TabTextArea ta = getActiveTab();
     return ta.getTextContent();
   }
 
+  /**
+   * Update connections into in each tab
+   * that uses connections (currently only SQL tabs)
+   */
   public void updateConnections() {
     for(Tab tab : pane.getTabs()) {
       if (tab instanceof SqlTab) {
@@ -145,6 +158,9 @@ public class CodeComponent extends BorderPane {
     pane.getSelectionModel().select(tab);
   }
 
+  /**
+   * Remove a connection from all code tabs
+   */
   public void removeConnectionFromTabs(String value) {
     for (Tab tab : pane.getTabs()) {
       if (tab instanceof SqlTab) {
@@ -154,23 +170,17 @@ public class CodeComponent extends BorderPane {
     }
   }
 
-  public void reloadTabContent(File pomFile) {
-    for (Tab tab : pane.getTabs()) {
-      log.trace("check tab {}", tab.getText());
-      if (tab instanceof TextAreaTab) {
-        TextAreaTab codeTab = (TextAreaTab) tab;
-        var tabFile = codeTab.getFile();
-        log.trace("File is {}", tabFile);
-        if (tabFile != null && tabFile.equals(pomFile)) {
-          if (!codeTab.isChanged()) {
-            log.trace("Reloading from disk");
-            codeTab.reloadFromDisk();
-          } else {
-            Alerts.warnFx("Cannot reload when tab is not saved",
-                pomFile + " was updated but the code is changed so cannot reload it, you need to manually merge the content");
-          }
-        }
-      }
+  /**
+   * Reload a tab from disk
+   * @param tab the tab to reload
+   */
+  public void reloadTabContent(TextAreaTab tab) {
+    File file = tab.getFile();
+    if (file != null && file.exists() && !tab.isChanged()) {
+      log.trace("Reloading from disk");
+      tab.reloadFromDisk();
+    } else {
+      log.info("User tried to reload {} but this is not possible", file);
     }
   }
 }

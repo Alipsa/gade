@@ -35,12 +35,20 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
   /** The file this texarea is editing */
   protected File file;
 
+  /**
+   * A flag that indicates whether a change of text should be considered
+   * as changed text (true), e-g- an edit by the user,
+   * or new text (false), e.g read from file
+   */
   protected boolean blockChange = false;
 
   private TextAreaTab parentTab;
 
   private final Pattern whiteSpace = Pattern.compile( "^\\s+" );
 
+  /**
+   * Default ctor
+   */
   public CodeTextArea() {
 
     getStyleClass().add("codeTextArea");
@@ -74,6 +82,11 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     */
   }
 
+  /**
+   * Constructor relating this text area to a TextAreaTab.
+   *
+   * @param parent the TextAreaTab that should be the parent of this code text area
+   */
   public CodeTextArea(TextAreaTab parent) {
     this();
     this.parentTab = parent;
@@ -210,6 +223,13 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     return String.join("\n", untabbed);
   }
 
+  /**
+   * Indent (add space) to the selected area
+   * e.g. when pressing the tab button
+   *
+   * @param selected the text to indent
+   * @return the indented text
+   */
   protected String indentText(String selected) {
     if (selected == null || "".equals(selected)) {
       return INDENT;

@@ -4,10 +4,18 @@ import java.io.File;
 
 public interface TabTextArea {
 
+  /**
+   * @return the file this textarea is related to
+   * or null if no such relation exists
+   */
   File getFile();
 
   void setFile(File file);
 
+  /**
+   * @return the textual content (String) of this text area
+   * which resides in a tab.
+   */
   String getTextContent();
 
   /**
