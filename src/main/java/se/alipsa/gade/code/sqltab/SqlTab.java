@@ -5,6 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Tooltip;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +26,7 @@ import tech.tablesaw.api.Table;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +36,9 @@ public class SqlTab extends TextAreaTab {
   private final SqlTextArea sqlTextArea;
   private final Button executeButton;
   private final ComboBox<ConnectionInfo> connectionCombo;
+
+  private final CheckBox keepConnectionOpenCheckBox;
+  private Connection con;
 
   private static final Logger log = LogManager.getLogger(SqlTab.class);
 
@@ -56,6 +61,28 @@ public class SqlTab extends TextAreaTab {
     buttonPane.getChildren().add(connectionCombo);
     updateConnections();
 
+    keepConnectionOpenCheckBox = new CheckBox("Keep connection open");
+    buttonPane.getChildren().add(keepConnectionOpenCheckBox);
+    keepConnectionOpenCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+      if (oldValue == true && newValue == false && con != null) {
+        try {
+          con.close();
+          con = null;
+        } catch (SQLException e) {
+          ExceptionAlert.showAlert("Failed to close connection", e);
+        }
+      }
+    });
+
+    setOnCloseRequest(r -> {
+      if (con != null) {
+        try {
+          con.close();
+        } catch (SQLException e) {
+          log.warn("Failed to close connection", e);
+        }
+      }
+    });
     sqlTextArea = new SqlTextArea(this);
     VirtualizedScrollPane<SqlTextArea> scrollPane = new VirtualizedScrollPane<>(sqlTextArea);
     pane.setCenter(scrollPane);
@@ -110,7 +137,10 @@ public class SqlTab extends TextAreaTab {
       protected Void call() throws Exception {
         ConnectionInfo ci = connectionCombo.getValue();
 
-        try (Connection con = gui.getEnvironmentComponent().connect(ci)) {
+        if (con == null) {
+          con = gui.getEnvironmentComponent().connect(ci);
+        }
+        try {
           if (con == null) {
             throw new Exception("Failed to establish a connection");
           }
@@ -149,6 +179,11 @@ public class SqlTab extends TextAreaTab {
                 hasMoreResultSets = stm.getMoreResults();
               }
             }
+          }
+        } finally {
+          if (!keepConnectionOpenCheckBox.isSelected()) {
+            con.close();
+            con = null;
           }
         }
         return null;
