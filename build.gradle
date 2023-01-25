@@ -145,20 +145,22 @@ runtime {
     launcher {
         noConsole = true
     }
-
     // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
+    def baseUrl = "https://download.bell-sw.com/java"
+    def version = "17.0.6+10"
+
     targetPlatform("linux") {
-        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.5+8/bellsoft-jdk17.0.5+8-linux-amd64-full.tar.gz") {
+        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-linux-amd64-full.tar.gz") {
             downloadDir = "$projectDir/platform/linux"
         }
     }
     targetPlatform("win") {
-        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.5+8/bellsoft-jdk17.0.5+8-windows-amd64-full.zip") {
+        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-windows-amd64-full.zip") {
             downloadDir = "$projectDir/platform/win"
         }
     }
     targetPlatform("mac") {
-        jdkHome = jdkDownload("https://download.bell-sw.com/java/17.0.5+8/bellsoft-jdk17.0.5+8-macos-amd64-full.tar.gz") {
+        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-macos-amd64-full.tar.gz") {
             downloadDir = "$projectDir/platform/mac"
         }
     }

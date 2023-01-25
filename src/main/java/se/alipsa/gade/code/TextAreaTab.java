@@ -162,4 +162,12 @@ public abstract class TextAreaTab extends Tab implements TabTextArea {
       Alerts.warn("Failed to reload from disk", "Cannot reload content from disk since file is not set");
     }
   }
+
+  public void highlightSyntax() {
+    try {
+      getCodeArea().computeHighlighting(getText());
+    } catch (Throwable t) {
+      throw new RuntimeException("Failed to compute syntax highlighting", t);
+    }
+  }
 }

@@ -67,7 +67,7 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
         .successionEnds(Duration.ofMillis(400))
 
         // run the following code block when previous stream emits an event
-        .subscribe(ignore -> setStyleSpans(0, computeHighlighting(getText())));
+        .subscribe(ignore -> highlightSyntax());
 
     /*
     Iterator<String> it = getStylesheets().iterator();
@@ -360,5 +360,9 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     }
     suggestionsPopup.setOnHiding(e -> this.requestFocus());
     suggestionsPopup.show(this, screenX, screenY);
+  }
+
+  public void highlightSyntax() {
+    setStyleSpans(0, computeHighlighting(getText()));
   }
 }

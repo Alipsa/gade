@@ -69,6 +69,7 @@ public class SqlTab extends TextAreaTab {
           con.close();
           con = null;
         } catch (SQLException e) {
+          con = null;
           ExceptionAlert.showAlert("Failed to close connection", e);
         }
       }
@@ -79,7 +80,7 @@ public class SqlTab extends TextAreaTab {
         try {
           con.close();
         } catch (SQLException e) {
-          log.warn("Failed to close connection", e);
+          log.warn("Failed to close connection when closing tab " + title, e);
         }
       }
     });

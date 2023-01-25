@@ -3,6 +3,8 @@ package se.alipsa.gade.code.sqltab;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 import se.alipsa.gade.code.CodeTextArea;
@@ -13,6 +15,7 @@ import java.util.regex.Pattern;
 
 public class SqlTextArea extends CodeTextArea {
 
+  private static final Logger log = LogManager.getLogger();
   private static final String[] KEYWORDS = new String[]{
       "absolute", "action", "add", "admin", "after", "aggregate", "alias", "all", "allocate", "alter",
       "and", "any", "are", "array", "as", "asc", "assertion", "assertion", "at", "atomic", "authorization",
@@ -91,11 +94,12 @@ public class SqlTextArea extends CodeTextArea {
   private static final String COMMENT_PATTERN = "--[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/";
 
   private static final Pattern PATTERN = Pattern.compile(
-      "(?<KEYWORD>" + KEYWORD_PATTERN + ")"
+      "(?<COMMENT>" + COMMENT_PATTERN + ")"
+          + "|(?<KEYWORD>" + KEYWORD_PATTERN + ")"
           + "|(?<PAREN>" + PAREN_PATTERN + ")"
           + "|(?<SEMICOLON>" + SEMICOLON_PATTERN + ")"
           + "|(?<STRING>" + STRING_PATTERN + ")"
-          + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
+
   );
 
   private final ContextMenu suggestionsPopup = new ContextMenu();
@@ -144,19 +148,23 @@ public class SqlTextArea extends CodeTextArea {
   }
 
 
+  // TODO, while this works most of the time, sometimes for highly complex SQl code matching
+  //  goes into an infinite loop. An alternative approach is to either parse to an AST and apply
+  //  styling on the AST model or create an eventparser (like SAX) and apply styling that way.
   @Override
   protected StyleSpans<Collection<String>> computeHighlighting(String text) {
+    log.info("Computing highlighting for sql");
     Matcher matcher = PATTERN.matcher(text);
     int lastKwEnd = 0;
     StyleSpansBuilder<Collection<String>> spansBuilder
         = new StyleSpansBuilder<>();
     while (matcher.find()) {
       String styleClass =
-          matcher.group("KEYWORD") != null ? "keyword" :
+          matcher.group("COMMENT") != null ? "comment" :
+            matcher.group("KEYWORD") != null ? "keyword" :
               matcher.group("PAREN") != null ? "paren" :
                   matcher.group("SEMICOLON") != null ? "semicolon" :
                       matcher.group("STRING") != null ? "string" :
-                          matcher.group("COMMENT") != null ? "comment" :
                               null; /* never happens */
       assert styleClass != null;
       spansBuilder.add(Collections.emptyList(), matcher.start() - lastKwEnd);
