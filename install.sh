@@ -73,7 +73,7 @@ if [[ -d "$TARGET_DIR" ]]; then
 fi
 mkdir -p "$TARGET_DIR" || exit
 
-echo "- Copy ${PLATFORM} dist"
+echo "- Copy ${PLATFORM} dist to $TARGET_DIR"
 cp -r "build/image/gade-${PLATFORM}/." "$TARGET_DIR" || exit
 
 if [[ -d "${LINK_DIR}" || -L "${LINK_DIR}" ]]; then
@@ -91,7 +91,7 @@ if [[ "$PLATFORM" == "win" ]]; then
     lnkBase="$(dirname "${LINK_DIR}")"
     lnkDir="$(wslpath -w "$lnkBase")\\gade"
   fi
-  # echo "creating junction to $lnkDir from $srcDir"
+  echo "- creating junction to $lnkDir from $srcDir"
   cmd.exe /c "mklink /J $lnkDir $srcDir"
 else
   chmod +x "${TARGET_DIR}"/*.sh  || exit
