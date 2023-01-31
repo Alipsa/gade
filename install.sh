@@ -2,8 +2,27 @@
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-source ~/.sdkman/bin/sdkman-init.sh
-source jdk17
+javacmd=$(command -v java)
+
+function switchJava() {
+  if [[ -f ~/.sdkman/bin/sdkman-init.sh ]]; then
+    source ~/.sdkman/bin/sdkman-init.sh
+  fi
+  if [[ $(command -v jdk17) ]]; then
+    source jdk17
+  fi
+}
+
+if [[ -f "$javacmd" ]]; then
+        javaVersion=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1)
+        if [[ (($javaVersion -eq 17)) ]]; then
+                echo "java 17 is already the active version"
+        else
+                switchJava
+        fi
+else
+        switchJava
+fi
 
 function platform {
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -27,6 +46,10 @@ function getProperty {
    PROP_KEY=$1
    PROP_VALUE=$(cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f2)
    echo "$PROP_VALUE" | xargs
+}
+
+function toMsysPath {
+  echo "/$1" | sed -e 's/\\/\//g' -e 's/://'
 }
 
 #VERSION=$(getProperty "version")
@@ -59,9 +82,15 @@ if [[ -d "${LINK_DIR}" || -L "${LINK_DIR}" ]]; then
 fi
 echo "- Create dir link"
 if [[ "$PLATFORM" == "win" ]]; then
-  srcDir="$(wslpath -w "${TARGET_DIR}")"
-  lnkBase="$(dirname "${LINK_DIR}")"
-  lnkDir="$(wslpath -w "$lnkBase")\\gade"
+  if [[ "$OSTYPE" == "msys" ]]; then
+    srcDir="$(toMsysPath "${TARGET_DIR}")"
+    lnkBase="$(dirname "${LINK_DIR}")"
+    lnkDir="$(toMsysPath "$lnkBase")\\gade"
+  else
+    srcDir="$(wslpath -w "${TARGET_DIR}")"
+    lnkBase="$(dirname "${LINK_DIR}")"
+    lnkDir="$(wslpath -w "$lnkBase")\\gade"
+  fi
   # echo "creating junction to $lnkDir from $srcDir"
   cmd.exe /c "mklink /J $lnkDir $srcDir"
 else
