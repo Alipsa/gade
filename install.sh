@@ -52,6 +52,10 @@ function toMsysPath {
   echo "/$1" | sed -e 's/\\/\//g' -e 's/://'
 }
 
+function toWinPath {
+  echo "$1" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/'
+}
+
 #VERSION=$(getProperty "version")
 #JAR_NAME=$(getProperty "jar.name")
 RELEASE_TAG=$(getProperty "release.tag")
@@ -83,9 +87,9 @@ fi
 echo "- Create dir link"
 if [[ "$PLATFORM" == "win" ]]; then
   if [[ "$OSTYPE" == "msys" ]]; then
-    srcDir="$(toMsysPath "${TARGET_DIR}")"
+    srcDir="$(toWinPath "${TARGET_DIR}")"
     lnkBase="$(dirname "${LINK_DIR}")"
-    lnkDir="$(toMsysPath "$lnkBase")\\gade"
+    lnkDir="$(toWinPath "$lnkBase")\\gade"
   else
     srcDir="$(wslpath -w "${TARGET_DIR}")"
     lnkBase="$(dirname "${LINK_DIR}")"
