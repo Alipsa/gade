@@ -90,15 +90,18 @@ if [[ "$PLATFORM" == "win" ]]; then
     srcDir="$(toWinPath "${TARGET_DIR}")"
     lnkBase="$(dirname "${LINK_DIR}")"
     lnkDir="$(toWinPath "$lnkBase")\\gade"
+    echo "- creating junction to $lnkDir from $srcDir"
+    cmd.exe "/c mklink /J $lnkDir $srcDir"
   else
     srcDir="$(wslpath -w "${TARGET_DIR}")"
     lnkBase="$(dirname "${LINK_DIR}")"
     lnkDir="$(wslpath -w "$lnkBase")\\gade"
+    echo "- creating junction to $lnkDir from $srcDir"
+    /mnt/c/windows/system32/cmd.exe /c "mklink /J $lnkDir $srcDir"
   fi
-  echo "- creating junction to $lnkDir from $srcDir"
-  cmd.exe /c "mklink /J $lnkDir $srcDir"
 else
   chmod +x "${TARGET_DIR}"/*.sh  || exit
+  echo "- creating symlink to ${TARGET_DIR} from ${LINK_DIR}"
   ln -sf "${TARGET_DIR}" "${LINK_DIR}" || exit
 fi
 
