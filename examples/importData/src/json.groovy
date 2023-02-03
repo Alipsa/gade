@@ -1,5 +1,5 @@
 /**************************************** 
- * Simple example fo how to import data
+ * Simple example for how to import data
  * from a json file
  ****************************************/ 
  

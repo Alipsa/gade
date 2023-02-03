@@ -58,8 +58,8 @@ a connection and choose "view connection".
 For any issues or feature request etc. on Gade please use the [github issue feature](https://github.com/perNyfelt/gade/issues)
 
 # Documentation
- - [Cookbook](cookbook.md) - an introduction to use Gade to solve common Data Scientist tasks.
- - [Freecharts](FreeCharts.md) - A short description on how to use the Freecharts library with Gade
+ - [Cookbook](docs/cookbook/cookbook.md) - an introduction to use Gade to solve common Data Scientist tasks.
+ - [Freecharts](docs/FreeCharts.md) - A short description on how to use the Freecharts library with Gade
  - User Manual - can be found in Gade (Help -> User Manual)
  - [Wiki](https://github.com/perNyfelt/gade/wiki) - Wiki pages on various topics related to Gade
 

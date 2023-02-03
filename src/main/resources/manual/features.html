@@ -9,7 +9,6 @@
         <h4>Menu options</h4>
         <ul>
             <li><a href="#tools-global_options">Tools -> Global options</a></li>
-            <li><a href="#tools-running_the_repl_console">Tools -> Run REPL in console</a></li>
         </ul>
     </li>
 </ul>
@@ -49,27 +48,36 @@
     <h5>Console Max size</h5>
     This describes how many character that are allowed in the console. After the limit is reaches no console output will
     be written.
+
     <h5>Style theme</h5>
     Gade comes with 3 predefined styles. Blue, Dark and Bright. The Bright Theme is more or less the Java FX default theme but
     most care has gone into making the Blue Theme a pleasant coloring theme for Groovy development.
-    <h5>Use pom classpath</h5>
-    Use a classpath based on the pom.xml (with the system classpath as the parent) for running Groovy code in Gade.
+
+    <h5>Use build.gradle classpath</h5>
+    Use a classpath based on the build.gradle (with the system classpath as the parent) for running Groovy code in Gade.
+
     <h5>Add build dir to classpath</h5>
     Will also add the target/classes and target/test-classes dirs to the classpath
-    <h5>Restart session after maven build</h5>
-    Whether to restart the session after each maven build (so new classes etc. can be picked up)
-    <h5>MAVEN_HOME</h5>
-    The location of your maven installation used to run maven. Will override any system property for MAVEN_HOME.
+
+    <h5>Restart session after build</h5>
+    Whether to restart the session after each gradle build (so new classes etc. can be picked up)
+
+    <h5>GRADLE_HOME</h5>
+    The location of your gradle installation used to run gradle. Will override any system property for GRADLE_HOME.
+
     <h5>Enable git integration</h5>
     Whether to use git integration (git commands, syntax highlighting in the file view etc.) or not.
+
     <h5>Run global autorun.groovy on session init</h5>
     Enable to run a file called autorun.groovy (if it exists) from the Gade install dir each time a session (re)starts.
     It is just a normal Groovy script enabling you to set up session variables, define functions, read in data files etc.
-    Note that executing the script will give no output (unless there is some problem with the script) so print etc will
+    Note that executing the script will give no output (unless there is some problem with the script) so print etc. will
     not produce anything that can be seen.
+
     <h5>Run project autorun.groovy on session init</h5>
     Run autorun.groovy from the project dir (working dir) each time a session (re)starts. Same as above but for the current project
     dir.
+
     <h5>Add imports when running Groovy snippets</h5>
     In Groovy, imports are not part of the engine session so when executing code line by line or marking an area and run it
     will be problematic due to missing imports (Classes will not be found). When checked, Gade will add the import lines to the
