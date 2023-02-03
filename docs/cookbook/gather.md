@@ -48,7 +48,7 @@ CsvReadOptions options = builder.build();
 table = Table.read().usingOptions(options);
 ```
 
-## <a id="importExcel"/>Import an excel file
+## Import an excel file
 The Excel import is somewhat crude in the sense that the sheet you import should be pretty much only the
 tabular data you want to import. Any extra header texts besides just the column names will make the sheet
 impossible to import. Hence, you might need to massage the excel file a bit e.g. before importing it.

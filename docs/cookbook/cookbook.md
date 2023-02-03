@@ -11,7 +11,7 @@ I highly recommend you to read all of these after reading this cookbook to go de
 # Table of content
 - [Gather](gather.md)
   - [Import from CSV](gather.md/#import-a-csv-file)
-  - [Import from Excel](#importExcel)
+  - [Import from Excel](gather.md/#Import-an-excel-file)
   - [Import from database](#importDb)
   - [Import from other sources and formats](#importOther)
 - [Explore](#explore)
