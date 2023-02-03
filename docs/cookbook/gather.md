@@ -110,7 +110,7 @@ connectionInfo = io.dbConnection("mydatabase").withPassword(getDbPasswdFromSomew
 table = io.dbSelect(connectionInfo, "select * from mytable")
 ```
 
-## import Json
+## Import Json
 
 ```groovy
 import static tech.tablesaw.api.ColumnType.*
@@ -130,7 +130,7 @@ options = JsonReadOptions.builder(jsonFile)
 glaciers = Table.read().usingOptions(options)
 ```
 
-## import XML
+## Import XML
 ```groovy
 import static tech.tablesaw.api.ColumnType.*
 import tech.tablesaw.api.*
@@ -148,7 +148,7 @@ options = XmlReadOptions.builder(xmlFile)
 glaciers = Table.read().usingOptions(options);
 ```
 
-## import Open Office Calc
+## Import Open Office Calc
 ```groovy
 import tech.tablesaw.io.ods.OdsReadOptions
 import tech.tablesaw.io.ods.OdsReader
