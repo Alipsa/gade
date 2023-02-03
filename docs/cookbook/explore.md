@@ -116,7 +116,7 @@ import tech.tablesaw.plotly.api.*
 data = Table.read().csv("airquality.csv")
 io.display(Histogram.create("Temperature (°F)", data, "Temp"), "Temperature distribution")
 ```
-![Temperature_histogram.png](docs/Temperature_histogram.png "Temperature distribution")
+![Temperature_histogram.png](../Temperature_histogram.png "Temperature distribution")
 
 ## <a id="heatMaps"/>Heat maps
 ```groovy
@@ -126,7 +126,7 @@ import tech.tablesaw.plotly.api.*
 data = Table.read().csv("airquality.csv")
 io.display(Histogram2D.create("Distribution of temp and ozone", data, "Temp", "Ozone"), "Temp/Ozone")
 ```
-![heatmap_Temp_Ozone.png](docs/heatmap_Temp_Ozone.png "Temperature and Ozone distribution")
+![heatmap_Temp_Ozone.png](../heatmap_Temp_Ozone.png "Temperature and Ozone distribution")
 
 ### <a id="boxPlots"/>Box plots
 ```groovy
@@ -136,7 +136,7 @@ import tech.tablesaw.plotly.api.*
 data = Table.read().csv("airquality.csv")
 io.display(BoxPlot.create("Temp by Month", data, "Month", "Temp"), "Temp/Month")
 ```
-![boxplot_Temp_Month.png](docs/boxplot_Temp_Month.png "Temperature by month")
+![boxplot_Temp_Month.png](../boxplot_Temp_Month.png "Temperature by month")
 
 ## <a id="scatterPlots"/>Scatter plots
 
@@ -147,6 +147,6 @@ import tech.tablesaw.plotly.api.*
 data = Table.read().csv("airquality.csv")
 io.display(ScatterPlot.create("Temperature and Ozone", data, "Temp", "Ozone"))
 ```
-![../scatterPlot_Temp_Ozone.png](../scatterPlot_Temp_Ozone.png "Temperature and Ozone")
+![scatterPlot_Temp_Ozone.png](../scatterPlot_Temp_Ozone.png "Temperature and Ozone")
 
 
