@@ -147,6 +147,6 @@ import tech.tablesaw.plotly.api.*
 data = Table.read().csv("airquality.csv")
 io.display(ScatterPlot.create("Temperature and Ozone", data, "Temp", "Ozone"))
 ```
-![scatterPlot_Temp_Ozone.png](../scatterPlot_Temp_Ozone.png "Temperature and Ozone")
+![../scatterPlot_Temp_Ozone.png](../scatterPlot_Temp_Ozone.png "Temperature and Ozone")
 
 
