@@ -15,7 +15,7 @@ and [Tablesaw](/jtablesaw/tablesaw). Of the two Gade provides a lot of convenien
 Tablesaw, but you can certainly use Joinery instead of you prefer. At the core of the Tablesaw api is
 the Table class which gives you similar power to manipulate data as you have with SQL in a relational database.
 
-## <a id="importCsv" />Import a csv file
+## Import a csv file
 Importing a csv file could typically be as simple as:
 ```groovy
 import tech.tablesaw.api.*
