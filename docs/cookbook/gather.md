@@ -67,7 +67,7 @@ XlsxReader xlsxReader = new XlsxReader()
 glaciers = xlsxReader.read(options)
 ```
 
-## <a id="importDb"/>Import data from a relational database
+## Import data from a relational database
 
 Groovy has excellent built-in support for reading from relational databases in the Sql class.
 There is a snag when using @Grab however. The Sql class uses DriverManager to get the connection which
@@ -110,6 +110,54 @@ connectionInfo = io.dbConnection("mydatabase").withPassword(getDbPasswdFromSomew
 table = io.dbSelect(connectionInfo, "select * from mytable")
 ```
 
-## <a id="importOther"/>Other data sources and formats
-It is also possible to import json, xml, and Open Office Calc spreadsheets. See the [examples/importData/src](examples/importData/src)
-for some simple examples how to do that.
+## import Json
+
+```groovy
+import static tech.tablesaw.api.ColumnType.*
+import tech.tablesaw.api.*
+import tech.tablesaw.io.json.*
+ 
+jsonFile = new File(io.scriptDir(), "../data/glaciers.json")
+
+options = JsonReadOptions.builder(jsonFile)
+        .columnTypes(colName -> switch (colName) {
+          case "Year", "Number of observations" -> INTEGER;
+          case "Mean cumulative mass balance" -> DOUBLE;
+          default -> STRING;
+        })
+        .build();
+  
+glaciers = Table.read().usingOptions(options)
+```
+
+## import XML
+```groovy
+import static tech.tablesaw.api.ColumnType.*
+import tech.tablesaw.api.*
+import tech.tablesaw.io.xml.*
+
+xmlFile = new File(io.scriptDir(), "../data/glaciers.xml")
+
+options = XmlReadOptions.builder(xmlFile)
+        .columnTypes(f -> switch (f) {
+          case "Year", "Number_of_observations" -> INTEGER
+          case "Mean_cumulative_mass_balance" -> DOUBLE
+          default -> STRING
+        })
+        .build()
+glaciers = Table.read().usingOptions(options);
+```
+
+## import Open Office Calc
+```groovy
+import tech.tablesaw.io.ods.OdsReadOptions
+import tech.tablesaw.io.ods.OdsReader
+
+odsFile = new File(io.scriptDir(), "../data/glaciers.ods")
+OdsReadOptions options = OdsReadOptions.builder(odsFile)
+.sheetIndex(0)
+.tableName("Glaciers")
+.build()
+OdsReader reader = new OdsReader()
+glaciers = reader.read(options)
+```
