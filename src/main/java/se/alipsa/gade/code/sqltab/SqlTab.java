@@ -128,7 +128,7 @@ public class SqlTab extends TextAreaTab {
     // the whole sql code will be in batchedQry[0]
     String[] batchedQry = SqlParser.split(sqlCode, parseMessage);
     if (parseMessage.length() > 0) {
-      consoleComponent.addWarning(getTitle(), parseMessage.toString(), false);
+      consoleComponent.addWarning(getTitle(), parseMessage.toString() + '\n', false);
     } else {
       consoleComponent.addOutput(getTitle(), "Query contains " + batchedQry.length + " statements", false, true);
     }

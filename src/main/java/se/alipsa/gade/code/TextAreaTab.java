@@ -148,6 +148,13 @@ public abstract class TextAreaTab extends Tab implements TabTextArea {
     }
     log.trace("Replacing content text");
     replaceContentText(content, true);
+    //TODO, large files does not highlight; below does not fix it
+    /*
+    final String cnt = content;
+    final var kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(1000), e -> replaceContentText(cnt, true));
+    final var timeline = new javafx.animation.Timeline(kf);
+    javafx.application.Platform.runLater(timeline::play);
+    */
   }
 
   public void reloadFromDisk() {
