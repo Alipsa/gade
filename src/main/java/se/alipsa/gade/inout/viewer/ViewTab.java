@@ -26,6 +26,7 @@ import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.code.xmltab.XmlTextArea;
+import se.alipsa.groovy.gmd.HtmlDecorator;
 import tech.tablesaw.api.Table;
 import se.alipsa.gade.utils.*;
 
@@ -264,6 +265,23 @@ public class ViewTab extends Tab {
         createContextMenu(browser, url);
       }
     }
+    tab.setContent(browser);
+    viewPane.getSelectionModel().select(tab);
+  }
+
+  public void viewHtmlWithBootstrap(String content, String... title) {
+    Tab tab = new Tab();
+    if (title.length > 0) {
+      tab.setText(title[0]);
+    }
+    viewPane.getTabs().add(tab);
+    WebView browser = new WebView();
+    browser.setContextMenuEnabled(false);
+
+    WebEngine webEngine = browser.getEngine();
+    String html = HtmlDecorator.decorate(content, true);
+    webEngine.loadContent(html);
+    createContextMenu(browser, html);
     tab.setContent(browser);
     viewPane.getSelectionModel().select(tab);
   }

@@ -50,6 +50,7 @@ public class Gade extends Application {
   private Scene scene;
   private MainMenu mainMenu;
   private Preferences preferences;
+  private final Map<String, Object> sessionMap = new HashMap<>();
   private File gadeBaseDir;
   private FileOpener fileOpener;
   private static Gade instance;
@@ -271,9 +272,16 @@ public class Gade extends Application {
     return scene;
   }
 
+  public void saveSessionObject(String key, Object val) {
+    sessionMap.put(key, val);
+  }
+
+  public Object getSessionObject(String key) {
+    return sessionMap.get(key);
+  }
+
   public File getGadeBaseDir() {
     return gadeBaseDir;
   }
-
 
 }

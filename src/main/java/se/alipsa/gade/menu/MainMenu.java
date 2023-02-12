@@ -37,6 +37,11 @@ import se.alipsa.gade.UnStyledCodeArea;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.code.munin.MuninGmdTab;
+import se.alipsa.gade.code.munin.MuninGroovyTab;
+import se.alipsa.gade.code.munin.ReportType;
+import se.alipsa.gade.model.MuninConnection;
+import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.utils.*;
 import se.alipsa.gade.utils.git.GitUtils;
 
@@ -48,6 +53,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.prefs.Preferences;
 
 public class MainMenu extends MenuBar {
 
@@ -69,9 +75,10 @@ public class MainMenu extends MenuBar {
     //Menu menuDebug = new Menu("Debug");
     //Menu menuProfile = new Menu("Profile");
     Menu menuTools = createToolsMenu();
+    Menu menuMunin = createMuninMenu();
     Menu menuHelp = createHelpMenu();
     getMenus().addAll(menuFile, menuEdit, menuCode, /*menuView, menuPlots,*/ menuSession,
-        /*menuBuild, menuDebug, menuProfile, */ menuTools, menuHelp);
+        /*menuBuild, menuDebug, menuProfile, */ menuTools, menuMunin, menuHelp);
   }
 
   private Menu createCodeMenu() {
@@ -99,6 +106,52 @@ public class MainMenu extends MenuBar {
     menu.getItems().add(cloneProjectMI);
 
     return menu;
+  }
+
+  private Menu createMuninMenu() {
+    Menu menu = new Menu("Munin");
+    MenuItem configureMI = new MenuItem("Configure");
+    configureMI.setOnAction(a -> configureMuninConnection());
+    MenuItem loadReportMI = new MenuItem("Load report");
+    loadReportMI.setOnAction(a -> loadMuninReport());
+    MenuItem createUnmanagedReportMI = new MenuItem("Create Groovy report");
+    createUnmanagedReportMI.setOnAction(a -> createUnmanagedReport());
+    MenuItem createMdrReportMI = new MenuItem("Create gmd report");
+    createMdrReportMI.setOnAction(a -> createGmdReport());
+    menu.getItems().addAll(configureMI, loadReportMI, createUnmanagedReportMI, createMdrReportMI);
+    return menu;
+  }
+
+  private void loadMuninReport() {
+    MuninConnection con = (MuninConnection) gui.getSessionObject(SESSION_MUNIN_CONNECTION);
+    if (con == null) {
+      con = configureMuninConnection();
+    }
+    if (con == null) return;
+
+    MuninReportDialog reportDialog = new MuninReportDialog(gui);
+    Optional<MuninReport> result = reportDialog.showAndWait();
+    if (result.isEmpty()) return;
+    MuninReport report = result.get();
+    TextAreaTab tab;
+    tab = ReportType.GMD.equals(report.getReportType()) ? new MuninGmdTab(gui, report) : new MuninGroovyTab(gui, report);
+    //tab.replaceContentText(0, 0, report.getDefinition());
+    gui.getCodeComponent().addTabAndActivate(tab);
+  }
+
+  private void createUnmanagedReport() {
+    MuninReport report = new MuninReport(DEFAULT_GROOVY_REPORT_NAME, ReportType.UNMANAGED);
+    report.setDefinition("library('se.alipsa:htmlcreator')\n\n" +
+        "html.clear()\n" +
+        "html.add('<h1>add content like this here</h1>')");
+    var tab = new MuninGroovyTab(gui, report);
+    gui.getCodeComponent().addTabAndActivate(tab);
+  }
+
+  private void createGmdReport() {
+    MuninReport report = new MuninReport(DEFAULT_GMD_REPORT_NAME, ReportType.GMD);
+    MuninGmdTab tab = new MuninGmdTab(gui, report);
+    gui.getCodeComponent().addTabAndActivate(tab);
   }
 
   private void cloneProject(ActionEvent actionEvent) {
@@ -880,5 +933,56 @@ public class MainMenu extends MenuBar {
       file = new File(file.getParentFile(), file.getName() + extension);
     }
     return file;
+  }
+
+  public MuninConnection configureMuninConnection() {
+    Dialog<MuninConnection> dialog = new Dialog<>();
+    GridPane pane = new GridPane();
+    dialog.getDialogPane().setContent(pane);
+
+    Preferences prefs = gui.getPrefs();
+
+    pane.add(new Label("Server name or IP: "), 0, 0);
+    TextField serverTf = new TextField();
+    serverTf.setText(prefs.get(PREF_MUNIN_SERVER, ""));
+    pane.add(serverTf, 1, 0);
+
+    pane.add(new Label("Server port: "), 0, 1);
+    IntField serverPortIf = new IntField(0, 65535, 8088);
+    serverPortIf.setValue(prefs.getInt(PREF_MUNIN_PORT, 8088));
+    pane.add(serverPortIf, 1, 1);
+
+    pane.add(new Label("Username: "), 0, 2);
+    TextField userNameTf = new TextField();
+    userNameTf.setText(prefs.get(PREF_MUNIN_USERNAME, ""));
+    pane.add(userNameTf, 1, 2);
+
+    pane.add(new Label("Password: "), 0, 3);
+    PasswordField pwdTf = new PasswordField();
+    pane.add(pwdTf, 1, 3);
+
+    dialog.setResultConverter(callback -> {
+      MuninConnection con = new MuninConnection();
+      con.setServerName(serverTf.getText());
+      con.setServerPort(serverPortIf.getValue());
+      con.setUserName(userNameTf.getText());
+      con.setPassword(pwdTf.getText());
+      return con;
+    });
+    dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+    GuiUtils.addStyle(gui, dialog);
+
+    if(serverTf.getText().length() > 0 && userNameTf.getText().length() > 0) {
+      Platform.runLater(pwdTf::requestFocus);
+    }
+
+    Optional<MuninConnection> opt = dialog.showAndWait();
+    MuninConnection con = opt.orElse(null);
+    if (con == null) return null;
+    gui.saveSessionObject(SESSION_MUNIN_CONNECTION, con);
+    prefs.put(PREF_MUNIN_SERVER, con.getServerName());
+    prefs.putInt(PREF_MUNIN_PORT, con.getServerPort());
+    prefs.put(PREF_MUNIN_USERNAME, con.getUserName());
+    return con;
   }
 }

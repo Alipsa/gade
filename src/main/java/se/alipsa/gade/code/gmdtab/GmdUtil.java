@@ -23,16 +23,27 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import static se.alipsa.gade.utils.DocUtil.saveHtmlAsPdf;
+import static se.alipsa.groovy.gmd.HtmlDecorator.HIGHLIGHT_JS_CSS;
 
 public class GmdUtil {
 
   private static final Logger log = LogManager.getLogger();
+
+  private static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.css";
+  private static final String BOOTSTRAP_CSS_PATH = "META-INF/resources/webjars/bootstrap/5.2.0/css/bootstrap.css";
+  public static final String BOOTSTRAP_CSS = resourceUrlExternalForm(BOOTSTRAP_CSS_PATH);
   static Gmd gmd = new Gmd();
 
+
+  private static String resourceUrlExternalForm(String resource) {
+    URL url = FileUtils.getResourceUrl(resource);
+    return url == null ? "" : url.toExternalForm();
+  }
 
   public static void viewGmd(Gade gui, String title, String textContent) {
     gui.getInoutComponent().viewHtml(convertGmdToHtml(textContent), title);
@@ -58,4 +69,5 @@ public class GmdUtil {
       ExceptionAlert.showAlert(e.getMessage(), e);
     }
   }
+
 }

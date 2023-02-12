@@ -301,7 +301,7 @@ public class ConsoleComponent extends BorderPane {
     engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
   }
 
-
+   */
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
     if (engine == null) {
       Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
@@ -317,7 +317,7 @@ public class ConsoleComponent extends BorderPane {
     return engine.eval(script);
   }
 
-   */
+
 
   /*
   public Object runScriptSilent(String script, Map<String, Object> additionalParams) throws Exception {
@@ -819,5 +819,13 @@ public class ConsoleComponent extends BorderPane {
 
   public OutputStream getOutputStream() {
     return new ConsoleOutputStream(this);
+  }
+
+  public void addVariableToSession(String key, Object value) {
+    engine.put(key, value);
+  }
+
+  public void removeVariableFromSession(String varName) {
+    engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
   }
 }
