@@ -33,14 +33,6 @@ function platform {
     echo "win"
   fi
 }
-PREF_TARGET="${1:-$HOME/programs/}"
-PLATFORM="${2:-$(platform)}"
-
-cd "${SCRIPT_DIR}" || exit
-echo "- Building Gade"
-./gradlew clean runtime || exit 1
-
-PROPERTY_FILE=version.properties
 
 function getProperty {
    PROP_KEY=$1
@@ -56,10 +48,34 @@ function toWinPath {
   echo "$1" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/'
 }
 
+PREF_TARGET="${1:-$HOME/programs/}"
+if [[ "msys" == "${OSTYPE}" ]]; then
+  default_target=$(toMsysPath "$USERPROFILE/programs")
+  PREF_TARGET="${1:-$default_target}"
+fi
+PLATFORM="${2:-$(platform)}"
+
+echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM} "
+
+cd "${SCRIPT_DIR}" || exit
+
+# Workaround if building for windows from linux and local repo does not have windows javafx jars:
+jfxVersion=19.0.2.1
+if [[ "${OSTYPE}" == "linux-gnu" && "${PLATFORM}" == "win" ]]; then
+  echo "- Downloading windows javafx jars"
+  mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-base:${jfxVersion}:jar:win
+  mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-controls:${jfxVersion}:jar:win
+  mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-graphics:${jfxVersion}:jar:win
+fi
+
+echo "- Building Gade"
+./gradlew clean runtime || exit 1
+
+PROPERTY_FILE=version.properties
+
 #VERSION=$(getProperty "version")
 #JAR_NAME=$(getProperty "jar.name")
 RELEASE_TAG=$(getProperty "release.tag")
-
 
 TARGET_DIR="${PREF_TARGET}/gade-${RELEASE_TAG}"
 
@@ -89,7 +105,15 @@ if [[ "$PLATFORM" == "win" ]]; then
   if [[ "$OSTYPE" == "msys" ]]; then
     srcDir="$(toWinPath "${TARGET_DIR}")"
     lnkBase="$(dirname "${LINK_DIR}")"
-    lnkDir="$(toWinPath "$lnkBase")\\gade"
+    lnkDir="$(toWinPath "${lnkBase}/gade")"
+    if [[ ! -d ${srcDir} ]]; then
+      echo "source dir for installation: ${srcDir} does not exist!"
+      exit 1
+    fi
+    if [[ ! -d ${lnkBase} ]]; then
+      echo "base dir for installation: ${lnkBase} does not exist!"
+      exit 1
+    fi
     echo "- creating junction to $lnkDir from $srcDir"
     cmd.exe "/c mklink /J $lnkDir $srcDir"
   else
