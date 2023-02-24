@@ -12,8 +12,8 @@ import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.utils.ExceptionAlert;
+import se.alipsa.groovy.gmd.GmdException;
 
-import javax.script.ScriptException;
 import java.io.File;
 
 public class GmdTab extends TextAreaTab implements TaskListener {
@@ -56,7 +56,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
   private void viewMdr(ActionEvent actionEvent) {
     try {
       GmdUtil.viewGmd(gui, getTitle(), getTextContent());
-    } catch (ScriptException e) {
+    } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to view gmd", e);
     }
   }
@@ -79,7 +79,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
         return;
       }
       GmdUtil.saveGmdAsPdf(getTextContent(), outFile);
-    } catch (ScriptException e) {
+    } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save gmd as pdf", e);
     }
   }
@@ -102,7 +102,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
         return;
       }
       GmdUtil.saveGmdAsHtml(outFile, getTextContent());
-    } catch (ScriptException e) {
+    } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save gmd as html", e);
     }
   }

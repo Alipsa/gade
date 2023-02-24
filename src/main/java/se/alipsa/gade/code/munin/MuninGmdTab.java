@@ -5,8 +5,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.gmdtab.GmdUtil;
 import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.utils.ExceptionAlert;
-
-import javax.script.ScriptException;
+import se.alipsa.groovy.gmd.GmdException;
 
 public class MuninGmdTab extends MuninTab {
 
@@ -23,7 +22,7 @@ public class MuninGmdTab extends MuninTab {
     try {
       GmdUtil.viewGmd(gui, getTitle(), getTextContent());
       gui.getConsoleComponent().updateEnvironment();
-    } catch (ScriptException e) {
+    } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to view gmd", e);
     }
   }

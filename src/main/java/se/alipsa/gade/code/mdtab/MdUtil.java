@@ -5,6 +5,7 @@ import se.alipsa.gade.utils.DocUtil;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.groovy.gmd.Gmd;
+import se.alipsa.groovy.gmd.GmdException;
 
 import javax.script.ScriptException;
 import java.io.File;
@@ -17,7 +18,7 @@ public class MdUtil {
     try {
       String html = gmd.mdToHtmlDoc(textContent);
       gui.getInoutComponent().viewHtml(html, title);
-    } catch (ScriptException e) {
+    } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to view md", e);
     }
   }
@@ -25,7 +26,7 @@ public class MdUtil {
     try {
       String html = gmd.mdToHtmlDoc(textContent);
       FileUtils.writeToFile(outFile, html);
-    } catch (ScriptException | FileNotFoundException e) {
+    } catch (GmdException | FileNotFoundException e) {
       ExceptionAlert.showAlert(e.getMessage(), e);
     }
   }
@@ -34,7 +35,7 @@ public class MdUtil {
     try {
       String html = gmd.mdToHtmlDoc(textContent);
       DocUtil.saveHtmlAsPdf(html, outFile);
-    } catch (ScriptException e) {
+    } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save md as pdf", e);
     }
   }

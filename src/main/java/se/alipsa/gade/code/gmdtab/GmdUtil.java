@@ -14,6 +14,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.groovy.gmd.Gmd;
+import se.alipsa.groovy.gmd.GmdException;
 import se.alipsa.groovy.gmd.HtmlDecorator;
 
 import javax.script.ScriptException;
@@ -46,11 +47,11 @@ public class GmdUtil {
     return url == null ? "" : url.toExternalForm();
   }
 
-  public static void viewGmd(Gade gui, String title, String textContent) throws ScriptException {
+  public static void viewGmd(Gade gui, String title, String textContent) throws GmdException {
     gui.getInoutComponent().viewHtml(convertGmdToHtml(textContent), title);
   }
 
-  private static String convertGmdToHtml(String textContent) throws ScriptException {
+  private static String convertGmdToHtml(String textContent) throws GmdException {
     return gmd.gmdToHtmlDoc(textContent);
   }
 
@@ -58,11 +59,11 @@ public class GmdUtil {
    * @param target the target pdf file
    * @param textContent the content to write
    */
-  public static void saveGmdAsPdf(String textContent, File target) throws ScriptException {
+  public static void saveGmdAsPdf(String textContent, File target) throws GmdException {
     saveHtmlAsPdf(convertGmdToHtml(textContent), target);
   }
 
-  public static void saveGmdAsHtml(File target, String textContent) throws ScriptException {
+  public static void saveGmdAsHtml(File target, String textContent) throws GmdException {
     try {
       String html = convertGmdToHtml(textContent);
       FileUtils.writeToFile(target, html);
