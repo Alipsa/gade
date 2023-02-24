@@ -143,6 +143,10 @@ Eclipse Distribution License v1.0
 Makes it possible to load jdbc drivers without having to resort to the system classloader.
 MIT license.
 
+### se.alipsa:simple-rest
+Provides support for REST interaction with Munin.
+MIT license.
+
 ### se.alipsa.groovy:gmd
 Provides support for processing Groovy Markdown (gmd).
 MIT license.
