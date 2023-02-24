@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.code.munin.MuninTab;
+import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.TikaUtils;
@@ -53,6 +55,13 @@ public class FileOpener {
       }
       if (strEndsWith(fileNameLower, ".md") || strEndsWith(fileNameLower, ".rmd")) {
         return codeComponent.addTab(file, CodeType.MD);
+      }
+      if (strEndsWith(fileNameLower, ".md") || strEndsWith(fileNameLower, MuninReport.FILE_EXTENSION)) {
+        if (MuninTab.isSupported(file)) {
+          return codeComponent.addTab(MuninTab.fromFile(file));
+        } else {
+          codeComponent.addTab(file, CodeType.XML);
+        }
       }
       if (strEquals(type, "application/x-sas") || strEndsWith(fileNameLower, ".sas")) {
         return codeComponent.addTab(file, CodeType.SAS);

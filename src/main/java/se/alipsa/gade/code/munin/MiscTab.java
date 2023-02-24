@@ -7,13 +7,14 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import se.alipsa.gade.code.xmltab.XmlTextArea;
 import se.alipsa.gade.model.MuninReport;
+import se.alipsa.gade.model.ReportType;
 
 public class MiscTab extends Tab {
 
   private final TextField reportNameTF;
   private final TextArea descriptionTA;
   private final TextField groupTF;
-  private final ComboBox<String> typeCB;
+  private final ComboBox<ReportType> typeCB;
   private final XmlTextArea inputTA;
 
   public MiscTab(MuninTab parentTab) {
@@ -72,7 +73,7 @@ public class MiscTab extends Tab {
     return groupTF.getText();
   }
 
-  public String getReportType() {
+  public ReportType getReportType() {
     return typeCB.getValue();
   }
 
@@ -80,7 +81,7 @@ public class MiscTab extends Tab {
     return inputTA.getAllTextContent();
   }
 
-  public void setReportType(String type) {
+  public void setReportType(ReportType type) {
     typeCB.getSelectionModel().select(type);
   }
 }

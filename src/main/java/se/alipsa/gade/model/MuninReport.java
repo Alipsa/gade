@@ -12,12 +12,12 @@ public class MuninReport {
   private String description;
   private String definition;
   private String inputContent;
-  private String reportType;
+  private ReportType reportType;
   private String reportGroup;
 
   public MuninReport() {}
 
-  public MuninReport(String reportName, String reportType) {
+  public MuninReport(String reportName, ReportType reportType) {
     this.reportName = reportName;
     this.reportType = reportType;
   }
@@ -56,11 +56,11 @@ public class MuninReport {
     this.inputContent = inputContent;
   }
 
-  public String getReportType() {
+  public ReportType getReportType() {
     return reportType;
   }
 
-  public void setReportType(String reportType) {
+  public void setReportType(ReportType reportType) {
     this.reportType = reportType;
   }
 

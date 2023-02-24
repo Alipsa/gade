@@ -13,6 +13,7 @@ import se.alipsa.gade.code.groovytab.GroovyTab;
 import se.alipsa.gade.code.javatab.JavaTab;
 import se.alipsa.gade.code.jstab.JsTab;
 import se.alipsa.gade.code.mdtab.MdTab;
+import se.alipsa.gade.code.munin.MuninTab;
 import se.alipsa.gade.code.rtab.RTab;
 import se.alipsa.gade.code.sastab.SasTab;
 import se.alipsa.gade.code.sqltab.SqlTab;
@@ -127,6 +128,10 @@ public class CodeComponent extends BorderPane {
       ExceptionAlert.showAlert("Failed to read content of file " + file, e);
     }
     return null;
+  }
+
+  public TextAreaTab addTab(MuninTab tab) {
+    return addTabAndActivate(tab);
   }
 
   public void fileSaved(File file) {

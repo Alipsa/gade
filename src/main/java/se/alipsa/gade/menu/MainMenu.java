@@ -39,7 +39,7 @@ import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.code.munin.MuninGmdTab;
 import se.alipsa.gade.code.munin.MuninGroovyTab;
-import se.alipsa.gade.code.munin.ReportType;
+import se.alipsa.gade.model.ReportType;
 import se.alipsa.gade.model.MuninConnection;
 import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.utils.*;

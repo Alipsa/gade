@@ -17,6 +17,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.inout.viewer.ViewHelper;
 import se.alipsa.gade.model.MuninReport;
+import se.alipsa.gade.model.ReportType;
 import se.alipsa.gade.utils.ExceptionAlert;
 
 import java.util.Collections;

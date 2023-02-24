@@ -4,6 +4,7 @@ import javafx.event.ActionEvent;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.gmdtab.GmdUtil;
 import se.alipsa.gade.model.MuninReport;
+import se.alipsa.gade.model.ReportType;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.groovy.gmd.GmdException;
 
