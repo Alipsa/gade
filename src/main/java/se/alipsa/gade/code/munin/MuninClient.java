@@ -3,6 +3,8 @@ package se.alipsa.gade.code.munin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.model.MuninConnection;
 import se.alipsa.gade.model.MuninReport;
 import se.alipsa.simplerest.RequestMethod;
@@ -13,12 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 import static se.alipsa.simplerest.CommonHeaders.basicAuthHeader;
-import static se.alipsa.simplerest.UrlParameters.parameters;
 
 public class MuninClient {
 
+  private static final Logger log = LogManager.getLogger();
   private static RestClient restClient;
-  private static RestClient createClient(MuninConnection con) {
+  private static RestClient createClient() {
     if (restClient == null) {
       restClient = new RestClient();
     }
@@ -26,8 +28,8 @@ public class MuninClient {
   }
 
   public static Map<String, List<String>> fetchReportInfo(MuninConnection con) throws Exception {
-    RestClient client = createClient(con);
-    Response response = client.get(con.target() + "/api/getReportInfo", basicAuthHeader(con.getUserName(), con.getPassword()));
+    RestClient client = createClient();
+    Response response = client.get(con.target("/api/getReportInfo"), basicAuthHeader(con.getUserName(), con.getPassword()));
 
     if (response.getResponseCode() != 200) {
       throw new Exception("Failed to fetch report info on Munin server: " + con.target()
@@ -41,9 +43,9 @@ public class MuninClient {
   }
 
   public static List<String> fetchReportGroups(MuninConnection con) throws Exception {
-    RestClient client = createClient(con);
+    RestClient client = createClient();
 
-    Response response = client.get(con.target() + "/api/getReportGroups", basicAuthHeader(con.getUserName(), con.getPassword()));
+    Response response = client.get(con.target("/api/getReportGroups"), basicAuthHeader(con.getUserName(), con.getPassword()));
     if (response.getResponseCode() != 200) {
       throw new Exception("Failed to fetch report groups on Munin server: " + con.target()
           + ". The response code was " + response.getResponseCode());
@@ -56,8 +58,10 @@ public class MuninClient {
   }
 
   public static List<MuninReport> fetchReports(MuninConnection con, String groupName) throws Exception {
-    RestClient client = createClient(con);
-    Response response = client.get(con.target() + "/api/getReports" + parameters("groupName", groupName), basicAuthHeader(con.getUserName(), con.getPassword()));
+    RestClient client = createClient();
+    String url = con.target("/api/getReports", "groupName", groupName);
+    log.info("Calling {}", url);
+    Response response = client.get(url, basicAuthHeader(con.getUserName(), con.getPassword()));
 
     if (response.getResponseCode() != 200) {
       throw new Exception("Failed to fetch reports on Munin server: " + con.target()
@@ -88,13 +92,13 @@ public class MuninClient {
   }
 
   private static void upsertReport(MuninConnection con, MuninReport report, String url, String method) throws Exception {
-    RestClient client = createClient(con);
+    RestClient client = createClient();
     Response response;
 
     if (RequestMethod.PUT.equals(method)) {
-      response = client.put(url, report);
+      response = client.put(con.target(url), report);
     } else if (RequestMethod.POST.equals(method)) {
-      response = client.post(url, report);
+      response = client.post(con.target(url), report);
     } else {
       throw new IllegalArgumentException("Unknown method: "  + method);
     }

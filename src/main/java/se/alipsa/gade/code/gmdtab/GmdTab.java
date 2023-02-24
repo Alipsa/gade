@@ -11,7 +11,9 @@ import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.utils.ExceptionAlert;
 
+import javax.script.ScriptException;
 import java.io.File;
 
 public class GmdTab extends TextAreaTab implements TaskListener {
@@ -52,45 +54,57 @@ public class GmdTab extends TextAreaTab implements TaskListener {
   }
 
   private void viewMdr(ActionEvent actionEvent) {
-    GmdUtil.viewGmd(gui, getTitle(), getTextContent());
+    try {
+      GmdUtil.viewGmd(gui, getTitle(), getTextContent());
+    } catch (ScriptException e) {
+      ExceptionAlert.showAlert("Failed to view gmd", e);
+    }
   }
 
   private void exportToPdf(ActionEvent actionEvent) {
-    FileChooser fc = new FileChooser();
-    fc.setTitle("Save PDF File");
-    String initialFileName = getTitle().replace("*", "").replace(".gmd", "");
-    if (initialFileName.endsWith(".")) {
-      initialFileName = initialFileName + "pdf";
-    } else {
-      initialFileName = initialFileName + ".pdf";
+    try {
+      FileChooser fc = new FileChooser();
+      fc.setTitle("Save PDF File");
+      String initialFileName = getTitle().replace("*", "").replace(".gmd", "");
+      if (initialFileName.endsWith(".")) {
+        initialFileName = initialFileName + "pdf";
+      } else {
+        initialFileName = initialFileName + ".pdf";
+      }
+      fc.setInitialDirectory(gui.getInoutComponent().projectDir());
+      fc.setInitialFileName(initialFileName);
+      fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+      File outFile = fc.showSaveDialog(gui.getStage());
+      if (outFile == null) {
+        return;
+      }
+      GmdUtil.saveGmdAsPdf(getTextContent(), outFile);
+    } catch (ScriptException e) {
+      ExceptionAlert.showAlert("Failed to save gmd as pdf", e);
     }
-    fc.setInitialDirectory(gui.getInoutComponent().projectDir());
-    fc.setInitialFileName(initialFileName);
-    fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-    File outFile = fc.showSaveDialog(gui.getStage());
-    if (outFile == null) {
-      return;
-    }
-    GmdUtil.saveGmdAsPdf(getTextContent(), outFile);
   }
 
   private void exportToHtml(ActionEvent actionEvent) {
-    FileChooser fc = new FileChooser();
-    fc.setTitle("Save HTML File");
-    String initialFileName = getTitle().replace("*", "").replace(".gmd", "");
-    if (initialFileName.endsWith(".")) {
-      initialFileName = initialFileName + "html";
-    } else {
-      initialFileName = initialFileName + ".html";
+    try {
+      FileChooser fc = new FileChooser();
+      fc.setTitle("Save HTML File");
+      String initialFileName = getTitle().replace("*", "").replace(".gmd", "");
+      if (initialFileName.endsWith(".")) {
+        initialFileName = initialFileName + "html";
+      } else {
+        initialFileName = initialFileName + ".html";
+      }
+      fc.setInitialDirectory(gui.getInoutComponent().projectDir());
+      fc.setInitialFileName(initialFileName);
+      fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("HTML", "*.html"));
+      File outFile = fc.showSaveDialog(gui.getStage());
+      if (outFile == null) {
+        return;
+      }
+      GmdUtil.saveGmdAsHtml(outFile, getTextContent());
+    } catch (ScriptException e) {
+      ExceptionAlert.showAlert("Failed to save gmd as html", e);
     }
-    fc.setInitialDirectory(gui.getInoutComponent().projectDir());
-    fc.setInitialFileName(initialFileName);
-    fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("HTML", "*.html"));
-    File outFile = fc.showSaveDialog(gui.getStage());
-    if (outFile == null) {
-      return;
-    }
-    GmdUtil.saveGmdAsHtml(outFile, getTextContent());
   }
 
   @Override

@@ -1,10 +1,22 @@
 package se.alipsa.gade.model;
 
+import static se.alipsa.simplerest.UrlParameters.parameters;
+
 public class MuninConnection {
   private String serverName;
   private int serverPort;
   private String userName;
   private String password;
+
+  private String protocol;
+
+  public MuninConnection() {
+    this.protocol = "http";
+  }
+
+  public MuninConnection(String protocol) {
+    this.protocol = protocol;
+  }
 
   public String getServerName() {
     return serverName;
@@ -39,7 +51,15 @@ public class MuninConnection {
   }
 
   public String target() {
-    return "http://" + getServerName() + ":" + getServerPort();
+    return protocol + "://" + getServerName() + ":" + getServerPort();
+  }
+
+  public String target(String url) {
+    return target() + url;
+  }
+
+  public String target(String url, String... parameters) {
+    return target(url) + parameters(parameters);
   }
 
   @Override

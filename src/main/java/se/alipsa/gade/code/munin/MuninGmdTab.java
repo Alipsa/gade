@@ -4,6 +4,9 @@ import javafx.event.ActionEvent;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.gmdtab.GmdUtil;
 import se.alipsa.gade.model.MuninReport;
+import se.alipsa.gade.utils.ExceptionAlert;
+
+import javax.script.ScriptException;
 
 public class MuninGmdTab extends MuninTab {
 
@@ -17,7 +20,11 @@ public class MuninGmdTab extends MuninTab {
 
   @Override
   void viewAction(ActionEvent actionEvent) {
-    GmdUtil.viewGmd(gui, getTitle(), getTextContent());
-    gui.getConsoleComponent().updateEnvironment();
+    try {
+      GmdUtil.viewGmd(gui, getTitle(), getTextContent());
+      gui.getConsoleComponent().updateEnvironment();
+    } catch (ScriptException e) {
+      ExceptionAlert.showAlert("Failed to view gmd", e);
+    }
   }
 }
