@@ -5,12 +5,15 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.code.xmltab.XmlTextArea;
 import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.model.ReportType;
 
 public class MiscTab extends Tab {
 
+  private static final Logger log = LogManager.getLogger();
   private final TextField reportNameTF;
   private final TextArea descriptionTA;
   private final TextField groupTF;
@@ -44,8 +47,10 @@ public class MiscTab extends Tab {
     groupTF.textProperty().addListener((observable, oldValue, newValue) -> parentTab.contentChanged());
     groupAndTypeBox.getChildren().addAll(new Label("Group"), groupTF);
     typeCB = new ComboBox<>();
-    typeCB.getItems().addAll(ReportType.UNMANAGED, ReportType.GMD);
-    typeCB.getSelectionModel().select(muninReport.getReportType());
+    typeCB.getItems().addAll(ReportType.values());
+    log.info("Setting report type to {}", muninReport.getReportType());
+    //typeCB.getSelectionModel().select(muninReport.getReportType());
+    typeCB.setValue(muninReport.getReportType());
     typeCB.setOnAction(ae -> parentTab.contentChanged());
 
     groupAndTypeBox.getChildren().addAll(new Label("Type"), typeCB);

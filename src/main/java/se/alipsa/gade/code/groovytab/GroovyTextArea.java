@@ -9,6 +9,8 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.code.CodeTextArea;
+import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.utils.Alerts;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -64,7 +66,7 @@ public class GroovyTextArea extends CodeTextArea {
   public GroovyTextArea() {
   }
 
-  public GroovyTextArea(GroovyTab parent) {
+  public GroovyTextArea(TextAreaTab parent) {
     super(parent);
     addEventHandler(KeyEvent.KEY_PRESSED, e -> {
       if (e.isControlDown()) {
@@ -81,7 +83,11 @@ public class GroovyTextArea extends CodeTextArea {
           } else {
             gCode += getText(getCurrentParagraph()); // current line
           }
-          parent.runGroovy(gCode);
+          if (parent instanceof GroovyTab groovyTab) {
+            groovyTab.runGroovy(gCode);
+          } else {
+            Alerts.warn("Run code", "Not implemented");
+          }
           moveTo(getCurrentParagraph() + 1, 0);
           int totalLength = getAllTextContent().length();
           if (getCaretPosition() > totalLength) {

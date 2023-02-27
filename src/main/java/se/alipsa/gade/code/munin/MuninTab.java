@@ -20,6 +20,7 @@ import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.code.gmdtab.GmdTextArea;
+import se.alipsa.gade.code.groovytab.GroovyTextArea;
 import se.alipsa.gade.code.rtab.RTextArea;
 import se.alipsa.gade.model.MuninConnection;
 import se.alipsa.gade.model.MuninReport;
@@ -80,9 +81,9 @@ public abstract class MuninTab extends TextAreaTab implements TaskListener {
   }
 
   public MuninTab(Gade gui, MuninReport report) {
-    super(gui, ReportType.GMD.equals(report.getReportType()) ? CodeType.GMD : CodeType.GROOVY);
+    super(gui, mapToCodeType(report.getReportType()));
     muninReport = report;
-    codeTextArea = getCodeType() == CodeType.GMD ? new GmdTextArea(this) : new RTextArea(this);
+    codeTextArea = getCodeType() == CodeType.GMD ? new GmdTextArea(this) : new GroovyTextArea(this);
     miscTab = new MiscTab(this);
     setTitle(report.getReportName());
 
@@ -109,6 +110,10 @@ public abstract class MuninTab extends TextAreaTab implements TaskListener {
     pane.setCenter(tabPane);
     //gui.getEnvironmentComponent().addContextFunctionsUpdateListener(codeTextArea);
     //setOnClosed(e -> gui.getEnvironmentComponent().removeContextFunctionsUpdateListener(codeTextArea));
+  }
+
+  private static CodeType mapToCodeType(ReportType reportType) {
+    return ReportType.GMD.equals(reportType) ? CodeType.GMD : CodeType.GROOVY;
   }
 
   private void saveContent() {

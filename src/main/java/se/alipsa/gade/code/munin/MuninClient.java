@@ -96,15 +96,15 @@ public class MuninClient {
     Response response;
 
     if (RequestMethod.PUT.equals(method)) {
-      response = client.put(con.target(url), report);
+      response = client.put(con.target(url), report, basicAuthHeader(con.getUserName(), con.getPassword()));
     } else if (RequestMethod.POST.equals(method)) {
-      response = client.post(con.target(url), report);
+      response = client.post(con.target(url), report, basicAuthHeader(con.getUserName(), con.getPassword()));
     } else {
       throw new IllegalArgumentException("Unknown method: "  + method);
     }
 
     if (response.getResponseCode() != 200) {
-      throw new Exception("Failed to publish report to Munin server: " + con.target()
+      throw new Exception("Failed to publish report to Munin server: " + con.target(url)
                           + ". The response code was " + response.getResponseCode()
                           + "\n, Error message was '" + response.getPayload() + "'"
       );
