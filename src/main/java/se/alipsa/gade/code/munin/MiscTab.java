@@ -48,9 +48,10 @@ public class MiscTab extends Tab {
     groupAndTypeBox.getChildren().addAll(new Label("Group"), groupTF);
     typeCB = new ComboBox<>();
     typeCB.getItems().addAll(ReportType.values());
-    log.info("Setting report type to {}", muninReport.getReportType());
-    //typeCB.getSelectionModel().select(muninReport.getReportType());
-    typeCB.setValue(muninReport.getReportType());
+
+    if (muninReport.getReportType() != null) {
+      typeCB.getSelectionModel().select(muninReport.getReportType());
+    }
     typeCB.setOnAction(ae -> parentTab.contentChanged());
 
     groupAndTypeBox.getChildren().addAll(new Label("Type"), typeCB);

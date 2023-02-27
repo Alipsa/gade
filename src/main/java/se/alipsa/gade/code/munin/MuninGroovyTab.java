@@ -29,7 +29,7 @@ public class MuninGroovyTab extends MuninTab {
 
   public MuninGroovyTab(Gade gui, MuninReport report) {
     super(gui, report);
-    getMiscTab().setReportType(ReportType.UNMANAGED);
+    //getMiscTab().setReportType(ReportType.UNMANAGED);
     if (report.getDefinition() != null) {
       replaceContentText(0,0, report.getDefinition());
     }
