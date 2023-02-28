@@ -615,7 +615,7 @@ public class MainMenu extends MenuBar {
         .append(" (").append(nashornScriptEngineFactory.getLanguageName())
         .append(" ").append(nashornScriptEngineFactory.getLanguageVersion()).append(")");
 
-    content.append("\n\n See https://github.com/perNyfelt/gade/ for more info or to report issues");
+    content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues");
     showInfoAlert("About Gade", content, 615, 220);
 
   }
