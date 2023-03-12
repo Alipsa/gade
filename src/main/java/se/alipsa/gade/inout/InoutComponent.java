@@ -2,6 +2,7 @@ package se.alipsa.gade.inout;
 
 import static se.alipsa.gade.menu.GlobalOptions.*;
 import static se.alipsa.gade.utils.TableUtils.transpose;
+import static se.alipsa.gade.utils.TableUtils.transposeAny;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -24,6 +25,7 @@ import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
 import se.alipsa.gade.utils.*;
+import se.alipsa.matrix.TableMatrix;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
 
@@ -178,12 +180,11 @@ public class InoutComponent extends TabPane  {
 
 
 
-  public void view(List<List<Object>> matrix, String... title) {
+  public void view(List<List<?>> matrix, String... title) {
     if (matrix == null) {
       Alerts.warnFx("View", "matrix is null, cannot View");
       return;
     }
-    List<String> header = createAnonymousHeader(matrix.size());
     // Instanceof check does not work due to module restrictions
     if (matrix.getClass().getName().contains(".ListAdapter")) {
       // Due to erasure and whatever other strange reasons, in java 11 Nashorn return a List<ScriptObjectMirror> and still end up here
@@ -191,7 +192,8 @@ public class InoutComponent extends TabPane  {
       return;
     }
 
-    var t = transpose(matrix);
+    var t = transposeAny(matrix);
+    List<String> header = createAnonymousHeader(t.size());
     StringColumn[] columns = new StringColumn[t.size()];
     for (int i = 0; i < columns.length; i++) {
       columns[i] = StringColumn.create(header.get(i), t.get(i).stream().map(String::valueOf).toArray(String[]::new));
@@ -213,6 +215,8 @@ public class InoutComponent extends TabPane  {
     }
     if (matrix instanceof Object[][]) {
       view2dArray((Object[][])matrix, title);
+    } else if (matrix instanceof TableMatrix tableMatrix) {
+      viewTable(tableMatrix, title);
     } else {
       console.appendWarningFx("Unknown matrix type " + matrix.getClass().getName());
       console.appendFx(String.valueOf(matrix), true);
@@ -276,6 +280,15 @@ public class InoutComponent extends TabPane  {
   }
 
   public void viewTable(Table table, String... title) {
+    Platform.runLater(() -> {
+          viewer.viewTable(table, title);
+          SingleSelectionModel<Tab> selectionModel = getSelectionModel();
+          selectionModel.select(viewer);
+        }
+    );
+  }
+
+  public void viewTable(TableMatrix table, String... title) {
     Platform.runLater(() -> {
           viewer.viewTable(table, title);
           SingleSelectionModel<Tab> selectionModel = getSelectionModel();

@@ -27,6 +27,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.code.xmltab.XmlTextArea;
 import se.alipsa.groovy.gmd.HtmlDecorator;
+import se.alipsa.matrix.TableMatrix;
 import tech.tablesaw.api.Table;
 import se.alipsa.gade.utils.*;
 
@@ -62,10 +63,18 @@ public class ViewTab extends Tab {
   }
 
   public void viewTable(Table table, String... title) {
+    List<String> types = new ArrayList<>();
+    table.types().forEach(t -> types.add(t.name()));
+    viewTable(table.columnNames(), toRowList(table), types, title);
+  }
+
+  public void viewTable(TableMatrix tableMatrix, String... title) {
+    viewTable(tableMatrix.columnNames(), tableMatrix.matrix(), tableMatrix.columnTypeNames(), title);
+  }
+
+  public void viewTable(List<String> headerList, List<List<?>> rowList, List<String> columnTypes, String... title) {
     try {
 
-      List<String> headerList = table.columnNames();
-      List<List<Object>> rowList = toRowList(table);
       NumberFormat numberFormatter = NumberFormat.getInstance();
       numberFormatter.setGroupingUsed(false);
 
@@ -108,7 +117,7 @@ public class ViewTab extends Tab {
         TableColumn<List<String>, String> col = new TableColumn<>();
 
         Label colLabel = new Label(colName);
-        colLabel.setTooltip(new Tooltip(table.column(i).type().name()));
+        colLabel.setTooltip(new Tooltip(columnTypes.get(i)));
         col.setGraphic(colLabel);
         col.setPrefWidth(new Text(colName).getLayoutBounds().getWidth() * 1.25 + 12.0);
 
@@ -116,7 +125,7 @@ public class ViewTab extends Tab {
         col.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().get(j)));
       }
       ObservableList<List<String>> data = FXCollections.observableArrayList();
-      for (List<Object> row : rowList) {
+      for (List<?> row : rowList) {
         List<String> obsRow = new ArrayList<>();
         for (Object obj : row) {
           if (obj instanceof Number) {

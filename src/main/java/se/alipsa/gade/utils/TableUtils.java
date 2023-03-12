@@ -21,6 +21,19 @@ public class TableUtils {
     return grid;
   }
 
+  public static List<List<?>> transposeAny(List<List<?>> matrix) {
+    List<List<?>> grid = new ArrayList<>();
+    final int N = matrix.get(0).size();
+    for (int i = 0; i < N; i++) {
+      List<Object> col = new ArrayList<>();
+      for (List<?> row : matrix) {
+        col.add(row.get(i));
+      }
+      grid.add(col);
+    }
+    return grid;
+  }
+
   public static Object[][] transpose(Object[][] matrix){
     int m = matrix.length;
     int n = matrix[0].length;
@@ -35,8 +48,8 @@ public class TableUtils {
     return transposedMatrix;
   }
 
-  public static List<List<Object>> toRowList(Table table) {
-    List<List<Object>> rowList = new ArrayList<>(table.rowCount());
+  public static List<List<?>> toRowList(Table table) {
+    List<List<?>> rowList = new ArrayList<>(table.rowCount());
     int ncol = table.columnCount();
     for (Row row : table) {
       List<Object> r = new ArrayList<>();

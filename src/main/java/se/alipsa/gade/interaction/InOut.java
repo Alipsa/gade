@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
+import se.alipsa.matrix.TableMatrix;
 import tech.tablesaw.chart.Chart;
 import tech.tablesaw.chart.Plot;
 import se.alipsa.gade.environment.connections.ConnectionInfo;
@@ -515,8 +516,20 @@ public class InOut implements GuiInteraction {
     display(img, title);
   }
 
+  public void view(List<List<?>> matrix, String... title) {
+    gui.getInoutComponent().view(matrix, determineTitle(title));
+  }
+
+  public void view(TableMatrix tableMatrix, String... title) {
+    gui.getInoutComponent().view(tableMatrix, determineTitle(title));
+  }
+
   public void view(Table table, String... title) {
-    String tit = title.length > 0 ? title[0] : table.name();
+    gui.getInoutComponent().viewTable(table, determineTitle(title));
+  }
+
+  private String determineTitle(String... title) {
+    String tit = title.length > 0 ? title[0] : null;
     if (tit == null) {
       tit = gui.getCodeComponent().getActiveScriptName();
       int extIdx = tit.lastIndexOf('.');
@@ -524,7 +537,7 @@ public class InOut implements GuiInteraction {
         tit = tit.substring(0, extIdx);
       }
     }
-    gui.getInoutComponent().viewTable(table, tit);
+    return tit;
   }
 
   /**

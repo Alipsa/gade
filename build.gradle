@@ -86,6 +86,7 @@ dependencies {
     implementation 'se.alipsa.groovy:gmd:1.0.7'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa:simple-rest:1.0.5-SNAPSHOT'
+    implementation 'se.alipsa:matrix:1.0-SNAPSHOT'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
