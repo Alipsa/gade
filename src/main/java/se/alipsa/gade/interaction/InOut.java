@@ -16,7 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
-import se.alipsa.matrix.TableMatrix;
+import se.alipsa.groovy.matrix.TableMatrix;
 import tech.tablesaw.chart.Chart;
 import tech.tablesaw.chart.Plot;
 import se.alipsa.gade.environment.connections.ConnectionInfo;
