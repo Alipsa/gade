@@ -6,7 +6,7 @@ plugins {
     id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.44.0"
+    id "com.github.ben-manes.versions" version "0.46.0"
 }
 
 group = 'se.alipsa'
@@ -38,12 +38,12 @@ repositories {
 }
 
 dependencies {
-    def jacksonVersion = '2.14.1'
-    def tikaVersion = '2.6.0'
-    def jgitVersion = '6.4.0.202211300538-r'
+    def jacksonVersion = '2.14.2'
+    def tikaVersion = '2.7.0'
+    def jgitVersion = '6.5.0.202303070854-r'
     def tablesawVersion = "0.43.1"
-    def log4jVersion = "2.19.0"
-    def groovyVersion = "4.0.8"
+    def log4jVersion = "2.20.0"
+    def groovyVersion = "4.0.10"
 
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
@@ -53,12 +53,12 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
 
     // Used by se.alipsa.gade.utils.SemanticVersion
-    implementation 'org.apache.maven:maven-artifact:3.8.7'
+    implementation 'org.apache.maven:maven-artifact:3.9.1'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'org.jsoup:jsoup:1.15.3'
+    implementation 'org.jsoup:jsoup:1.15.4'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation 'org.fxmisc.richtext:richtextfx:0.11.0'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
@@ -67,14 +67,14 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
     implementation 'commons-io:commons-io:2.11.0'
-    implementation 'com.github.jsqlparser:jsqlparser:4.5'
+    implementation 'com.github.jsqlparser:jsqlparser:4.6'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:7.6'
-    implementation 'org.jetbrains:annotations:24.0.0'
-    implementation 'io.github.classgraph:classgraph:4.8.154'
+    implementation 'org.gradle:gradle-tooling-api:8.0.2'
+    implementation 'org.jetbrains:annotations:24.0.1'
+    implementation 'io.github.classgraph:classgraph:4.8.157'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
@@ -85,8 +85,8 @@ dependencies {
     implementation 'se.alipsa.groovy:data-utils:1.0.3'
     implementation 'se.alipsa.groovy:gmd:1.0.7'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-    implementation 'se.alipsa:simple-rest:1.0.5-SNAPSHOT'
-    implementation 'se.alipsa.groovy:matrix:1.0-SNAPSHOT'
+    implementation 'se.alipsa:simple-rest:1.0.5'
+    implementation 'se.alipsa.groovy:matrix:1.0.1'
     implementation 'se.alipsa.groovy:spreadsheet:1.0-SNAPSHOT'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'

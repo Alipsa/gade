@@ -48,7 +48,7 @@ function toWinPath {
   echo "$1" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/'
 }
 
-PREF_TARGET="${1:-$HOME/programs/}"
+PREF_TARGET="${1:-$HOME/programs}"
 if [[ "msys" == "${OSTYPE}" ]]; then
   default_target=$(toMsysPath "$USERPROFILE/programs")
   PREF_TARGET="${1:-$default_target}"
