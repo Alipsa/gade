@@ -447,6 +447,11 @@ public class InOut implements GuiInteraction {
     display(Plot.jfx(chart), title);
   }
 
+  public void display(se.alipsa.groovy.charts.Chart chart, String... titleOpt) {
+    String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
+    display(se.alipsa.groovy.charts.Plot.jfx(chart), title);
+  }
+
   public void display(Figure figure, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     Page page = Page.pageBuilder(figure, "target").build();
