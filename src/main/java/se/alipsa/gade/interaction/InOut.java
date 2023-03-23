@@ -2,8 +2,10 @@ package se.alipsa.gade.interaction;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
@@ -42,6 +44,7 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
@@ -51,6 +54,7 @@ import static tech.tablesaw.chart.DataType.isCharacter;
 import static tech.tablesaw.chart.DataType.sqlType;
 import static se.alipsa.gade.utils.FileUtils.removeExt;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class InOut implements GuiInteraction {
@@ -447,6 +451,11 @@ public class InOut implements GuiInteraction {
     display(Plot.jfx(chart), title);
   }
 
+  public void display(se.alipsa.groovy.charts.Chart chart, String... titleOpt) {
+    String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
+    display(se.alipsa.groovy.charts.Plot.jfx(chart), title);
+  }
+
   public void display(Figure figure, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     Page page = Page.pageBuilder(figure, "target").build();
@@ -483,10 +492,14 @@ public class InOut implements GuiInteraction {
 
   public void display(File file, String... title) {
     if (file == null || !file.exists()) {
-      Alerts.warn("Cannot display image", "Failed to find " + file);
+      Alerts.warnFx("Cannot display image", "Failed to find " + file);
       return;
     }
-    display(file.getAbsolutePath(), title);
+    if (title.length == 0) {
+      display(file.getAbsolutePath(), file.getName());
+    } else {
+      display(file.getAbsolutePath(), title);
+    }
   }
 
   public void display(String fileName, String... title) {
@@ -639,6 +652,25 @@ public class InOut implements GuiInteraction {
 
   public Image readImage(File file) throws IOException {
     return readImage.read(file);
+  }
+
+  public void save(se.alipsa.groovy.charts.Chart chart, File file) {
+    CountDownLatch countDownLatch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      var jfxChart = se.alipsa.groovy.charts.Plot.jfx(chart);
+      var snapshot = jfxChart.snapshot(new SnapshotParameters(), null);
+      try {
+        ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", file);
+      } catch (IOException e) {
+        ExceptionAlert.showAlert("Failed to save chart to file", e);
+      }
+      countDownLatch.countDown();
+    });
+    try {
+      countDownLatch.await();
+    } catch (InterruptedException e) {
+      Platform.runLater(() -> ExceptionAlert.showAlert("Save was interrupted", e));
+    }
   }
 
   public String getContentType(String fileName) throws IOException {
