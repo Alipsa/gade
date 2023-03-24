@@ -5,13 +5,12 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.Scene;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
+import javafx.scene.image.WritableImage;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +36,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -655,10 +655,31 @@ public class InOut implements GuiInteraction {
   }
 
   public void save(se.alipsa.groovy.charts.Chart chart, File file) {
+    double width = gui.getInoutComponent().getPlotsTab().getTabPane().getWidth();
+    double height = gui.getInoutComponent().getPlotsTab().getTabPane().getHeight() - 20.0;
+    log.info("Saving chart with width {} and height {}", width, height);
+    try (var out = Files.newOutputStream(file.toPath())){
+      save(chart, file, width, height);
+    } catch (IOException e) {
+      Platform.runLater(() -> ExceptionAlert.showAlert("Failed to save chart to " + file, e));
+    }
+  }
+
+  /**
+   * Save a chart with the same style as the current Gade style to a png file
+   * @param chart the chart to save
+   * @param file the file to save to
+   * @param width the intended width of the png image
+   * @param height the intended height of the png image
+   */
+  public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height) {
+    // Use countdown latch to make the method synchronous i.e. return once the file is saved
     CountDownLatch countDownLatch = new CountDownLatch(1);
     Platform.runLater(() -> {
       var jfxChart = se.alipsa.groovy.charts.Plot.jfx(chart);
-      var snapshot = jfxChart.snapshot(new SnapshotParameters(), null);
+      Scene scene = new Scene(jfxChart, width, height);
+      scene.getStylesheets().addAll(gui.getStyleSheets());
+      WritableImage snapshot = scene.snapshot(null);
       try {
         ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", file);
       } catch (IOException e) {

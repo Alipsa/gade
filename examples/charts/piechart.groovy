@@ -16,7 +16,7 @@ empData = TableMatrix.create(
 chart = PieChart.create("Salaries", empData, "emp_name", "salary")
 io.display(chart, "jfx piechart")
 file = io.projectFile("piechart.png")
-Plot.png(chart, file)
+Plot.png(chart, file, 542, 345)
 io.display(file)
 file2 = io.projectFile("piechart2.png")
 io.save(chart, file2)

@@ -16,7 +16,7 @@ empData = TableMatrix.create(
 chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.NONE, "salary")
 io.display(chart, "jfx barchart")
 file = io.projectFile("barchart.png")
-Plot.png(chart, file)
+Plot.png(chart, file, 800, 600)
 io.display(file)
 file2 = io.projectFile("barchart2.png")
 io.save(chart, file2)

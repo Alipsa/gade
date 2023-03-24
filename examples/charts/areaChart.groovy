@@ -15,9 +15,9 @@ empData = TableMatrix.create(
 
 chart = AreaChart.create("Salaries", empData, "emp_name", "salary")
 io.display(chart, "jfx areachart")
-file = io.projectFile("areachart.png")
-Plot.png(chart, file)
+file = io.projectFile("charts areachart.png")
+Plot.png(chart, file, 800, 600)
 io.display(file)
 file2 = io.projectFile("areachart2.png")
 io.save(chart, file2)
-io.display(file2)
+io.display(file2, "io.save")
