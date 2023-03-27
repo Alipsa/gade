@@ -21,3 +21,7 @@ io.display(file)
 file2 = io.projectFile("areachart2.png")
 io.save(chart, file2)
 io.display(file2, "io.save")
+
+file3 = io.projectFile("charts areachart.svg")
+Plot.svg(chart, file3)
+io.display(file3)
