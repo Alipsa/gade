@@ -1,16 +1,19 @@
 package se.alipsa.gade.interaction;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.javafx.tk.Toolkit;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.Region;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -657,34 +660,50 @@ public class InOut implements GuiInteraction {
   public void save(se.alipsa.groovy.charts.Chart chart, File file) {
     double width = gui.getInoutComponent().getPlotsTab().getTabPane().getWidth();
     double height = gui.getInoutComponent().getPlotsTab().getTabPane().getHeight() - 20.0;
-    log.info("Saving chart with width {} and height {}", width, height);
-    try (var out = Files.newOutputStream(file.toPath())){
-      save(chart, file, width, height);
-    } catch (IOException e) {
-      Platform.runLater(() -> ExceptionAlert.showAlert("Failed to save chart to " + file, e));
-    }
+    save(chart, file, width, height, true);
   }
 
   /**
-   * Save a chart with the same style as the current Gade style to a png file
+   * Save a chart to a png file
    * @param chart the chart to save
    * @param file the file to save to
    * @param width the intended width of the png image
    * @param height the intended height of the png image
+   * @param useGadeStyle style the chart with the same style as the current Gade style
    */
-  public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height) {
+  public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height, boolean useGadeStyle) {
+    save(se.alipsa.groovy.charts.Plot.jfx(chart), file, width, height, useGadeStyle);
+  }
+
+  public void save(Region region, File file, boolean useGadeStyle) {
+    save(region, file, region.getWidth(), region.getHeight(), useGadeStyle);
+  }
+
+  public void save(Parent region, File file, double width, double height, boolean useGadeStyle) {
+    if (region == null) {
+      Alerts.warnFx("Cannot save", "the javafx region to save was null, nothing to do!");
+      return;
+    }
+    log.info("saving region to " + file);
     // Use countdown latch to make the method synchronous i.e. return once the file is saved
     CountDownLatch countDownLatch = new CountDownLatch(1);
+
     Platform.runLater(() -> {
-      var jfxChart = se.alipsa.groovy.charts.Plot.jfx(chart);
-      Scene scene = new Scene(jfxChart, width, height);
-      scene.getStylesheets().addAll(gui.getStyleSheets());
+      Scene scene = new Scene(region, width, height);
+      if (useGadeStyle) {
+        scene.getStylesheets().addAll(gui.getStyleSheets());
+      }
+      log.info("Getting a snapshot");
       WritableImage snapshot = scene.snapshot(null);
+
       try {
+        log.info("Writing the png file");
         ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", file);
       } catch (IOException e) {
+        log.warn("Failed to write to png file " + file, e);
         ExceptionAlert.showAlert("Failed to save chart to file", e);
       }
+      log.info("File write finished");
       countDownLatch.countDown();
     });
     try {
