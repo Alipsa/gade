@@ -3,6 +3,7 @@ package se.alipsa.gade.interaction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.javafx.tk.Toolkit;
 import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
@@ -33,8 +34,10 @@ import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 import tech.tablesaw.plotly.components.Page;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -474,9 +477,10 @@ public class InOut implements GuiInteraction {
 
   public void display(Node node, String... title) {
     Platform.runLater(() -> {
-          var plotsTab = gui.getInoutComponent().getPlotsTab();
-          plotsTab.showPlot(node, title);
-          SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
+      var plotsTab = gui.getInoutComponent().getPlotsTab();
+
+      plotsTab.showPlot(node, title);
+      SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
           selectionModel.select(plotsTab);
         }
     );
@@ -684,32 +688,45 @@ public class InOut implements GuiInteraction {
       Alerts.warnFx("Cannot save", "the javafx region to save was null, nothing to do!");
       return;
     }
-    log.info("saving region to " + file);
-    // Use countdown latch to make the method synchronous i.e. return once the file is saved
-    CountDownLatch countDownLatch = new CountDownLatch(1);
+    try {
+      // TODO putting a region in a Scene changes the region: make a deep clone of the region first
+      final Parent reg = region;
+      log.info("saving region to " + file);
+      List<WritableImage> img = new ArrayList<>();
 
-    Platform.runLater(() -> {
-      Scene scene = new Scene(region, width, height);
-      if (useGadeStyle) {
-        scene.getStylesheets().addAll(gui.getStyleSheets());
+      Scene scene = reg.getScene();
+      if (scene != null) {
+        Alerts.warnFx("Cannot save", "This javafx region is already bound to a scene");
+        return;
       }
-      log.info("Getting a snapshot");
-      WritableImage snapshot = scene.snapshot(null);
-
+      log.info("Create scene");
+      Scene finalScene = new Scene(reg, width, height);
+      // Use countdown latch to make the method synchronous i.e. return once the file is saved
+      CountDownLatch countDownLatch = new CountDownLatch(1);
+      Platform.runLater(() -> {
+        if (useGadeStyle) {
+          log.info("Setting styles");
+          finalScene.getStylesheets().addAll(gui.getStyleSheets());
+        }
+        log.info("Getting a snapshot");
+        WritableImage snapshot = finalScene.snapshot(null);
+        img.add(snapshot);
+        countDownLatch.countDown();
+      });
       try {
+        countDownLatch.await();
         log.info("Writing the png file");
-        ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", file);
+        ImageIO.write(SwingFXUtils.fromFXImage(img.get(0), null), "png", file);
+
+        log.info("File write finished");
+      } catch (InterruptedException e) {
+        Platform.runLater(() -> ExceptionAlert.showAlert("Save was interrupted", e));
       } catch (IOException e) {
         log.warn("Failed to write to png file " + file, e);
-        ExceptionAlert.showAlert("Failed to save chart to file", e);
+        Platform.runLater(() -> ExceptionAlert.showAlert("Failed to save chart to file", e));
       }
-      log.info("File write finished");
-      countDownLatch.countDown();
-    });
-    try {
-      countDownLatch.await();
-    } catch (InterruptedException e) {
-      Platform.runLater(() -> ExceptionAlert.showAlert("Save was interrupted", e));
+    } catch (RuntimeException e) {
+      Platform.runLater(() -> ExceptionAlert.showAlert("A runtime exception occurred when trying to save", e));
     }
   }
 

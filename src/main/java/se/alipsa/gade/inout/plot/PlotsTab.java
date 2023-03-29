@@ -35,6 +35,7 @@ public class PlotsTab extends Tab {
 
   public void showPlot(Node node, String[] title) {
     Tab tab = new Tab();
+    // TODO: clone the node so we dont bind it to the tab
     imageTabPane.getTabs().add(tab);
     if (title.length > 0) {
       tab.setText(title[0]);
