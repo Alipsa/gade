@@ -124,6 +124,6 @@ arcChart.getConnections().forEach(connection -> connection.addChartEvtObserver(C
 io.display(arcChart, "hansolo chart")
 
 file = io.projectFile("arcChart.png")
-new javafx.embed.swing.JFXPanel()
-io.save(arcChart, file, 800, 600, false)
+
+io.save(arcChart, file, 800, 600, true)
 io.display(file, "saved hansolo chart")
