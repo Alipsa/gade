@@ -6,9 +6,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.scene.*;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
@@ -695,21 +693,33 @@ public class InOut implements GuiInteraction {
       List<WritableImage> img = new ArrayList<>();
 
       Scene scene = reg.getScene();
+      final Scene finalScene;
       if (scene != null) {
-        Alerts.warnFx("Cannot save", "This javafx region is already bound to a scene");
-        return;
+        log.warn("This region is already bound to a screen, ignoring width and height parameters");
+        finalScene = null;
+      } else {
+        log.info("Create scene");
+        finalScene = new Scene(reg, width, height);
       }
-      log.info("Create scene");
-      Scene finalScene = new Scene(reg, width, height);
       // Use countdown latch to make the method synchronous i.e. return once the file is saved
       CountDownLatch countDownLatch = new CountDownLatch(1);
       Platform.runLater(() -> {
+        WritableImage snapshot;
         if (useGadeStyle) {
           log.info("Setting styles");
-          finalScene.getStylesheets().addAll(gui.getStyleSheets());
+          if (finalScene != null) {
+            finalScene.getStylesheets().addAll(gui.getStyleSheets());
+          } else {
+            reg.getStylesheets().addAll(gui.getStyleSheets());
+          }
         }
-        log.info("Getting a snapshot");
-        WritableImage snapshot = finalScene.snapshot(null);
+        if (finalScene != null) {
+          log.info("Getting a snapshot of the scene");
+          snapshot = finalScene.snapshot(null);
+        } else {
+          log.info("Getting a snapshot of the region");
+          snapshot = reg.snapshot(new SnapshotParameters(), null);
+        }
         img.add(snapshot);
         countDownLatch.countDown();
       });
