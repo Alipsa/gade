@@ -476,7 +476,7 @@ public class InOut implements GuiInteraction {
   public void display(Node node, String... title) {
     Platform.runLater(() -> {
       var plotsTab = gui.getInoutComponent().getPlotsTab();
-
+      //Node clone = DeepCopier.deepCopy(node);
       plotsTab.showPlot(node, title);
       SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
           selectionModel.select(plotsTab);
