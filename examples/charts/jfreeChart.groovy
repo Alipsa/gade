@@ -67,5 +67,5 @@ viewer = new ChartViewer(chart)
 io.display(viewer, "Smart Phones")
 
 file = io.projectFile("SmartPhones.png")
-io.save(viewer, file, 800, 600, false)
+io.save(viewer, file, 1024, 768, false)
 io.display(file)

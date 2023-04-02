@@ -1,15 +1,18 @@
 package se.alipsa.gade.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.javafx.scene.control.LabeledText;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.Chart;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Shape;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -17,7 +20,16 @@ import java.util.List;
 
 public class DeepCopier {
 
-  public static Serializable deepCopy(Serializable object) throws IOException, ClassNotFoundException {
+  private static final Logger log = LogManager.getLogger();
+
+  public static <T> T deepCopy(T obj) throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    StringWriter sw = new StringWriter();
+    mapper.writeValue(sw, obj);
+    return mapper.readValue(sw.toString(), (Class<T>) obj.getClass());
+  }
+
+  public static <T extends Serializable> T deepCopy(Serializable object) throws IOException, ClassNotFoundException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream oos = new ObjectOutputStream(bos);
     oos.writeObject(object);
@@ -26,7 +38,7 @@ public class DeepCopier {
     bos.close();
     byte[] byteData = bos.toByteArray();
     ByteArrayInputStream bais = new ByteArrayInputStream(byteData);
-    return (Serializable) new ObjectInputStream(bais).readObject();
+    return (T) new ObjectInputStream(bais).readObject();
   }
 
   public static Scene deepCopy(Scene scene) {
@@ -34,15 +46,15 @@ public class DeepCopier {
     return new Scene(root, scene.getWidth(), scene.getHeight(), scene.getFill());
   }
 
-  public static Node deepCopy(Node node) {
+  public static <T extends Node> T deepCopy(Node node) {
     if (node == null) {
       return null;
     }
     if (node instanceof Group group) {
-      return deepCopy(group);
+      return (T)deepCopy(group);
     }
     if (node instanceof Region region) {
-      return deepCopy(region);
+      return (T)deepCopy(region);
     }
     throw new RuntimeException("Unknown node type: " + node.getClass());
   }
@@ -57,50 +69,20 @@ public class DeepCopier {
     return new Group(clonedChildren);
   }
 
-  public static Region deepCopy(Region node) {
-    var children = node.getChildrenUnmodifiable();
-    List<Node> clonedChildren = new ArrayList<>();
-    for (var child : children) {
-      clonedChildren.add(deepCopy(child));
-    }
-    Node[] nodes = new Node[clonedChildren.size()];
-    if (node instanceof StackPane) {
-      return new StackPane(clonedChildren.toArray(nodes));
-    }
-    if (node instanceof HBox) {
-      return new HBox(clonedChildren.toArray(nodes));
-    }
-    if (node instanceof VBox) {
-      return new VBox(clonedChildren.toArray(nodes));
-    }
-    if (node instanceof TilePane) {
-      return new TilePane(clonedChildren.toArray(nodes));
-    }
-    if (node instanceof FlowPane) {
-      return new FlowPane(clonedChildren.toArray(nodes));
-    }
-    if (node instanceof BorderPane) {
-      Node center = deepCopy(((BorderPane) node).getCenter());
-      Node top  = deepCopy(((BorderPane) node).getTop());
-      Node right = deepCopy(((BorderPane) node).getRight());
-      Node bottom = deepCopy(((BorderPane) node).getBottom());
-      Node left = deepCopy(((BorderPane) node).getLeft());
-      return new BorderPane(center,top, right, bottom, left);
-    }
-    if (node instanceof GridPane) {
-      // TODO: create a gridpane deepCopier
-      return new GridPane();
-    }
-    if (node instanceof AnchorPane) {
-      return new AnchorPane(clonedChildren.toArray(nodes));
-    }
-    if (node instanceof Control control) {
-      return deepCopy(control);
+  public static <T extends Region> T deepCopy(Region node) {
+
+    if (node instanceof Pane pane) {
+      return (T)deepCopy(pane);
     }
     if (node instanceof Chart chart) {
-      return deepCopy(chart);
+      return (T)deepCopy(chart);
     }
-    throw new RuntimeException("Support for " + node.getClass() + " with parent " + node.getParent() + " not implemented!");
+    if (node instanceof Control control) {
+      return (T)deepCopy(control);
+    }
+
+    log.warn("Support for " + node.getTypeSelector() + " with parent " + node.getParent() + " not implemented!");
+    return (T)node;
   }
 
   public static Control deepCopy(Control control) {
@@ -110,36 +92,124 @@ public class DeepCopier {
     throw new RuntimeException("Support for control " + control.getClass() + " not implemented!");
   }
 
+  public static <T extends Pane> T deepCopy(Pane node) {
+    var children = node.getChildrenUnmodifiable();
+    List<Node> clonedChildren = new ArrayList<>();
+    for (var child : children) {
+      clonedChildren.add(deepCopy(child));
+    }
+    Node[] nodes = new Node[clonedChildren.size()];
+    if (node instanceof StackPane) {
+      return (T)new StackPane(clonedChildren.toArray(nodes));
+    }
+    if (node instanceof HBox) {
+      return (T)new HBox(clonedChildren.toArray(nodes));
+    }
+    if (node instanceof VBox) {
+      return (T)new VBox(clonedChildren.toArray(nodes));
+    }
+    if (node instanceof TilePane) {
+      return (T)new TilePane(clonedChildren.toArray(nodes));
+    }
+    if (node instanceof FlowPane) {
+      return (T)new FlowPane(clonedChildren.toArray(nodes));
+    }
+    if (node instanceof BorderPane) {
+      Node center = deepCopy(((BorderPane) node).getCenter());
+      Node top  = deepCopy(((BorderPane) node).getTop());
+      Node right = deepCopy(((BorderPane) node).getRight());
+      Node bottom = deepCopy(((BorderPane) node).getBottom());
+      Node left = deepCopy(((BorderPane) node).getLeft());
+      return (T)new BorderPane(center,top, right, bottom, left);
+    }
+    if (node instanceof GridPane gridPane) {
+      // TODO: create a gridpane deepCopier
+      throw new RuntimeException("Support for GridPane not yet implemented!");
+    }
+    if (node instanceof AnchorPane) {
+      return (T)new AnchorPane(clonedChildren.toArray(nodes));
+    }
+    throw new RuntimeException("Support for Pane " + node.getClass() + " not implemented!");
+  }
+
   public static Label deepCopy(Label label) {
     return new Label(label.getText(), label.getGraphic());
   }
 
-  public static Chart deepCopy(Chart chart) {
-    if (chart instanceof AreaChart<?,?> areaChart) {
-      return deepCopy(areaChart);
-    }
-    throw new RuntimeException("Support for chart " + chart.getClass() + " not implemented!");
+  public static LabeledText deepCopy(LabeledText labeledText) {
+    return labeledText;
   }
 
-  public static AreaChart<?,?> deepCopy(AreaChart<?,?> chart) {
-    AreaChart<?,?> copy = new AreaChart<>(chart.getXAxis(), chart.getYAxis());
-    copy.setTitle(chart.getTitle());
-    for (var series : chart.getData()) {
-      XYChart.Series serie = new XYChart.Series<>();
-      serie.setName(series.getName());
-      for (var data : series.getData()) {
-        serie.getData().add(new XYChart.Data(data.getXValue(), data.getYValue()));
-      }
-      copy.getData().add(serie);
+  public static <T extends Chart> T deepCopy(Chart chart) {
+    if (chart instanceof AreaChart areaChart) {
+      return (T)deepCopy(areaChart);
     }
-    copy.setStyle(chart.getStyle());
+    if (chart instanceof BarChart barChart) {
+      return (T)deepCopy(barChart);
+    }
+    if (chart instanceof PieChart pieChart) {
+      return (T)deepCopy(pieChart);
+    }
+    log.warn("Support for chart " + chart.getClass() + " not implemented!");
+    return (T)chart;
+  }
+
+  public static AreaChart deepCopy(AreaChart<?,?> chart) {
+    AreaChart copy = new AreaChart(chart.getXAxis(), chart.getYAxis());
+    copyXYChart(chart, copy);
     copy.setCreateSymbols(chart.getCreateSymbols());
-    Background background = chart.getBackground();
+    return copy;
+  }
+
+  private static Axis<?> copyAxis(Axis axis) {
+    if (axis instanceof CategoryAxis categoryAxis) {
+      List<String> categories = new ArrayList<>();
+      categories.addAll(categoryAxis.getCategories());
+      CategoryAxis copy = new CategoryAxis();
+      copy.getCategories().addAll(categories);
+      return copy;
+    }
+    if (axis instanceof NumberAxis numberAxis ) {
+      if (numberAxis.isAutoRanging()) {
+        return new NumberAxis();
+      } else {
+        return new NumberAxis(numberAxis.getLowerBound(), numberAxis.getUpperBound(), numberAxis.getTickUnit());
+      }
+    }
+    throw new RuntimeException("Support for axis " + axis.getClass() + " not implemented!");
+  }
+
+  public static <T,E> BarChart<T,E> deepCopy(BarChart<T,E> chart) {
+    Axis<T> xAxis = (Axis<T>) copyAxis(chart.getXAxis());
+    Axis<E> yAxis = (Axis<E>) copyAxis(chart.getYAxis());
+    BarChart<T,E> copy = new BarChart<>(xAxis, yAxis);
+    copyXYChart(chart, copy);
+    return copy;
+  }
+
+  public static PieChart deepCopy(PieChart chart) {
+    PieChart copy = new PieChart();
+    for (var data : chart.getData()) {
+      copy.getData().add(new PieChart.Data(data.getName(), data.getPieValue()));
+    }
+    return copy;
+  }
+
+  private static void copyXYChart(XYChart<?,?> from, XYChart<?,?> to) {
+    to.setTitle(from.getTitle());
+    for (var fromSeries : from.getData()) {
+      XYChart.Series toSerie = new XYChart.Series<>();
+      toSerie.setName(fromSeries.getName());
+      for (var data : fromSeries.getData()) {
+        toSerie.getData().add(new XYChart.Data(data.getXValue(), data.getYValue()));
+      }
+      to.getData().add(toSerie);
+    }
+    to.setStyle(from.getStyle());
+    Background background = from.getBackground();
     if (background != null) {
       Background bg = new Background(background.getFills(), background.getImages());
-      copy.setBackground(bg);
+      to.setBackground(bg);
     }
-
-    return copy;
   }
 }

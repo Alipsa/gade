@@ -14,8 +14,17 @@ empData = TableMatrix.create(
 )
 
 chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.NONE, "salary")
-io.display(chart, "jfx barchart")
+io.display(chart, "charts barchart")
 file = io.projectFile("barchart.png")
+
+jfxChart = Plot.jfx(chart)
+copy = se.alipsa.gade.utils.DeepCopier.deepCopy(jfxChart)
+io.display(jfxChart, true, "jfx barchart") //Values are not set properly when cloning!
+jfxFile = io.projectFile("jfxBarchart.png")
+io.save(jfxChart, jfxFile, 640, 480) 
+io.display(jfxFile)
+io.display(jfxChart, true, "jfx barchart2")
+
 Plot.png(chart, file, 800, 600)
 io.display(file)
 file2 = io.projectFile("barchart2.png")

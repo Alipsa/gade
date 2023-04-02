@@ -35,7 +35,6 @@ series2.getData().add(new XYChart.Data(47, 23));
 blc.getData().addAll(series1, series2);  
 
 io.display(blc, "jfx bubble")
-new javafx.embed.swing.JFXPanel()
 file = io.projectFile("jfxBubble.png")
-io.save(blc, file, 800, 600, false)
+io.save(blc, file, 800, 600, true)
 io.display(file)

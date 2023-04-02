@@ -14,14 +14,18 @@ empData = TableMatrix.create(
 )
 
 chart = AreaChart.create("Salaries", empData, "emp_name", "salary")
+io.display(chart, "charts areachart")
+
+jfxChart = Plot.jfx(chart)
 io.display(chart, "jfx areachart")
+
+jfxCopy = se.alipsa.gade.utils.DeepCopier.deepCopy(jfxChart)
+io.display(chart, "jfxcopy areachart")
+
 file = io.projectFile("charts areachart.png")
 Plot.png(chart, file, 800, 600)
 io.display(file)
+
 file2 = io.projectFile("areachart2.png")
 io.save(chart, file2)
 io.display(file2, "io.save")
-
-file3 = io.projectFile("charts areachart.svg")
-Plot.svg(chart, file3)
-io.display(file3)

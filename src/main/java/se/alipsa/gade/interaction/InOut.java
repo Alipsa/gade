@@ -1,9 +1,7 @@
 package se.alipsa.gade.interaction;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.javafx.tk.Toolkit;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.*;
@@ -32,15 +30,12 @@ import tech.tablesaw.api.Table;
 import tech.tablesaw.plotly.components.Figure;
 import tech.tablesaw.plotly.components.Page;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.URL;
-import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -452,12 +447,12 @@ public class InOut implements GuiInteraction {
 
   public void display(Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    display(Plot.jfx(chart), title);
+    display(Plot.jfx(chart), false, title);
   }
 
   public void display(se.alipsa.groovy.charts.Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    display(se.alipsa.groovy.charts.Plot.jfx(chart), title);
+    display(se.alipsa.groovy.charts.Plot.jfx(chart), false, title);
   }
 
   public void display(Figure figure, String... titleOpt) {
@@ -474,10 +469,24 @@ public class InOut implements GuiInteraction {
   }
 
   public void display(Node node, String... title) {
+    if (node instanceof javafx.scene.chart.Chart) {
+      display(node, true, title);
+    } else {
+      display(node, false, title);
+    }
+  }
+
+  public void display(Node node, boolean displayCopy, String... title) {
+    final Node displayNode;
+    if (displayCopy) {
+      displayNode = DeepCopier.deepCopy(node);
+    } else {
+      displayNode = node;
+    }
     Platform.runLater(() -> {
       var plotsTab = gui.getInoutComponent().getPlotsTab();
-      //Node clone = DeepCopier.deepCopy(node);
-      plotsTab.showPlot(node, title);
+
+      plotsTab.showPlot(displayNode, title);
       SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
           selectionModel.select(plotsTab);
         }
@@ -665,6 +674,10 @@ public class InOut implements GuiInteraction {
     save(chart, file, width, height, true);
   }
 
+  public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height) {
+    save(chart, file, width, height, true);
+  }
+
   /**
    * Save a chart to a png file
    * @param chart the chart to save
@@ -674,21 +687,39 @@ public class InOut implements GuiInteraction {
    * @param useGadeStyle style the chart with the same style as the current Gade style
    */
   public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height, boolean useGadeStyle) {
-    save(se.alipsa.groovy.charts.Plot.jfx(chart), file, width, height, useGadeStyle);
+    save(se.alipsa.groovy.charts.Plot.jfx(chart), file, width, height, useGadeStyle, false);
+  }
+
+  public void save(Region region, File file) {
+    save(region, file, region.getWidth(), region.getHeight(), true);
   }
 
   public void save(Region region, File file, boolean useGadeStyle) {
     save(region, file, region.getWidth(), region.getHeight(), useGadeStyle);
   }
 
+  public void save(Region region, File file, double width, double height) {
+    save(region, file, width, height, true);
+  }
+
   public void save(Parent region, File file, double width, double height, boolean useGadeStyle) {
+    save(region, file, width, height, useGadeStyle, true);
+  }
+
+  public void save(Parent region, File file, double width, double height, boolean useGadeStyle, boolean displayCopy ) {
     if (region == null) {
       Alerts.warnFx("Cannot save", "the javafx region to save was null, nothing to do!");
       return;
     }
+    final Parent reg;
     try {
       // TODO putting a region in a Scene changes the region: make a deep clone of the region first
-      final Parent reg = region;
+      if (displayCopy) {
+        reg = DeepCopier.deepCopy(region);
+      } else {
+        reg = region;
+      }
+
       log.info("saving region to " + file);
       List<WritableImage> img = new ArrayList<>();
 
