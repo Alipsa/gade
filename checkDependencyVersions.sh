@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-#mvn versions:display-plugin-updates versions:display-dependency-updates
-./gradlew dependencyUpdates -Drevision=release
-
 # dependencyUpdates only checks maven central
 url=https://repo.gradle.org/gradle/libs-releases/org/gradle/gradle-tooling-api/maven-metadata.xml
 echo "Checking latest version of the gradle tooling api"
@@ -17,3 +14,6 @@ if echo "${latestVersion}" | grep -q "milestone\|rc"; then
 else
   echo "${latestVersion}"
 fi
+
+./gradlew dependencyUpdates -Drevision=release
+
