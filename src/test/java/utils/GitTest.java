@@ -25,7 +25,7 @@ public class GitTest {
    * ~/.git-credentials file for this test to work.
    * The format of the string in ~/.git-credentials is:
    * <pre>
-   * git:myPassword@github.com:perNyfelt/gade.git
+   * git:myPassword@github.com:Alipsa/gade.git
    * </pre>
    */
   @Test
@@ -48,7 +48,8 @@ public class GitTest {
     if (credentialsProvider != null) {
       fetchCommand.setCredentialsProvider(credentialsProvider);
     }
-    FetchResult fetchResult = fetchCommand.call();
+    var fetchResult = fetchCommand.call();
+    System.out.println(fetchResult.getClass());
     log.info("Messages: {}", fetchResult.getMessages());
     log.info("Tracking refs: {}", fetchResult.getTrackingRefUpdates().stream().map(r -> r.toString()).collect(Collectors.joining(", ")));
   }

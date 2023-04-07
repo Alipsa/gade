@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<plist version="1.0">
+  <dict>
+    <key>CFBundleExecutable</key>
+    <string>gade</string>
+    <key>CFBundleGetInfoString</key>
+    <string>Gade, a Groovy Anaytics Development Environment</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleIconFile</key>
+    <string>gade.png</string>
+    <key>CFBundleIconName</key>
+    <string>gade</string>
+  </dict>
+</plist>

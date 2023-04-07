@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 // Run `gradle runtimeZip` to create the distributions
 plugins {
     id 'java'
@@ -128,6 +131,39 @@ tasks.withType(JavaCompile) {
 
 test {
     useJUnitPlatform()
+    testLogging {
+        // set options for log level LIFECYCLE
+        events TestLogEvent.FAILED,
+                TestLogEvent.PASSED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_OUT
+        exceptionFormat TestExceptionFormat.FULL
+        showExceptions true
+        showCauses true
+        showStackTraces true
+
+        // set options for log level DEBUG and INFO
+        debug {
+            events TestLogEvent.STARTED,
+                    TestLogEvent.FAILED,
+                    TestLogEvent.PASSED,
+                    TestLogEvent.SKIPPED,
+                    TestLogEvent.STANDARD_ERROR,
+                    TestLogEvent.STANDARD_OUT
+            exceptionFormat TestExceptionFormat.FULL
+        }
+        info.events = debug.events
+        info.exceptionFormat = debug.exceptionFormat
+
+        afterSuite { desc, result ->
+            if (!desc.parent) { // will match the outermost suite
+                def output = "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped)"
+                def startItem = '|  ', endItem = '  |'
+                def repeatLength = startItem.length() + output.length() + endItem.length()
+                println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+            }
+        }
+    }
 }
 
 /*
@@ -171,7 +207,9 @@ runtime {
         }
     }
     targetPlatform("mac") {
-        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-macos-amd64-full.tar.gz") {
+        // https://download.bell-sw.com/java/17.0.6+10/bellsoft-jdk17.0.6+10-macos-aarch64-full.tar.gz
+        // "${baseUrl}/${version}/bellsoft-jdk${version}-macos-amd64-full.tar.gz"
+        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-macos-aarch64-full.tar.gz") {
             downloadDir = "$projectDir/platform/mac"
         }
     }
@@ -252,6 +290,30 @@ tasks.named("dependencyUpdates").configure {
                     reject('Release candidate')
                 }
             }
+        }
+    }
+}
+
+task osxApp {
+    dependsOn runtime
+
+    doLast {
+        def dist = "${buildDir}/app/${project.name}.app"
+        mkdir("$dist/Contents/MacOS")
+        mkdir("$dist/Contents/Resources")
+        ant.copy(file: "src/main/mac/Info.plist", todir: "$dist/Contents")
+        /*
+        ant.copy(file: "src/main/mac/launcher", todir: "$dist/Contents/MacOS") {
+            filterset {
+                filter(token: 'APP_JAR', value: "${project.name}-${version}.jar")
+                filter(token: 'APP_NAME', value: project.name)
+                filter(token: 'JAVA_VERSION', value: java.toolchain.languageVersion)
+            }
+        }*/
+        ant.copy(file: "src/main/mac/gade.icns", todir: "$dist/Contents/Resources")
+        ant.copy(file: "src/main/mac/gade", todir="$dist/Contents/MacOS")
+        project.exec {
+            commandLine('chmod', '+x', "$dist/Contents/MacOS/gade")
         }
     }
 }

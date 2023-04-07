@@ -35,10 +35,18 @@ public class GadeSshSessionFactory extends JschConfigSessionFactory {
   private static final Logger log = LogManager.getLogger();
 
   String url;
+  File publicKeyFile;
+  File privateKeyFile;
 
   public GadeSshSessionFactory(String url) {
     log.trace("GadeSshSessionFactory for {}", url);
     this.url = url;
+  }
+
+  public GadeSshSessionFactory(String url, File publicKeyFile, File privateKeyFile) {
+    this(url);
+    this.publicKeyFile = publicKeyFile;
+    this.privateKeyFile = privateKeyFile;
   }
 
   @Override
@@ -69,8 +77,24 @@ public class GadeSshSessionFactory extends JschConfigSessionFactory {
     if (knownHosts.exists()) {
       defaultJSch.setKnownHosts(knownHosts.getAbsolutePath());
     }
-    String privateKey = System.getProperty("user.home") + "/.ssh/id_rsa";
-    String publicKey = System.getProperty("user.home") + "/.ssh/id_rsa.pub";
+    String privateKey;
+    String publicKey;
+    if (privateKeyFile == null) {
+      privateKey = System.getProperty("user.home") + "/.ssh/id_rsa";
+      publicKey = System.getProperty("user.home") + "/.ssh/id_rsa.pub";
+      if (!new File(publicKey).exists()) {
+        File dir = new File(System.getProperty("user.home") + "/.ssh");
+        var files = FileUtils.findFilesWithExt(dir, ".pub");
+        if (files.size() == 0) {
+          throw new JSchException("~/.ssh/id_rsa.pub does not exist and no other public keys fund");
+        }
+        publicKey = files.get(0).getAbsolutePath();
+        privateKey = publicKey.substring(0, publicKey.length() - ".pub".length());
+      }
+    } else {
+      publicKey = publicKeyFile.getAbsolutePath();
+      privateKey = privateKeyFile.getAbsolutePath();
+    }
     KeyPair keyPair = KeyPair.load(defaultJSch, privateKey, publicKey);
     if (keyPair.isEncrypted()) {
       try {
