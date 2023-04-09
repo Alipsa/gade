@@ -324,6 +324,15 @@ public class FileUtils {
     return homeDir;
   }
 
+  public static String nameNoExt(File file) {
+    String fileName = file.getName();
+    return fileName.substring(0, fileName.lastIndexOf('.'));
+  }
+
+  public static String ext(File file) {
+    String fileName = file.getName();
+    return fileName.substring(fileName.lastIndexOf('.'));
+  }
   public static String baseName(String url) {
     if (url == null) return null;
     String basename = "";

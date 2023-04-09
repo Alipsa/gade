@@ -441,6 +441,10 @@ public class InOut implements GuiInteraction {
     return gui.getInoutComponent().projectDir();
   }
 
+  public File projectDir(String subDir) {
+    return new File(gui.getInoutComponent().projectDir(), subDir);
+  }
+
   public File projectFile(String relativePath) {
     return new File(gui.getInoutComponent().projectDir(), relativePath);
   }
@@ -548,11 +552,12 @@ public class InOut implements GuiInteraction {
   }
 
   public void view(TableMatrix tableMatrix, String... title) {
-    gui.getInoutComponent().view(tableMatrix, determineTitle(title));
+    gui.getInoutComponent().view(tableMatrix, tableMatrix.getName() == null ? determineTitle(title) : tableMatrix.getName());
   }
 
   public void view(Table table, String... title) {
-    gui.getInoutComponent().viewTable(table, determineTitle(title));
+    gui.getInoutComponent().viewTable(table,
+        table.name() == null ? determineTitle(title) : table.name());
   }
 
   private String determineTitle(String... title) {
@@ -652,8 +657,16 @@ public class InOut implements GuiInteraction {
     return dialogs.promptYearMonth(message);
   }
 
+  public File chooseFile(String title, File initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
+    return dialogs.chooseFile(title, initialDirectory, description, extensions);
+  }
+
   public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
     return dialogs.chooseFile(title, initialDirectory, description, extensions);
+  }
+
+  public File chooseDir(String title, File initialDirectory) throws ExecutionException, InterruptedException {
+    return dialogs.chooseDir(title, initialDirectory);
   }
 
   public File chooseDir(String title, String initialDirectory) throws ExecutionException, InterruptedException {

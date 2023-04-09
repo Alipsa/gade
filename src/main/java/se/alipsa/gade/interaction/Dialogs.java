@@ -160,11 +160,14 @@ public class Dialogs {
     }
 
     public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws InterruptedException, ExecutionException {
+        return chooseFile(title, new File(initialDirectory), description, extensions);
+    }
+    public File chooseFile(String title, File initialDirectory, String description, String... extensions) throws InterruptedException, ExecutionException {
         FutureTask<File> task = new FutureTask<>(() -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle(title == null ? "Select file" : title);
             if (initialDirectory != null) {
-                chooser.setInitialDirectory(new File(initialDirectory));
+                chooser.setInitialDirectory(initialDirectory);
             }
             chooser.getExtensionFilters().addAll(
                     new FileChooser.ExtensionFilter(description, extensions)
@@ -176,9 +179,12 @@ public class Dialogs {
     }
 
     public File chooseDir(String title, String initialDirectory) throws InterruptedException, ExecutionException  {
+        return chooseDir(title, new File(initialDirectory));
+    }
+    public File chooseDir(String title, File initialDirectory) throws InterruptedException, ExecutionException  {
         FutureTask<File> task = new FutureTask<>(() -> {
             DirectoryChooser chooser = new DirectoryChooser();
-            chooser.setInitialDirectory(new File(initialDirectory));
+            chooser.setInitialDirectory(initialDirectory);
             chooser.setTitle(title);
             return chooser.showDialog(stage);
         });
