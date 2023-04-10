@@ -60,7 +60,7 @@ echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM} "
 cd "${SCRIPT_DIR}" || exit
 
 # Workaround if building for windows from linux and local repo does not have windows javafx jars:
-jfxVersion=19.0.2.1
+jfxVersion=20
 if [[ "${OSTYPE}" == "linux-gnu" && "${PLATFORM}" == "win" ]]; then
   echo "- Downloading windows javafx jars"
   mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-base:${jfxVersion}:jar:win
@@ -69,7 +69,7 @@ if [[ "${OSTYPE}" == "linux-gnu" && "${PLATFORM}" == "win" ]]; then
 fi
 
 echo "- Building Gade"
-./gradlew clean runtime || exit 1
+./gradlew clean build runtime || exit 1
 
 PROPERTY_FILE=version.properties
 
