@@ -78,6 +78,10 @@ fi
 # to the command below, but even better to add it to JAVA_OPTS variable in env.sh
 MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 
+if [[ "${OS}" == "mac" ]]; then
+  JAVA_OPTS="$JAVA_OPTS -Xdock:icon=\"$DIR/gade-icon.png\""
+fi
+
 if [[ "${OS}" == "win" ]]; then
 	JAVA_CMD=$(fullJavaPath "javaw")
 	CLASSPATH="${JAR_NAME};$(winpath "${LIB_DIR}")/*"
@@ -88,12 +92,11 @@ if [[ "${OS}" == "win" ]]; then
 	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES} -cp "${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
 	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
-
 else
 	JAVA_CMD=$(fullJavaPath "java")
 	CLASSPATH="${JAR_NAME}:${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
-	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -cp "${JAR_NAME}" se.alipsa.gade.splash.SplashScreen &
+	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -cp "${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
 	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
 fi

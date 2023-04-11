@@ -8,6 +8,8 @@ function notify() {
     zenity --info --text="$1"
   elif command -v notify-send > /dev/null 2>&1; then
     notify-send "$1"
+  elif command -v osascript > /dev/null 2>&1; then
+    osascript -e "display notification \"$1\" with title \"Gade\""
   elif [[ "${OSTYPE}" == "msys" ]]; then
     msg ${USERNAME} "$1" /time:30
   fi
@@ -61,6 +63,12 @@ else
   OS=win
 fi
 
+if [[ "${OS}" == "mac" ]]; then
+  JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$DIR/gade-icon.png"
+fi
+
+MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
+
 # Note: It is possible to force the initial package loader by adding:
 # -DConsoleComponent.PackageLoader=ClasspathPackageLoader
 # to the command below, but even better to add it to JAVA_OPTS variable in env.sh
@@ -74,15 +82,15 @@ if [[ "${OS}" == "win" ]]; then
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
-	start "${BIN_DIR}\${JAVA_CMD}" -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
+	start "${BIN_DIR}\${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
-	start "${BIN_DIR}\${JAVA_CMD}" -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
+	start "${BIN_DIR}\${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
 
 else
 	JAVA_CMD="java"
 	CLASSPATH="${JAR_NAME}:${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
-	"${BIN_DIR}/${JAVA_CMD}" -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen &
+	"${BIN_DIR}/${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
-	"${BIN_DIR}/${JAVA_CMD}" -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
+	"${BIN_DIR}/${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
 fi
