@@ -10,7 +10,7 @@
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
     <key>CFBundleIconFile</key>
-    <string>gade.png</string>
+    <string>gade.icns</string>
     <key>CFBundleIconName</key>
     <string>gade</string>
   </dict>

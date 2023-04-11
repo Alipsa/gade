@@ -292,30 +292,6 @@ tasks.named("dependencyUpdates").configure {
     }
 }
 
-task osxApp {
-    dependsOn runtime
-
-    doLast {
-        def dist = "${buildDir}/app/${project.name}.app"
-        mkdir("$dist/Contents/MacOS")
-        mkdir("$dist/Contents/Resources")
-        ant.copy(file: "src/main/mac/Info.plist", todir: "$dist/Contents")
-        /*
-        ant.copy(file: "src/main/mac/launcher", todir: "$dist/Contents/MacOS") {
-            filterset {
-                filter(token: 'APP_JAR', value: "${project.name}-${version}.jar")
-                filter(token: 'APP_NAME', value: project.name)
-                filter(token: 'JAVA_VERSION', value: java.toolchain.languageVersion)
-            }
-        }*/
-        ant.copy(file: "src/main/mac/gade.icns", todir: "$dist/Contents/Resources")
-        ant.copy(file: "src/main/mac/gade", todir="$dist/Contents/MacOS")
-        project.exec {
-            commandLine('chmod', '+x', "$dist/Contents/MacOS/gade")
-        }
-    }
-}
-
 /* 4.7.1 is the default version for plugin version 5.09
 spotbugs {
     toolVersion = '4.7.1'

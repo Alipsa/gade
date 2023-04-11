@@ -134,5 +134,31 @@ if [[ -d "${tmp_dir}" ]]; then
   cp "${tmp_dir}"/env.* "$TARGET_DIR"/ || exit
   rm -rf "${tmp_dir}" || exit
 fi
+
+if [[ "${PLATFORM}" == "mac" ]]; then
+  echo "- creating mac application"
+  APP_DIR=$(dirname "${TARGET_DIR}")/gade.app
+  if [[ -d "${APP_DIR}" ]]; then
+    echo "- backing up previous installation"
+    if [[ -d "${APP_DIR}.old" ]]; then
+      rm -rf "${APP_DIR}.old"
+    fi
+    mv "$APP_DIR" "${APP_DIR}.old"
+  else
+    mkdir "$APP_DIR"
+  fi
+
+  cp -r "$TARGET_DIR" "$APP_DIR"
+  CONTENT_DIR="${APP_DIR}/Contents"
+  MACOS_DIR="${CONTENT_DIR}/MacOS"
+  RESOURCE_DIR="${CONTENT_DIR}/Resources"
+  mkdir -p "$MACOS_DIR"
+  mkdir -p "$RESOURCE_DIR"
+  cp "$SCRIPT_DIR/src/main/mac/Info.plist" "$CONTENT_DIR/"
+  cp "$SCRIPT_DIR/src/main/mac/gade.icns" "${RESOURCE_DIR}/"
+  cp "$SCRIPT_DIR/src/main/mac/gade" "${MACOS_DIR}/"
+  chmod +x "${MACOS_DIR}/gade"
+  SetFile -a B "${APP_DIR}"
+fi
 echo "Finished at $(date)"
 
