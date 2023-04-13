@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
-import se.alipsa.groovy.matrix.TableMatrix;
+import se.alipsa.groovy.matrix.Matrix;
 import tech.tablesaw.chart.Chart;
 import tech.tablesaw.chart.Plot;
 import se.alipsa.gade.environment.connections.ConnectionInfo;
@@ -551,7 +551,7 @@ public class InOut implements GuiInteraction {
     gui.getInoutComponent().view(matrix, determineTitle(title));
   }
 
-  public void view(TableMatrix tableMatrix, String... title) {
+  public void view(Matrix tableMatrix, String... title) {
     gui.getInoutComponent().view(tableMatrix, tableMatrix.getName() == null ? determineTitle(title) : tableMatrix.getName());
   }
 

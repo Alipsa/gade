@@ -6,8 +6,8 @@
 <h1>Table of content</h1>
 <ul>
     <li><a href="#querying_db">Querying a database</a></li>
-    <li><a href="#using_packages">Using packages</a></li>
     <li><a href="#reusing_code">Reusing code</a></li>
+    <li><a href="#integrated_security">Reusing code</a></li>
 </ul>
 
 
@@ -112,3 +112,23 @@ can easily use it.<br/>
 Gade has a wizard that helps you create the structure and all the boilerplate code needed (Code -> Create package project).
 </body>
 </html>
+
+<h2 id="integrated_security">Integrated Security</h2>
+Some database drivers offer "integrated security" e.g. using the current Windows AD account to authenticate
+to the database. An example is SQL Server. In older versions of the jdbc driver, you were forced to install some .dll files
+and point the java.library.path to that directory when launching java e.g:
+
+<pre><code>
+-Djava.library.path="C:/some/path"
+</code></pre>
+
+Fortunately, in later versions of the jdbc driver, this is no longer necessary. Instead, you
+set the following two properties in the connection string:
+<ol>
+    <li>integratedSecurity=true</li>
+    <li>authenticationScheme=JavaKerberos</li>
+</ol>
+here is an example:
+<pre><code>
+jdbc:sqlserver://some.server.name:1433;databaseName=mydb;integratedSecurity=true;authenticationScheme=JavaKerberos
+</code></pre>

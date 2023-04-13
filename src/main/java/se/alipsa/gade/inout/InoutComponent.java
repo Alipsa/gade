@@ -25,7 +25,7 @@ import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
 import se.alipsa.gade.utils.*;
-import se.alipsa.groovy.matrix.TableMatrix;
+import se.alipsa.groovy.matrix.Matrix;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
 
@@ -215,7 +215,7 @@ public class InoutComponent extends TabPane  {
     }
     if (matrix instanceof Object[][]) {
       view2dArray((Object[][])matrix, title);
-    } else if (matrix instanceof TableMatrix tableMatrix) {
+    } else if (matrix instanceof Matrix tableMatrix) {
       viewTable(tableMatrix, title);
     } else {
       console.appendWarningFx("Unknown matrix type " + matrix.getClass().getName());
@@ -288,7 +288,7 @@ public class InoutComponent extends TabPane  {
     );
   }
 
-  public void viewTable(TableMatrix table, String... title) {
+  public void viewTable(Matrix table, String... title) {
     Platform.runLater(() -> {
           viewer.viewTable(table, title);
           SingleSelectionModel<Tab> selectionModel = getSelectionModel();

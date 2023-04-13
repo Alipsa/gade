@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import se.alipsa.gade.utils.DeepCopier;
 import se.alipsa.groovy.charts.ChartType;
 import se.alipsa.groovy.charts.Plot;
-import se.alipsa.groovy.matrix.TableMatrix;
+import se.alipsa.groovy.matrix.Matrix;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -31,7 +31,7 @@ public class DeepCopyTest {
     final NumberAxis xAxis = new NumberAxis(1, 31, 1);
     final NumberAxis yAxis = new NumberAxis();
     final AreaChart<Number,Number> ac =
-        new AreaChart<Number,Number>(xAxis,yAxis);
+            new AreaChart<>(xAxis, yAxis);
     ac.setTitle("Temperature Monitoring (in Degrees C)");
 
     XYChart.Series seriesApril= new XYChart.Series();
@@ -144,7 +144,7 @@ public class DeepCopyTest {
   @Test
   public void testCopyBarchart2() {
 
-    var empData = TableMatrix.create(
+    var empData = Matrix.create(
         Map.of(
           "emp_id", Arrays.asList(1,2,3,4,5),
           "emp_name", Arrays.asList("Rick","Dan","Michelle","Ryan","Gary"),

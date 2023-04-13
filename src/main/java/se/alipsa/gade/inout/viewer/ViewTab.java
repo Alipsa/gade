@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.groovy.gmd.HtmlDecorator;
-import se.alipsa.groovy.matrix.TableMatrix;
+import se.alipsa.groovy.matrix.Matrix;
 import tech.tablesaw.api.Table;
 import se.alipsa.gade.utils.*;
 
@@ -57,8 +57,8 @@ public class ViewTab extends Tab {
     viewTable(table.columnNames(), toRowList(table), types, title);
   }
 
-  public void viewTable(TableMatrix tableMatrix, String... title) {
-    viewTable(tableMatrix.columnNames(), tableMatrix.matrix(), tableMatrix.columnTypeNames(), title);
+  public void viewTable(Matrix tableMatrix, String... title) {
+    viewTable(tableMatrix.columnNames(), tableMatrix.rows(), tableMatrix.columnTypeNames(), title);
   }
 
   public void viewTable(List<String> headerList, List<List<?>> rowList, List<String> columnTypes, String... title) {

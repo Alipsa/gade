@@ -61,11 +61,28 @@ cd "${SCRIPT_DIR}" || exit
 
 # Workaround if building for windows from linux and local repo does not have windows javafx jars:
 jfxVersion=20
-if [[ "${OSTYPE}" == "linux-gnu" && "${PLATFORM}" == "win" ]]; then
+
+function fetchJfxArtifacts {
+  qualifier=$1
+  pluginVer=3.5.0
+  mvn org.apache.maven.plugins:maven-dependency-plugin:${pluginVer}:get -Dartifact=org.openjfx:javafx-base:${jfxVersion}:jar:"$qualifier"
+  mvn org.apache.maven.plugins:maven-dependency-plugin:${pluginVer}:get -Dartifact=org.openjfx:javafx-controls:${jfxVersion}:jar:"$qualifier"
+  mvn org.apache.maven.plugins:maven-dependency-plugin:${pluginVer}:get -Dartifact=org.openjfx:javafx-graphics:${jfxVersion}:jar:"$qualifier"
+}
+
+# see https://repo1.maven.org/maven2/org/openjfx/javafx/20/javafx-20.pom for info on qualifier names
+if [[ ! "${PLATFORM}" == "win" ]]; then
   echo "- Downloading windows javafx jars"
-  mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-base:${jfxVersion}:jar:win
-  mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-controls:${jfxVersion}:jar:win
-  mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.openjfx:javafx-graphics:${jfxVersion}:jar:win
+  fetchJfxArtifacts win
+
+fi
+if [[ ! "${PLATFORM}" == "linux" ]]; then
+  echo "- Downloading linux javafx jars"
+  fetchJfxArtifacts linux
+fi
+if [[ ! "${PLATFORM}" == "mac" ]]; then
+  echo "- Downloading mac javafx jars"
+  fetchJfxArtifacts macosx-aarch64
 fi
 
 echo "- Building Gade"
