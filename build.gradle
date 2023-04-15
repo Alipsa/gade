@@ -88,7 +88,7 @@ dependencies {
     implementation 'se.alipsa.groovy:gmd:1.0.7'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa:simple-rest:1.0.5'
-    implementation 'se.alipsa.groovy:matrix:1.0.2-SNAPSHOT'
+    implementation 'se.alipsa.groovy:matrix:1.1.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:spreadsheet:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:charts:1.0.0-SNAPSHOT'
 

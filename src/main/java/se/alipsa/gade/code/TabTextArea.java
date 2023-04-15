@@ -10,6 +10,9 @@ public interface TabTextArea {
    */
   File getFile();
 
+  /**
+   * set the file this textarea is related to
+   */
   void setFile(File file);
 
   /**
@@ -24,6 +27,9 @@ public interface TabTextArea {
    */
   String getAllTextContent();
 
+  /**
+   * replace the entire text of the TabTextArea
+   */
   void replaceContentText(String content, boolean isReadFromFile);
 
   void replaceContentText(int start, int end, String content);

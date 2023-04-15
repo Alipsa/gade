@@ -71,6 +71,7 @@ function fetchJfxArtifacts {
 }
 
 # see https://repo1.maven.org/maven2/org/openjfx/javafx/20/javafx-20.pom for info on qualifier names
+# hint: its the javafx.platform property, not the id
 if [[ ! "${PLATFORM}" == "win" ]]; then
   echo "- Downloading windows javafx jars"
   fetchJfxArtifacts win
@@ -82,7 +83,7 @@ if [[ ! "${PLATFORM}" == "linux" ]]; then
 fi
 if [[ ! "${PLATFORM}" == "mac" ]]; then
   echo "- Downloading mac javafx jars"
-  fetchJfxArtifacts macosx-aarch64
+  fetchJfxArtifacts mac-aarch64
 fi
 
 echo "- Building Gade"

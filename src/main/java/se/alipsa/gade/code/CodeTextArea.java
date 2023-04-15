@@ -362,6 +362,9 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     suggestionsPopup.show(this, screenX, screenY);
   }
 
+  /**
+   * compute and set syntax highlighting
+   */
   public void highlightSyntax() {
     setStyleSpans(0, computeHighlighting(getText()));
   }
