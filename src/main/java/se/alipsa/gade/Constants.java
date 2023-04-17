@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import se.alipsa.gade.utils.SystemUtils;
 
 public class Constants {
   public static final String SESSION_MUNIN_CONNECTION = "MuninConnection";
@@ -19,7 +20,10 @@ public class Constants {
   public static final int VGAP = 5;
   public static final Insets FLOWPANE_INSETS = new Insets(5, 10, 5, 5);
 
-  public static final KeyCodeCombination KEY_CODE_COPY = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_ANY);
+  public static final KeyCodeCombination KEY_CODE_COPY =
+          SystemUtils.getPlatform() == SystemUtils.OS.MAC ?
+                  new KeyCodeCombination(KeyCode.C, KeyCombination.META_ANY)
+          : new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_ANY);
 
   public static final String INDENT = "  ";
 
@@ -29,15 +33,15 @@ public class Constants {
   public static final String BLUE_THEME = "blueTheme.css";
 
   public enum Driver {
-    POSTGRES("org.postgresql.Driver", "org.postgresql:postgresql:42.4.0"),
-    MYSQL("com.mysql.jdbc.Driver", "mysql:mysql-connector-java:8.0.29"),
-    MARIADB("org.mariadb.jdbc.Driver", "org.mariadb.jdbc:mariadb-java-client:3.0.6"),
+    POSTGRES("org.postgresql.Driver", "org.postgresql:postgresql:42.6.0"),
+    MYSQL("com.mysql.jdbc.Driver", "com.mysql:mysql-connector-j:8.0.32"),
+    MARIADB("org.mariadb.jdbc.Driver", "org.mariadb.jdbc:mariadb-java-client:3.1.3"),
     H2("org.h2.Driver", "com.h2database:h2:2.1.214"),
-    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17"),
-    SQLLITE("org.sqlite.JDBC", "org.xerial:sqlite-jdbc:3.36.0.3"),
-    FIREBIRD("org.firebirdsql.jdbc.FBDriver", "org.firebirdsql.jdbc:jaybird:4.0.6.java11"),
+    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", "com.microsoft.sqlserver:mssql-jdbc:11.2.2.jre17"),
+    SQLLITE("org.sqlite.JDBC", "org.xerial:sqlite-jdbc:3.41.2.1"),
+    FIREBIRD("org.firebirdsql.jdbc.FBDriver", "org.firebirdsql.jdbc:jaybird:5.0.1.java11"),
     DERBY("org.apache.derby.jdbc.ClientDriver", "org.apache.derby:derby:10.16.1.1"),
-    ORACLE("oracle.jdbc.OracleDriver", "com.oracle.database.jdbc:ojdbc10:19.15.0.0.1"),
+    ORACLE("oracle.jdbc.OracleDriver", "com.oracle.database.jdbc:ojdbc10:19.18.0.0"),
     NONE("", "");
 
     final String driverClass;
