@@ -586,6 +586,10 @@ public class InOut implements GuiInteraction {
     gui.getInoutComponent().viewHtml(html, title);
   }
 
+  public void viewMarkdown(String markdown, String... title) {
+    gui.getInoutComponent().viewMarkdown(markdown, title);
+  }
+
   public void view(File file, String... title) {
     if (file == null) {
       gui.getConsoleComponent().addWarning("view file", "File argument cannot be null", true);
