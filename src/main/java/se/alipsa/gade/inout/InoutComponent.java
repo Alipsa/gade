@@ -4,6 +4,10 @@ import static se.alipsa.gade.menu.GlobalOptions.*;
 import static se.alipsa.gade.utils.TableUtils.transpose;
 import static se.alipsa.gade.utils.TableUtils.transposeAny;
 
+import com.vladsch.flexmark.ext.tables.TablesExtension;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.data.MutableDataSet;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -30,6 +34,7 @@ import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
 
 import java.io.File;
+import java.net.HttpCookie;
 import java.util.*;
 
 public class InoutComponent extends TabPane  {
@@ -44,6 +49,9 @@ public class InoutComponent extends TabPane  {
   private final TextField statusField;
   private boolean enableGit;
 
+  private MutableDataSet flexmarkOptions;
+  private Parser markdownParser;
+  private HtmlRenderer htmlRenderer;
 
   private static final Logger log = LogManager.getLogger(InoutComponent.class);
 
@@ -108,6 +116,7 @@ public class InoutComponent extends TabPane  {
     getTabs().add(viewer);
 
     setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
+
 
   }
 
@@ -355,4 +364,30 @@ public class InoutComponent extends TabPane  {
   public PlotsTab getPlotsTab() {
     return plotsTab;
   }
+
+  public void viewMarkdown(String markdown, String... title) {
+    viewHtml(getHtmlRenderer().render(getMarkdownParser().parse(markdown)), title);
+  }
+
+  private Parser getMarkdownParser() {
+    if (markdownParser == null) {
+      markdownParser = Parser.builder(getFlexmarkOptions()).build();
+    }
+    return markdownParser;
+  }
+
+  private HtmlRenderer getHtmlRenderer() {
+    if (htmlRenderer == null) {
+      htmlRenderer = HtmlRenderer.builder(getFlexmarkOptions()).build();
+    }
+    return htmlRenderer;
+  }
+
+  MutableDataSet getFlexmarkOptions() {
+    if (flexmarkOptions == null) flexmarkOptions = new MutableDataSet();
+    flexmarkOptions.set(Parser.EXTENSIONS, List.of(TablesExtension.create()));
+    return flexmarkOptions;
+  }
+
+
 }
