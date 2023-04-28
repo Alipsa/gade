@@ -42,7 +42,12 @@ JAVA_OPTS="-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.renderer=sun.java2d.mar
 ```
 JAVA_OPTS is a special variable to add system properties (-D values) to java starting up.
 
-On Windows, you can run Gade in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
+Equivalent in windows is (note the placement of quotation marks):
+```shell
+set "JAVA_OPTS=-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine"
+```
+
+On Windows, you can also run Gade in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
 in the env.cmd i.e:
 ```shell
 SET JAVA_CMD=java

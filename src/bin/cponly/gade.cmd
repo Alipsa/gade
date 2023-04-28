@@ -19,16 +19,17 @@ if exist %DIR%\env.cmd (
     call %DIR%\env.cmd
 )
 
+:: Use the bundles version of java
 SET JAVA_HOME=%DIR%
+
+:: if you dont want the console to remain, do start javaw instead of java
 if not defined JAVA_CMD (
 	set JAVA_CMD=javaw
 )
 
 start %BIN_DIR%\%JAVA_CMD% -cp %LIB_DIR%/%JAR_NAME% %JAVA_OPTS% se.alipsa.gade.splash.SplashScreen
 
-:: if you dont want the console to remain, do start javaw instead of java
-
 start %BIN_DIR%\%JAVA_CMD% ^
--Djava.library.path="%LIB_DIR%" -cp %JAR_NAME%;%LIB_DIR%/* ^
+-Djava.library.path="%LIB_DIR%" -cp %JAR_NAME%;%LIB_DIR%\* ^
 %JAVA_OPTS% ^
 se.alipsa.gade.Gade
