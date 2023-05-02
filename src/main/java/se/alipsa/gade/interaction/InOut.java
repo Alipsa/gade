@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
+import se.alipsa.groovy.datautil.gtable.Gtable;
 import se.alipsa.groovy.matrix.Matrix;
 import tech.tablesaw.chart.Chart;
 import tech.tablesaw.chart.Plot;
@@ -118,25 +119,25 @@ public class InOut implements GuiInteraction {
     return gui.getEnvironmentComponent().connect(ci);
   }
   
-  public Table dbSelect(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  public Gtable dbSelect(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Table.read().db(rs);
+      return Gtable.read().db(rs);
     }
   }
 
-  public Table dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  public Gtable dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Table.read().db(rs);
+      return Gtable.read().db(rs);
     }
   }
 
@@ -813,7 +814,7 @@ public class InOut implements GuiInteraction {
         ConnectionInfo dbConnection(String name)
           Return a connection info (object containing the info) for the name defined in the Connections tab.            
                  
-        Table dbSelect(String connectionName, String sqlQuery)
+        Gtable dbSelect(String connectionName, String sqlQuery)
           Convenient way to query a database using a connection defined in the Connections tab.
                   
         public int dbUpdate(String connectionName, String sqlQuery) 

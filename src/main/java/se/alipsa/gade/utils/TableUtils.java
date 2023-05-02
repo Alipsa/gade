@@ -1,8 +1,5 @@
 package se.alipsa.gade.utils;
 
-import tech.tablesaw.api.Row;
-import tech.tablesaw.api.Table;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,18 +43,5 @@ public class TableUtils {
       }
     }
     return transposedMatrix;
-  }
-
-  public static List<List<?>> toRowList(Table table) {
-    List<List<?>> rowList = new ArrayList<>(table.rowCount());
-    int ncol = table.columnCount();
-    for (Row row : table) {
-      List<Object> r = new ArrayList<>();
-      for (int i = 0; i < ncol; i++) {
-        r.add(row.getObject(i));
-      }
-      rowList.add(r);
-    }
-    return  rowList;
   }
 }

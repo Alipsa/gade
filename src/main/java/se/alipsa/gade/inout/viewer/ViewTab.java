@@ -2,7 +2,8 @@ package se.alipsa.gade.inout.viewer;
 
 import static se.alipsa.gade.Constants.KEY_CODE_COPY;
 import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
-import static se.alipsa.gade.utils.TableUtils.toRowList;
+
+import se.alipsa.groovy.datautil.TableUtil;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -54,7 +55,7 @@ public class ViewTab extends Tab {
   public void viewTable(Table table, String... title) {
     List<String> types = new ArrayList<>();
     table.types().forEach(t -> types.add(t.name()));
-    viewTable(table.columnNames(), toRowList(table), types, title);
+    viewTable(table.columnNames(), TableUtil.toRowList(table), types, title);
   }
 
   public void viewTable(Matrix tableMatrix, String... title) {
