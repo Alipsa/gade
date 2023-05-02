@@ -1,9 +1,10 @@
 # Gade
 ## A Groovy based Analytics Development Environment for Analysts and Data Scientists 
 
-Gade started off as a fork of [Ride](/alipsa/ride) but I wanted a simpler, more integrated set-up for Groovy based Data Science work. 
+Gade started off as a fork of [Ride](/Alipsa/ride), but I wanted a simpler, more integrated set-up for Groovy based Data Science work. 
 Since there is no equivalent to a data.frame OOTB in Java or Groovy, I decided to use [Tablesaw](/jtablesaw/tablesaw) 
-and integrate it as much as possible to get a similarly convenient experience as in R.
+and integrate it as much as possible to get a similarly convenient experience as in R. In order to do so, I created a subclass of the
+Tablesaw Table class called Gtable (available outside of Gade in the [data-utils](/Alipsa/data-utils) library).
 
 The purpose of this IDE is to provide a groovy development environment for data analysis, visualization, model building, and machine learning. 
 It runs Groovy code in the Groovy ScriptEngine thus allowing you to be conveniently used for ad-hoc work as well as for creating
@@ -13,7 +14,7 @@ It is fully functional i.e. it is possible to create, open, save and execute Gro
 run selected text, ctrl + enter execution of current line or selected text,
 see variables created, syntax highlighting for XML, SQL, Java, Groovy, Javascript etc.
 It also has wizards to create Groovy applications or Libraries and of course, integrated support 
-for git and maven making it a very convenient development environment for analytics and data science.
+for git and gradle making it a very convenient development environment for analytics and data science.
 
 ![Screenshot](https://raw.githubusercontent.com/perNyfelt/gade/master/docs/Screenshot.png "Screenshot")
 
@@ -144,8 +145,16 @@ Apache Software License, Version 2.0.
 Used to provide git support. 
 Eclipse Distribution License v1.0
 
+### se.alipsa.groovy:matrix
+A data container library for Groovy, similar to Joinery and Tablesaw for Java.
+MIT license.
+
 ### se.alipsa.groovy:data-utils
 Makes it possible to load jdbc drivers without having to resort to the system classloader.
+MIT license.
+
+### se.alipsa.groovy:datasets
+Commonly used datasets in other data science languages (R, Python/Pandas) such as mtcars, Iris etc.
 MIT license.
 
 ### se.alipsa:simple-rest
@@ -154,6 +163,11 @@ MIT license.
 
 ### se.alipsa.groovy:gmd
 Provides support for processing Groovy Markdown (gmd).
+MIT license.
+
+### se.alipsa.groovy:charts
+A chart library for Groovy. Provides integration with Javafx Chart, Tablesaw Plotly charts, and (work in progress) a 
+grammar of graphics implementation for Grooy similar to ggplo2. 
 MIT license.
 
 # Contributing
