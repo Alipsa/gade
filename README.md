@@ -25,9 +25,9 @@ There are icons for windows and Linux in the base folder of the unpacked zip tha
 
 Use gade.cmd or gade.sh to start Gade.
 
-If you want to run the bash script from windows git bash (msys), create a shortcut with the comment
+If you want to run the bash script from windows git bash (msys), create a shortcut with the command
 `D:\whatever\Git\bin\bash.exe ./gade.sh`
-Where D:\whatever is the path to your git for windows installation
+Where `D:\whatever` is the path to your git for windows installation
 Also set the working dir in the shortcut to wherever you installed Gade.
 
 If you want to override or customize startup options you can create a file called env.sh (or env.cmd) in the base directory
