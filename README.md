@@ -1,12 +1,10 @@
 # Gade
 ## A Groovy based Analytics Development Environment for Analysts and Data Scientists 
 
-
-
 Gade started off as a fork of [Ride](/Alipsa/ride), but I wanted a simpler, more integrated set-up for Groovy based Data Science work.
 Since there is no equivalent to a data.frame OOTB in Java or Groovy, I created the [matrix](https://github.com/Alipsa/matrix) library for that.
 However, I also decided to fully support the [Tablesaw](/jtablesaw/tablesaw) library to provide a very mature data management
-library. In order to do so, I created a subclass of the Tablesaw Table class called Gtable 
+library. To make Tablesaw slightly Groovier, I created a subclass of the Tablesaw Table class called Gtable 
 (available outside of Gade in the [data-utils](/Alipsa/data-utils) library).
 
 The purpose of this IDE is to provide a groovy development environment for data analysis, visualization, model building, and machine learning. 
