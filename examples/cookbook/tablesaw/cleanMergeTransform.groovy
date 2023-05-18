@@ -27,17 +27,20 @@ def comparator = { a,b ->
 } as Comparator  
 
 comparedData = data.sortOn(comparator)
+//io.view(comparedData, "Tablesaw")
 
 // Remove rows with missing Solar.R values
 solarData = data.dropWhere(data.column("Solar.R").isMissing())
 
 // Remove outliers
 filtered = data.dropWhere(
-    data.numberColumn("Wind").isGreaterThan(20)
-    .and(data.numberColumn("Solar.R").isLessThan(20))
+    data.numberColumn("Wind").isGreaterThan(20.0)
+    .and(data.numberColumn("Solar.R").isLessThan(20.0))
 )
+//io.view(filtered.sortOn("Month", "Day"))
 
 filtered2 = data.where(
     data.numberColumn("Wind").isLessThan(20)
         .and(data.numberColumn("Solar.R").isGreaterThan(20))
 )
+//io.view(filtered2.sortOn("Month", "Day"))

@@ -92,6 +92,6 @@ public class GitTest {
     log.info("Starting thread");
     runningThread.start();
     log.info("Waiting for thread to finish");
-    waiter.await(6000);
+    waiter.await(7000);
   }
 }

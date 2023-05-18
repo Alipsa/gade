@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
+    id 'org.openjfx.javafxplugin' version '0.0.14'
     id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
@@ -19,7 +19,7 @@ ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 javafx {
-    version = "20" // must be in sync with install.sh
+    version = "20.0.1" // must be in sync with install.sh
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
 }
 
@@ -40,12 +40,12 @@ repositories {
 }
 
 dependencies {
-    def jacksonVersion = '2.14.2'
-    def tikaVersion = '2.7.0'
+    def jacksonVersion = '2.15.1'
+    def tikaVersion = '2.8.0'
     def jgitVersion = '6.5.0.202303070854-r'
     def tablesawVersion = "0.43.1"
     def log4jVersion = "2.20.0"
-    def groovyVersion = "4.0.11"
+    def groovyVersion = "4.0.12"
 
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
@@ -55,12 +55,12 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
 
     // Used by se.alipsa.gade.utils.SemanticVersion
-    implementation 'org.apache.maven:maven-artifact:3.9.1'
+    implementation 'org.apache.maven:maven-artifact:3.9.2'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'org.jsoup:jsoup:1.15.4'
+    implementation 'org.jsoup:jsoup:1.16.1'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation 'org.fxmisc.richtext:richtextfx:0.11.0'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
@@ -68,15 +68,15 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'commons-io:commons-io:2.12.0'
     implementation 'com.github.jsqlparser:jsqlparser:4.6'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.0.2'
+    implementation 'org.gradle:gradle-tooling-api:8.1.1'
     implementation 'org.jetbrains:annotations:24.0.1'
-    implementation 'io.github.classgraph:classgraph:4.8.157'
+    implementation 'io.github.classgraph:classgraph:4.8.158'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
@@ -84,18 +84,18 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-json:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-html:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
-    implementation 'com.vladsch.flexmark:flexmark-all:0.64.0'
+    implementation 'com.vladsch.flexmark:flexmark-all:0.64.4'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.4-SNAPSHOT'
     implementation 'se.alipsa.groovy:gmd:1.0.7'
     implementation 'se.alipsa:simple-rest:1.0.5'
-    implementation 'se.alipsa.groovy:matrix:1.1.1-SNAPSHOT'
-    implementation 'se.alipsa.groovy:datasets:1.0.1-SNAPSHOT'
-    implementation 'se.alipsa.groovy:spreadsheet:1.0.0-SNAPSHOT'
-    implementation 'se.alipsa.groovy:charts:1.0.0-SNAPSHOT'
+    implementation 'se.alipsa.groovy:matrix:1.1.1'
+    implementation 'se.alipsa.groovy:matrix-datasets:1.0.1'
+    implementation 'se.alipsa.groovy:matrix-spreadsheet:1.0.0'
+    implementation 'se.alipsa.groovy:matrix-charts:1.0.0-SNAPSHOT'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
 
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
@@ -113,6 +113,13 @@ static def getDate() {
     def date = new Date()
     def formattedDate = date.format('yyyy-MMM-dd_HH.mm.ss')
     return formattedDate
+}
+
+clean {
+    // include the platform jdks as otherwise, updating the version will not "take"
+    delete "$projectDir/platform/linux"
+    delete "$projectDir/platform/win"
+    delete "$projectDir/platform/mac"
 }
 
 processResources.doLast {
@@ -194,7 +201,7 @@ runtime {
     }
     // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
     def baseUrl = "https://download.bell-sw.com/java"
-    def version = "17.0.6+10"
+    def version = "17.0.7+7"
 
     targetPlatform("linux") {
         jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-linux-amd64-full.tar.gz") {

@@ -60,7 +60,7 @@ echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM} "
 cd "${SCRIPT_DIR}" || exit
 
 # Workaround if building for windows from linux and local repo does not have windows javafx jars:
-jfxVersion=20
+jfxVersion=20.0.1
 
 function fetchJfxArtifacts {
   qualifier=$1
