@@ -62,31 +62,38 @@ public abstract class TextAreaTab extends Tab implements TabTextArea {
     buttonPane.getChildren().add(saveButton);
 
     super.setOnCloseRequest(event -> {
-          if (isChanged()) {
-            ButtonType yes = new ButtonType("Yes", ButtonBar.ButtonData.OK_DONE);
-            ButtonType no = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.getButtonTypes().clear();
-            alert.getButtonTypes().addAll(yes, no);
-            alert.setTitle("File is not saved");
-            alert.setHeaderText("Save file " + getTitle());
-            alert.initOwner(gui.getStage());
-            String styleSheetPath = gui.getPrefs().get(THEME, BRIGHT_THEME);
-
-            URL styleSheetUrl = FileUtils.getResourceUrl(styleSheetPath);
-            if (styleSheetUrl != null) {
-              alert.getDialogPane().getStylesheets().add(styleSheetUrl.toExternalForm());
-            }
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == yes) {
-              gui.getMainMenu().saveContent(this);
-            } else {
-              // ... user chose CANCEL or closed the dialog
-            }
-          }
+          checkSave(gui);
         }
     );
+  }
+
+  protected boolean checkSave(Gade gui) {
+    if (isChanged()) {
+      ButtonType yes = new ButtonType("Yes", ButtonBar.ButtonData.OK_DONE);
+      ButtonType no = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
+      Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+      alert.getButtonTypes().clear();
+      alert.getButtonTypes().addAll(yes, no);
+      alert.setTitle("File is not saved");
+      alert.setHeaderText("Save file " + getTitle());
+      alert.initOwner(gui.getStage());
+      String styleSheetPath = gui.getPrefs().get(THEME, BRIGHT_THEME);
+
+      URL styleSheetUrl = FileUtils.getResourceUrl(styleSheetPath);
+      if (styleSheetUrl != null) {
+        alert.getDialogPane().getStylesheets().add(styleSheetUrl.toExternalForm());
+      }
+
+      Optional<ButtonType> result = alert.showAndWait();
+      if (result.get() == yes) {
+        gui.getMainMenu().saveContent(this);
+        return true;
+      } else {
+        // ... user chose CANCEL or closed the dialog
+        return false;
+      }
+    }
+    return true;
   }
 
   public String getTitle() {

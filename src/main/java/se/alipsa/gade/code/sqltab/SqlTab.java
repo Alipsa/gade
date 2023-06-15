@@ -76,7 +76,8 @@ public class SqlTab extends TextAreaTab {
     });
 
     setOnCloseRequest(r -> {
-      if (con != null) {
+      boolean isClosing = super.checkSave(getGui());
+      if (con != null && isClosing) {
         try {
           con.close();
         } catch (SQLException e) {
