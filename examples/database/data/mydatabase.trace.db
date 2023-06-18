@@ -1,0 +1,1119 @@
+2022-08-10 12:20:35 database: close
+org.h2.message.DbException: IO Exception: "Closing" [90028-214]
+	at org.h2.message.DbException.get(DbException.java:212)
+	at org.h2.mvstore.db.Store.close(Store.java:402)
+	at org.h2.engine.Database.closeOpenFilesAndUnlock(Database.java:1261)
+	at org.h2.engine.Database.closeImpl(Database.java:1225)
+	at org.h2.engine.Database.close(Database.java:1144)
+	at org.h2.engine.Database.removeSession(Database.java:1072)
+	at org.h2.engine.SessionLocal.close(SessionLocal.java:899)
+	at org.h2.jdbc.JdbcConnection.close(JdbcConnection.java:360)
+	at groovy.sql.Sql.close(Sql.java:3389)
+	at java_lang_AutoCloseable$close.call(Unknown Source)
+	at se.alipsa.groovy.datautil.SqlUtil.withInstance(SqlUtil.groovy:64)
+	at se.alipsa.groovy.datautil.SqlUtil$withInstance.callStatic(Unknown Source)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallStatic(CallSiteArray.java:53)
+	at se.alipsa.groovy.datautil.SqlUtil$withInstance.callStatic(Unknown Source)
+	at se.alipsa.groovy.datautil.SqlUtil.withInstance(SqlUtil.groovy:97)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:318)
+	at Script3.run(Script3.groovy:13)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:331)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:161)
+	at java.scripting/javax.script.AbstractScriptEngine.eval(AbstractScriptEngine.java:262)
+	at se.alipsa.gade.console.ConsoleComponent.executeScriptAndReport(ConsoleComponent.java:664)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:371)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:366)
+	at javafx.graphics/javafx.concurrent.Task$TaskCallable.call(Task.java:1426)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+Caused by: org.h2.jdbc.JdbcSQLNonTransientException: IO Exception: "Closing" [90028-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:554)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	... 26 more
+Caused by: org.h2.mvstore.MVStoreException: java.lang.ClassCastException: class org.h2.mvstore.Chunk cannot be cast to class org.h2.mvstore.Chunk (org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @292ce8b8; org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @4869ce48) [2.1.214/3]
+	at org.h2.mvstore.DataUtils.newMVStoreException(DataUtils.java:1004)
+	at org.h2.mvstore.MVStore.compactMoveChunks(MVStore.java:2052)
+	at org.h2.mvstore.MVStore.compactFile(MVStore.java:2282)
+	at org.h2.mvstore.MVStore.closeStore(MVStore.java:1329)
+	at org.h2.mvstore.MVStore.close(MVStore.java:1291)
+	at org.h2.mvstore.db.Store.close(Store.java:386)
+	... 24 more
+Caused by: java.lang.ClassCastException: class org.h2.mvstore.Chunk cannot be cast to class org.h2.mvstore.Chunk (org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @292ce8b8; org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @4869ce48)
+	at org.h2.mvstore.Chunk$PositionComparator.compare(Chunk.java:537)
+	at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:355)
+	at java.base/java.util.TimSort.sort(TimSort.java:220)
+	at java.base/java.util.Arrays.sort(Arrays.java:1307)
+	at java.base/java.util.ArrayList.sort(ArrayList.java:1721)
+	at org.h2.mvstore.MVStore.findChunksToMove(MVStore.java:2103)
+	at org.h2.mvstore.MVStore.compactMoveChunks(MVStore.java:2064)
+	at org.h2.mvstore.MVStore.compactMoveChunks(MVStore.java:2041)
+	... 28 more
+2022-08-10 12:21:02 database: close
+org.h2.message.DbException: IO Exception: "Closing" [90028-214]
+	at org.h2.message.DbException.get(DbException.java:212)
+	at org.h2.mvstore.db.Store.close(Store.java:402)
+	at org.h2.engine.Database.closeOpenFilesAndUnlock(Database.java:1261)
+	at org.h2.engine.Database.closeImpl(Database.java:1225)
+	at org.h2.engine.Database.close(Database.java:1144)
+	at org.h2.engine.Database.removeSession(Database.java:1072)
+	at org.h2.engine.SessionLocal.close(SessionLocal.java:899)
+	at org.h2.jdbc.JdbcConnection.close(JdbcConnection.java:360)
+	at groovy.sql.Sql.close(Sql.java:3389)
+	at java_lang_AutoCloseable$close.call(Unknown Source)
+	at se.alipsa.groovy.datautil.SqlUtil.withInstance(SqlUtil.groovy:64)
+	at se.alipsa.groovy.datautil.SqlUtil$withInstance.callStatic(Unknown Source)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallStatic(CallSiteArray.java:53)
+	at se.alipsa.groovy.datautil.SqlUtil$withInstance.callStatic(Unknown Source)
+	at se.alipsa.groovy.datautil.SqlUtil.withInstance(SqlUtil.groovy:97)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:318)
+	at createTable.run(createTable.groovy:5)
+	at groovy.lang.GroovyShell.evaluate(GroovyShell.java:460)
+	at groovy.lang.GroovyShell.evaluate(GroovyShell.java:504)
+	at groovy.lang.Script.evaluate(Script.java:241)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:343)
+	at groovy.lang.MetaMethod.doMethodInvoke(MetaMethod.java:328)
+	at groovy.lang.MetaClassImpl.doInvokeMethod(MetaClassImpl.java:1371)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1103)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1009)
+	at groovy.lang.DelegatingMetaClass.invokeMethod(DelegatingMetaClass.java:165)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl$3.invokeMethod(GroovyScriptEngineImpl.java:315)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.selectMethod(IndyInterface.java:346)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:318)
+	at Script3.run(Script3.groovy:10)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:331)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:161)
+	at java.scripting/javax.script.AbstractScriptEngine.eval(AbstractScriptEngine.java:262)
+	at se.alipsa.gade.console.ConsoleComponent.executeScriptAndReport(ConsoleComponent.java:664)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:371)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:366)
+	at javafx.graphics/javafx.concurrent.Task$TaskCallable.call(Task.java:1426)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+Caused by: org.h2.jdbc.JdbcSQLNonTransientException: IO Exception: "Closing" [90028-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:554)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	... 43 more
+Caused by: org.h2.mvstore.MVStoreException: java.lang.ClassCastException: class org.h2.mvstore.Chunk cannot be cast to class org.h2.mvstore.Chunk (org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @292ce8b8; org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @4869ce48) [2.1.214/3]
+	at org.h2.mvstore.DataUtils.newMVStoreException(DataUtils.java:1004)
+	at org.h2.mvstore.MVStore.compactMoveChunks(MVStore.java:2052)
+	at org.h2.mvstore.MVStore.compactFile(MVStore.java:2282)
+	at org.h2.mvstore.MVStore.closeStore(MVStore.java:1329)
+	at org.h2.mvstore.MVStore.close(MVStore.java:1291)
+	at org.h2.mvstore.db.Store.close(Store.java:386)
+	... 41 more
+Caused by: java.lang.ClassCastException: class org.h2.mvstore.Chunk cannot be cast to class org.h2.mvstore.Chunk (org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @292ce8b8; org.h2.mvstore.Chunk is in unnamed module of loader groovy.lang.GroovyClassLoader @4869ce48)
+	at org.h2.mvstore.Chunk$PositionComparator.compare(Chunk.java:537)
+	at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:355)
+	at java.base/java.util.TimSort.sort(TimSort.java:220)
+	at java.base/java.util.Arrays.sort(Arrays.java:1307)
+	at java.base/java.util.ArrayList.sort(ArrayList.java:1721)
+	at org.h2.mvstore.MVStore.findChunksToMove(MVStore.java:2103)
+	at org.h2.mvstore.MVStore.compactMoveChunks(MVStore.java:2064)
+	at org.h2.mvstore.MVStore.compactMoveChunks(MVStore.java:2041)
+	... 45 more
+2022-08-10 14:02:28 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston[*]-robberies.csv(\000aMonth VARCHAR(8000),\000aRecord INTEGER,\000aRobberies INTEGERCONSTRAINT pk_boston-robberies.csv PRIMARY KEY ()\000a);"; SQL statement:
+create table boston-robberies.csv(
+Month VARCHAR(8000),
+Record INTEGER,
+Robberies INTEGERCONSTRAINT pk_boston-robberies.csv PRIMARY KEY ()
+); [42000-214]
+2022-08-10 14:07:37 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table ____________________(\000a[*]Month VARCHAR(8000),\000aRecord INTEGER,\000aRobberies INTEGER\000a);"; expected "identifier"; SQL statement:
+create table ____________________(
+Month VARCHAR(8000),
+Record INTEGER,
+Robberies INTEGER
+); [42001-214]
+2022-08-10 14:08:36 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston[*]-robberies_csv(\000aMonth VARCHAR(8000),\000aRecord INTEGER,\000aRobberies INTEGER\000a);"; SQL statement:
+create table boston-robberies_csv(
+Month VARCHAR(8000),
+Record INTEGER,
+Robberies INTEGER
+); [42000-214]
+2022-08-10 14:10:50 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston[*]-robberies_csv(\000aMonth VARCHAR(8000),\000aRecord INTEGER,\000aRobberies INTEGER\000a);"; SQL statement:
+create table boston-robberies_csv(
+Month VARCHAR(8000),
+Record INTEGER,
+Robberies INTEGER
+); [42000-214]
+2022-08-10 14:11:04 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE TABLE boston_robberies_csv ([*]Month VARCHAR (8000), Record INTEGER, Robberies INTEGER)"; expected "identifier"; SQL statement:
+CREATE TABLE boston_robberies_csv (Month VARCHAR (8000), Record INTEGER, Robberies INTEGER) [42001-214]
+2022-08-10 14:11:46 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies_csv(\000a[*]'Month' VARCHAR(8000),\000a'Record' INTEGER,\000a'Robberies' INTEGER\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies_csv(
+'Month' VARCHAR(8000),
+'Record' INTEGER,
+'Robberies' INTEGER
+); [42001-214]
+2022-08-10 14:12:29 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies_csv(\000a  [*]'Month' VARCHAR(8000),\000a  'Record' INTEGER,\000a  'Robberies' INTEGER\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies_csv(
+  'Month' VARCHAR(8000),
+  'Record' INTEGER,
+  'Robberies' INTEGER
+); [42001-214]
+2022-08-10 14:14:39 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies(\000a  [*]'Month' VARCHAR(8000),\000a  'Record' INTEGER,\000a  'Robberies' INTEGER\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies(
+  'Month' VARCHAR(8000),
+  'Record' INTEGER,
+  'Robberies' INTEGER
+); [42001-214]
+2022-08-10 14:15:35 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE TABLE boston_robberies_csv ([*]Month VARCHAR (8000))"; expected "identifier"; SQL statement:
+CREATE TABLE boston_robberies_csv (Month VARCHAR (8000)) [42001-214]
+2022-08-10 14:15:43 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies_csv(\000a  [*]'Month' VARCHAR(8000)\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies_csv(
+  'Month' VARCHAR(8000)
+); [42001-214]
+2022-08-10 14:15:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies_csv (\000a  [*]'Month' VARCHAR(8000)\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies_csv (
+  'Month' VARCHAR(8000)
+); [42001-214]
+2022-08-10 14:16:43 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies_csv (\000a  [*]'Month' VARCHAR(8000),\000a  'Record' INT,\000a  'Robberies' INT\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies_csv (
+  'Month' VARCHAR(8000),
+  'Record' INT,
+  'Robberies' INT
+); [42001-214]
+2022-08-10 14:16:56 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table boston_robberies_csv (\000a  [*]'Month' VARCHAR(2000),\000a  'Record' INTEGER,\000a  'Robberies' INTEGER\000a);"; expected "identifier"; SQL statement:
+create table boston_robberies_csv (
+  'Month' VARCHAR(2000),
+  'Record' INTEGER,
+  'Robberies' INTEGER
+); [42001-214]
+2022-08-10 14:18:22 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE TABLE boston_robberies_csv ([*]Month VARCHAR (8000), Record INTEGER, Robberies INTEGER)"; expected "identifier"; SQL statement:
+CREATE TABLE boston_robberies_csv (Month VARCHAR (8000), Record INTEGER, Robberies INTEGER) [42001-214]
+2022-08-10 14:18:46 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE TABLE boston_robberies_csv ([*]Month VARCHAR (8000) null, Record INTEGER not null, Robberies INTEGER null)"; expected "identifier"; SQL statement:
+CREATE TABLE boston_robberies_csv (Month VARCHAR (8000) null, Record INTEGER not null, Robberies INTEGER null) [42001-214]
+2022-08-10 14:25:11 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "BOSTON_ROBBERIES_CSV" already exists; SQL statement:
+create table boston_robberies_csv(
+"Month" VARCHAR(8000),
+"Record" INTEGER,
+"Robberies" INTEGER
+) [42101-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-01', 1, 41 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-01', 1, 41 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-02', 2, 39 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-02', 2, 39 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-03', 3, 50 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-03', 3, 50 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-04', 4, 40 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-04', 4, 40 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-05', 5, 43 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-05', 5, 43 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-06', 6, 38 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-06', 6, 38 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-07', 7, 44 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-07', 7, 44 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-08', 8, 35 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-08', 8, 35 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-09', 9, 39 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-09', 9, 39 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-10', 10, 35 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-10', 10, 35 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-11', 11, 29 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-11', 11, 29 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-12', 12, 49 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-12', 12, 49 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-01', 13, 50 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-01', 13, 50 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-02', 14, 59 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-02', 14, 59 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-03', 15, 63 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-03', 15, 63 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-04', 16, 32 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-04', 16, 32 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-05', 17, 39 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-05', 17, 39 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-06', 18, 47 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-06', 18, 47 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-07', 19, 53 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-07', 19, 53 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-08', 20, 60 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-08', 20, 60 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-09', 21, 57 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-09', 21, 57 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-10', 22, 52 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-10', 22, 52 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-11', 23, 70 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-11', 23, 70 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-12', 24, 90 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-12', 24, 90 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-01', 25, 74 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-01', 25, 74 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-02', 26, 62 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-02', 26, 62 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-03', 27, 55 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-03', 27, 55 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-04', 28, 84 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-04', 28, 84 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-05', 29, 94 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-05', 29, 94 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-06', 30, 70 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-06', 30, 70 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-07', 31, 108 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-07', 31, 108 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-08', 32, 139 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-08', 32, 139 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-09', 33, 120 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-09', 33, 120 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-10', 34, 97 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-10', 34, 97 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-11', 35, 126 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-11', 35, 126 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-12', 36, 149 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-12', 36, 149 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-01', 37, 158 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-01', 37, 158 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-02', 38, 124 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-02', 38, 124 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-03', 39, 140 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-03', 39, 140 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-04', 40, 109 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-04', 40, 109 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-05', 41, 114 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-05', 41, 114 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-06', 42, 77 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-06', 42, 77 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-07', 43, 120 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-07', 43, 120 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-08', 44, 133 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-08', 44, 133 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-09', 45, 110 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-09', 45, 110 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-10', 46, 92 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-10', 46, 92 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-11', 47, 97 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-11', 47, 97 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-12', 48, 78 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-12', 48, 78 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-01', 49, 99 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-01', 49, 99 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-02', 50, 107 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-02', 50, 107 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-03', 51, 112 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-03', 51, 112 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-04', 52, 90 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-04', 52, 90 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-05', 53, 98 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-05', 53, 98 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-06', 54, 125 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-06', 54, 125 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-07', 55, 155 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-07', 55, 155 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-08', 56, 190 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-08', 56, 190 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-09', 57, 236 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-09', 57, 236 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-10', 58, 189 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-10', 58, 189 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-11', 59, 174 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-11', 59, 174 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-12', 60, 178 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-12', 60, 178 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-01', 61, 136 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-01', 61, 136 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-02', 62, 161 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-02', 62, 161 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-03', 63, 171 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-03', 63, 171 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-04', 64, 149 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-04', 64, 149 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-05', 65, 184 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-05', 65, 184 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-06', 66, 155 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-06', 66, 155 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-07', 67, 276 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-07', 67, 276 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-08', 68, 224 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-08', 68, 224 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-09', 69, 213 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-09', 69, 213 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-10', 70, 279 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-10', 70, 279 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-11', 71, 268 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-11', 71, 268 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-12', 72, 287 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-12', 72, 287 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-01', 73, 238 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-01', 73, 238 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-02', 74, 213 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-02', 74, 213 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-03', 75, 257 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-03', 75, 257 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-04', 76, 293 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-04', 76, 293 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-05', 77, 212 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-05', 77, 212 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-06', 78, 246 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-06', 78, 246 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-07', 79, 353 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-07', 79, 353 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-08', 80, 339 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-08', 80, 339 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-09', 81, 308 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-09', 81, 308 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-10', 82, 247 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-10', 82, 247 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-11', 83, 257 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-11', 83, 257 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-12', 84, 322 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-12', 84, 322 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-01', 85, 298 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-01', 85, 298 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-02', 86, 273 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-02', 86, 273 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-03', 87, 312 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-03', 87, 312 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-04', 88, 249 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-04', 88, 249 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-05', 89, 286 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-05', 89, 286 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-06', 90, 279 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-06', 90, 279 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-07', 91, 309 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-07', 91, 309 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-08', 92, 401 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-08', 92, 401 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-09', 93, 309 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-09', 93, 309 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-10', 94, 328 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-10', 94, 328 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-11', 95, 353 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-11', 95, 353 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-12', 96, 354 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-12', 96, 354 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-01', 97, 327 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-01', 97, 327 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-02', 98, 324 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-02', 98, 324 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-03', 99, 285 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-03', 99, 285 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-04', 100, 243 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-04', 100, 243 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-05', 101, 241 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-05', 101, 241 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-06', 102, 287 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-06', 102, 287 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-07', 103, 355 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-07', 103, 355 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-08', 104, 460 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-08', 104, 460 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-09', 105, 364 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-09', 105, 364 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-10', 106, 487 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-10', 106, 487 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-11', 107, 452 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-11', 107, 452 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-12', 108, 391 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-12', 108, 391 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-01', 109, 500 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-01', 109, 500 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-02', 110, 451 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-02', 110, 451 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-03', 111, 375 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-03', 111, 375 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-04', 112, 372 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-04', 112, 372 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-05', 113, 302 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-05', 113, 302 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-06', 114, 316 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-06', 114, 316 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-07', 115, 398 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-07', 115, 398 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-08', 116, 394 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-08', 116, 394 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-09', 117, 431 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-09', 117, 431 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1975-10', 118, 431 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1975-10', 118, 431 );  [42001-214]
+2022-08-10 14:29:05 jdbc[3]: exception
+org.h2.jdbc.JdbcBatchUpdateException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-01', 1, 41 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-01', 1, 41 );  [42001-214]
+	at org.h2.jdbc.JdbcStatement.executeBatch(JdbcStatement.java:800)
+	at se.alipsa.gade.interaction.InOut.insert(InOut.java:311)
+	at se.alipsa.gade.interaction.InOut.create(InOut.java:247)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:318)
+	at Script2.run(Script2.groovy:15)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:331)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:161)
+	at java.scripting/javax.script.AbstractScriptEngine.eval(AbstractScriptEngine.java:262)
+	at se.alipsa.gade.console.ConsoleComponent.executeScriptAndReport(ConsoleComponent.java:664)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:371)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:366)
+	at javafx.graphics/javafx.concurrent.Task$TaskCallable.call(Task.java:1426)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-01', 1, 41 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-01', 1, 41 );  [42001-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:502)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	at org.h2.message.DbException.getSyntaxError(DbException.java:261)
+	at org.h2.command.Parser.readIdentifier(Parser.java:5656)
+	at org.h2.command.Parser.parseColumn(Parser.java:1256)
+	at org.h2.command.Parser.parseColumnList(Parser.java:1241)
+	at org.h2.command.Parser.parseInsert(Parser.java:1641)
+	at org.h2.command.Parser.parsePrepared(Parser.java:814)
+	at org.h2.command.Parser.parse(Parser.java:689)
+	at org.h2.command.Parser.parse(Parser.java:661)
+	at org.h2.command.Parser.prepareCommand(Parser.java:569)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:631)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:554)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1116)
+	at org.h2.jdbc.JdbcStatement.executeUpdateInternal(JdbcStatement.java:186)
+	at org.h2.jdbc.JdbcStatement.executeBatchElement(JdbcStatement.java:842)
+	at org.h2.jdbc.JdbcStatement.executeBatch(JdbcStatement.java:794)
+	at se.alipsa.gade.interaction.InOut.insert(InOut.java:311)
+	at se.alipsa.gade.interaction.InOut.create(InOut.java:247)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:318)
+	at Script2.run(Script2.groovy:15)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:331)
+	at org.codehaus.groovy.jsr223.GroovyScriptEngineImpl.eval(GroovyScriptEngineImpl.java:161)
+	at java.scripting/javax.script.AbstractScriptEngine.eval(AbstractScriptEngine.java:262)
+	at se.alipsa.gade.console.ConsoleComponent.executeScriptAndReport(ConsoleComponent.java:664)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:371)
+	at se.alipsa.gade.console.ConsoleComponent$2.call(ConsoleComponent.java:366)
+	at javafx.graphics/javafx.concurrent.Task$TaskCallable.call(Task.java:1426)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-02', 2, 39 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-02', 2, 39 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-03', 3, 50 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-03', 3, 50 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-04', 4, 40 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-04', 4, 40 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-05', 5, 43 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-05', 5, 43 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-06', 6, 38 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-06', 6, 38 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-07', 7, 44 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-07', 7, 44 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-08', 8, 35 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-08', 8, 35 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-09', 9, 39 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-09', 9, 39 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-10', 10, 35 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-10', 10, 35 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-11', 11, 29 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-11', 11, 29 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1966-12', 12, 49 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1966-12', 12, 49 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-01', 13, 50 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-01', 13, 50 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-02', 14, 59 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-02', 14, 59 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-03', 15, 63 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-03', 15, 63 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-04', 16, 32 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-04', 16, 32 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-05', 17, 39 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-05', 17, 39 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-06', 18, 47 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-06', 18, 47 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-07', 19, 53 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-07', 19, 53 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-08', 20, 60 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-08', 20, 60 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-09', 21, 57 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-09', 21, 57 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-10', 22, 52 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-10', 22, 52 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-11', 23, 70 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-11', 23, 70 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1967-12', 24, 90 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1967-12', 24, 90 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-01', 25, 74 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-01', 25, 74 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-02', 26, 62 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-02', 26, 62 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-03', 27, 55 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-03', 27, 55 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-04', 28, 84 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-04', 28, 84 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-05', 29, 94 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-05', 29, 94 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-06', 30, 70 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-06', 30, 70 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-07', 31, 108 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-07', 31, 108 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-08', 32, 139 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-08', 32, 139 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-09', 33, 120 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-09', 33, 120 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-10', 34, 97 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-10', 34, 97 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-11', 35, 126 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-11', 35, 126 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1968-12', 36, 149 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1968-12', 36, 149 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-01', 37, 158 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-01', 37, 158 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-02', 38, 124 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-02', 38, 124 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-03', 39, 140 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-03', 39, 140 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-04', 40, 109 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-04', 40, 109 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-05', 41, 114 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-05', 41, 114 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-06', 42, 77 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-06', 42, 77 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-07', 43, 120 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-07', 43, 120 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-08', 44, 133 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-08', 44, 133 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-09', 45, 110 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-09', 45, 110 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-10', 46, 92 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-10', 46, 92 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-11', 47, 97 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-11', 47, 97 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1969-12', 48, 78 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1969-12', 48, 78 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-01', 49, 99 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-01', 49, 99 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-02', 50, 107 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-02', 50, 107 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-03', 51, 112 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-03', 51, 112 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-04', 52, 90 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-04', 52, 90 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-05', 53, 98 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-05', 53, 98 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-06', 54, 125 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-06', 54, 125 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-07', 55, 155 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-07', 55, 155 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-08', 56, 190 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-08', 56, 190 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-09', 57, 236 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-09', 57, 236 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-10', 58, 189 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-10', 58, 189 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-11', 59, 174 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-11', 59, 174 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1970-12', 60, 178 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1970-12', 60, 178 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-01', 61, 136 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-01', 61, 136 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-02', 62, 161 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-02', 62, 161 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-03', 63, 171 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-03', 63, 171 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-04', 64, 149 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-04', 64, 149 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-05', 65, 184 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-05', 65, 184 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-06', 66, 155 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-06', 66, 155 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-07', 67, 276 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-07', 67, 276 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-08', 68, 224 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-08', 68, 224 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-09', 69, 213 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-09', 69, 213 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-10', 70, 279 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-10', 70, 279 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-11', 71, 268 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-11', 71, 268 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1971-12', 72, 287 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1971-12', 72, 287 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-01', 73, 238 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-01', 73, 238 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-02', 74, 213 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-02', 74, 213 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-03', 75, 257 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-03', 75, 257 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-04', 76, 293 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-04', 76, 293 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-05', 77, 212 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-05', 77, 212 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-06', 78, 246 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-06', 78, 246 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-07', 79, 353 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-07', 79, 353 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-08', 80, 339 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-08', 80, 339 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-09', 81, 308 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-09', 81, 308 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-10', 82, 247 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-10', 82, 247 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-11', 83, 257 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-11', 83, 257 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1972-12', 84, 322 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1972-12', 84, 322 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-01', 85, 298 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-01', 85, 298 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-02', 86, 273 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-02', 86, 273 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-03', 87, 312 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-03', 87, 312 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-04', 88, 249 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-04', 88, 249 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-05', 89, 286 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-05', 89, 286 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-06', 90, 279 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-06', 90, 279 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-07', 91, 309 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-07', 91, 309 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-08', 92, 401 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-08', 92, 401 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-09', 93, 309 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-09', 93, 309 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-10', 94, 328 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-10', 94, 328 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-11', 95, 353 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-11', 95, 353 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1973-12', 96, 354 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1973-12', 96, 354 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-01', 97, 327 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-01', 97, 327 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-02', 98, 324 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-02', 98, 324 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-03', 99, 285 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-03', 99, 285 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-04', 100, 243 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-04', 100, 243 );  [42001-214]
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "insert into bostonRobberies ( [*]Month, Record, Robberies ) values ( '1974-05', 101, 241 ); "; expected "identifier"; SQL statement:
+insert into bostonRobberies ( Month, Record, Robberies ) values ( '1974-05', 101, 241 );  [42001-214]
+(truncated)
+2022-08-10 14:34:40 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table bostonRobberies3(\000a""Month"" VARCHAR(8000),\000a""Record"" INTEGER,\000a""Robberies"" INTEGER\000a CONSTRAINT pk_bostonRobberies3 PRIMARY KEY [*](Record)\000a);"; expected "HASH, CONSTRAINT, COMMENT, UNIQUE, NOT NULL, NULL, CHECK, REFERENCES, AUTO_INCREMENT, ,, )"; SQL statement:
+create table bostonRobberies3(
+"Month" VARCHAR(8000),
+"Record" INTEGER,
+"Robberies" INTEGER
+ CONSTRAINT pk_bostonRobberies3 PRIMARY KEY (Record)
+); [42001-214]
+2022-08-10 14:37:17 database: wrong user or password; user: "SA"
+org.h2.message.DbException: Wrong user name or password [28000-214]
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.message.DbException.get(DbException.java:188)
+	at org.h2.engine.Engine.openSession(Engine.java:154)
+	at org.h2.engine.Engine.openSession(Engine.java:222)
+	at org.h2.engine.Engine.createSession(Engine.java:201)
+	at org.h2.engine.SessionRemote.connectEmbeddedOrServer(SessionRemote.java:338)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:122)
+	at org.h2.Driver.connect(Driver.java:59)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.connect(ConnectionsTab.java:871)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.validateAndAddConnection(ConnectionsTab.java:243)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.lambda$new$5(ConnectionsTab.java:220)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:86)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:234)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:191)
+	at javafx.base/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:49)
+	at javafx.base/javafx.event.Event.fireEvent(Event.java:198)
+	at javafx.graphics/javafx.scene.Node.fireEvent(Node.java:8792)
+	at javafx.controls/javafx.scene.control.Button.fire(Button.java:203)
+	at javafx.controls/com.sun.javafx.scene.control.behavior.ButtonBehavior.mouseReleased(ButtonBehavior.java:208)
+	at javafx.controls/com.sun.javafx.scene.control.inputmap.InputMap.handle(InputMap.java:274)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler$NormalEventHandlerRecord.handleBubblingEvent(CompositeEventHandler.java:247)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:80)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:234)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:191)
+	at javafx.base/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:54)
+	at javafx.base/javafx.event.Event.fireEvent(Event.java:198)
+	at javafx.graphics/javafx.scene.Scene$MouseHandler.process(Scene.java:3897)
+	at javafx.graphics/javafx.scene.Scene.processMouseEvent(Scene.java:1878)
+	at javafx.graphics/javafx.scene.Scene$ScenePeerListener.mouseEvent(Scene.java:2623)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.run(GlassViewEventHandler.java:411)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.run(GlassViewEventHandler.java:301)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler.lambda$handleMouseEvent$2(GlassViewEventHandler.java:450)
+	at javafx.graphics/com.sun.javafx.tk.quantum.QuantumToolkit.runWithoutRenderLock(QuantumToolkit.java:424)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler.handleMouseEvent(GlassViewEventHandler.java:449)
+	at javafx.graphics/com.sun.glass.ui.View.handleMouseEvent(View.java:557)
+	at javafx.graphics/com.sun.glass.ui.View.notifyMouse(View.java:943)
+	at javafx.graphics/com.sun.glass.ui.gtk.GtkApplication._runLoop(Native Method)
+	at javafx.graphics/com.sun.glass.ui.gtk.GtkApplication.lambda$runLoop$11(GtkApplication.java:290)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+Caused by: org.h2.jdbc.JdbcSQLInvalidAuthorizationSpecException: Wrong user name or password [28000-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:510)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	... 69 more
+2022-08-11 11:57:07 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT Month[*], Record FROM boston_robberies"; expected "("; SQL statement:
+SELECT Month, Record FROM boston_robberies [42001-214]
+2022-08-11 11:57:51 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "RECORD" not found; SQL statement:
+SELECT Record, Robberies FROM boston_robberies [42122-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:502)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.expression.ExpressionColumn.getColumnException(ExpressionColumn.java:244)
+	at org.h2.expression.ExpressionColumn.optimizeOther(ExpressionColumn.java:226)
+	at org.h2.expression.ExpressionColumn.optimize(ExpressionColumn.java:213)
+	at org.h2.command.query.Select.prepareExpressions(Select.java:1170)
+	at org.h2.command.query.Query.prepare(Query.java:218)
+	at org.h2.command.Parser.prepareCommand(Parser.java:575)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:631)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:554)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1116)
+	at org.h2.jdbc.JdbcStatement.executeInternal(JdbcStatement.java:237)
+	at org.h2.jdbc.JdbcStatement.execute(JdbcStatement.java:223)
+	at se.alipsa.gade.code.sqltab.SqlTab$1.call(SqlTab.java:120)
+	at se.alipsa.gade.code.sqltab.SqlTab$1.call(SqlTab.java:108)
+	at javafx.graphics/javafx.concurrent.Task$TaskCallable.call(Task.java:1426)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+2022-08-11 11:58:03 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "ROBBERIES" not found; SQL statement:
+SELECT "Record", Robberies FROM boston_robberies [42122-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:502)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.expression.ExpressionColumn.getColumnException(ExpressionColumn.java:244)
+	at org.h2.expression.ExpressionColumn.optimizeOther(ExpressionColumn.java:226)
+	at org.h2.expression.ExpressionColumn.optimize(ExpressionColumn.java:213)
+	at org.h2.command.query.Select.prepareExpressions(Select.java:1170)
+	at org.h2.command.query.Query.prepare(Query.java:218)
+	at org.h2.command.Parser.prepareCommand(Parser.java:575)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:631)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:554)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1116)
+	at org.h2.jdbc.JdbcStatement.executeInternal(JdbcStatement.java:237)
+	at org.h2.jdbc.JdbcStatement.execute(JdbcStatement.java:223)
+	at se.alipsa.gade.code.sqltab.SqlTab$1.call(SqlTab.java:120)
+	at se.alipsa.gade.code.sqltab.SqlTab$1.call(SqlTab.java:108)
+	at javafx.graphics/javafx.concurrent.Task$TaskCallable.call(Task.java:1426)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+2022-08-11 12:26:16 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "BOSTON_ROBBERIES" already exists; SQL statement:
+create table boston_robberies(
+"Month" VARCHAR(8000),
+"Record" INTEGER,
+"Robberies" INTEGER
+ , CONSTRAINT pk_boston_robberies PRIMARY KEY ("Record")
+) [42101-214]
+2022-08-11 12:29:52 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "BOSTON_ROBBERIES" already exists; SQL statement:
+create table boston_robberies(
+"Month" VARCHAR(8000),
+"Record" INTEGER,
+"Robberies" INTEGER
+ , CONSTRAINT pk_boston_robberies PRIMARY KEY ("Record")
+) [42101-214]
+2022-08-11 12:32:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "BOSTON_ROBBERIES" already exists; SQL statement:
+create table boston_robberies(
+"Month" VARCHAR(8000),
+"Record" INTEGER,
+"Robberies" INTEGER
+ , CONSTRAINT pk_boston_robberies PRIMARY KEY ("Record")
+) [42101-214]
+2022-08-11 13:04:28 database: wrong user or password; user: "SA"
+org.h2.message.DbException: Wrong user name or password [28000-214]
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.message.DbException.get(DbException.java:188)
+	at org.h2.engine.Engine.openSession(Engine.java:154)
+	at org.h2.engine.Engine.openSession(Engine.java:222)
+	at org.h2.engine.Engine.createSession(Engine.java:201)
+	at org.h2.engine.SessionRemote.connectEmbeddedOrServer(SessionRemote.java:338)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:122)
+	at org.h2.Driver.connect(Driver.java:59)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.connect(ConnectionsTab.java:871)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.validateAndAddConnection(ConnectionsTab.java:243)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.lambda$new$5(ConnectionsTab.java:220)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:86)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:234)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:191)
+	at javafx.base/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:49)
+	at javafx.base/javafx.event.Event.fireEvent(Event.java:198)
+	at javafx.graphics/javafx.scene.Node.fireEvent(Node.java:8792)
+	at javafx.controls/javafx.scene.control.Button.fire(Button.java:203)
+	at javafx.controls/com.sun.javafx.scene.control.behavior.ButtonBehavior.mouseReleased(ButtonBehavior.java:208)
+	at javafx.controls/com.sun.javafx.scene.control.inputmap.InputMap.handle(InputMap.java:274)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler$NormalEventHandlerRecord.handleBubblingEvent(CompositeEventHandler.java:247)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:80)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:234)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:191)
+	at javafx.base/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:54)
+	at javafx.base/javafx.event.Event.fireEvent(Event.java:198)
+	at javafx.graphics/javafx.scene.Scene$MouseHandler.process(Scene.java:3897)
+	at javafx.graphics/javafx.scene.Scene.processMouseEvent(Scene.java:1878)
+	at javafx.graphics/javafx.scene.Scene$ScenePeerListener.mouseEvent(Scene.java:2623)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.run(GlassViewEventHandler.java:411)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.run(GlassViewEventHandler.java:301)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler.lambda$handleMouseEvent$2(GlassViewEventHandler.java:450)
+	at javafx.graphics/com.sun.javafx.tk.quantum.QuantumToolkit.runWithoutRenderLock(QuantumToolkit.java:424)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler.handleMouseEvent(GlassViewEventHandler.java:449)
+	at javafx.graphics/com.sun.glass.ui.View.handleMouseEvent(View.java:557)
+	at javafx.graphics/com.sun.glass.ui.View.notifyMouse(View.java:943)
+	at javafx.graphics/com.sun.glass.ui.gtk.GtkApplication._runLoop(Native Method)
+	at javafx.graphics/com.sun.glass.ui.gtk.GtkApplication.lambda$runLoop$11(GtkApplication.java:290)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+Caused by: org.h2.jdbc.JdbcSQLInvalidAuthorizationSpecException: Wrong user name or password [28000-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:510)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	... 69 more
+2022-08-12 19:57:26 database: wrong user or password; user: "SA"
+org.h2.message.DbException: Wrong user name or password [28000-214]
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.message.DbException.get(DbException.java:188)
+	at org.h2.engine.Engine.openSession(Engine.java:154)
+	at org.h2.engine.Engine.openSession(Engine.java:222)
+	at org.h2.engine.Engine.createSession(Engine.java:201)
+	at org.h2.engine.SessionRemote.connectEmbeddedOrServer(SessionRemote.java:338)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:122)
+	at org.h2.Driver.connect(Driver.java:59)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.connect(ConnectionsTab.java:871)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.validateAndAddConnection(ConnectionsTab.java:243)
+	at se.alipsa.gade.environment.connections.ConnectionsTab.lambda$new$5(ConnectionsTab.java:220)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:86)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:234)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:191)
+	at javafx.base/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:49)
+	at javafx.base/javafx.event.Event.fireEvent(Event.java:198)
+	at javafx.graphics/javafx.scene.Node.fireEvent(Node.java:8792)
+	at javafx.controls/javafx.scene.control.Button.fire(Button.java:203)
+	at javafx.controls/com.sun.javafx.scene.control.behavior.ButtonBehavior.mouseReleased(ButtonBehavior.java:208)
+	at javafx.controls/com.sun.javafx.scene.control.inputmap.InputMap.handle(InputMap.java:274)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler$NormalEventHandlerRecord.handleBubblingEvent(CompositeEventHandler.java:247)
+	at javafx.base/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:80)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:234)
+	at javafx.base/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:191)
+	at javafx.base/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:54)
+	at javafx.base/javafx.event.Event.fireEvent(Event.java:198)
+	at javafx.graphics/javafx.scene.Scene$MouseHandler.process(Scene.java:3897)
+	at javafx.graphics/javafx.scene.Scene.processMouseEvent(Scene.java:1878)
+	at javafx.graphics/javafx.scene.Scene$ScenePeerListener.mouseEvent(Scene.java:2623)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.run(GlassViewEventHandler.java:411)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.run(GlassViewEventHandler.java:301)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler.lambda$handleMouseEvent$2(GlassViewEventHandler.java:450)
+	at javafx.graphics/com.sun.javafx.tk.quantum.QuantumToolkit.runWithoutRenderLock(QuantumToolkit.java:424)
+	at javafx.graphics/com.sun.javafx.tk.quantum.GlassViewEventHandler.handleMouseEvent(GlassViewEventHandler.java:449)
+	at javafx.graphics/com.sun.glass.ui.View.handleMouseEvent(View.java:557)
+	at javafx.graphics/com.sun.glass.ui.View.notifyMouse(View.java:943)
+	at javafx.graphics/com.sun.glass.ui.gtk.GtkApplication._runLoop(Native Method)
+	at javafx.graphics/com.sun.glass.ui.gtk.GtkApplication.lambda$runLoop$11(GtkApplication.java:290)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+Caused by: org.h2.jdbc.JdbcSQLInvalidAuthorizationSpecException: Wrong user name or password [28000-214]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:510)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:477)
+	... 69 more
