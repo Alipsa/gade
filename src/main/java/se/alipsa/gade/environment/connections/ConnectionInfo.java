@@ -124,12 +124,15 @@ public class ConnectionInfo implements Comparable<ConnectionInfo> {
   }
 
   public String asJson() {
+    String pwd = password.getValue() == null ? "" : password.getValue().replaceAll(".", "*");
     return "{" +
-       "\"name\"=\"" + name.getValue() +
-       "\", \"driver\"=\"" + driver.getValue() +
-       "\", \"url\"=\"" + url.getValue() +
-       "\", \"user\"=" + user.getValue() +
-       "\", \"password\"=\"" + password.getValue().replaceAll(".", "*") +
-       "\"}";
+        "\"name\"=\"" + name.getValue() +
+        "\", \"driver\"=\"" + driver.getValue() +
+        "\", \"url\"=\"" + url.getValue() +
+        "\", \"user\"=" + user.getValue() +
+        "\", \"password\"=\"" + pwd +
+        "\"}";
   }
+
+
 }

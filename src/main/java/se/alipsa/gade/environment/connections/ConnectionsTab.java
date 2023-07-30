@@ -28,6 +28,7 @@ import javafx.stage.StageStyle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.UnStyledCodeArea;
@@ -57,17 +58,15 @@ import static se.alipsa.gade.utils.QueryBuilder.*;
 
 public class ConnectionsTab extends Tab {
 
-  private static final String NAME_PREF = "ConnectionsTab.name";
-  private static final String DEPENDENCY_PREF = "ConnectionsTab.dependency";
-  private static final String DRIVER_PREF = "ConnectionsTab.driver";
-  private static final String URL_PREF = "ConnectionsTab.url";
-  private static final String USER_PREF = "ConnectionsTab.user";
-  private static final String CONNECTIONS_PREF = "ConnectionsTab.Connections";
+  static final String NAME_PREF = "ConnectionsTab.name";
+  static final String DEPENDENCY_PREF = "ConnectionsTab.dependency";
+  static final String DRIVER_PREF = "ConnectionsTab.driver";
+  static final String URL_PREF = "ConnectionsTab.url";
+  static final String USER_PREF = "ConnectionsTab.user";
+  static final String CONNECTIONS_PREF = "ConnectionsTab.Connections";
   private final BorderPane contentPane;
   private final Gade gui;
-  private final ComboBox<String> name = new ComboBox<>();
-  private TextField dependencyText;
-  private TextField driverText;
+  private final ComboBox<ConnectionInfo> name = new ComboBox<>();
   private TextField urlText;
   private TextField userText;
   private PasswordField passwordField;
@@ -85,15 +84,12 @@ public class ConnectionsTab extends Tab {
 
     VBox inputBox = new VBox();
     HBox topInputPane = new HBox();
-    HBox middleInputPane = new HBox();
     HBox bottomInputPane = new HBox();
     HBox buttonInputPane = new HBox();
-    inputBox.getChildren().addAll(topInputPane, middleInputPane, bottomInputPane, buttonInputPane);
+    inputBox.getChildren().addAll(topInputPane, bottomInputPane, buttonInputPane);
 
     topInputPane.setPadding(FLOWPANE_INSETS);
     topInputPane.setSpacing(2);
-    middleInputPane.setPadding(FLOWPANE_INSETS);
-    middleInputPane.setSpacing(2);
     bottomInputPane.setPadding(FLOWPANE_INSETS);
     bottomInputPane.setSpacing(2);
     contentPane.setTop(inputBox);
@@ -101,28 +97,24 @@ public class ConnectionsTab extends Tab {
     VBox nameBox = new VBox();
     Label nameLabel = new Label("Name:");
 
-    name.getItems().addAll(getSavedConnectionNames());
     String lastUsedName = getPrefOrBlank(NAME_PREF);
-    name.setEditable(true);
-    if (!"".equals(lastUsedName)) {
-      if (name.getItems().contains(lastUsedName)) {
-        name.getSelectionModel().select(lastUsedName);
-      } else {
-        name.getItems().add(lastUsedName);
+    for (String connectionName : getSavedConnectionNames()) {
+      ConnectionInfo ci = getSavedConnection(connectionName);
+      name.getItems().add(ci);
+      if (ci.getName().equals(lastUsedName)) {
+        name.setValue(ci);
       }
     }
-    name.getEditor().focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-      if (! isNowFocused) {
-        name.setValue(name.getEditor().getText());
-      }
-    });
     name.setPrefWidth(300);
     name.getSelectionModel().selectedIndexProperty().addListener((observable, oldValue, newValue) -> {
-      ConnectionInfo ci = getSavedConnection(name.getValue());
-      dependencyText.setText(ci.getDependency());
+      ConnectionInfo ci = name.getValue()  ;
+      if (ci == null) {
+        return;
+      }
       userText.setText(ci.getUser());
-      driverText.setText(ci.getDriver());
       urlText.setText(ci.getUrl());
+      userText.setEditable(!ci.getUrl().contains("user"));
+      passwordField.setEditable(!ci.getUrl().contains("password"));
       passwordField.clear();
       passwordField.requestFocus();
       connectionsTable.getSelectionModel().select(connectionsTable.getItems().indexOf(ci));
@@ -145,68 +137,72 @@ public class ConnectionsTab extends Tab {
     passwordBox.getChildren().addAll(passwordLabel, passwordField);
     topInputPane.getChildren().add(passwordBox);
 
-    VBox dependencyBox = new VBox();
-    Label dependencyLabel = new Label("Dependency:");
-    dependencyText = new TextField(getPrefOrBlank(DEPENDENCY_PREF));
-    HBox.setHgrow(dependencyBox, Priority.SOMETIMES);
-    dependencyBox.getChildren().addAll(dependencyLabel, dependencyText);
-    middleInputPane.getChildren().add(dependencyBox);
-
-    VBox driverBox = new VBox();
-    Label driverLabel = new Label("Driver:");
-    driverText = new TextField(getPrefOrBlank(DRIVER_PREF));
-    HBox.setHgrow(driverBox, Priority.SOMETIMES);
-    driverBox.getChildren().addAll(driverLabel, driverText);
-    middleInputPane.getChildren().add(driverBox);
-
     VBox urlBox = new VBox();
     Label urlLabel = new Label("Url:");
     urlText = new TextField(getPrefOrBlank(URL_PREF));
+    urlText.setEditable(false);
+    userText.setEditable(!urlText.getText().contains("user"));
+    passwordField.setEditable(!urlText.getText().contains("password"));
     urlBox.getChildren().addAll(urlLabel, urlText);
     HBox.setHgrow(urlBox, Priority.ALWAYS);
     bottomInputPane.getChildren().add(urlBox);
 
-    Button newButton = new Button("New");
-    newButton.setPadding(new Insets(7, 10, 7, 10));
-    newButton.setOnAction(a -> {
-      name.setValue("");
-      dependencyText.clear();
-      userText.clear();
-      passwordField.clear();
-      driverText.clear();
-      urlText.clear();
-    });
+    Button addButton = getAddConnectionButton();
+    Button editConnectionButton = getEditConnectionButton();
+    Button newButton = getNewConnectionButton();
+    Button deleteButton = getDeleteConnectionButton(gui);
 
-    Button deleteButton = new Button("Delete");
-    deleteButton.setPadding(new Insets(7, 10, 7, 10));
-    deleteButton.setOnAction(a -> {
-      String connectionName = name.getValue();
-      Preferences pref = gui.getPrefs().node(CONNECTIONS_PREF).node(connectionName);
-      try {
-        pref.removeNode();
-      } catch (BackingStoreException e) {
-        ExceptionAlert.showAlert("Failed to remove the connection from preferences", e);
-      }
-      gui.getCodeComponent().removeConnectionFromTabs(connectionName);
-      connectionsTable.getItems().removeIf(c -> c.getName().equals(connectionName));
-      name.getItems().remove(connectionName);
-      name.setValue("");
-      dependencyText.clear();
-      userText.clear();
-      passwordField.clear();
-      driverText.clear();
-      urlText.clear();
-      name.requestFocus();
-    });
-
-    Button addButton = new Button("Add / Update Connection");
-    addButton.setPadding(new Insets(7, 10, 7, 10));
     createConnectionTableView();
     contentPane.setCenter(connectionsTable);
     connectionsTable.setPlaceholder(new Label("No connections defined"));
 
+    buttonInputPane.setSpacing(10);
+    buttonInputPane.getChildren().addAll(addButton, editConnectionButton, newButton, deleteButton);
+  }
+
+  @NotNull
+  private Button getNewConnectionButton() {
+    Button newButton = new Button("New");
+    newButton.setPadding(new Insets(7, 10, 7, 10));
+    newButton.setOnAction(a -> {
+      var dialog = new ConnectionDialog(this);
+      var result = dialog.showAndWait();
+      if (result.isPresent()) {
+        ConnectionInfo ci = result.get();
+        name.getItems().add(ci);
+        name.setValue(ci);
+        userText.setText(ci.getUser());
+        passwordField.setText(ci.getPassword());
+        urlText.setText(ci.getUrl());
+      }
+    });
+    return newButton;
+  }
+
+  @NotNull
+  private Button getEditConnectionButton() {
+    Button editConnectionButton = new Button("Edit");
+    editConnectionButton.setPadding(new Insets(7, 10, 7, 10));
+    editConnectionButton.setOnAction( a -> {
+      ConnectionInfo existing = name.getValue();
+      ConnectionDialog dialog = new ConnectionDialog(existing, this);
+      var result = dialog.showAndWait();
+      if (result.isPresent()) {
+        ConnectionInfo ci = result.get();
+        name.getItems().remove(existing);
+        name.getItems().add(ci);
+        name.setValue(ci);
+      }
+    });
+    return editConnectionButton;
+  }
+
+  @NotNull
+  private Button getAddConnectionButton() {
+    Button addButton = new Button("Activate Connection");
+    addButton.setPadding(new Insets(7, 10, 7, 10));
     addButton.setOnAction(e -> {
-      if (name.getValue() == null || name.getValue().isBlank()) {
+      if (name.getValue() == null) {
         Alerts.info("Information missing", "No connection name provided, cannot add it");
         return;
       }
@@ -216,25 +212,39 @@ public class ConnectionsTab extends Tab {
         log.warn(msg);
         Alerts.info("MySQL and multiple query statements", msg);
       }
-      ConnectionInfo con = new ConnectionInfo(name.getValue(), dependencyText.getText(), driverText.getText(), urlText.getText(), userText.getText(), passwordField.getText());
+      ConnectionInfo con = name.getValue();
       if (validateAndAddConnection(con)) return;
       connectionsTable.getSelectionModel().select(connectionsTable.getItems().indexOf(con));
     });
-    /*VBox buttonBox = new VBox();
-    buttonBox.setPadding(new Insets(10, 10, 0, 10));
-    buttonBox.setSpacing(VGAP);
-    buttonBox.getChildren().add(addButton);
-    buttonBox.alignmentProperty().setValue(Pos.BOTTOM_CENTER);*/
-    Image wizIMage = new Image("image/wizard.png", ICON_WIDTH, ICON_HEIGHT, true, true);
-    ImageView wizImg =  new ImageView(wizIMage);
-    Button wizardButton = new Button("Url Wizard", wizImg);
-    wizardButton.setOnAction(this::openUrlWizard);
-    wizardButton.setTooltip(new Tooltip("create/update the url using the wizard"));
-    buttonInputPane.setAlignment(Pos.CENTER);
-    Insets btnInsets = new Insets(5, 10, 5, 10);
-    wizardButton.setPadding(btnInsets);
-    buttonInputPane.setSpacing(10);
-    buttonInputPane.getChildren().addAll(newButton, addButton, wizardButton, deleteButton);
+    return addButton;
+  }
+
+  @NotNull
+  private Button getDeleteConnectionButton(Gade gui) {
+    Button deleteButton = new Button("Delete");
+    deleteButton.setPadding(new Insets(7, 10, 7, 10));
+    deleteButton.setOnAction(a -> {
+      boolean isConfirmed = Alerts.confirm("Are you sure?", "Delete " + name.getValue().getName(), "Completely remove the " + name.getValue() + " connection?");
+      if (!isConfirmed) {
+        return;
+      }
+      String connectionName = name.getValue().getName();
+      Preferences pref = gui.getPrefs().node(CONNECTIONS_PREF).node(connectionName);
+      try {
+        pref.removeNode();
+      } catch (BackingStoreException e) {
+        ExceptionAlert.showAlert("Failed to remove the connection from preferences", e);
+      }
+      gui.getCodeComponent().removeConnectionFromTabs(connectionName);
+      connectionsTable.getItems().removeIf(c -> c.getName().equals(connectionName));
+      name.getItems().remove(name.getValue());
+      name.setValue(null);
+      userText.clear();
+      passwordField.clear();
+      urlText.clear();
+      name.requestFocus();
+    });
+    return deleteButton;
   }
 
   public boolean validateAndAddConnection(ConnectionInfo con) {
@@ -255,11 +265,15 @@ public class ConnectionsTab extends Tab {
     } catch (SQLException ex) {
       Exception exceptionToShow = ex;
       try {
-        JdbcUrlParser.validate(driverText.getText(), urlText.getText());
+        var ci = name.getValue();
+        JdbcUrlParser.validate(ci.getDriver(), ci.getUrl());
       } catch (MalformedURLException exc) {
         exceptionToShow = exc;
       }
       ExceptionAlert.showAlert("Failed to connect to database: " + exceptionToShow, ex);
+      if (exceptionToShow.getMessage().contains("authentication")) {
+        log.warn("Connection attempted to '{}' using userName '{}', and password '{}'", con.getName(), con.getUser(), con.getPassword());
+      }
       return false;
     }
     addConnection(con);
@@ -280,31 +294,15 @@ public class ConnectionsTab extends Tab {
       existing.setDependency(con.getDependency());
       existing.setDriver(con.getDriver());
       existing.setUrl(con.getUrl());
-
     }
-    if (name.getItems().stream().filter(c -> c.equals(con.getName())).findAny().orElse(null) == null) {
-      name.getItems().add(con.getName());
-      dependencyText.setText(con.getDependency());
+    if (name.getItems().stream().filter(c -> c.equals(con)).findAny().orElse(null) == null) {
+      name.getItems().add(con);
       userText.setText(con.getUser());
       passwordField.setText(con.getPassword());
-      driverText.setText(con.getDriver());
       urlText.setText(con.getUrl());
     }
     connectionsTable.refresh();
     gui.getCodeComponent().updateConnections();
-  }
-
-  private void openUrlWizard(ActionEvent actionEvent) {
-
-    JdbcUrlWizardDialog dialog = new JdbcUrlWizardDialog(gui);
-    Optional<ConnectionInfo> result = dialog.showAndWait();
-    if (result.isEmpty()) {
-      return;
-    }
-    ConnectionInfo ci = result.get();
-    driverText.setText(ci.getDriver());
-    urlText.setText(ci.getUrl());
-    dependencyText.setText(ci.getDependency());
   }
 
   private void createConnectionTableView() {
@@ -365,9 +363,7 @@ public class ConnectionsTab extends Tab {
       tableView.getSelectionModel().selectedIndexProperty().addListener(e -> {
         ConnectionInfo info = tableView.getSelectionModel().getSelectedItem();
         if (info != null) {
-          name.setValue(info.getName());
-          dependencyText.setText(info.getDependency());
-          driverText.setText(info.getDriver());
+          name.setValue(info);
           urlText.setText(info.getUrl());
           userText.setText(info.getUser());
           passwordField.setText(info.getPassword());
@@ -391,7 +387,7 @@ public class ConnectionsTab extends Tab {
     return rCode;
   }
 
-  private String getPrefOrBlank(String pref) {
+  String getPrefOrBlank(String pref) {
     return gui.getPrefs().get(pref, "");
   }
 
@@ -417,9 +413,9 @@ public class ConnectionsTab extends Tab {
 
   private void saveConnection(ConnectionInfo c) {
     // Save current
-    setPref(NAME_PREF, name.getValue());
-    setPref(DEPENDENCY_PREF, dependencyText.getText());
-    setPref(DRIVER_PREF, driverText.getText());
+    setPref(NAME_PREF, name.getValue().getName());
+    setPref(DEPENDENCY_PREF, c.getDependency());
+    setPref(DRIVER_PREF, c.getDriver());
     setPref(URL_PREF, urlText.getText());
     setPref(USER_PREF, userText.getText());
     // Save to list of defined connections
@@ -805,6 +801,9 @@ public class ConnectionsTab extends Tab {
   @SuppressWarnings("unchecked")
   public Connection connect(ConnectionInfo ci) throws SQLException {
     log.info("Connecting to {} using {}", ci.getUrl(), ci.getDependency());
+    if (!ci.getUrl().contains("password")) {
+      ci.setPassword(passwordField.getText());
+    }
     var gui = Gade.instance();
     Driver driver;
 
@@ -874,5 +873,9 @@ public class ConnectionsTab extends Tab {
   public boolean urlContainsLogin(String url) {
     String safeLcUrl = url.toLowerCase();
     return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") ) || safeLcUrl.contains("@");
+  }
+
+  public Gade getGui() {
+    return gui;
   }
 }

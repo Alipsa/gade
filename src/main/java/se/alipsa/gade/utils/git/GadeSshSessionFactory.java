@@ -101,7 +101,8 @@ public class GadeSshSessionFactory extends JschConfigSessionFactory {
         var usrPwd = GitUtils.findUserNamePassword(url);
         if (usrPwd != null) {
           String pwd = usrPwd.get("password");
-          defaultJSch.addIdentity(privateKey, pwd.getBytes());
+          //defaultJSch.addIdentity(privateKey, pwd.getBytes());
+          defaultJSch.addIdentity(privateKey, pwd);
         } else {
           log.info("Password required but no password found for {}", url);
           throw new JSchException("Password required but no password found for " + url + " in " + GitUtils.getCredentialsFile());
