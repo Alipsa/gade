@@ -65,7 +65,9 @@ public class GadeSshSessionFactory extends JschConfigSessionFactory {
       }
     } catch (IOException | URISyntaxException e) {
       e.printStackTrace();
+      throw new TransportException("Failed to get password info", e);
     }
+    log.info("Get session: uri = {}", uri);
     return super.getSession(uri, credentialsProvider, fs, tms);
   }
 
@@ -95,6 +97,7 @@ public class GadeSshSessionFactory extends JschConfigSessionFactory {
       publicKey = publicKeyFile.getAbsolutePath();
       privateKey = privateKeyFile.getAbsolutePath();
     }
+    log.info("Using publicKey {}, and privateKey {}", publicKey, privateKey);
     KeyPair keyPair = KeyPair.load(defaultJSch, privateKey, publicKey);
     if (keyPair.isEncrypted()) {
       try {
@@ -108,6 +111,7 @@ public class GadeSshSessionFactory extends JschConfigSessionFactory {
           throw new JSchException("Password required but no password found for " + url + " in " + GitUtils.getCredentialsFile());
         }
       } catch (IOException | URISyntaxException e) {
+        log.warn("Failed to get stored credentials", e);
         throw new JSchException("Failed to get stored credentials", e);
       }
     }

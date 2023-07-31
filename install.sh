@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 javacmd=$(command -v java)
 
@@ -14,14 +14,14 @@ function switchJava() {
 }
 
 if [[ -f "$javacmd" ]]; then
-        javaVersion=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1)
-        if [[ (($javaVersion -eq 17)) ]]; then
-                echo "java 17 is already the active version"
-        else
-                switchJava
-        fi
+  javaVersion=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1)
+  if [[ (($javaVersion -eq 17)) ]]; then
+    echo "java 17 is already the active version"
+  else
+    switchJava
+  fi
 else
-        switchJava
+  switchJava
 fi
 
 function platform {
@@ -35,9 +35,9 @@ function platform {
 }
 
 function getProperty {
-   PROP_KEY=$1
-   PROP_VALUE=$(cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f2)
-   echo "$PROP_VALUE" | xargs
+  PROP_KEY=$1
+  PROP_VALUE=$(cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f2)
+  echo "$PROP_VALUE" | xargs
 }
 
 function toMsysPath {
@@ -59,32 +59,7 @@ echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM} "
 
 cd "${SCRIPT_DIR}" || exit
 
-# Workaround if building for windows from linux and local repo does not have windows javafx jars:
-jfxVersion=20.0.1
-
-function fetchJfxArtifacts {
-  qualifier=$1
-  pluginVer=3.5.0
-  mvn org.apache.maven.plugins:maven-dependency-plugin:${pluginVer}:get -Dartifact=org.openjfx:javafx-base:${jfxVersion}:jar:"$qualifier"
-  mvn org.apache.maven.plugins:maven-dependency-plugin:${pluginVer}:get -Dartifact=org.openjfx:javafx-controls:${jfxVersion}:jar:"$qualifier"
-  mvn org.apache.maven.plugins:maven-dependency-plugin:${pluginVer}:get -Dartifact=org.openjfx:javafx-graphics:${jfxVersion}:jar:"$qualifier"
-}
-
-# see https://repo1.maven.org/maven2/org/openjfx/javafx/20/javafx-20.pom for info on qualifier names
-# hint: its the javafx.platform property, not the id
-if [[ ! "${PLATFORM}" == "win" ]]; then
-  echo "- Downloading windows javafx jars"
-  fetchJfxArtifacts win
-
-fi
-if [[ ! "${PLATFORM}" == "linux" ]]; then
-  echo "- Downloading linux javafx jars"
-  fetchJfxArtifacts linux
-fi
-if [[ ! "${PLATFORM}" == "mac" ]]; then
-  echo "- Downloading mac javafx jars"
-  fetchJfxArtifacts mac-aarch64
-fi
+./downloadJfxJars.sh "$PLATFORM"
 
 echo "- Building Gade"
 ./gradlew clean build runtime || exit 1
@@ -99,7 +74,7 @@ TARGET_DIR="${PREF_TARGET}/gade-${RELEASE_TAG}"
 
 LINK_DIR=$(dirname "${TARGET_DIR}")/gade
 
-if ls "$LINK_DIR"/env.* 1> /dev/null 2>&1; then
+if ls "$LINK_DIR"/env.* 1>/dev/null 2>&1; then
   echo "- Saving env files"
   tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX) || exit
   cp "$LINK_DIR"/env.* "${tmp_dir}/" || exit
@@ -142,7 +117,7 @@ if [[ "$PLATFORM" == "win" ]]; then
     /mnt/c/windows/system32/cmd.exe /c "mklink /J $lnkDir $srcDir"
   fi
 else
-  chmod +x "${TARGET_DIR}"/*.sh  || exit
+  chmod +x "${TARGET_DIR}"/*.sh || exit
   echo "- creating symlink to ${TARGET_DIR} from ${LINK_DIR}"
   ln -sf "${TARGET_DIR}" "${LINK_DIR}" || exit
 fi
@@ -179,4 +154,3 @@ if [[ "${PLATFORM}" == "mac" ]]; then
   SetFile -a B "${APP_DIR}"
 fi
 echo "Finished at $(date)"
-

@@ -286,6 +286,10 @@ public class DynamicContextMenu extends ContextMenu {
             gitListRemotesMI.setOnAction(this::gitListRemotes);
             gitRemoteMenu.getItems().add(gitListRemotesMI);
 
+            MenuItem gitFetchMI = new MenuItem("fetch");
+            gitFetchMI.setOnAction(this::gitFetch);
+            gitRemoteMenu.getItems().add(gitFetchMI);
+
             MenuItem gitPushMI = new MenuItem("push");
             gitPushMI.setOnAction(this::gitPush);
             gitRemoteMenu.getItems().add(gitPushMI);
@@ -567,6 +571,52 @@ public class DynamicContextMenu extends ContextMenu {
       }
    }
 
+   private void gitFetch(ActionEvent actionEvent) {
+      gui.setWaitCursor();
+      String url = getRemoteGitUrl();
+      gui.getInoutComponent().setStatus("Fetching from " + url);
+
+      Task<FetchResult> task = new Task<>() {
+         @Override
+         public FetchResult call() throws Exception {
+            try {
+               return GitUtils.fetch(fileTree.getRootDir());
+            } catch (RuntimeException e) {
+               // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
+               // this way we can get to the original one by extracting the cause from the thrown exception
+               System.out.println("Exception caught, rethrowing as wrapped Exception");
+               throw new Exception(e);
+            }
+         }
+      };
+
+      task.setOnSucceeded(e -> {
+         gui.setNormalCursor();
+         FetchResult result = task.getValue();
+         Alerts.info("Git fetch", result.toString());
+         gui.getInoutComponent().clearStatus();
+      });
+      task.setOnFailed(e -> {
+         gui.setNormalCursor();
+
+         Throwable throwable = task.getException();
+         Throwable ex = throwable.getCause();
+         if (ex == null) {
+            ex = throwable;
+         }
+         if (ex instanceof TransportException || ex instanceof org.eclipse.jgit.errors.TransportException) {
+            handleTransportException(ex, "fetch");
+         } else {
+            log.warn("Failed to fetch", ex);
+            ExceptionAlert.showAlert("Failed to fetch", ex);
+         }
+         gui.getInoutComponent().clearStatus();
+      });
+      Thread runningThread = new Thread(task);
+      runningThread.setDaemon(false);
+      runningThread.start();
+   }
+
    private void gitPull(ActionEvent actionEvent) {
       gui.setWaitCursor();
       String url = getRemoteGitUrl();
@@ -620,7 +670,15 @@ public class DynamicContextMenu extends ContextMenu {
    private CredentialsProvider getCredentialsProvider(String url) throws IOException, URISyntaxException {
       CredentialsProvider credentialsProvider = credentialsProviders.get(url);
       if (credentialsProvider == null) {
-         return GitUtils.getStoredCredentials(url);
+         credentialsProvider = GitUtils.getStoredCredentials(url);
+      }
+      if (credentialsProvider == null) {
+         File gitCredentials = GitUtils.getCredentialsFile();
+         if (gitCredentials.exists()) {
+            Alerts.warnFx("No credentials provider found", "add " + url + " to " + gitCredentials);
+         } else {
+            Alerts.warnFx("No credentials provider found", gitCredentials + " is missing");
+         }
       }
       return credentialsProvider;
    }
@@ -776,6 +834,8 @@ public class DynamicContextMenu extends ContextMenu {
          gitPush(null);
       } else if ("pull".equals(operation)) {
          gitPull(null);
+      } else if ("fetch".equals(operation)) {
+            gitFetch(null);
       } else {
          Alerts.warn(
             "Unknown operation when calling handleTransportException",

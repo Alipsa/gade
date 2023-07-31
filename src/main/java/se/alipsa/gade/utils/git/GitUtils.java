@@ -13,10 +13,12 @@ import static se.alipsa.gade.utils.StringUtils.isBlank;
 import javafx.scene.control.TreeItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import se.alipsa.gade.inout.FileItem;
@@ -100,6 +102,7 @@ public class GitUtils {
 
    public static CredentialsProvider getStoredCredentials(String url) throws IOException, URISyntaxException {
       var userPwd = findUserNamePassword(url);
+      log.info("Credentials for {} are {}", url, userPwd);
       return userPwd == null ? null : new UsernamePasswordCredentialsProvider(userPwd.get("username"), userPwd.get("password"));
    }
 
@@ -140,6 +143,13 @@ public class GitUtils {
       return null;
    }
 
+   /**
+    * Format of the ~/.git-credentials file:
+    * https://username:token@github.com/
+    * git:certpassword@github.com:nordnet-private/odds_ucbatch.git
+    *
+    * @return
+    */
    public static File getCredentialsFile() {
       return new File(FileUtils.getUserHome(), CREDENTIALS_FILENAME);
    }
@@ -182,4 +192,24 @@ public class GitUtils {
      lines.remove(lineToRemove);
      FileUtils.writeToFile(gitCredentials, lines);
   }
+
+  public static FetchResult fetch(File dir) throws IOException, URISyntaxException, GitAPIException {
+     try(Git git = Git.open(dir)) {
+
+        String url = git.getRepository().getConfig().getString("remote", "origin", "url");
+        log.info("remote origin Url is " + url);
+        log.info("Getting credentials");
+        SshTransportConfigCallback sshTransportConfigCallback = new SshTransportConfigCallback(url);
+        CredentialsProvider credentialsProvider = getStoredCredentials(url);
+        log.info("Fetching...");
+        FetchCommand fetchCommand = git.fetch()
+                .setTransportConfigCallback(sshTransportConfigCallback);
+        if (credentialsProvider != null) {
+           fetchCommand.setCredentialsProvider(credentialsProvider);
+        }
+        return fetchCommand.call();
+     }
+  }
+
+
 }

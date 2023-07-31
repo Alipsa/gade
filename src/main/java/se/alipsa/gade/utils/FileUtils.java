@@ -235,6 +235,30 @@ public class FileUtils {
   }
 
   /**
+   * recursive delete.
+   */
+  public static void delete(File dir) throws IOException {
+    if (dir == null) {
+      return;
+    }
+    dir.delete();
+    Files.walkFileTree(dir.toPath(), new SimpleFileVisitor<>() {
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+        file.toFile().delete();
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+        dir.toFile().delete();
+        return FileVisitResult.CONTINUE;
+      }
+    });
+
+  }
+
+  /**
    * @param file    the file to write to
    * @param content the content to write
    * @throws FileNotFoundException If the given file object does not denote an existing, writable regular file

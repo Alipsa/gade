@@ -7,12 +7,14 @@ import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.*;
 import org.junit.jupiter.api.Test;
+import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.git.GitUtils;
 import se.alipsa.gade.utils.git.SshTransportConfigCallback;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -35,21 +37,7 @@ public class GitTest {
       curDir = curDir.getParentFile();
     }
     File gadeDir = curDir;
-    Git git = Git.open(gadeDir);
-
-    String url = git.getRepository().getConfig().getString("remote", "origin", "url");
-    log.info("remote origin Url is " + url);
-    log.info("Getting credentials");
-    SshTransportConfigCallback sshTransportConfigCallback = new SshTransportConfigCallback(url);
-    CredentialsProvider credentialsProvider = GitUtils.getStoredCredentials(url);
-    log.info("Fetching...");
-    FetchCommand fetchCommand = git.fetch()
-        .setTransportConfigCallback(sshTransportConfigCallback);
-    if (credentialsProvider != null) {
-      fetchCommand.setCredentialsProvider(credentialsProvider);
-    }
-    var fetchResult = fetchCommand.call();
-    System.out.println(fetchResult.getClass());
+    var fetchResult = GitUtils.fetch(gadeDir);
     log.info("Messages: {}", fetchResult.getMessages());
     log.info("Tracking refs: {}", fetchResult.getTrackingRefUpdates().stream().map(r -> r.toString()).collect(Collectors.joining(", ")));
   }
@@ -63,21 +51,12 @@ public class GitTest {
       curDir = curDir.getParentFile();
     }
     File gadeDir = curDir;
-    Git git = Git.open(gadeDir);
-
-    String url = git.getRepository().getConfig().getString("remote", "origin", "url");
-
     Thread runningThread = new Thread(() -> {
       log.info("Thread call started...");
+
       try {
-        log.info("remote origin Url is " + url);
         log.info("Getting credentials in thread");
-        CredentialsProvider credentialsProvider = GitUtils.getStoredCredentials(url);
-        log.info("Fetching in thread...");
-        SshTransportConfigCallback sshTransportConfigCallback = new SshTransportConfigCallback(url);
-        FetchResult fetchResult = git.fetch()
-            .setTransportConfigCallback(sshTransportConfigCallback)
-            .setCredentialsProvider(credentialsProvider).call();
+        FetchResult fetchResult = GitUtils.fetch(gadeDir);
         log.info("Messages: {}", fetchResult.getMessages());
         log.info("Tracking refs: {}", fetchResult.getTrackingRefUpdates().stream().map(r -> r.toString()).collect(Collectors.joining(", ")));
       } catch (Exception e) {
@@ -93,5 +72,22 @@ public class GitTest {
     runningThread.start();
     log.info("Waiting for thread to finish");
     waiter.await(7000);
+  }
+
+  @Test
+  public void testGitClone() throws Exception {
+    GitServer server = new GitServer();
+    server.start(8080);
+    File targetDir = Files.createTempDirectory("gitrepo").toFile();
+    String url = "http://localhost:8080/TestRepo";
+    log.info("Cloning {} to {}", url, targetDir);
+    try(var call = Git.cloneRepository()
+            .setURI(url)
+            .setDirectory(targetDir)
+            .call()){
+      log.info("Call = {}", call);
+    }
+    server.stop();
+    FileUtils.delete(targetDir);
   }
 }

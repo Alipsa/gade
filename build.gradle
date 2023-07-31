@@ -9,7 +9,7 @@ plugins {
     id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.46.0"
+    id "com.github.ben-manes.versions" version "0.47.0"
 }
 
 group = 'se.alipsa'
@@ -40,9 +40,10 @@ repositories {
 }
 
 dependencies {
-    def jacksonVersion = '2.15.1'
+    def jacksonVersion = '2.15.2'
     def tikaVersion = '2.8.0'
-    def jgitVersion = '6.5.0.202303070854-r'
+    def jgitVersion = '6.6.0.202305301015-r'
+    //def jgitVersion = '6.5.0.202303070854-r'
     def tablesawVersion = "0.43.1"
     def log4jVersion = "2.20.0"
     def groovyVersion = "4.0.12"
@@ -68,7 +69,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-    implementation 'commons-io:commons-io:2.12.0'
+    implementation 'commons-io:commons-io:2.13.0'
     implementation 'com.github.jsqlparser:jsqlparser:4.6'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
@@ -76,7 +77,7 @@ dependencies {
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     implementation 'org.gradle:gradle-tooling-api:8.1.1'
     implementation 'org.jetbrains:annotations:24.0.1'
-    implementation 'io.github.classgraph:classgraph:4.8.158'
+    implementation 'io.github.classgraph:classgraph:4.8.160'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
@@ -84,7 +85,7 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-json:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-html:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
-    implementation 'com.vladsch.flexmark:flexmark-all:0.64.6'
+    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.4-SNAPSHOT'
     implementation 'se.alipsa.groovy:gmd:1.0.7'
@@ -97,7 +98,11 @@ dependencies {
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
-
+    testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
+    testImplementation 'org.eclipse.jetty:jetty-server:10.0.15'
+    testImplementation 'org.eclipse.jetty:jetty-servlet:10.0.15'
+    //testImplementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
 }
 
