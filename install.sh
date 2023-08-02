@@ -59,7 +59,8 @@ echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM} "
 
 cd "${SCRIPT_DIR}" || exit
 
-./downloadJfxJars.sh "$PLATFORM"
+# dependencies are declared in the gradle build script, no need to download outside of that
+#./downloadJfxJars.sh "$PLATFORM"
 
 echo "- Building Gade"
 ./gradlew clean build runtime || exit 1

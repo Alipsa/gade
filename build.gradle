@@ -17,9 +17,10 @@ version = '1.0.0-SNAPSHOT'
 description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
+def jfxVersion="20.0.1"
 
 javafx {
-    version = "20.0.1" // must be in sync with install.sh
+    version = "${jfxVersion}" // must be in sync with install.sh
     modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
 }
 
@@ -39,6 +40,12 @@ repositories {
     }
 }
 
+configurations {
+    jfxWin
+    jfxLinux
+    jfxMac
+}
+
 dependencies {
     def jacksonVersion = '2.15.2'
     def tikaVersion = '2.8.0'
@@ -48,6 +55,30 @@ dependencies {
     def log4jVersion = "2.20.0"
     def groovyVersion = "4.0.12"
 
+    jfxWin(
+            "org.openjfx:javafx-base:${jfxVersion}:win",
+            "org.openjfx:javafx-controls:${jfxVersion}:win",
+            "org.openjfx:javafx-graphics:${jfxVersion}:win",
+            "org.openjfx:javafx-media:${jfxVersion}:win",
+            "org.openjfx:javafx-web:${jfxVersion}:win",
+            "org.openjfx:javafx-swing:${jfxVersion}:win"
+    )
+    jfxLinux(
+            "org.openjfx:javafx-base:${jfxVersion}:linux",
+            "org.openjfx:javafx-controls:${jfxVersion}:linux",
+            "org.openjfx:javafx-graphics:${jfxVersion}:linux",
+            "org.openjfx:javafx-media:${jfxVersion}:linux",
+            "org.openjfx:javafx-web:${jfxVersion}:linux",
+            "org.openjfx:javafx-swing:${jfxVersion}:linux"
+    )
+    jfxMac(
+            "org.openjfx:javafx-base:${jfxVersion}:mac-aarch64",
+            "org.openjfx:javafx-controls:${jfxVersion}:mac-aarch64",
+            "org.openjfx:javafx-graphics:${jfxVersion}:mac-aarch64",
+            "org.openjfx:javafx-media:${jfxVersion}:mac-aarch64",
+            "org.openjfx:javafx-web:${jfxVersion}:mac-aarch64",
+            "org.openjfx:javafx-swing:${jfxVersion}:mac-aarch64"
+    )
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation 'org.apache.ivy:ivy:2.5.1'
@@ -120,12 +151,13 @@ static def getDate() {
     return formattedDate
 }
 
+/*
 clean {
     // include the platform jdks as otherwise, updating the version will not "take"
     delete "$projectDir/platform/linux"
     delete "$projectDir/platform/win"
     delete "$projectDir/platform/mac"
-}
+}*/
 
 processResources.doLast {
     ant.propertyfile(file: "${projectDir}/version.properties") {
@@ -134,7 +166,10 @@ processResources.doLast {
         ant.entry(key: "release.tag", value: "${releaseTag}")
         ant.entry(key: "build.date", value: "${getDate()}")
     }
-    ant.copy(file: "${projectDir}/version.properties", todir: "${buildDir}/resources/main" )
+    ant.copy(
+            file: "${projectDir}/version.properties",
+            todir: "${buildDir}/resources/main"
+    )
 }
 
 tasks.withType(JavaCompile) {
@@ -178,17 +213,6 @@ test {
     }
 }
 
-/*
-javadoc {
-    source = sourceSets.main.allJava
-}
-
-tasks.register('javadocJar', Jar) {
-    from javadoc
-    archiveClassifier = 'javadoc'
-}
- */
-
 artifacts {
     archives sourcesJar
     archives javadocJar
@@ -206,6 +230,7 @@ runtime {
     }
     // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
     def baseUrl = "https://download.bell-sw.com/java"
+    // if you change version, remember to delete the platform dir to trigger download of the new version
     def version = "17.0.7+7"
 
     targetPlatform("linux") {
@@ -228,6 +253,18 @@ runtime {
 }
 
 tasks.runtime.doLast {
+    copy {
+        from configurations.jfxLinux
+        into "$buildDir/image/gade-linux/lib/"
+    }
+    copy {
+        from configurations.jfxWin
+        into "$buildDir/image/gade-win/lib/"
+    }
+    copy {
+        from configurations.jfxMac
+        into "$buildDir/image/gade-mac/lib/"
+    }
     copy {
         from("$projectDir/src/bin/")
         into("$buildDir/image/gade-linux/")
@@ -276,6 +313,20 @@ tasks.runtime.doLast {
         from("$projectDir")
         into("$buildDir/image/gade-win/")
         include 'version.properties'
+    }
+    // Depending on the build environment, platform specific jars are included in
+    // all the platform specific dirs so we need to clean up
+    delete fileTree("$buildDir/image/gade-win/lib/").matching {
+        include '*-mac*.jar'
+        include '*-linux*.jar'
+    }
+    delete fileTree("$buildDir/image/gade-linux/lib/").matching {
+        include '*-mac*.jar'
+        include '*-win*.jar'
+    }
+    delete fileTree("$buildDir/image/gade-mac/lib/").matching {
+        include '*-win*.jar'
+        include '*-linux*.jar'
     }
 }
 
