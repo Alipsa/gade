@@ -12,6 +12,8 @@ public interface TabTextArea {
 
   /**
    * set the file this textarea is related to
+   *
+   * @param file the file to associate with
    */
   void setFile(File file);
 
@@ -32,5 +34,8 @@ public interface TabTextArea {
    */
   void replaceContentText(String content, boolean isReadFromFile);
 
+  /**
+   * replace a section of text of the TabTextArea
+   */
   void replaceContentText(int start, int end, String content);
 }

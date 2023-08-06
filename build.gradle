@@ -17,7 +17,7 @@ version = '1.0.0-SNAPSHOT'
 description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
-def jfxVersion="20.0.1"
+def jfxVersion="20.0.2"
 
 javafx {
     version = "${jfxVersion}" // must be in sync with install.sh
@@ -30,7 +30,10 @@ application {
 
 
 repositories {
-    mavenLocal() // Slows down the build (a lot), use only if local SNAPSHOTS are needed
+    if (version.contains('SNAPSHOT')) {
+        // Slows down the build (a lot), use only if local SNAPSHOTS are needed
+        mavenLocal()
+    }
     mavenCentral()
     maven {
         url = uri('https://repo.gradle.org/gradle/libs-releases')
@@ -53,7 +56,7 @@ dependencies {
     //def jgitVersion = '6.5.0.202303070854-r'
     def tablesawVersion = "0.43.1"
     def log4jVersion = "2.20.0"
-    def groovyVersion = "4.0.12"
+    def groovyVersion = "4.0.13"
 
     jfxWin(
             "org.openjfx:javafx-base:${jfxVersion}:win",
@@ -87,11 +90,11 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
 
     // Used by se.alipsa.gade.utils.SemanticVersion
-    implementation 'org.apache.maven:maven-artifact:3.9.2'
+    implementation 'org.apache.maven:maven-artifact:3.9.4'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'org.apache.commons:commons-lang3:3.13.0'
     implementation 'org.jsoup:jsoup:1.16.1'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation 'org.fxmisc.richtext:richtextfx:0.11.0'
@@ -106,9 +109,9 @@ dependencies {
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.1.1'
+    implementation 'org.gradle:gradle-tooling-api:8.2.1'
     implementation 'org.jetbrains:annotations:24.0.1'
-    implementation 'io.github.classgraph:classgraph:4.8.160'
+    implementation 'io.github.classgraph:classgraph:4.8.161'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
     implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
     implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
@@ -118,7 +121,7 @@ dependencies {
     implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-    implementation 'se.alipsa.groovy:data-utils:1.0.4-SNAPSHOT'
+    implementation 'se.alipsa.groovy:data-utils:1.0.4'
     implementation 'se.alipsa.groovy:gmd:1.0.7'
     implementation 'se.alipsa:simple-rest:1.0.5'
     implementation 'se.alipsa.groovy:matrix:1.1.1'
@@ -127,7 +130,7 @@ dependencies {
     implementation 'se.alipsa.groovy:matrix-charts:1.0.0-SNAPSHOT'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.15'
@@ -346,6 +349,7 @@ def isNonStable = { String version ->
 }
 // https://github.com/ben-manes/gradle-versions-plugin
 tasks.named("dependencyUpdates").configure {
+    gradleReleaseChannel = "current"
     resolutionStrategy {
         componentSelection {
             all {

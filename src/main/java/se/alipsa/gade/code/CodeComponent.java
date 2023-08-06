@@ -97,6 +97,10 @@ public class CodeComponent extends BorderPane {
     }
   }
 
+  /**
+   *
+   * @return the currently active tab
+   */
   public TextAreaTab getActiveTab() {
     SingleSelectionModel<Tab> selectionModel = pane.getSelectionModel();
     return (TextAreaTab) selectionModel.getSelectedItem();
@@ -149,6 +153,11 @@ public class CodeComponent extends BorderPane {
     return false;
   }
 
+  /**
+   *
+   * @param file the file connected to the tab
+   * @return the tab that opened the file
+   */
   public TextAreaTab getTab(File file) {
     for (Tab tab : pane.getTabs()) {
       TextAreaTab textAreaTab = (TextAreaTab) tab;
