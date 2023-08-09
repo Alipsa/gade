@@ -21,7 +21,7 @@ import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.SqlParser;
 import se.alipsa.gade.utils.StringUtils;
-import tech.tablesaw.api.Table;
+import se.alipsa.groovy.matrix.Matrix;
 
 import java.io.File;
 import java.sql.Connection;
@@ -157,7 +157,9 @@ public class SqlTab extends TextAreaTab {
               while (hasMoreResultSets || stm.getUpdateCount() != -1) {
                 if (hasMoreResultSets) {
                   try (ResultSet rs = stm.getResultSet()) {
-                    Table table = Table.read().db(rs);
+                    // We used to use tablesaw but switched to Matrix, the column types are different
+                    //Table table = Table.read().db(rs);
+                    Matrix table = Matrix.create(rs);
                     Platform.runLater(() ->
                         gui.getInoutComponent().viewTable(table, SqlTab.this.getTitle() + " " + queryCount.getAndIncrement() + ".")
                     );

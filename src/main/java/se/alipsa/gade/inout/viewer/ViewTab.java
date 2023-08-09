@@ -23,7 +23,9 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.groovy.gmd.HtmlDecorator;
+import se.alipsa.groovy.matrix.Grid;
 import se.alipsa.groovy.matrix.Matrix;
+import tech.tablesaw.api.ColumnType;
 import tech.tablesaw.api.Table;
 import se.alipsa.gade.utils.*;
 
@@ -42,6 +44,10 @@ import java.util.TreeSet;
 public class ViewTab extends Tab {
 
   private static final Logger log = LogManager.getLogger();
+  private static final List<String> NUMERIC_TYPES = List.of(
+      "NUMBER", "BYTE", "SHORT", "INTEGER", "INT", "LONG", "BIGINTEGER",
+      "FLOAT", "DOUBLE", "BIGDECIMAL"
+  );
 
   private final TabPane viewPane;
 
@@ -60,6 +66,21 @@ public class ViewTab extends Tab {
 
   public void viewTable(Matrix tableMatrix, String... title) {
     viewTable(tableMatrix.columnNames(), tableMatrix.rows(), tableMatrix.columnTypeNames(), title);
+  }
+
+  public void viewTable(Grid grid, String... title) {
+    // assume uniform format
+    String type = "STRING";
+    if (grid.getAt(0,0) instanceof Number) {
+      type = "NUMBER";
+    }
+    List<String> typeList = new ArrayList<>();
+    List<String> headerList = new ArrayList<>();
+    for (int i = 0; i < grid.getAt(0).size(); i++) {
+      typeList.add(type);
+      headerList.add("c" + i+1);
+    }
+    viewTable(headerList, grid.getData(), typeList, title);
   }
 
   public void viewTable(List<String> headerList, List<List<?>> rowList, List<String> columnTypes, String... title) {
@@ -105,7 +126,9 @@ public class ViewTab extends Tab {
         final int j = i;
         String colName = headerList.get(i);
         TableColumn<List<String>, String> col = new TableColumn<>();
-
+        if (shouldRightAlign(columnTypes.get(i))) {
+          col.setStyle("-fx-alignment: CENTER-RIGHT;");
+        }
         Label colLabel = new Label(colName);
         colLabel.setTooltip(new Tooltip(columnTypes.get(i)));
         col.setGraphic(colLabel);
@@ -140,6 +163,16 @@ public class ViewTab extends Tab {
     } catch (RuntimeException e) {
       ExceptionAlert.showAlert("Failed to view table", e);
     }
+  }
+
+  private boolean shouldRightAlign(String type) {
+    if (type == null) return false;
+    boolean isNumeric = false;
+    // All tablesaw numbers columns are NUMBER, we already cover that in NUMERIC_TYPES
+    if (NUMERIC_TYPES.contains(type.toUpperCase())) {
+      isNumeric = true;
+    }
+    return isNumeric;
   }
 
 
@@ -196,7 +229,7 @@ public class ViewTab extends Tab {
       }
       FileChooser fc = new FileChooser();
       fc.setTitle("Save CSV File");
-      String initialFileName = (title.length == 0 ? "rideExport" : title[0])
+      String initialFileName = (title.length == 0 ? "gadeExport" : title[0])
           .replace("*", "").replace(" ", "");
       if (initialFileName.endsWith(".")) {
         initialFileName = initialFileName + "csv";
