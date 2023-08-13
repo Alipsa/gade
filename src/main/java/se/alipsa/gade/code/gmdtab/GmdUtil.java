@@ -37,7 +37,9 @@ public class GmdUtil {
   private static final Logger log = LogManager.getLogger();
 
   private static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.css";
-  private static final String BOOTSTRAP_CSS_PATH = "META-INF/resources/webjars/bootstrap/5.2.0/css/bootstrap.css";
+
+  //"META-INF/resources/webjars/bootstrap/5.2.3/css/bootstrap.css";
+  private static final String BOOTSTRAP_CSS_PATH = HtmlDecorator.BOOTSTRAP_CSS_PATH;
   public static final String BOOTSTRAP_CSS = resourceUrlExternalForm(BOOTSTRAP_CSS_PATH);
   static Gmd gmd = new Gmd();
 

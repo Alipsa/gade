@@ -23,7 +23,7 @@ public class GitTest {
   private static Logger log = LogManager.getLogger();
 
   /**
-   * If you have a password for your certificate, you need to add credentionsl to your
+   * If you have a password for your certificate, you need to add credentials to your
    * ~/.git-credentials file for this test to work.
    * The format of the string in ~/.git-credentials is:
    * <pre>

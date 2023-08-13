@@ -67,6 +67,10 @@ public class FileUtils {
         return url;
       }
     }
+    URL classResource = FileUtils.class.getResource(resource);
+    if (classResource != null) {
+      return classResource;
+    }
 
     final URL systemResource = ClassLoader.getSystemResource(resource);
     if (systemResource != null) {
