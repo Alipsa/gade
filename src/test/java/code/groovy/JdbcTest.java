@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class JdbcTest {
 
   private static final String dbDriver = "org.h2.Driver";
-  private static final String dbUrl = "jdbc:h2:file:"+ new File(".").getAbsolutePath() + "/testdb";
+  private static final String dbUrl = "jdbc:h2:file:"+ new File(".").getAbsolutePath() + "/build/testdb";
   private static final String dbUser = "sa";
   private static final String dbPasswd = "123";
 
