@@ -124,7 +124,7 @@ public class ViewTab extends Tab {
 
       for (int i = 0; i < headerList.size(); i++) {
         final int j = i;
-        String colName = headerList.get(i);
+        String colName = String.valueOf(headerList.get(i));
         TableColumn<List<String>, String> col = new TableColumn<>();
         if (shouldRightAlign(columnTypes.get(i))) {
           col.setStyle("-fx-alignment: CENTER-RIGHT;");

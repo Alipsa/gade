@@ -158,7 +158,7 @@ public class FileUtils {
   public static File copy(String resourcePath, File toDir, Map<String, String> replacements) throws IOException {
     var content = readContent(resourcePath);
     for (var e : replacements.entrySet()) {
-      content = content.replaceAll(e.getKey(), e.getValue());
+      content = content.replace(e.getKey(), e.getValue());
     }
     if (!toDir.exists()) {
       toDir.mkdirs();

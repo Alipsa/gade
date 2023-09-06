@@ -404,6 +404,41 @@ public class InOut implements GuiInteraction {
     }
   }
 
+  public Object sql(String connectionName, String projectFile) throws IOException,
+      SQLException, ExecutionException, InterruptedException {
+
+    String s = FileUtils.readContent(projectFile(projectFile));
+    return dbExecuteSql(connectionName, s);
+  }
+
+  public Object sql(String connectionName, String projectFile, @NotNull Map<String, Object> replacements, boolean... logSql) throws IOException,
+      SQLException, ExecutionException, InterruptedException {
+
+    String s = FileUtils.readContent(projectFile(projectFile));
+    for (var entry : replacements.entrySet()) {
+      Object value = entry.getValue();
+      String strVal;
+      if (value instanceof Collection<?> list) {
+        var listValues = new ArrayList<String>();
+        for (var val : list) {
+          if (val instanceof CharSequence) {
+            listValues.add("'" + val + "'");
+          } else {
+            listValues.add(String.valueOf(val));
+          }
+        }
+        strVal = String.join(", ", listValues);
+      } else {
+        strVal = String.valueOf(value);
+      }
+      s = s.replace(entry.getKey(), strVal);
+    }
+    if (logSql.length > 0 && logSql[0]) {
+      log.info("Executing SQL: {}", s);
+    }
+    return dbExecuteSql(connectionName, s);
+  }
+
   /**
    * As this is called from the script engine which runs on a separate thread
    * any gui interaction must be performed in a Platform.runLater (not sure if this qualifies as gui interaction though)
@@ -544,6 +579,10 @@ public class InOut implements GuiInteraction {
     }
     Image img = new Image(url.toExternalForm());
     display(img, title);
+  }
+
+  public void view(Integer o, String... title) {
+    view(Matrix.create(List.of(List.of("Update count", o))), title.length > 0 ? title : new String[] {"Updated rows"});
   }
 
   public void view(List<List<?>> matrix, String... title) {

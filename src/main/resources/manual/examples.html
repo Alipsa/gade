@@ -67,7 +67,7 @@ I like to save these kind of queries with the extension psql (parameterized sql)
 <div class="codeblock"><pre>
 <span class="comment">// Read the sql file containing the SQL code above:</span>
 fancyQuery = io.projectFile(<span class="string">"fancy.psql"</span>).text
-    .replaceAll(<span class="string">"@1"</span>, <span class="string">"Per"</span>)
+    .replace(<span class="string">"@1"</span>, <span class="string">"Per"</span>)
 </pre>
 </div>
 
