@@ -303,6 +303,11 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     return parentTab;
   }
 
+  /**
+   * Associate this CodeTextArea with a Tab
+   *
+   * @param parentTab the tab to set as the "owner" of this CodeTextArea
+   */
   public void setParentTab(TextAreaTab parentTab) {
     this.parentTab = parentTab;
   }

@@ -106,6 +106,14 @@ public class CodeComponent extends BorderPane {
     return (TextAreaTab) selectionModel.getSelectedItem();
   }
 
+  /**
+   * Load the content of the file into a tab, add and active it.
+   *
+   * @param file the file to load
+   * @param type the CodeType of the file
+   *
+   * @return the loaded and activated tab
+   */
   public TextAreaTab addTab(File file, CodeType type) {
     log.trace("Opening {} as type {}", file, type);
     try {
@@ -134,6 +142,7 @@ public class CodeComponent extends BorderPane {
     return null;
   }
 
+  /** Add a Munin Tab to the Code component and make it active */
   public TextAreaTab addTab(MuninTab tab) {
     return addTabAndActivate(tab);
   }

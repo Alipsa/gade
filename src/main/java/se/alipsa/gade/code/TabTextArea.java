@@ -36,6 +36,10 @@ public interface TabTextArea {
 
   /**
    * replace a section of text of the TabTextArea
+   *
+   * @param start the start of the section
+   * @param end the end of the section
+   * @param content the replacement content
    */
   void replaceContentText(int start, int end, String content);
 }

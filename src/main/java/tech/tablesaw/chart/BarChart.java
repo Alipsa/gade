@@ -5,7 +5,7 @@ import tech.tablesaw.columns.Column;
 
 public class BarChart extends Chart {
 
-  protected ChartType chartType = ChartType.NONE;
+  protected ChartType chartType = ChartType.BASIC;
   private ChartDirection direction;
 
   public ChartType getChartType() {

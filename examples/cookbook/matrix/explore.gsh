@@ -43,7 +43,7 @@ io.display(Histogram.create(
 
 //io.view(aq)
 // show a bok plot for how temperature is distributed each month
-io.display(BarChart.create("bar Temp by Month", ChartType.NONE, aq.convert("Month": String), "Month", ChartDirection.VERTICAL, "Temp"), "bar Temp/Month")
+io.display(BarChart.create("bar Temp by Month", ChartType.BASIC, aq.convert("Month": String), "Month", ChartDirection.VERTICAL, "Temp"), "bar Temp/Month")
 println("TODO: Boxcharts does not yet exist")
 io.display(BoxChart.create("box Temp by Month", aq, "Month", "Temp"), "box Temp/Month")
 

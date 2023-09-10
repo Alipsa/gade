@@ -118,8 +118,8 @@ public class InOut implements GuiInteraction {
     }
     return gui.getEnvironmentComponent().connect(ci);
   }
-  
-  public Gtable dbSelect(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+
+  private Gtable dbSelect(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
@@ -130,7 +130,7 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public Gtable dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private Gtable dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
@@ -141,14 +141,14 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbUpdate(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement()) {
       return dbExecuteUpdate(stm, sqlQuery);
     }
   }
 
-  public int dbUpdate(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement()) {
       return dbExecuteUpdate(stm, sqlQuery);
@@ -163,12 +163,12 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbUpdate(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
     String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
     return dbUpdate(connectionName, sql);
   }
 
-  public int dbUpdate(ConnectionInfo ci, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(ConnectionInfo ci, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
     String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
     return dbUpdate(ci, sql);
   }
@@ -281,7 +281,7 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbInsert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
       return (int)dbExecuteSql(connectionName, sqlQuery);
     } else {
@@ -289,7 +289,7 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbInsert(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
       return (int)dbExecuteSql(ci, sqlQuery);
     } else {
@@ -297,13 +297,13 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbInsert(String connectionName, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(String connectionName, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
     String sql = createInsertSql(tableName, row);
     log.info("Executing insert query: {}", sql);
     return dbInsert(connectionName, sql);
   }
 
-  public int dbInsert(ConnectionInfo ci, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(ConnectionInfo ci, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
     String sql = createInsertSql(tableName, row);
     log.info("Executing insert query: {}", sql);
     return dbInsert(ci, sql);
@@ -325,19 +325,19 @@ public class InOut implements GuiInteraction {
     return sql;
   }
 
-  public int dbInsert(String connectionName, Table table) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(String connectionName, Table table) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = dbConnect(connectionName)) {
       return dbInsert(con, table);
     }
   }
 
-  public int dbInsert(ConnectionInfo ci, Table table) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(ConnectionInfo ci, Table table) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = dbConnect(ci)) {
       return dbInsert(con, table);
     }
   }
 
-  public int dbInsert(Connection con, Table table) throws SQLException {
+  private int dbInsert(Connection con, Table table) throws SQLException {
     try(Statement stm = con.createStatement()) {
       for (Row row : table) {
         stm.addBatch(createInsertSql(table.name(), row));
@@ -347,15 +347,15 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbUpsert(String connectionName, Row row, String... primaryKeyName) {
+  private int dbUpsert(String connectionName, Row row, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
-  public int dbUpsert(String connectionName, Table table, String... primaryKeyName) {
+  private int dbUpsert(String connectionName, Table table, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
-  public int dbDelete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbDelete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
       return (int)dbExecuteSql(connectionName, sqlQuery);
     } else {
@@ -363,7 +363,7 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public int dbDelete(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbDelete(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
     if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
       return (int)dbExecuteSql(ci, sqlQuery);
     } else {
@@ -380,7 +380,7 @@ public class InOut implements GuiInteraction {
    * @throws ExecutionException if it was not possible to connect
    * @throws InterruptedException if the thread was interrupted during execution
    */
-  public Object dbExecuteSql(String connectionName, String sql) throws SQLException, ExecutionException, InterruptedException {
+  private Object dbExecuteSql(String connectionName, String sql) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
@@ -392,7 +392,7 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public Object dbExecuteSql(ConnectionInfo ci, String sql) throws SQLException, ExecutionException, InterruptedException {
+  private Object dbExecuteSql(ConnectionInfo ci, String sql) throws SQLException, ExecutionException, InterruptedException {
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
@@ -836,136 +836,7 @@ public class InOut implements GuiInteraction {
 
   @Override
   public String help() {
-    return """
-        Inout: Providing interaction capabilities between Groovy Code and Gade 
-                
-        File chooseDir(String title, String initialDirectory)
-            asks user to select a dir
-            Return the java.io.File pointing to the directory chosen 
-                            
-        File chooseFile(String title, String initialDirectory, String description, String... extensions)
-            asks user to select a file
-            Returns the java.io.File selected by the user              
-                            
-        public Connection dbConnect(String name)
-          Connect to a database defined in the Connections tab. 
-           
-        ConnectionInfo dbConnection(String name)
-          Return a connection info (object containing the info) for the name defined in the Connections tab.            
-                 
-        Gtable dbSelect(String connectionName, String sqlQuery)
-          Convenient way to query a database using a connection defined in the Connections tab.
-                  
-        public int dbUpdate(String connectionName, String sqlQuery) 
-          Convenient way to run an update query using a connection defined in the Connections tab. 
-            
-        public int dbInsert(String connectionName, String sqlQuery) 
-          Convenient way to run an insert query using a connection defined in the Connections tab.  
-              
-        public int dbDelete(String connectionName, String sqlQuery) 
-          Convenient way to run a delete query using a connection defined in the Connections tab.  
-          
-        void display(Node node, String... title)
-           display an image in the Plot tab
-           @param node the Node to display
-           @param title an optional title for the component displaying the node
-         
-        void display(Image img, String... title)
-           display an image in the Plot tab     
-           @param img the Image to display
-           @param title an optional title for the component displaying the image
-
-        void display(String fileName, String... title)
-          display an image in the Plot tab
-          @param fileName the file name of the image to display
-          @param title an optional title for the component displaying the image    
-              
-        void display(Chart chart, String... titleOpt)
-          Show the chart in the plots tab
-                
-        void display(Figure figure, String... titleOpt)
-          Show the figure in the plots tab
-          
-        void display(JComponent swingPanel, String... titleOpt)
-          Show a swing component in the plots tab, useful for swing chart libraries e.g. xchart
-
-        String getContentType(String fileName)
-            makes an educated guess of the content type for the filePath specified  
-                           
-        Stage getStage()
-          Allows Dialogs and similar in external packages to interact with Ride
-          @return the primary stage     
-          
-        void help(Class<?> clazz, String... title)
-          shows useful info about the class i.e. available methods in the help tab.
-                
-        void help(Object obj, String... title)
-          shows useful info about the object i.e. the object type, available methods and toString content in the hep tab.
-
-        void javadoc(String groupId, String artifactId)
-          displays javadoc for the latest version fot the artifact in the help tab   
-        
-        void javadoc(String groupId, String artifactId, String version)
-          displays javadoc in the help tab for the version of the artifact specified     
-          
-        void javadoc(String dependencyString)
-          displays javadoc in the help tab for the version of the artifact specified   
-          dependencyString is in the format groupId:artifactId:version e.g. "org.knowm.xchart:xchart:3.8.1"  
-
-        void javadoc(Class clazz)
-          displays javadoc in the help tab for class specified, looks up the class in maven central search and tries to
-          make a somewhat educated guess for which artifact it should be  
-          
-        File projectDir()
-          return the project dir (the root of the file tree)    
-          
-        String prompt(String title, String headerText, String message, String defaultValue)
-           prompt for text input
-           
-        String prompt(String message)   
-           quick prompt for text input
-           
-        String promptPassword(String title, String message)
-          prompt for a password (text shown as ***)   
-           
-        Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue)
-            prompt user to pick from a list of values
-            
-        LocalDate promptDate(String title, String message, LocalDate defaultValue)
-            prompt user for a date. If outputformat is null, the format will be yyyy-MM-dd
-            
-        YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial)
-            prompt user for a yearMonth (yyyy-MM)
-            
-        public YearMonth promptYearMonth(String message)
-            quick prompt for a YearMonth
-            
-        Image readImage(String filePath)
-            create an javafx Image from the url/path specified    
-            
-        Image readImage(File file)
-            create an javafx Image from the file specified   
-                           
-        File scriptFile()
-          return the file from the active tab or null if the active tab has never been saved
-                
-        File scriptDir()
-          return the dir where the current script resides
-          or the project dir if the active tab has never been saved
-
-        boolean urlExists(String urlString, int timeout)
-          attempts to connect to the url specified with a HEAD request to see if it is there or not. 
-                             
-        void view(Table table, String... title)
-          display data in the Viewer tab
-          @param table the tablesaw Table to show
-          @param title an optional title for the component displaying the table
-                
-        void view(String html, String... title)
-          display html in the Viewer tab        
-          @param html a String or similar with the html content to view or a path or url to a file containing the html
-          @param title an optional title for the component displaying the html                                                                                                                                   
-        """;
+    return "Inout: Providing interaction capabilities between Groovy Code and Gade\n" + helpText(InOut.class, false);
   }
 
   public void help(Class<?> clazz, String... title) {

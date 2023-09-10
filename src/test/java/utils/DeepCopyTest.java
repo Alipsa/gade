@@ -152,7 +152,7 @@ public class DeepCopyTest {
           "start_date", toLocalDates("2012-01-01", "2013-09-23", "2014-11-15", "2014-05-11", "2015-03-27")),
         Arrays.asList(int.class, String.class, Number.class, LocalDate.class));
 
-    var chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.NONE, "salary");
+    var chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
     Node jChart = Plot.jfx(chart);
     var c = DeepCopier.deepCopy(jChart);
     var jfxChart = (BarChart<?, ?>)jChart;

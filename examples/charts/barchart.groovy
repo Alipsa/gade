@@ -13,7 +13,7 @@ empData = Matrix.create(
     [int, String, Number, LocalDate]
 )
 
-chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.NONE, "salary")
+chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary")
 io.display(chart, "charts barchart")
 file = io.projectFile("barchart.png")
 

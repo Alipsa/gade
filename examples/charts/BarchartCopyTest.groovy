@@ -1,16 +1,4 @@
 import java.time.LocalDate
-import javafx.scene.Group
-import javafx.scene.Node
-import javafx.scene.Parent
-import javafx.scene.Scene
-import javafx.scene.chart.*
-import javafx.scene.layout.*
-import javafx.scene.shape.Shape
-
-import se.alipsa.groovy.matrix.*
-import se.alipsa.groovy.charts.*
-
-import static se.alipsa.groovy.matrix.ListConverter.*
 
 
 empData = TableMatrix.create(
@@ -21,7 +9,7 @@ empData = TableMatrix.create(
     [int, String, Number, LocalDate]
 )
 
-chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.NONE, "salary")
+chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary")
 io.display(chart, "charts barchart")
 file = io.projectFile("barchart.png")
 
@@ -32,7 +20,7 @@ println ""
 
 Axis copyAxis(Axis axis) {
   if (axis instanceof CategoryAxis) {
-    def categoryAxis = axis
+    CategoryAxis categoryAxis = axis as CategoryAxis
     List<String> categories = new ArrayList<>();
     categories.addAll(categoryAxis.getCategories());
     CategoryAxis copy = new CategoryAxis();
@@ -60,7 +48,7 @@ for (def fromSeries : jfxChart.getData()) {
   def toSerie = new XYChart.Series<>();
   toSerie.setName(fromSeries.getName());
   def dat = []
-  for (var data : fromSeries.getData()) {
+  for (def data : fromSeries.getData()) {
     dat.add(new XYChart.Data(data.getXValue(), data.getYValue()));
   }
   toSerie.getData().addAll(dat)
