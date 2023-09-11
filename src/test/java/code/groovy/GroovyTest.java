@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import javax.script.ScriptException;
 
 public class GroovyTest {
 
@@ -21,7 +23,7 @@ public class GroovyTest {
     }
 
     @Test
-    public void testGrape() {
+    public void testGrape() throws ScriptException {
         GroovyClassLoader gcl = new GroovyClassLoader();
         GroovyShell groovyShell = new GroovyShell(gcl);
         StringBuilder sb = new StringBuilder()
@@ -36,6 +38,29 @@ public class GroovyTest {
         Object result = groovyShell.evaluate(sb.toString());
         //System.out.println(result);
         assertEquals("any",result);
+
+        var engine = new GroovyScriptEngineImpl();
+        result = engine.eval(sb.toString());
+        assertEquals("any",result);
+
+        System.setProperty("groovy.grape.report.downloads","true");
+        System.setProperty("ivy.message.logger.level","4");
+        String script = """
+            import groovy.grape.Grape
+            Grape.grab('org.apache.httpcomponents:httpclient:4.2.1')
+            import org.apache.http.impl.client.DefaultHttpClient
+            import org.apache.http.client.methods.HttpGet
+                    
+            def httpClient = new DefaultHttpClient()
+            def url = 'http://www.google.com/search?q=Groovy'
+            def httpGet = new HttpGet(url)
+                    
+            def httpResponse = httpClient.execute(httpGet)    
+            """;
+        result = groovyShell.evaluate(script);
+        System.out.println(result);
+        result = engine.eval(script);
+        System.out.println(result);
     }
 
     @Test
