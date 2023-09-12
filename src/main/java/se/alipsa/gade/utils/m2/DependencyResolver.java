@@ -42,8 +42,20 @@ public class DependencyResolver {
   }
 
   public void addDependency(String groupId, String artifactId, String version) throws ResolvingException {
-    List<File> artifacts = resolve(groupId, artifactId, version);
+    Dependency dep = new Dependency(groupId, artifactId, version);
+    addDependency(dep);
+  }
+
+  public void addDependency(String dependency) throws ResolvingException {
+    Dependency dep = new Dependency(dependency);
+    addDependency(dep);
+  }
+
+  private void addDependency(Dependency dep) throws ResolvingException {
+
+    List<File> artifacts = resolve(dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
     if (classLoader == null) {
+      log.error("You must add a GroovyClassloader before adding dependencies");
       throw new ResolvingException("You must add a GroovyClassloader before adding dependencies");
     }
     try {
@@ -51,6 +63,7 @@ public class DependencyResolver {
         classLoader.addURL(artifact.toURI().toURL());
       }
     } catch (MalformedURLException e) {
+      log.warn("Failed to convert the downloaded file to a URL", e);
       throw new ResolvingException("Failed to convert the downloaded file to a URL", e);
     }
   }
@@ -79,6 +92,7 @@ public class DependencyResolver {
           dependency.getVersion()
       );
     } catch (SettingsBuildingException | ArtifactResolutionException e) {
+      log.warn("Failed to resolve artifact " + dependency);
       throw new ResolvingException("Failed to resolve artifact " + dependency);
     }
     jarFiles.add(artifact);
@@ -90,6 +104,7 @@ public class DependencyResolver {
         }
       }
     } catch (SettingsBuildingException | ModelBuildingException | DependenciesResolveException e) {
+      log.warn("Failed to resolve pom file " + pomFile);
       throw new ResolvingException("Failed to resolve pom file " + pomFile);
     }
   }

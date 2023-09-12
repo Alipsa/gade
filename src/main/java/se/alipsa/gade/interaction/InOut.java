@@ -17,6 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.utils.m2.DependencyResolver;
+import se.alipsa.gade.utils.m2.ResolvingException;
 import se.alipsa.groovy.datautil.gtable.Gtable;
 import se.alipsa.groovy.matrix.Matrix;
 import tech.tablesaw.chart.Chart;
@@ -1011,6 +1013,15 @@ public class InOut implements GuiInteraction {
         + packageName + "/" + className + ".html";
     log.info("Showing {} in help tab", jdocUrl);
     gui.getInoutComponent().viewHtml(jdocUrl, artifactId);
+  }
+
+  public void addDependency(String dependency) {
+    DependencyResolver resolver = new DependencyResolver(gui.dynamicClassLoader);
+    try {
+      resolver.addDependency(dependency);
+    } catch (ResolvingException e) {
+      Platform.runLater(() -> ExceptionAlert.showAlert("Failed to add dependency " + dependency, e));
+    }
   }
 
 
