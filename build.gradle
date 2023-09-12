@@ -131,8 +131,6 @@ dependencies {
     implementation 'se.alipsa.groovy:matrix-json:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-csv:1.0.0'
     implementation 'se.alipsa:maven-3.8.4-utils:1.0.3-SNAPSHOT'
-    // note: dom4j is also in se.alipsa.groovy:data-utils
-    implementation 'org.dom4j:dom4j:2.1.4'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 

@@ -43,8 +43,8 @@ public class GroovyTest {
         result = engine.eval(sb.toString());
         assertEquals("any",result);
 
-        System.setProperty("groovy.grape.report.downloads","true");
-        System.setProperty("ivy.message.logger.level","4");
+        //System.setProperty("groovy.grape.report.downloads","true");
+        //System.setProperty("ivy.message.logger.level","4");
         String script = """
             import groovy.grape.Grape
             Grape.grab('org.apache.httpcomponents:httpclient:4.2.1')

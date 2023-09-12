@@ -5,35 +5,34 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.model.building.ModelBuildingException;
 import org.apache.maven.settings.building.SettingsBuildingException;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
+import se.alipsa.gade.interaction.UrlUtil;
 import se.alipsa.gade.model.Dependency;
+import se.alipsa.gade.utils.MavenRepoLookup;
 import se.alipsa.mavenutils.DependenciesResolveException;
 import se.alipsa.mavenutils.MavenUtils;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 
 
 public class DependencyResolver {
 
   private static final Logger log = LogManager.getLogger();
-  public static final URL CENTRAL_MAVEN_REPOSITORY;
 
-  static {
-    try {
-      CENTRAL_MAVEN_REPOSITORY = new URL("https://repo1.maven.org/maven2/");
-    } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
-    }
-  }
-  private final Set<URL> remoteRepositories;
+  private final UrlUtil urlUtil = new UrlUtil();
+
   private GroovyClassLoader classLoader = null;
 
   public DependencyResolver() {
-    remoteRepositories = new LinkedHashSet<>();
-    remoteRepositories.add(CENTRAL_MAVEN_REPOSITORY);
   }
 
   public DependencyResolver(GroovyClassLoader classLoader) {
@@ -97,6 +96,22 @@ public class DependencyResolver {
     }
     jarFiles.add(artifact);
     File pomFile = new File(artifact.getParent(), artifact.getName().replace(".jar", ".pom"));
+    if (!pomFile.exists()) {
+      String url = null;
+      for (RemoteRepository remoteRepository : mavenUtils.getRemoteRepositories()) {
+        url = MavenRepoLookup.pomUrl(dependency, remoteRepository.getUrl());
+        if (urlUtil.exists(url, 10)) {
+          break;
+        }
+      }
+      if (url != null) {
+        try {
+          download(url, pomFile);
+        } catch (IOException e) {
+          throw new ResolvingException("Failed to resolve pom file for " + dependency, e);
+        }
+      }
+    }
     try {
       for (File file : mavenUtils.resolveDependencies(pomFile)) {
         if (file.getName().toLowerCase().endsWith(".jar")) {
@@ -106,6 +121,16 @@ public class DependencyResolver {
     } catch (SettingsBuildingException | ModelBuildingException | DependenciesResolveException e) {
       log.warn("Failed to resolve pom file " + pomFile);
       throw new ResolvingException("Failed to resolve pom file " + pomFile);
+    }
+  }
+
+  private void download(String urlString, File localFilename) throws IOException {
+    URL url = new URL(urlString);
+    try (
+        ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+        FileOutputStream fileOutputStream = new FileOutputStream(localFilename);
+        FileChannel fileChannel = fileOutputStream.getChannel()) {
+      fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
     }
   }
 }
