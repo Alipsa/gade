@@ -79,13 +79,38 @@ public class MavenRepoLookup {
     return artifactUrl(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(), repositoryUrl);
   }
 
+  public static String pomUrl(String groupId, String artifactId, String version, String repositoryUrl) {
+    return repositoryUrl + subDir(groupId,artifactId,version) + pomFile(artifactId, version);
+  }
+
+  public static String pomUrl(Dependency dependency, String repositoryUrl) {
+    return pomUrl(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(), repositoryUrl);
+  }
+
   public static String jarFile(String artifactId, String version) {
     return artifactId + "-" + version + ".jar";
+  }
+
+  public static String jarFile(Dependency dependency) {
+    return jarFile(dependency.getArtifactId(), dependency.getVersion());
+  }
+
+  public static String pomFile(String artifactId, String version) {
+    return artifactId + "-" + version + ".pom";
+  }
+
+  public static String pomFile(Dependency dependency) {
+    return pomFile(dependency.getArtifactId(), dependency.getVersion());
   }
 
   public static String subDir(String groupId, String artifactId, String version) {
     return groupUrlPart(groupId) + artifactId + "/" + version + "/";
   }
+
+  public static String subDir(Dependency dependency) {
+    return subDir(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion());
+  }
+
   public static String groupUrlPart(String groupId) {
     return groupId.replace('.', '/') + "/";
   }
@@ -97,5 +122,4 @@ public class MavenRepoLookup {
   public static String toShortDependency(String groupId, String artifactId, String version) {
     return groupId + ":" + artifactId + ":" + version;
   }
-
 }
