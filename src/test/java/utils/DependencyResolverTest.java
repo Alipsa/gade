@@ -16,6 +16,5 @@ public class DependencyResolverTest {
 
     List<File> dependencies = resolver.resolve("org.apache.commons:commons-lang3:3.13.0");
     Assertions.assertEquals(1, dependencies.size());
-
   }
 }

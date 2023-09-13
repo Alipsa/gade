@@ -4,15 +4,19 @@ import javafx.scene.control.Button;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.console.ConsoleComponent;
-import se.alipsa.gade.console.ConsoleTextArea;
+import se.alipsa.gade.model.GroovyCodeHeader;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static se.alipsa.gade.menu.GlobalOptions.ADD_IMPORTS;
 
@@ -42,11 +46,14 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
   }
 
   public void runGroovy() {
-    String code = "";
+
+    String imports = "";
     if (gui.getPrefs().getBoolean(ADD_IMPORTS, true)) {
-      code = groovyTextArea.getImports();
+      GroovyCodeHeader headers = groovyTextArea.getImportsAndDependencies();
+      imports = headers.imports();
+      runGroovy(headers.grabs() + "\n" + headers.deps());
     }
-    runGroovy(code + "\n" + getTextContent());
+    runGroovy(imports + "\n" + getTextContent());
   }
 
   public void runGroovy(final String content) {

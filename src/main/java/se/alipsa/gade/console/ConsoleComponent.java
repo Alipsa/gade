@@ -669,8 +669,10 @@ public class ConsoleComponent extends BorderPane {
       }
       Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
 
-    } catch (ScriptException | RuntimeException e) {
+    } catch (ScriptException e) {
       throw e;
+    } catch (RuntimeException re) {
+      throw new Exception(re.getMessage(), re);
     }
   }
 

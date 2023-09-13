@@ -6,10 +6,12 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
+import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.model.GroovyCodeHeader;
 import se.alipsa.gade.utils.Alerts;
 
 import java.lang.reflect.Method;
@@ -74,7 +76,7 @@ public class GroovyTextArea extends CodeTextArea {
           CodeComponent codeComponent = parent.getGui().getCodeComponent();
           String gCode = "";
           if (parent.getGui().getPrefs().getBoolean(ADD_IMPORTS, true)) {
-            gCode += getImports();
+            gCode += getImportsAndDependencies();
           }
           String selected = selectedTextProperty().getValue();
           // if text is selected then go with that
@@ -100,17 +102,23 @@ public class GroovyTextArea extends CodeTextArea {
     });
   }
 
-  String getImports() {
+  GroovyCodeHeader getImportsAndDependencies() {
     List<String> imports = new ArrayList<>();
+    List<String> grabs = new ArrayList<>();
+    List<String> deps = new ArrayList<>();
     try(Scanner scanner = new Scanner(getAllTextContent())) {
       while (scanner.hasNextLine()) {
         String line = scanner.nextLine().trim();
         if (line.startsWith("import ")) {
           imports.add(line);
+        } else if (line.startsWith("@Grab") || line.startsWith("Grape.grab")) {
+          grabs.add(line);
+        } else if (line.startsWith("io.addDependency")) {
+          deps.add(line);
         }
       }
     }
-    return String.join("\n", imports) + "\n";
+    return new GroovyCodeHeader(grabs, deps, imports);
   }
 
   protected final StyleSpans<Collection<String>> computeHighlighting(String text) {

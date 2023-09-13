@@ -85,12 +85,25 @@ dependencies {
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation 'org.apache.ivy:ivy:2.5.2'
+    /*
+    implementation 'org.apache.ant:ant:1.9.16'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.commons:commons-vfs2:2.2'
+    implementation 'org.bouncycastle:bcpg-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'oro:oro:2.0.8'
+    implementation 'com.jcraft:jsch:0.1.55'
+    implementation 'com.jcraft:jsch.agentproxy:0.0.9'
+    implementation 'com.jcraft:jsch.agentproxy.connector-factory:0.0.9'
+    implementation 'com.jcraft:jsch.agentproxy.jsch:0.0.9'
+    */
+
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
 
-    // Used by se.alipsa.gade.utils.SemanticVersion
-    implementation 'org.apache.maven:maven-artifact:3.9.4'
+    // Used by se.alipsa.gade.utils.SemanticVersion, sync with maven-utils
+    implementation 'org.apache.maven:maven-artifact:3.8.4'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
@@ -130,7 +143,8 @@ dependencies {
     implementation 'se.alipsa.groovy:matrix-charts:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-json:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-csv:1.0.0'
-    implementation 'se.alipsa:maven-3.8.4-utils:1.0.3-SNAPSHOT'
+    implementation 'se.alipsa:maven-3.9.4-utils:1.0.3-SNAPSHOT'
+    //implementation 'org.apache.maven.resolver:maven-resolver-api:1.6.3'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
