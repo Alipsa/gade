@@ -144,7 +144,6 @@ dependencies {
     implementation 'se.alipsa.groovy:matrix-json:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-csv:1.0.0'
     implementation 'se.alipsa:maven-3.9.4-utils:1.0.3-SNAPSHOT'
-    //implementation 'org.apache.maven.resolver:maven-resolver-api:1.6.3'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
@@ -246,7 +245,7 @@ runtime {
     modules.set(['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
                'java.management', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs', 'java.xml',
                'java.compiler', 'java.scripting', 'java.desktop', 'jdk.dynalink', 'jdk.security.auth',
-               'java.security.jgss'])
+               'java.security.jgss', 'java.instrument'])
     launcher {
         noConsole = true
     }

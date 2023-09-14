@@ -12,12 +12,14 @@ import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.model.GroovyCodeHeader;
+import se.alipsa.gade.utils.ExceptionAlert;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static se.alipsa.gade.menu.GlobalOptions.ADD_DEPENDENCIES;
 import static se.alipsa.gade.menu.GlobalOptions.ADD_IMPORTS;
 
 public class GroovyTab extends TextAreaTab implements TaskListener {
@@ -47,13 +49,42 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
 
   public void runGroovy() {
 
-    String imports = "";
-    if (gui.getPrefs().getBoolean(ADD_IMPORTS, true)) {
-      GroovyCodeHeader headers = groovyTextArea.getImportsAndDependencies();
-      imports = headers.imports();
-      runGroovy(headers.grabs() + "\n" + headers.deps());
+
+    boolean runImports = gui.getPrefs().getBoolean(ADD_IMPORTS, true);
+    boolean runDeps = gui.getPrefs().getBoolean(ADD_DEPENDENCIES, true);
+    log.info("runImports = {}, runDeps = {}", runImports, runDeps);
+    if (runDeps) {
+      List<String> headers = groovyTextArea.getDependencies();
+      String deps = String.join("\n", headers);
+      if (headers.contains("@Grab")){
+        deps += "\nimport java.lang.Object";
+      }
+      try {
+        log.info("Running {}", deps);
+        var result = gui.getConsoleComponent().runScriptSilent(deps);
+        log.info("Result was {}", result);
+      } catch (Exception e) {
+        log.warn("Failed to run: {}", deps);
+        ExceptionAlert.showAlert("Failed to run dependencies", e);
+        return;
+      }
+      //gui.dynamicClassLoader.setShouldRecompile(true);
     }
-    runGroovy(imports + "\n" + getTextContent());
+    if (runImports) {
+      List<String> headers = groovyTextArea.getImports();
+      String imports = String.join("\n", headers);
+      try {
+        log.info("Running {}", imports);
+        var result = gui.getConsoleComponent().runScriptSilent(imports);
+        log.info("Result was {}", result);
+      } catch (Exception e) {
+        log.warn("Failed to run: {}", imports);
+        ExceptionAlert.showAlert("Failed to run imports", e);
+        return;
+      }
+      //gui.dynamicClassLoader.setShouldRecompile(true);
+    }
+    runGroovy(getTextContent());
   }
 
   public void runGroovy(final String content) {

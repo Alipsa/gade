@@ -75,9 +75,10 @@ public class GroovyTextArea extends CodeTextArea {
         if (KeyCode.ENTER.equals(e.getCode())) {
           CodeComponent codeComponent = parent.getGui().getCodeComponent();
           String gCode = "";
+          /*
           if (parent.getGui().getPrefs().getBoolean(ADD_IMPORTS, true)) {
-            gCode += getImportsAndDependencies();
-          }
+            gCode += getImports();
+          }*/
           String selected = selectedTextProperty().getValue();
           // if text is selected then go with that
           if (selected != null && !"".equals(selected)) {
@@ -102,23 +103,34 @@ public class GroovyTextArea extends CodeTextArea {
     });
   }
 
-  GroovyCodeHeader getImportsAndDependencies() {
-    List<String> imports = new ArrayList<>();
-    List<String> grabs = new ArrayList<>();
-    List<String> deps = new ArrayList<>();
+  List<String> getDependencies() {
+    List<String> headers = new ArrayList<>();
+    try(Scanner scanner = new Scanner(getAllTextContent())) {
+      while (scanner.hasNextLine()) {
+        String line = scanner.nextLine().trim();
+        if (line.startsWith("@Grab")
+            || line.startsWith("Grape.grab")
+            || line.startsWith("groovy.grape.")
+            || line.startsWith("io.addDependency")
+        ) {
+          headers.add(line);
+        }
+      }
+    }
+    return headers;
+  }
+
+  List<String> getImports() {
+    List<String> headers = new ArrayList<>();
     try(Scanner scanner = new Scanner(getAllTextContent())) {
       while (scanner.hasNextLine()) {
         String line = scanner.nextLine().trim();
         if (line.startsWith("import ")) {
-          imports.add(line);
-        } else if (line.startsWith("@Grab") || line.startsWith("Grape.grab")) {
-          grabs.add(line);
-        } else if (line.startsWith("io.addDependency")) {
-          deps.add(line);
+          headers.add(line);
         }
       }
     }
-    return new GroovyCodeHeader(grabs, deps, imports);
+    return headers;
   }
 
   protected final StyleSpans<Collection<String>> computeHighlighting(String text) {

@@ -207,7 +207,7 @@ public class MainMenu extends MenuBar {
       String mainProjectScript = camelCasedProjectName + ".groovy";
       String buildScriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
       FileUtils.writeToFile(new File(res.dir, "build.gradle"), buildScriptContent);
-      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("\\[artifactId\\]", res.projectName));
+      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("[artifactId]", res.projectName));
 
       Path mainPath = new File(res.dir, "src").toPath();
       Files.createDirectories(mainPath);
@@ -285,7 +285,7 @@ public class MainMenu extends MenuBar {
 
       String scriptContent = createBuildScript("templates/library_build.gradle", res.groupName, res.libName);
       FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
-      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("\\[artifactId\\]", res.libName));
+      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("[artifactId]", res.libName));
 
       Path mainPath = new File(res.dir, "src").toPath();
       Files.createDirectories(mainPath);
@@ -731,6 +731,7 @@ public class MainMenu extends MenuBar {
     }
 
     gui.getPrefs().putBoolean(ADD_IMPORTS, result.getBoolean(ADD_IMPORTS));
+    gui.getPrefs().putBoolean(ADD_DEPENDENCIES, result.getBoolean(ADD_DEPENDENCIES));
 
     if (shouldRestart) {
       restartR();

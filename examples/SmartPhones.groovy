@@ -1,5 +1,10 @@
-@Grab('org.jfree:jfreechart:1.5.3')
-@Grab(group='org.jfree', module='jfreechart-fx', version='1.0.1')
+System.setProperty('groovy.grape.report.downloads', 'true')
+System.setProperty('ivy.message.logger.level', '4')
+
+groovy.grape.Grape.grab('org.jfree:jfreechart:1.5.3')
+groovy.grape.Grape.grab(group:'org.jfree', module:'jfreechart-fx', version:'1.0.1')
+
+System.err.println('hello')
 //io.addDependency('org.jfree:jfreechart:1.5.3')
 //io.addDependency('org.jfree:jfreechart-fx:1.0.1')
 import java.awt.BasicStroke
@@ -8,10 +13,10 @@ import java.awt.Font
 import java.awt.RadialGradientPaint
 import java.awt.geom.Point2D
 import org.jfree.chart.ChartFactory
-import org.jfree.chart.fx.ChartViewer;
-import org.jfree.chart.title.TextTitle;
-import org.jfree.chart.ui.HorizontalAlignment;
-import org.jfree.chart.ui.RectangleEdge;
+import org.jfree.chart.fx.ChartViewer
+import org.jfree.chart.title.TextTitle
+import org.jfree.chart.ui.HorizontalAlignment
+import org.jfree.chart.ui.RectangleEdge
 import org.jfree.data.general.DefaultPieDataset
 
 

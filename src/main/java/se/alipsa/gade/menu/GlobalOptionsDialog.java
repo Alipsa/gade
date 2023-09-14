@@ -34,6 +34,8 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
   private CheckBox autoRunGlobal;
   private CheckBox autoRunProject;
   private CheckBox addImports;
+
+  private CheckBox addDependencies;
   private ComboBox<String> timezone;
 
   GlobalOptionsDialog(Gade gui) {
@@ -187,11 +189,18 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       addImports = new CheckBox();
       addImports.setSelected(gui.getPrefs().getBoolean(ADD_IMPORTS, gui.getPrefs().getBoolean(ADD_IMPORTS, true)));
       executionPane.getChildren().add(addImports);
+      //grid.add(executionPane, 0, 8,4, 1);
+
+      Label addDependeciesLabel = new Label("Run dependencies (grab, addDependency) before script");
+      addDependeciesLabel.setPadding(new Insets(0, 20, 0, 20));
+      executionPane.getChildren().add(addDependeciesLabel);
+      addDependencies = new CheckBox();
+      addDependencies.setSelected(gui.getPrefs().getBoolean(ADD_DEPENDENCIES, gui.getPrefs().getBoolean(ADD_DEPENDENCIES, true)));
+      executionPane.getChildren().add(addDependencies);
       grid.add(executionPane, 0, 8,4, 1);
 
 
-
-      getDialogPane().setPrefSize(760, 350);
+      getDialogPane().setPrefSize(760, 370);
       getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
       setResizable(true);
 
@@ -217,6 +226,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     result.put(AUTORUN_GLOBAL, autoRunGlobal.isSelected());
     result.put(AUTORUN_PROJECT, autoRunProject.isSelected());
     result.put(ADD_IMPORTS, addImports.isSelected());
+    result.put(ADD_DEPENDENCIES, addDependencies.isSelected());
     return result;
   }
 

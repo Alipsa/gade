@@ -18,6 +18,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
+import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
@@ -35,10 +36,7 @@ import se.alipsa.gade.utils.gradle.GradleUtils;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -640,13 +638,16 @@ public class ConsoleComponent extends BorderPane {
    */
 
   private void executeScriptAndReport(String script, String title) throws Exception {
-
+    PrintStream sysOut = System.out;
+    PrintStream sysErr = System.err;
     EnvironmentComponent env = gui.getEnvironmentComponent();
     try (
         AppenderWriter out = new AppenderWriter(console, true);
         WarningAppenderWriter err = new WarningAppenderWriter(console);
         PrintWriter outputWriter = new PrintWriter(out);
-        PrintWriter errWriter = new PrintWriter(err)
+        PrintWriter errWriter = new PrintWriter(err);
+        PrintStream outStream = new PrintStream(WriterOutputStream.builder().setWriter(outputWriter).get());
+        PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(errWriter).get());
     ) {
       if (engine == null) {
         Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
@@ -661,7 +662,8 @@ public class ConsoleComponent extends BorderPane {
 
       engine.getContext().setWriter(outputWriter);
       engine.getContext().setErrorWriter(errWriter);
-
+      System.setOut(outStream);
+      System.setErr(errStream);
       var result = engine.eval(script);
       // TODO: add config to opt out of printing the result to the console
       if (result != null) {
@@ -673,6 +675,9 @@ public class ConsoleComponent extends BorderPane {
       throw e;
     } catch (RuntimeException re) {
       throw new Exception(re.getMessage(), re);
+    } finally {
+      System.setOut(sysOut);
+      System.setErr(sysErr);
     }
   }
 
