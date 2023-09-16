@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import static se.alipsa.gade.menu.GlobalOptions.GRADLE_HOME;
+import static se.alipsa.gade.menu.GlobalOptions.USE_GRADLE_CLASSLOADER;
 
 public class GradleTab extends GroovyTab implements TaskListener {
 
@@ -31,6 +32,15 @@ public class GradleTab extends GroovyTab implements TaskListener {
     targetsField.setText("build");
     targetsField.setPrefColumnCount(30);
     buttonPane.getChildren().addAll(goalLabel, targetsField);
+
+    saveButton.setOnAction(a -> saveContent());
+  }
+
+  private void saveContent() {
+    gui.getMainMenu().saveContent(this);
+    if (gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false)) {
+      gui.getConsoleComponent().restartGroovy();
+    }
   }
 
   public void runGradle() {
@@ -41,7 +51,7 @@ public class GradleTab extends GroovyTab implements TaskListener {
           "You must save before running the build",
           "save now?");
       if (doSave) {
-        gui.getMainMenu().saveContent(this);
+        saveContent();
       } else {
         return;
       }

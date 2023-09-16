@@ -199,8 +199,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       executionPane.getChildren().add(addDependencies);
       grid.add(executionPane, 0, 8,4, 1);
 
-
-      getDialogPane().setPrefSize(760, 370);
+      getDialogPane().setPrefSize(780, 370);
       getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
       setResizable(true);
 

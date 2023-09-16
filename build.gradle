@@ -56,7 +56,7 @@ dependencies {
     //def jgitVersion = '6.5.0.202303070854-r'
     def tablesawVersion = "0.43.1"
     def log4jVersion = "2.20.0"
-    def groovyVersion = "4.0.14"
+    def groovyVersion = "4.0.15"
 
     jfxWin(
             "org.openjfx:javafx-base:${jfxVersion}:win",

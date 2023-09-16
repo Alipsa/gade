@@ -4,6 +4,7 @@ import static se.alipsa.gade.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
 import static se.alipsa.gade.menu.GlobalOptions.GRADLE_HOME;
 
 import javafx.application.Platform;
+import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gradle.tooling.*;
@@ -18,6 +19,7 @@ import org.gradle.util.GradleVersion;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
+import se.alipsa.gade.console.WarningAppenderWriter;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
@@ -132,13 +134,16 @@ public class GradleUtils {
       @Override
       protected Void call() {
         try (ProjectConnection connection = connector.connect();
-             OutputStream outputStream = consoleComponent.getOutputStream()) {
+             OutputStream outputStream = consoleComponent.getOutputStream();
+             WarningAppenderWriter err = new WarningAppenderWriter(console);
+             PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(err).get())) {
           BuildLauncher build = connection.newBuild();
           //build.addProgressListener(listener);
           if (tasks.length > 0) {
             build.forTasks(tasks);
           }
           build.setStandardOutput(outputStream);
+          build.setStandardError(errStream);
           build.run();
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -200,6 +205,8 @@ public class GradleUtils {
   public List<File> getProjectDependencies() {
     List<File> dependencyFiles = new ArrayList<>();
     try (ProjectConnection connection = connector.connect()) {
+      //BuildLauncher build = connection.newBuild();
+      //build.forTasks("dependencies").setStandardOutput(System.out).run();
       IdeaProject project = connection.getModel(IdeaProject.class);
       for (IdeaModule module : project.getModules()) {
         for (IdeaDependency dependency : module.getDependencies()) {
@@ -212,20 +219,52 @@ public class GradleUtils {
     return dependencyFiles;
   }
 
-  public ClassLoader createGradleCLassLoader(ClassLoader parent) throws MalformedURLException {
+  public List<URL> getOutputDirs() throws MalformedURLException {
+    List<URL> urls = new ArrayList<>();
+    try (ProjectConnection connection = connector.connect()) {
+      IdeaProject project = connection.getModel(IdeaProject.class);
+      for (IdeaModule module : project.getModules()) {
+        urls.add(getOutputDir(module).toURI().toURL());
+      }
+    }
+    return urls;
+  }
+
+  public File getOutputDir(IdeaModule module) {
+    File outPutDir = module.getCompilerOutput().getOutputDir();
+    if (outPutDir == null || !outPutDir.exists()) {
+      File moduleDir = module.getGradleProject().getProjectDirectory();
+      moduleDir = moduleDir != null && moduleDir.exists() ? moduleDir : projectDir;
+      outPutDir = new File(moduleDir, "build/classes/groovy/main/");
+    }
+    return outPutDir;
+  }
+
+  public ClassLoader createGradleCLassLoader(ClassLoader parent, ConsoleTextArea console) {
     List<URL> urls = new ArrayList<>();
     for (File f : getProjectDependencies()) {
-      urls.add(f.toURI().toURL());
+      try {
+        if (f.exists()) {
+          urls.add(f.toURI().toURL());
+        } else {
+          log.warn("Dependency file {} does not exist", f);
+          console.appendWarningFx("Dependency file " + f + " does not exist");
+        }
+      } catch (MalformedURLException e) {
+        log.warn("Error adding gradle dependency {} to classpath", f);
+        console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
+      }
     }
     try (ProjectConnection connection = connector.connect()) {
       IdeaProject project = connection.getModel(IdeaProject.class);
       for (IdeaModule module : project.getModules()) {
-        File outPutDir = module.getCompilerOutput().getOutputDir();
-        if (outPutDir == null || !outPutDir.exists()) {
-          // TODO find a non hard coded way to retrieve this
-          outPutDir = new File(projectDir, "build/classes/groovy/main/");
+        var outputDir = getOutputDir(module);
+        try {
+          urls.add(outputDir.toURI().toURL());
+        } catch (MalformedURLException e) {
+          log.warn("Error adding gradle output dir {} to classpath", outputDir);
+          console.appendWarningFx("Error adding gradle output dir {} " + outputDir + " to classpath");
         }
-        urls.add(outPutDir.toURI().toURL());
       }
     }
     return new URLClassLoader(urls.toArray(new URL[0]), parent);

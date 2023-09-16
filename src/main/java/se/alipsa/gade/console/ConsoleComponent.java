@@ -107,12 +107,12 @@ public class ConsoleComponent extends BorderPane {
   }
    */
 
-  public void initGroovy(ClassLoader parentClassLoader, boolean... skipMavenClassloading) {
+  public void initGroovy(ClassLoader parentClassLoader) {
     Task<Void> initTask = new Task<>() {
 
       @Override
       protected Void call() throws Exception {
-        return resetClassloaderAndGroovy(parentClassLoader, skipMavenClassloading);
+        return resetClassloaderAndGroovy(parentClassLoader);
       }
     };
     initTask.setOnSucceeded(e -> {
@@ -144,7 +144,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   @Nullable
-  private Void resetClassloaderAndGroovy(ClassLoader parentClassLoader, boolean... skipMavenClassloading) throws Exception {
+  private Void resetClassloaderAndGroovy(ClassLoader parentClassLoader) throws Exception {
     try {
 
       if (gui.getInoutComponent() == null) {
@@ -156,52 +156,58 @@ public class ConsoleComponent extends BorderPane {
 
       classLoader = new GroovyClassLoader(parentClassLoader);
 
-      boolean useMavenClassloader = skipMavenClassloading.length > 0
-          ? !skipMavenClassloading[0]
-          : gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
+      boolean useGradleCLassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
 
 
       if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
         File wd = gui.getInoutComponent().projectDir();
         if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true) && wd != null && wd.exists()) {
-          File classesDir = new File(wd, "target/classes");
+          File classesDir = new File(wd, "build/classes/groovy/main/");
           List<URL> urlList = new ArrayList<>();
           try {
             if (classesDir.exists()) {
               urlList.add(classesDir.toURI().toURL());
             }
-            File testClasses = new File(wd, "target/test-classes");
+            File testClasses = new File(wd, "build/classes/groovy/test/");
             if (testClasses.exists()) {
               urlList.add(testClasses.toURI().toURL());
             }
           } catch (MalformedURLException e) {
             log.warn("Failed to find classes dir", e);
           }
-          if (urlList.size() > 0) {
+          if (!urlList.isEmpty()) {
             log.trace("Adding compile dirs to classloader: {}", urlList);
             urlList.forEach(url -> classLoader.addURL(url));
             //classLoader = new URLClassLoader(urlList.toArray(new URL[0]), classLoader);
           }
         }
 
-        if (useMavenClassloader) {
+        if (useGradleCLassLoader) {
           File projectDir = gui.getInoutComponent().projectDir();
           File gradleHome = new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome()));
           File gradleFile = new File(projectDir, "build.gradle");
           if (gradleFile.exists() && gradleHome.exists()) {
             log.debug("Parsing build.gradle to use gradle classloader");
             console.appendFx("* Parsing build.gradle to create Gradle classloader...", true);
-            try {
-              var gradleUtils = new GradleUtils(gui);
-              classLoader = new GroovyClassLoader(gradleUtils.createGradleCLassLoader(classLoader));
-            } catch (Exception e) {
-              if (e instanceof MalformedURLException) {
-                Platform.runLater(() -> ExceptionAlert.showAlert("Failed to resolve gradle dependency: " + e.getMessage(), e));
-                log.info("Initializing groovy without Gradle...");
-              } else {
-                throw e;
+
+            var gradleUtils = new GradleUtils(gui);
+            /*
+            gradleUtils.getProjectDependencies().forEach(f -> {
+              try {
+                if (f.exists()) {
+                  classLoader.addURL(f.toURI().toURL());
+                } else {
+                  log.warn("Dependency file {} does not exist", f);
+                  console.appendWarningFx("Dependency file " + f + " does not exist");
+                }
+              } catch (MalformedURLException e) {
+                log.warn("Error adding gradle dependency {} to classpath", f);
+                console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
               }
-            }
+            });
+
+             */
+            classLoader = new GroovyClassLoader(gradleUtils.createGradleCLassLoader(classLoader, console));
           } else {
             log.info("Use gradle class loader is set but gradle build file {} does not exist", gradleFile);
           }

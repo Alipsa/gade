@@ -27,11 +27,14 @@ public class GradleUtilsTest {
 
     var gradleUtil = new GradleUtils(gradleInstallationDir, gradleProjectDir);
 
+    //System.out.println("Task names:" + gradleUtil.getGradleTaskNames());
+
     var depNames = gradleUtil.getProjectDependencyNames();
-    assertTrue(depNames.contains("commons-math3-3.6.1.jar"), "Failed to find dependency commons-math3-3.6.1.jar");
-    assertTrue(depNames.contains("guava-31.0.1-jre.jar"), "Failed to find dependency guava-31.0.1-jre.jar");
+    assertTrue(depNames.contains("commons-math3-3.6.1.jar"), "Failed to find dependency commons-math3-3.6.1.jar, was: " + depNames);
+    assertTrue(depNames.contains("guava-31.0.1-jre.jar"), "Failed to find dependency guava-31.0.1-jre.jar, was: " + depNames);
 
     var dependencies = gradleUtil.getProjectDependencies();
+    //dependencies.forEach(d -> System.out.println(d.getAbsolutePath()));
     assertNotNull(dependencies.stream().filter(f -> f.getName().equals("commons-math3-3.6.1.jar")).findAny().orElse(null), "Failed to find dependency commons-math3-3.6.1.jar");
     assertNotNull(dependencies.stream().filter(f -> f.getName().equals("guava-31.0.1-jre.jar")).findAny().orElse(null), "Failed to find dependency guava-31.0.1-jre.jar");
   }
