@@ -152,7 +152,7 @@ public class ConsoleComponent extends BorderPane {
         throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
       }
 
-      log.info("USE_GRADLE_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
+      //log.info("USE_GRADLE_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
 
       classLoader = new GroovyClassLoader(parentClassLoader);
 
