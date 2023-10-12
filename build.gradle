@@ -177,7 +177,8 @@ processResources.doLast {
     }
     ant.copy(
             file: "${projectDir}/version.properties",
-            todir: "${buildDir}/resources/main"
+            //todir: "${buildDir}/resources/main"
+            todir: project.layout.buildDirectory.dir("resources/main").get().asFile
     )
 }
 
@@ -240,7 +241,7 @@ runtime {
     // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
     def baseUrl = "https://download.bell-sw.com/java"
     // if you change version, remember to delete the platform dir to trigger download of the new version
-    def version = "17.0.7+7"
+    def version = "17.0.8.1+1"
 
     targetPlatform("linux") {
         jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-linux-amd64-full.tar.gz") {
@@ -253,8 +254,6 @@ runtime {
         }
     }
     targetPlatform("mac") {
-        // https://download.bell-sw.com/java/17.0.6+10/bellsoft-jdk17.0.6+10-macos-aarch64-full.tar.gz
-        // "${baseUrl}/${version}/bellsoft-jdk${version}-macos-amd64-full.tar.gz"
         jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-macos-aarch64-full.tar.gz") {
             downloadDir = "$projectDir/platform/mac"
         }
@@ -264,87 +263,113 @@ runtime {
 tasks.runtime.doLast {
     copy {
         from configurations.jfxLinux
-        into "$buildDir/image/gade-linux/lib/"
+        into(project.layout.buildDirectory.dir("image/gade-linux/lib/"))
     }
     copy {
         from configurations.jfxWin
-        into "$buildDir/image/gade-win/lib/"
+        into(project.layout.buildDirectory.dir("image/gade-win/lib/"))
     }
     copy {
         from configurations.jfxMac
-        into "$buildDir/image/gade-mac/lib/"
+        into(project.layout.buildDirectory.dir("image/gade-mac/lib/"))
     }
     copy {
         from("$projectDir/src/bin/")
-        into("$buildDir/image/gade-linux/")
+        into(project.layout.buildDirectory.dir("image/gade-linux/"))
         include 'createLauncher.sh'
         include '*.png'
     }
     copy {
         from("$projectDir/src/bin/cponly")
-        into("$buildDir/image/gade-linux/")
+        into(project.layout.buildDirectory.dir("image/gade-linux/"))
         include '*.sh'
     }
 
     copy {
         from("$projectDir/src/bin/")
-        into("$buildDir/image/gade-mac/")
+        into(project.layout.buildDirectory.dir("image/gade-mac/"))
         include '*.png'
     }
     copy {
         from("$projectDir/src/bin/cponly")
-        into("$buildDir/image/gade-mac/")
+        into(project.layout.buildDirectory.dir("image/gade-mac/"))
         include '*.sh'
     }
 
     copy {
         from("$projectDir/src/bin/")
-        into("$buildDir/image/gade-win/")
+        into(project.layout.buildDirectory.dir("image/gade-win/"))
         include '*.ico'
         include '*.ps1'
     }
     copy {
         from("$projectDir/src/bin/cponly")
-        into("$buildDir/image/gade-win/")
+        into(project.layout.buildDirectory.dir("image/gade-win/"))
     }
 
     copy {
         from("$projectDir")
-        into("$buildDir/image/gade-linux/")
+        into(project.layout.buildDirectory.dir("image/gade-linux/"))
         include 'version.properties'
     }
     copy {
         from("$projectDir")
-        into("$buildDir/image/gade-mac/")
+        into(project.layout.buildDirectory.dir("image/gade-mac/"))
         include 'version.properties'
     }
     copy {
         from("$projectDir")
-        into("$buildDir/image/gade-win/")
+        into(project.layout.buildDirectory.dir("image/gade-win/"))
         include 'version.properties'
     }
+
+    copy {
+        from("${tasks.runtime.targetPlatforms['linux'].jdkHome}/bin")
+        into(project.layout.buildDirectory.dir("image/${project.name}-linux/bin"))
+        //into("${project.buildDir}/image/${project.name}-linux/bin")
+        include 'javac'
+    }
+    copy {
+        from("${tasks.runtime.targetPlatforms['win'].jdkHome}/bin")
+        into(project.layout.buildDirectory.dir("image/${project.name}-win/bin"))
+        //into("${project.buildDir}/image/${project.name}-win/bin")
+        include 'javac.exe'
+    }
+    copy {
+        from("${tasks.runtime.targetPlatforms['mac'].jdkHome}/bin")
+        into(project.layout.buildDirectory.dir("image/${project.name}-mac/bin"))
+        include 'javac'
+    }
+
     // Depending on the build environment, platform specific jars are included in
     // all the platform specific dirs so we need to clean up
-    delete fileTree("$buildDir/image/gade-win/lib/").matching {
+    project.layout.buildDirectory.dir("image/gade-win/lib/").get().asFileTree
+    //delete fileTree("$project.buildDir/image/gade-win/lib/").matching {
+    delete project.layout.buildDirectory.dir("image/${project.name}-win/lib/").get().asFileTree.matching {
         include '*-mac*.jar'
         include '*-linux*.jar'
     }
-    delete fileTree("$buildDir/image/gade-linux/lib/").matching {
+    //delete fileTree("$project.buildDir/image/gade-linux/lib/").matching {
+    delete project.layout.buildDirectory.dir("image/${project.name}-linux/lib/").get().asFileTree.matching {
         include '*-mac*.jar'
         include '*-win*.jar'
     }
-    delete fileTree("$buildDir/image/gade-mac/lib/").matching {
+    //delete fileTree("$project.buildDir/image/gade-mac/lib/").matching {
+    delete project.layout.buildDirectory.dir("image/${project.name}-win/lib/").get().asFileTree.matching {
         include '*-win*.jar'
         include '*-linux*.jar'
     }
 }
 
 tasks.runtimeZip.doLast {
-    ant.move(todir:"$buildDir") {
-        ant.fileset(dir: "$buildDir") {
+
+    //ant.move(todir:"$project.buildDir") {
+    ant.move(todir: project.layout.buildDirectory.get().asFile) {
+        //ant.fileset(dir: "$project.buildDir") {
+        ant.fileset(dir: project.layout.buildDirectory.get().asFile) {
             include(name: "image-*.zip")
         }
-        ant.mapper(type: "glob", from: "image-*.zip", to: "gade-*-${version}.zip")
+        ant.mapper(type: "glob", from: "image-*.zip", to: "${project.name}-*-${version}.zip")
     }
 }
 
