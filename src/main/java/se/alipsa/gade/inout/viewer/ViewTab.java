@@ -65,7 +65,7 @@ public class ViewTab extends Tab {
   }
 
   public void viewTable(Matrix tableMatrix, String... title) {
-    viewTable(tableMatrix.columnNames(), tableMatrix.rows(), tableMatrix.columnTypeNames(), title);
+    viewTable(tableMatrix.columnNames(), tableMatrix.rowList(), tableMatrix.columnTypeNames(), title);
   }
 
   public void viewTable(Grid grid, String... title) {
@@ -80,10 +80,10 @@ public class ViewTab extends Tab {
       typeList.add(type);
       headerList.add("c" + i+1);
     }
-    viewTable(headerList, grid.getData(), typeList, title);
+    viewTable(headerList, grid.getRowList(), typeList, title);
   }
 
-  public void viewTable(List<String> headerList, List<List<?>> rowList, List<String> columnTypes, String... title) {
+  public void viewTable(List<String> headerList, List<List<Object>> rowList, List<String> columnTypes, String... title) {
     try {
 
       NumberFormat numberFormatter = NumberFormat.getInstance();
@@ -144,7 +144,7 @@ public class ViewTab extends Tab {
           if (obj instanceof Number) {
             obsRow.add(numberFormatter.format(obj));
           } else {
-            obsRow.add(obj + "");
+            obsRow.add(String.valueOf(obj));
           }
         }
         data.add(obsRow);

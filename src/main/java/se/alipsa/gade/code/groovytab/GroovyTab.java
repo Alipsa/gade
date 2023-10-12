@@ -48,8 +48,6 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
   }
 
   public void runGroovy() {
-
-
     boolean runImports = gui.getPrefs().getBoolean(ADD_IMPORTS, true);
     boolean runDeps = gui.getPrefs().getBoolean(ADD_DEPENDENCIES, true);
     log.info("runImports = {}, runDeps = {}", runImports, runDeps);
@@ -70,21 +68,13 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
       }
       //gui.dynamicClassLoader.setShouldRecompile(true);
     }
+    String code = getTextContent();
     if (runImports) {
       List<String> headers = groovyTextArea.getImports();
       String imports = String.join("\n", headers);
-      try {
-        log.info("Running {}", imports);
-        var result = gui.getConsoleComponent().runScriptSilent(imports);
-        log.info("Result was {}", result);
-      } catch (Exception e) {
-        log.warn("Failed to run: {}", imports);
-        ExceptionAlert.showAlert("Failed to run imports", e);
-        return;
-      }
-      //gui.dynamicClassLoader.setShouldRecompile(true);
+      code = imports + "\n" + code;
     }
-    runGroovy(getTextContent());
+    runGroovy(code);
   }
 
   public void runGroovy(final String content) {
