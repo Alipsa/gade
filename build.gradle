@@ -232,9 +232,75 @@ runtime {
     //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
     modules.set(['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
-               'java.management', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs', 'java.xml',
-               'java.compiler', 'java.desktop', 'jdk.dynalink', 'jdk.security.auth',
-               'java.security.jgss', 'java.instrument', 'jdk.zipfs'])
+               'java.management', 'java.se', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs',
+               'java.xml', 'java.compiler', 'jdk.compiler', 'java.desktop', 'jdk.dynalink',
+               'jdk.security.auth', 'java.security.jgss', 'java.instrument', 'jdk.zipfs',
+               'jdk.jartool', 'jdk.javadoc'
+    ])
+    /*modules.set([
+            'javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing',
+            'java.base',
+            'java.compiler',
+            'java.datatransfer',
+            'java.desktop',
+            'java.instrument',
+            'java.logging',
+            'java.management',
+            'java.management.rmi',
+            'java.naming',
+            'java.net.http',
+            'java.prefs',
+            'java.rmi',
+            'java.scripting',
+            'java.se',
+            'java.security.jgss',
+            'java.security.sasl',
+            //'java.smartcardio',
+            'java.sql',
+            'java.sql.rowset',
+            'java.transaction.xa',
+            'java.xml',
+            'java.xml.crypto',
+            'jdk.accessibility',
+            'jdk.attach',
+            'jdk.charsets',
+            'jdk.compiler',
+            'jdk.crypto.cryptoki',
+            'jdk.crypto.ec',
+            'jdk.dynalink',
+            //'jdk.editpad',
+            'jdk.hotspot.agent',
+            //'jdk.httpserver',
+            //'jdk.incubator.foreign',
+            //'jdk.incubator.vector',
+            'jdk.jartool',
+            'jdk.javadoc',
+            'jdk.jcmd',
+            //'jdk.jconsole',
+            'jdk.jdeps',
+            'jdk.jdi',
+            'jdk.jdwp.agent',
+            'jdk.jfr',
+            'jdk.jlink',
+            'jdk.jpackage',
+            //'jdk.jshell',
+            //'jdk.jsobject',
+            'jdk.jstatd',
+            'jdk.localedata',
+            'jdk.management',
+            'jdk.management.agent',
+            'jdk.management.jfr',
+            'jdk.naming.dns',
+            'jdk.naming.rmi',
+            'jdk.net',
+            'jdk.nio.mapmode',
+            'jdk.sctp',
+            'jdk.security.auth',
+            'jdk.security.jgss',
+            'jdk.xml.dom',
+            'jdk.zipfs'
+    ])*/
+
     launcher {
         noConsole = true
     }
@@ -323,6 +389,7 @@ tasks.runtime.doLast {
         include 'version.properties'
     }
 
+    /* included if the right jdk module is included
     copy {
         from("${tasks.runtime.targetPlatforms['linux'].jdkHome}/bin")
         into(project.layout.buildDirectory.dir("image/${project.name}-linux/bin"))
@@ -339,7 +406,7 @@ tasks.runtime.doLast {
         from("${tasks.runtime.targetPlatforms['mac'].jdkHome}/bin")
         into(project.layout.buildDirectory.dir("image/${project.name}-mac/bin"))
         include 'javac'
-    }
+    }*/
 
     // Depending on the build environment, platform specific jars are included in
     // all the platform specific dirs so we need to clean up
