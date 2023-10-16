@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -1024,6 +1025,13 @@ public class InOut implements GuiInteraction {
     }
   }
 
+  public void addToClassPath(File dirOrJar) {
+    try {
+      gui.dynamicClassLoader.addURL(dirOrJar.toURI().toURL());
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   @Override
   public String toString() {

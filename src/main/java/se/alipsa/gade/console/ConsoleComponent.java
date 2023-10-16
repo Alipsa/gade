@@ -162,6 +162,7 @@ public class ConsoleComponent extends BorderPane {
       if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
         File wd = gui.getInoutComponent().projectDir();
         if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true) && wd != null && wd.exists()) {
+          // TODO: we should set this from the resolved build
           File classesDir = new File(wd, "build/classes/groovy/main/");
           List<URL> urlList = new ArrayList<>();
           try {
@@ -171,6 +172,14 @@ public class ConsoleComponent extends BorderPane {
             File testClasses = new File(wd, "build/classes/groovy/test/");
             if (testClasses.exists()) {
               urlList.add(testClasses.toURI().toURL());
+            }
+            File javaClassesDir = new File(wd, "build/classes/java/main");
+            if (javaClassesDir.exists()) {
+              urlList.add(javaClassesDir.toURI().toURL());
+            }
+            File javaTestClassesDir = new File(wd, "build/classes/java/test");
+            if (javaTestClassesDir.exists()) {
+              urlList.add(javaTestClassesDir.toURI().toURL());
             }
           } catch (MalformedURLException e) {
             log.warn("Failed to find classes dir", e);
