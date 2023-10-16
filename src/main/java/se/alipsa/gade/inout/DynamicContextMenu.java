@@ -484,7 +484,9 @@ public class DynamicContextMenu extends ContextMenu {
 
    private void gitDiff(ActionEvent actionEvent) {
       try (StringWriter writer = new StringWriter();
-           OutputStream out = new WriterOutputStream(writer, StandardCharsets.UTF_8)) {
+           OutputStream out = WriterOutputStream.builder()
+               .setCharset(StandardCharsets.UTF_8).setWriter(writer).get()) {
+
          DiffCommand diffCommand = git.diff();
          diffCommand.setOutputStream(out);
          String path = getRelativePath();
