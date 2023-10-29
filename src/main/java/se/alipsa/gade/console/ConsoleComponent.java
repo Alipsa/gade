@@ -830,9 +830,9 @@ public class ConsoleComponent extends BorderPane {
     console.setCursor(Cursor.DEFAULT);
   }
 
-  public ClassLoader getGroovyClassLoader() {
-    // TODO find a proper way
-    return engine.getContext().getClass().getClassLoader();
+  public GroovyClassLoader getGroovyClassLoader() {
+    return classLoader;
+    //return engine.getContext().getClass().getClassLoader();
   }
 
   public ClassLoader getClassLoader() {
