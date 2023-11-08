@@ -100,7 +100,7 @@ public class ReadImage {
 
     public String getContentType(String fileName) throws IOException {
         File file = new File(fileName);
-       return getContentType(file);
+        return getContentType(file);
     }
 
     public String getContentType(File file) throws IOException {

@@ -53,6 +53,8 @@ jar {
   manifest {
     // define the main script to run when executing the jar (java -jar exampleProject.jar)
     attributes "Main-Class": "[mainScriptName]"
+    // make log4j work in a fat jar:
+    attributes 'Multi-Release': 'true'
   }
   // If the dependencies have identical files then skip the duplicates
   duplicatesStrategy = DuplicatesStrategy.EXCLUDE

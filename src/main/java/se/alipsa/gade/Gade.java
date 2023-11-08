@@ -23,7 +23,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import se.alipsa.gade.interaction.*;
+//import se.alipsa.gade.interaction.*;
+import se.alipsa.gi.*;
+import se.alipsa.gi.fx.*;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.console.ConsoleComponent;
@@ -154,7 +156,7 @@ public class Gade extends Application {
     enableDragDrop(scene);
     //consoleComponent.initGroovy(Gade.this.getClass().getClassLoader());
     guiInteractions = Map.of(
-        "io", new InOut()
+        "io", new InOut(primaryStage)
     );
     consoleComponent.initGroovy(Gade.instance().dynamicClassLoader);
     primaryStage.show();

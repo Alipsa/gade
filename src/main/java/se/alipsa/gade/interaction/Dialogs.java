@@ -14,6 +14,7 @@ import se.alipsa.ymp.YearMonthPicker;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -169,9 +170,21 @@ public class Dialogs {
             if (initialDirectory != null) {
                 chooser.setInitialDirectory(initialDirectory);
             }
-            chooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter(description, extensions)
-            );
+            if (extensions.length > 0) {
+                List<String> ext = new ArrayList<>();
+                for (String e : extensions) {
+                    if (e.startsWith("*.")) {
+                        ext.add(e);
+                    } else if (e.startsWith(".")) {
+                        ext.add("*" + e);
+                    } else {
+                        ext.add("*." + e);
+                    }
+                }
+                chooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter(description, ext)
+                );
+            }
             return chooser.showOpenDialog(stage);
         });
         Platform.runLater(task);

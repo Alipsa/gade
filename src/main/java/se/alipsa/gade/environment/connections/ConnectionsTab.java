@@ -522,15 +522,6 @@ public class ConnectionsTab extends Tab {
     }
 
     runQueryInThread(sql, con);
-    /*
-    try {
-      log.info("java.library.path={}", System.getProperty("java.library.path"));
-      Table table = runQuery(sql, con);
-      createTableTree(table, con);
-    } catch (SQLException e) {
-      ExceptionAlert.showAlert("Failed to run meta data query", e);
-    }
-     */
   }
 
   private void showDatabases(ConnectionInfo connectionInfo) {

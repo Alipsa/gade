@@ -60,7 +60,7 @@ import static se.alipsa.gade.utils.FileUtils.removeExt;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-public class InOut implements GuiInteraction {
+public class InOut extends se.alipsa.gi.fx.InOut {
 
   private static final Logger log = LogManager.getLogger();
   private final Gade gui;
@@ -643,23 +643,23 @@ public class InOut implements GuiInteraction {
     return gui.getStage();
   }
 
-  public String prompt(String title, String headerText, String message, String defaultValue) throws ExecutionException, InterruptedException {
+/*  public String prompt(String title, String headerText, String message, String defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.prompt(title, headerText, message, defaultValue);
-  }
+  }*/
 
-  public String prompt(String title, String headerText, String message) throws ExecutionException, InterruptedException {
+/*  public String prompt(String title, String headerText, String message) throws ExecutionException, InterruptedException {
     return dialogs.prompt(title, headerText, message, "");
-  }
+  }*/
 
-  public String prompt(String title, String message) throws ExecutionException, InterruptedException {
+/*  public String prompt(String title, String message) throws ExecutionException, InterruptedException {
     return dialogs.prompt(title, "", message, "");
-  }
+  }*/
 
-  public String prompt(String message) throws ExecutionException, InterruptedException {
+/*  public String prompt(String message) throws ExecutionException, InterruptedException {
     return dialogs.prompt("", "", message, "");
-  }
+  }*/
 
-  /**
+  /*
    * A prompt method with support for named parameters i Groovy.
    * Example usage:
    * applicationId =  io.prompt(
@@ -668,55 +668,55 @@ public class InOut implements GuiInteraction {
    *    message: "applicationId"
    * )
    *
-   * @param namedParams a key/value map with the paramater name and its value
+   * @param namedParams a key/value map with the parameter name and its value
    * @return the user input prompted for
    * @throws ExecutionException if a threading issue occurs
    * @throws InterruptedException if a threading interrupt issue occurs
    */
-  public String prompt(Map<String, Object> namedParams) throws ExecutionException, InterruptedException {
+/*  public String prompt(Map<String, Object> namedParams) throws ExecutionException, InterruptedException {
     return dialogs.prompt(
         String.valueOf(namedParams.getOrDefault("title", "")),
         String.valueOf(namedParams.getOrDefault("headerText", "")),
         String.valueOf(namedParams.getOrDefault("message", "")),
         String.valueOf(namedParams.getOrDefault("defaultValue", ""))
     );
-  }
+  }*/
 
-  public String promptPassword(String title, String message) throws ExecutionException, InterruptedException {
+/*  public String promptPassword(String title, String message) throws ExecutionException, InterruptedException {
     return dialogs.promptPassword(title, message);
-  }
+  }*/
 
-  public Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue) throws ExecutionException, InterruptedException {
+/*  public Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.promptSelect(title, headerText, message, options, defaultValue);
-  }
+  }*/
 
-  public LocalDate promptDate(String title, String message, LocalDate defaultValue) throws ExecutionException, InterruptedException {
+/*  public LocalDate promptDate(String title, String message, LocalDate defaultValue) throws ExecutionException, InterruptedException {
     return dialogs.promptDate(title, message, defaultValue);
-  }
+  }*/
 
-  public YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial) throws ExecutionException, InterruptedException {
+/*  public YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial) throws ExecutionException, InterruptedException {
     return dialogs.promptYearMonth(title, message, from, to, initial);
-  }
+  }*/
 
-  public YearMonth promptYearMonth(String message) throws ExecutionException, InterruptedException {
+/*  public YearMonth promptYearMonth(String message) throws ExecutionException, InterruptedException {
     return dialogs.promptYearMonth(message);
-  }
+  }*/
 
-  public File chooseFile(String title, File initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
+/*  public File chooseFile(String title, File initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
     return dialogs.chooseFile(title, initialDirectory, description, extensions);
-  }
+  }*/
 
-  public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
+/*  public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
     return dialogs.chooseFile(title, initialDirectory, description, extensions);
-  }
+  }*/
 
-  public File chooseDir(String title, File initialDirectory) throws ExecutionException, InterruptedException {
+/*  public File chooseDir(String title, File initialDirectory) throws ExecutionException, InterruptedException {
     return dialogs.chooseDir(title, initialDirectory);
-  }
+  }*/
 
-  public File chooseDir(String title, String initialDirectory) throws ExecutionException, InterruptedException {
+/*  public File chooseDir(String title, String initialDirectory) throws ExecutionException, InterruptedException {
     return dialogs.chooseDir(title, initialDirectory);
-  }
+  }*/
 
   public Image readImage(String filePath) throws IOException {
     return readImage.read(filePath);
@@ -829,15 +829,16 @@ public class InOut implements GuiInteraction {
     }
   }
 
-  public String getContentType(String fileName) throws IOException {
+/*  public String getContentType(String fileName) throws IOException {
     return readImage.getContentType(fileName);
-  }
+  }*/
 
+/*
   public boolean urlExists(String urlString, int timeout) {
     return urlUtil.exists(urlString, timeout);
   }
+*/
 
-  @Override
   public String help() {
     return "Inout: Providing interaction capabilities between Groovy Code and Gade\n" + helpText(InOut.class, false);
   }
@@ -987,21 +988,18 @@ public class InOut implements GuiInteraction {
       List<Object> groupIds = searchResult.response.docs.stream().map(d -> d.g + ":" + d.a)
           .distinct()
           .collect(Collectors.toList());
-      try {
-        var grpArt = promptSelect("Class " + className + " exists in many artifacts",
-            "No obvious match found for " + className + ",\nselect the groupId:artifact you want to view",
-            "groupId:artifact",
-            groupIds,
-            groupIds.get(0));
-        if (grpArt == null || String.valueOf(grpArt).isBlank()) {
-          return;
-        }
-        var ga = String.valueOf(grpArt).split(":");
-        groupId = ga[0];
-        artifactId = ga[1];
-      } catch (ExecutionException | InterruptedException e) {
-        throw new RuntimeException(e);
+
+      var grpArt = promptSelect("Class " + className + " exists in many artifacts",
+          "No obvious match found for " + className + ",\nselect the groupId:artifact you want to view",
+          "groupId:artifact",
+          groupIds,
+          groupIds.get(0));
+      if (grpArt == null || String.valueOf(grpArt).isBlank()) {
+        return;
       }
+      var ga = String.valueOf(grpArt).split(":");
+      groupId = ga[0];
+      artifactId = ga[1];
     } else {
       groupId = doc.g;
       artifactId = doc.a;
