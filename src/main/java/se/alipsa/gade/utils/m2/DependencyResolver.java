@@ -97,19 +97,20 @@ public class DependencyResolver {
     jarFiles.add(artifact);
     File pomFile = new File(artifact.getParent(), artifact.getName().replace(".jar", ".pom"));
     if (!pomFile.exists()) {
-      String url = null;
+      String url;
       for (RemoteRepository remoteRepository : mavenUtils.getRemoteRepositories()) {
         url = MavenRepoLookup.pomUrl(dependency, remoteRepository.getUrl());
-        if (urlUtil.exists(url, 10)) {
-          break;
-        }
-      }
-      if (url != null) {
+        log.debug("Trying {}", url);
         try {
           download(url, pomFile);
-        } catch (IOException e) {
-          throw new ResolvingException("Failed to resolve pom file for " + dependency, e);
+          log.debug("Download of {} successful", url);
+          break;
+        } catch (IOException ignored) {
+          log.debug("Download of {} failed", url);
         }
+      }
+      if (!pomFile.exists()) {
+        throw new ResolvingException("Failed to resolve pom file (" + pomFile + ") for " + dependency);
       }
     }
     try {
