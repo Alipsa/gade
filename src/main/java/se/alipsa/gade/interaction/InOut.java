@@ -17,13 +17,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.utils.m2.DependencyResolver;
-import se.alipsa.gade.utils.m2.ResolvingException;
+//import se.alipsa.gade.utils.m2.DependencyResolver;
+//import se.alipsa.gade.utils.m2.ResolvingException;
+import se.alipsa.groovy.resolver.*;
 import se.alipsa.groovy.datautil.gtable.Gtable;
 import se.alipsa.groovy.matrix.Matrix;
 import tech.tablesaw.chart.Chart;
 import tech.tablesaw.chart.Plot;
-import se.alipsa.gade.environment.connections.ConnectionInfo;
+//import se.alipsa.gade.environment.connections.ConnectionInfo;
+import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.model.centralsearch.CentralSearchResult;
 import se.alipsa.gade.utils.*;
@@ -44,8 +46,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -64,15 +64,11 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   private static final Logger log = LogManager.getLogger();
   private final Gade gui;
-  private final Dialogs dialogs;
   private final ReadImage readImage;
-  private final UrlUtil urlUtil;
 
   public InOut() {
     gui = Gade.instance();
-    dialogs = new Dialogs(gui.getStage());
     readImage = new ReadImage();
-    urlUtil = new UrlUtil();
   }
 
   /**
@@ -101,7 +97,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
         .filter(ci -> ci.getName().equals(name)).findAny().orElse(null);
   }
 
-  public Connection dbConnect(String name) throws SQLException, ExecutionException, InterruptedException {
+  public Connection dbConnect(String name) throws SQLException {
     ConnectionInfo ci = gui.getEnvironmentComponent().getDefinedConnections().stream()
         .filter(c -> c.getName().equals(name)).findAny().orElse(null);
     if (ci == null) {
@@ -113,7 +109,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return dbConnect(ci);
   }
 
-  public Connection dbConnect(ConnectionInfo ci) throws SQLException, ExecutionException, InterruptedException {
+  public Connection dbConnect(ConnectionInfo ci) throws SQLException {
     String url = ci.getUrl().toLowerCase();
     if (StringUtils.isBlank(ci.getPassword()) && !url.contains("passw") && !url.contains("integratedsecurity=true")) {
       String pwd = promptPassword("Password required", "Enter password to " + ci.getName() + " for " + ci.getUser());
@@ -122,7 +118,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return gui.getEnvironmentComponent().connect(ci);
   }
 
-  private Gtable dbSelect(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private Gtable dbSelect(String connectionName, String sqlQuery) throws SQLException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
@@ -133,7 +129,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  private Gtable dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private Gtable dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
@@ -144,14 +140,14 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  private int dbUpdate(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(String connectionName, String sqlQuery) throws SQLException {
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement()) {
       return dbExecuteUpdate(stm, sqlQuery);
     }
   }
 
-  private int dbUpdate(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(ConnectionInfo ci, String sqlQuery) throws SQLException  {
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement()) {
       return dbExecuteUpdate(stm, sqlQuery);
@@ -166,12 +162,12 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  private int dbUpdate(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException {
     String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
     return dbUpdate(connectionName, sql);
   }
 
-  private int dbUpdate(ConnectionInfo ci, String tableName, Row row, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+  private int dbUpdate(ConnectionInfo ci, String tableName, Row row, String... matchColumnName) throws SQLException {
     String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
     return dbUpdate(ci, sql);
   }
@@ -202,11 +198,11 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return String.valueOf(row.getObject(columnName));
   }
 
-  public int dbUpdate(String connectionName, Table table, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+  public int dbUpdate(String connectionName, Table table, String... matchColumnName) throws SQLException {
     return dbExecuteBatchUpdate(table, dbConnect(connectionName), matchColumnName);
   }
 
-  public int dbUpdate(ConnectionInfo ci, Table table, String... matchColumnName) throws SQLException, ExecutionException, InterruptedException {
+  public int dbUpdate(ConnectionInfo ci, Table table, String... matchColumnName) throws SQLException {
     return dbExecuteBatchUpdate(table, dbConnect(ci), matchColumnName);
   }
 
@@ -221,13 +217,13 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  public boolean dbTableExists(String connectionName, String tableName) throws SQLException, ExecutionException, InterruptedException {
+  public boolean dbTableExists(String connectionName, String tableName) throws SQLException {
     try(Connection con = dbConnect(connectionName)) {
       return dbTableExists(con, tableName);
     }
   }
 
-  public boolean dbTableExists(ConnectionInfo connectioInfo, String tableName) throws SQLException, ExecutionException, InterruptedException {
+  public boolean dbTableExists(ConnectionInfo connectioInfo, String tableName) throws SQLException {
     try(Connection con = dbConnect(connectioInfo)) {
       return dbTableExists(con, tableName);
     }
@@ -249,7 +245,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param table the table to copy to the db
    * @param primaryKey name(s) of the primary key columns
    */
-  public void dbCreate(ConnectionInfo connectionInfo, Table table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
+  public void dbCreate(ConnectionInfo connectionInfo, Table table, String... primaryKey) throws SQLException {
 
     var tableName = table.name()
         .replaceAll("\\.", "_")
@@ -328,13 +324,13 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return sql;
   }
 
-  private int dbInsert(String connectionName, Table table) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(String connectionName, Table table) throws SQLException {
     try(Connection con = dbConnect(connectionName)) {
       return dbInsert(con, table);
     }
   }
 
-  private int dbInsert(ConnectionInfo ci, Table table) throws SQLException, ExecutionException, InterruptedException {
+  private int dbInsert(ConnectionInfo ci, Table table) throws SQLException {
     try(Connection con = dbConnect(ci)) {
       return dbInsert(con, table);
     }
@@ -358,7 +354,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     throw new RuntimeException("Not yet implemented");
   }
 
-  private int dbDelete(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbDelete(String connectionName, String sqlQuery) throws SQLException {
     if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
       return (int)dbExecuteSql(connectionName, sqlQuery);
     } else {
@@ -366,7 +362,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  private int dbDelete(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
+  private int dbDelete(ConnectionInfo ci, String sqlQuery) throws SQLException {
     if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
       return (int)dbExecuteSql(ci, sqlQuery);
     } else {
@@ -380,10 +376,8 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param sql the sql string to execute
    * @return if the sql returns a result set, a Table containing the data is returned, else the number of rows affected is returned
    * @throws SQLException if there is something wrong with the sql
-   * @throws ExecutionException if it was not possible to connect
-   * @throws InterruptedException if the thread was interrupted during execution
    */
-  private Object dbExecuteSql(String connectionName, String sql) throws SQLException, ExecutionException, InterruptedException {
+  private Object dbExecuteSql(String connectionName, String sql) throws SQLException {
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
@@ -395,7 +389,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  private Object dbExecuteSql(ConnectionInfo ci, String sql) throws SQLException, ExecutionException, InterruptedException {
+  private Object dbExecuteSql(ConnectionInfo ci, String sql) throws SQLException {
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
@@ -510,11 +504,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   public void display(Node node, String... title) {
-    if (node instanceof javafx.scene.chart.Chart) {
-      display(node, true, title);
-    } else {
-      display(node, false, title);
-    }
+    display(node, node instanceof javafx.scene.chart.Chart, title);
   }
 
   public void display(Node node, boolean displayCopy, String... title) {
@@ -642,81 +632,6 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public Stage getStage() {
     return gui.getStage();
   }
-
-/*  public String prompt(String title, String headerText, String message, String defaultValue) throws ExecutionException, InterruptedException {
-    return dialogs.prompt(title, headerText, message, defaultValue);
-  }*/
-
-/*  public String prompt(String title, String headerText, String message) throws ExecutionException, InterruptedException {
-    return dialogs.prompt(title, headerText, message, "");
-  }*/
-
-/*  public String prompt(String title, String message) throws ExecutionException, InterruptedException {
-    return dialogs.prompt(title, "", message, "");
-  }*/
-
-/*  public String prompt(String message) throws ExecutionException, InterruptedException {
-    return dialogs.prompt("", "", message, "");
-  }*/
-
-  /*
-   * A prompt method with support for named parameters i Groovy.
-   * Example usage:
-   * applicationId =  io.prompt(
-   *    title: "Calculated variables",
-   *    headerText: "Score variables for applicationId",
-   *    message: "applicationId"
-   * )
-   *
-   * @param namedParams a key/value map with the parameter name and its value
-   * @return the user input prompted for
-   * @throws ExecutionException if a threading issue occurs
-   * @throws InterruptedException if a threading interrupt issue occurs
-   */
-/*  public String prompt(Map<String, Object> namedParams) throws ExecutionException, InterruptedException {
-    return dialogs.prompt(
-        String.valueOf(namedParams.getOrDefault("title", "")),
-        String.valueOf(namedParams.getOrDefault("headerText", "")),
-        String.valueOf(namedParams.getOrDefault("message", "")),
-        String.valueOf(namedParams.getOrDefault("defaultValue", ""))
-    );
-  }*/
-
-/*  public String promptPassword(String title, String message) throws ExecutionException, InterruptedException {
-    return dialogs.promptPassword(title, message);
-  }*/
-
-/*  public Object promptSelect(String title, String headerText, String message, List<Object> options, Object defaultValue) throws ExecutionException, InterruptedException {
-    return dialogs.promptSelect(title, headerText, message, options, defaultValue);
-  }*/
-
-/*  public LocalDate promptDate(String title, String message, LocalDate defaultValue) throws ExecutionException, InterruptedException {
-    return dialogs.promptDate(title, message, defaultValue);
-  }*/
-
-/*  public YearMonth promptYearMonth(String title, String message, YearMonth from, YearMonth to, YearMonth initial) throws ExecutionException, InterruptedException {
-    return dialogs.promptYearMonth(title, message, from, to, initial);
-  }*/
-
-/*  public YearMonth promptYearMonth(String message) throws ExecutionException, InterruptedException {
-    return dialogs.promptYearMonth(message);
-  }*/
-
-/*  public File chooseFile(String title, File initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
-    return dialogs.chooseFile(title, initialDirectory, description, extensions);
-  }*/
-
-/*  public File chooseFile(String title, String initialDirectory, String description, String... extensions) throws ExecutionException, InterruptedException {
-    return dialogs.chooseFile(title, initialDirectory, description, extensions);
-  }*/
-
-/*  public File chooseDir(String title, File initialDirectory) throws ExecutionException, InterruptedException {
-    return dialogs.chooseDir(title, initialDirectory);
-  }*/
-
-/*  public File chooseDir(String title, String initialDirectory) throws ExecutionException, InterruptedException {
-    return dialogs.chooseDir(title, initialDirectory);
-  }*/
 
   public Image readImage(String filePath) throws IOException {
     return readImage.read(filePath);

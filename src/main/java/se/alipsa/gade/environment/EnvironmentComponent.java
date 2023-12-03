@@ -11,7 +11,8 @@ import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.StyleClassedTextArea;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.UnStyledCodeArea;
-import se.alipsa.gade.environment.connections.ConnectionInfo;
+//import se.alipsa.gade.environment.connections.ConnectionInfo;
+import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.environment.connections.ConnectionsTab;
 import tech.tablesaw.api.Table;
 

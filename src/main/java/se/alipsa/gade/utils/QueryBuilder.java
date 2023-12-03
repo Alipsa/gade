@@ -2,7 +2,8 @@ package se.alipsa.gade.utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import se.alipsa.gade.environment.connections.ConnectionInfo;
+//import se.alipsa.gade.environment.connections.ConnectionInfo;
+import se.alipsa.groovy.datautil.ConnectionInfo;
 
 public class QueryBuilder {
 

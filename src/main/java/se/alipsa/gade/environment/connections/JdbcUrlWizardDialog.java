@@ -15,6 +15,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.GuiUtils;
 import se.alipsa.gade.utils.IntField;
+import se.alipsa.groovy.datautil.ConnectionInfo;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;

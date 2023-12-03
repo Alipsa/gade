@@ -1,6 +1,5 @@
 package se.alipsa.gade.environment.connections;
 
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -9,6 +8,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.FileUtils;
+import se.alipsa.groovy.datautil.ConnectionInfo;
 
 import java.net.URL;
 import java.util.Optional;
