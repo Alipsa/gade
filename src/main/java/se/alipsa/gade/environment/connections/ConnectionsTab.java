@@ -35,7 +35,9 @@ import se.alipsa.gade.model.TableMetaData;
 import se.alipsa.gade.utils.*;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.groovy.datautil.ConnectionInfo;
-import tech.tablesaw.api.Table;
+import se.alipsa.groovy.matrix.Matrix;
+import se.alipsa.groovy.matrix.Row;
+//import tech.tablesaw.api.Table;
 
 import java.io.File;
 import java.io.IOException;
@@ -591,17 +593,17 @@ public class ConnectionsTab extends Tab {
     createAndShowWindow(title, scrollPane);
   }
 
-  Table runQuery(String sql, ConnectionInfo con) throws SQLException {
+  Matrix runQuery(String sql, ConnectionInfo con) throws SQLException {
     try (Connection connection = connect(con)){
       ResultSet rs = connection.createStatement().executeQuery(sql);
-      return Table.read().db(rs);
+      return Matrix.create(rs);
     }
   }
 
-  void createTableTree(Table table, ConnectionInfo con) {
+  void createTableTree(Matrix table, ConnectionInfo con) {
     String connectionName = con.getName();
     List<TableMetaData> metaDataList = new ArrayList<>();
-    for (var row : table) {
+    for (Row row : table) {
       metaDataList.add(new TableMetaData(row));
     }
     setNormalCursor();
@@ -610,12 +612,12 @@ public class ConnectionsTab extends Tab {
   }
 
   void runQueryInThread(String sql, ConnectionInfo con) {
-    Task<Table> task = new Task<>() {
+    Task<Matrix> task = new Task<>() {
       @Override
-      public Table call() throws Exception {
+      public Matrix call() throws Exception {
         try (Connection connection = connect(con)){
           ResultSet rs = connection.createStatement().executeQuery(sql);
-          return Table.read().db(rs);
+          return Matrix.create(rs);
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -752,10 +754,10 @@ public class ConnectionsTab extends Tab {
           }
           try (Statement stm=connection.createStatement()){
             stm.setMaxRows(200);
-            Table table;
+            Matrix table;
             try (ResultSet rs = stm.executeQuery("SELECT * from " + tableName)) {
               rs.setFetchSize(200);
-              table = Table.read().db(rs);
+              table = Matrix.create(rs);
             }
             gui.getInoutComponent().viewTable(table, tableName);
 

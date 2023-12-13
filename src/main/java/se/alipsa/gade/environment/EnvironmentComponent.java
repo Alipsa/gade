@@ -14,7 +14,7 @@ import se.alipsa.gade.UnStyledCodeArea;
 //import se.alipsa.gade.environment.connections.ConnectionInfo;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.environment.connections.ConnectionsTab;
-import tech.tablesaw.api.Table;
+import se.alipsa.groovy.matrix.Matrix;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -65,16 +65,7 @@ public class EnvironmentComponent extends TabPane {
 
         Object value = entry.getValue();
         String content = "";
-        if (value instanceof Table table) {
-          var tableName = table.name() == null ? "" : table.name() + ": ";
-          String colNames = String.join(", ", table.columnNames().stream().map(String::valueOf).toList());
-          if (colNames.length() > MAX_CONTENT_LENGTH - 50) {
-            colNames = colNames.substring(0, MAX_CONTENT_LENGTH - 50) + "...";
-          }
-          content = tableName
-              + colNames
-              + " (" + table.columnNames().size() + " columns, " + table.rowCount() + " rows)";
-        } else if (value instanceof Collection<?> collection) {
+        if (value instanceof Collection<?> collection) {
           content = "(" + collection.size() +  " elements)";
         } else {
           content = String.valueOf(value);

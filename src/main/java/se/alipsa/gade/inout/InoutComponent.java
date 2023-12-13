@@ -1,8 +1,6 @@
 package se.alipsa.gade.inout;
 
 import static se.alipsa.gade.menu.GlobalOptions.*;
-import static se.alipsa.gade.utils.TableUtils.transpose;
-import static se.alipsa.gade.utils.TableUtils.transposeAny;
 
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
@@ -30,11 +28,8 @@ import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
 import se.alipsa.gade.utils.*;
 import se.alipsa.groovy.matrix.Matrix;
-import tech.tablesaw.api.StringColumn;
-import tech.tablesaw.api.Table;
 
 import java.io.File;
-import java.net.HttpCookie;
 import java.util.*;
 
 public class InoutComponent extends TabPane  {
@@ -201,6 +196,9 @@ public class InoutComponent extends TabPane  {
       return;
     }
 
+    Matrix table = Matrix.create(matrix);
+
+    /*
     var t = transposeAny(matrix);
     List<String> header = createAnonymousHeader(t.size());
     StringColumn[] columns = new StringColumn[t.size()];
@@ -208,6 +206,7 @@ public class InoutComponent extends TabPane  {
       columns[i] = StringColumn.create(header.get(i), t.get(i).stream().map(String::valueOf).toArray(String[]::new));
     }
     Table table = Table.create().addColumns(columns);
+     */
     viewTable(table, title);
   }
 
@@ -233,27 +232,12 @@ public class InoutComponent extends TabPane  {
   }
 
   private void view2dArray(Object[][] matrix, String... title) {
-    List<List<Object>> objList = new ArrayList<>();
+    List<List<?>> objList = new ArrayList<>();
     for (Object[] row : matrix) {
       objList.add(Arrays.asList(row));
     }
-    List<String> header = createAnonymousHeader(matrix[0].length);
-    var t = transpose(matrix);
-    StringColumn[] columns = new StringColumn[t.length];
-    for (int i = 0; i < columns.length; i++) {
-      columns[i] = StringColumn.create(header.get(i), Arrays.stream(t[i]).map(String::valueOf).toArray(String[]::new));
-    }
-    Table table = Table.create().addColumns(columns);
+    Matrix table = Matrix.create(objList);
     viewTable(table, title);
-  }
-
-  @NotNull
-  private List<String> createAnonymousHeader(int size) {
-    List<String> header = new ArrayList<>();
-    for (int i = 0; i < size; i++) {
-      header.add("V" + i);
-    }
-    return header;
   }
 
   public void viewHtml(String html, String... title) {
@@ -273,28 +257,11 @@ public class InoutComponent extends TabPane  {
     });
   }
 
-  /*
-  public void decorateAndViewHtml(String html, String... title) {
-    Platform.runLater(() -> {
-      viewer.decorateAndViewHtml(html, title);
-      getSelectionModel().select(viewer);
-    });
-  }
- */
   public void viewHelp(String title, String text) {
     Platform.runLater(() -> {
       helpTab.showText(text, title);
       getSelectionModel().select(helpTab);
     });
-  }
-
-  public void viewTable(Table table, String... title) {
-    Platform.runLater(() -> {
-          viewer.viewTable(table, title);
-          SingleSelectionModel<Tab> selectionModel = getSelectionModel();
-          selectionModel.select(viewer);
-        }
-    );
   }
 
   public void viewTable(Matrix table, String... title) {

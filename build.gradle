@@ -5,11 +5,11 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.14'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.47.0"
+    id "com.github.ben-manes.versions" version "0.50.0"
 }
 
 group = 'se.alipsa'
@@ -17,7 +17,7 @@ version = '1.0.0-SNAPSHOT'
 description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
-def jfxVersion="20.0.2"
+def jfxVersion="21.0.1"
 
 javafx {
     version = "${jfxVersion}" // must be in sync with install.sh
@@ -44,45 +44,64 @@ repositories {
 }
 
 configurations {
-    jfxWin
-    jfxLinux
-    jfxMac
+    jfxWin {
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+            attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "win"))
+            attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "x86-64"))
+        }
+    }
+    jfxLinux {
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+            attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "linux"))
+            attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "x86-64"))
+        }
+    }
+    jfxMac {
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+            attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "mac"))
+            attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "aarch64"))
+        }
+    }
 }
 
 dependencies {
-    def jacksonVersion = '2.15.2'
-    def tikaVersion = '2.9.0'
-    def jgitVersion = '6.6.0.202305301015-r'
-    //def jgitVersion = '6.5.0.202303070854-r'
+    def jacksonVersion = '2.16.0'
+    def tikaVersion = '2.9.1'
+    //def jgitVersion = '6.6.0.202305301015-r'
+    def jgitVersion = '6.8.0.202311291450-r'
     def tablesawVersion = "0.43.1"
-    def log4jVersion = "2.20.0"
-    def groovyVersion = "4.0.15"
+    def log4jVersion = "2.22.0"
+    def groovyVersion = "4.0.16"
 
-    jfxWin(
-            "org.openjfx:javafx-base:${jfxVersion}:win",
-            "org.openjfx:javafx-controls:${jfxVersion}:win",
-            "org.openjfx:javafx-graphics:${jfxVersion}:win",
-            "org.openjfx:javafx-media:${jfxVersion}:win",
-            "org.openjfx:javafx-web:${jfxVersion}:win",
-            "org.openjfx:javafx-swing:${jfxVersion}:win"
+
+    jfxWin (
+        "org.openjfx:javafx-base:${jfxVersion}:win",
+        "org.openjfx:javafx-controls:${jfxVersion}:win",
+        "org.openjfx:javafx-graphics:${jfxVersion}:win",
+        "org.openjfx:javafx-media:${jfxVersion}:win",
+        "org.openjfx:javafx-web:${jfxVersion}:win",
+        "org.openjfx:javafx-swing:${jfxVersion}:win"
+        )
+    jfxLinux (
+        "org.openjfx:javafx-base:${jfxVersion}:linux",
+        "org.openjfx:javafx-controls:${jfxVersion}:linux",
+        "org.openjfx:javafx-graphics:${jfxVersion}:linux",
+        "org.openjfx:javafx-media:${jfxVersion}:linux",
+        "org.openjfx:javafx-web:${jfxVersion}:linux",
+        "org.openjfx:javafx-swing:${jfxVersion}:linux"
     )
-    jfxLinux(
-            "org.openjfx:javafx-base:${jfxVersion}:linux",
-            "org.openjfx:javafx-controls:${jfxVersion}:linux",
-            "org.openjfx:javafx-graphics:${jfxVersion}:linux",
-            "org.openjfx:javafx-media:${jfxVersion}:linux",
-            "org.openjfx:javafx-web:${jfxVersion}:linux",
-            "org.openjfx:javafx-swing:${jfxVersion}:linux"
+    jfxMac (
+        "org.openjfx:javafx-base:${jfxVersion}:mac-aarch64",
+        "org.openjfx:javafx-controls:${jfxVersion}:mac-aarch64",
+        "org.openjfx:javafx-graphics:${jfxVersion}:mac-aarch64",
+        "org.openjfx:javafx-media:${jfxVersion}:mac-aarch64",
+        "org.openjfx:javafx-web:${jfxVersion}:mac-aarch64",
+        "org.openjfx:javafx-swing:${jfxVersion}:mac-aarch64"
     )
-    jfxMac(
-            "org.openjfx:javafx-base:${jfxVersion}:mac-aarch64",
-            "org.openjfx:javafx-controls:${jfxVersion}:mac-aarch64",
-            "org.openjfx:javafx-graphics:${jfxVersion}:mac-aarch64",
-            "org.openjfx:javafx-media:${jfxVersion}:mac-aarch64",
-            "org.openjfx:javafx-web:${jfxVersion}:mac-aarch64",
-            "org.openjfx:javafx-swing:${jfxVersion}:mac-aarch64"
-    )
-    implementation 'org.apache.commons:commons-text:1.10.0'
+    implementation 'org.apache.commons:commons-text:1.11.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation 'org.apache.ivy:ivy:2.5.2'
 
@@ -95,32 +114,25 @@ dependencies {
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
-    implementation 'org.apache.commons:commons-lang3:3.13.0'
-    implementation 'org.jsoup:jsoup:1.16.1'
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'org.jsoup:jsoup:1.17.1'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
-    implementation 'org.fxmisc.richtext:richtextfx:0.11.1'
+    implementation 'org.fxmisc.richtext:richtextfx:0.11.2'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-    implementation 'commons-io:commons-io:2.13.0'
-    implementation 'com.github.jsqlparser:jsqlparser:4.6'
+    implementation 'commons-io:commons-io:2.15.1'
+    implementation 'com.github.jsqlparser:jsqlparser:4.7'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.3'
-    implementation 'org.jetbrains:annotations:24.0.1'
-    implementation 'io.github.classgraph:classgraph:4.8.162'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
-    implementation "tech.tablesaw:tablesaw-core:${tablesawVersion}"
-    implementation "tech.tablesaw:tablesaw-jsplot:${tablesawVersion}"
-    implementation "tech.tablesaw:tablesaw-excel:${tablesawVersion}"
-    implementation "tech.tablesaw:tablesaw-json:${tablesawVersion}"
-    implementation "tech.tablesaw:tablesaw-html:${tablesawVersion}"
-    implementation "tech.tablesaw:tablesaw-aggregate:${tablesawVersion}"
-    implementation "se.alipsa.tablesaw:tablesaw-charts:1.0.0-SNAPSHOT"
+    implementation 'org.gradle:gradle-tooling-api:8.5'
+    implementation 'org.jetbrains:annotations:24.1.0'
+    implementation 'io.github.classgraph:classgraph:4.8.165'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.8.3'
     implementation "se.alipsa:gi-fx:1.0.0-SNAPSHOT"
 
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
@@ -141,8 +153,8 @@ dependencies {
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
-    testImplementation 'com.h2database:h2:2.2.220'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'com.h2database:h2:2.2.224'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.15'
@@ -154,7 +166,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
     withSourcesJar()
     withJavadocJar()
@@ -311,9 +323,10 @@ runtime {
         noConsole = true
     }
     // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
+    //https://download.bell-sw.com/java/21.0.1+12/bellsoft-jdk21.0.1+12-macos-aarch64-full.tar.gz
     def baseUrl = "https://download.bell-sw.com/java"
     // if you change version, remember to delete the platform dir to trigger download of the new version
-    def version = "17.0.8.1+1"
+    def version = "21.0.1+12"
 
     targetPlatform("linux") {
         jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-linux-amd64-full.tar.gz") {
@@ -428,7 +441,7 @@ tasks.runtime.doLast {
         include '*-win*.jar'
     }
     //delete fileTree("$project.buildDir/image/gade-mac/lib/").matching {
-    delete project.layout.buildDirectory.dir("image/${project.name}-win/lib/").get().asFileTree.matching {
+    delete project.layout.buildDirectory.dir("image/${project.name}-mac/lib/").get().asFileTree.matching {
         include '*-win*.jar'
         include '*-linux*.jar'
     }

@@ -19,21 +19,24 @@ import org.jetbrains.annotations.NotNull;
 import se.alipsa.gade.Gade;
 //import se.alipsa.gade.utils.m2.DependencyResolver;
 //import se.alipsa.gade.utils.m2.ResolvingException;
+import se.alipsa.groovy.charts.Chart;
+import se.alipsa.groovy.charts.Plot;
+import se.alipsa.groovy.matrix.Row;
 import se.alipsa.groovy.resolver.*;
-import se.alipsa.groovy.datautil.gtable.Gtable;
+//import se.alipsa.groovy.datautil.gtable.Gtable;
 import se.alipsa.groovy.matrix.Matrix;
-import tech.tablesaw.chart.Chart;
-import tech.tablesaw.chart.Plot;
+//import tech.tablesaw.chart.Chart;
+//import tech.tablesaw.chart.Plot;
 //import se.alipsa.gade.environment.connections.ConnectionInfo;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.model.centralsearch.CentralSearchResult;
 import se.alipsa.gade.utils.*;
-import tech.tablesaw.api.ColumnType;
-import tech.tablesaw.api.Row;
-import tech.tablesaw.api.Table;
-import tech.tablesaw.plotly.components.Figure;
-import tech.tablesaw.plotly.components.Page;
+//import tech.tablesaw.api.ColumnType;
+//import tech.tablesaw.api.Row;
+//import tech.tablesaw.api.Table;
+//import tech.tablesaw.plotly.components.Figure;
+//import tech.tablesaw.plotly.components.Page;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,9 +56,8 @@ import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static tech.tablesaw.chart.DataType.isCharacter;
-import static tech.tablesaw.chart.DataType.sqlType;
 import static se.alipsa.gade.utils.FileUtils.removeExt;
+import static se.alipsa.groovy.charts.DataType.sqlType;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -118,25 +120,25 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return gui.getEnvironmentComponent().connect(ci);
   }
 
-  private Gtable dbSelect(String connectionName, String sqlQuery) throws SQLException {
+  private Matrix dbSelect(String connectionName, String sqlQuery) throws SQLException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Gtable.read().db(rs);
+      return Matrix.create(rs);
     }
   }
 
-  private Gtable dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException {
+  private Matrix dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Gtable.read().db(rs);
+      return Matrix.create(rs);
     }
   }
 
@@ -191,26 +193,26 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   private String quoteIfString(Row row, String columnName) {
-    ColumnType type = row.getColumnType(columnName);
-    if (isCharacter(type)) {
-      return "'" + row.getString(columnName) + "'";
+    var value = row.getAt(columnName);
+    if (value instanceof CharSequence || value instanceof Character) {
+      return "'" + value + "'";
     }
-    return String.valueOf(row.getObject(columnName));
+    return String.valueOf(value);
   }
 
-  public int dbUpdate(String connectionName, Table table, String... matchColumnName) throws SQLException {
+  public int dbUpdate(String connectionName, Matrix table, String... matchColumnName) throws SQLException {
     return dbExecuteBatchUpdate(table, dbConnect(connectionName), matchColumnName);
   }
 
-  public int dbUpdate(ConnectionInfo ci, Table table, String... matchColumnName) throws SQLException {
+  public int dbUpdate(ConnectionInfo ci, Matrix table, String... matchColumnName) throws SQLException {
     return dbExecuteBatchUpdate(table, dbConnect(ci), matchColumnName);
   }
 
-  private int dbExecuteBatchUpdate(Table table, Connection connect, String[] matchColumnName) throws SQLException {
+  private int dbExecuteBatchUpdate(Matrix table, Connection connect, String[] matchColumnName) throws SQLException {
     try(Connection con = connect;
         Statement stm = con.createStatement()) {
       for (Row row : table) {
-        stm.addBatch(dbCreateUpdateSql(table.name(), row, matchColumnName));
+        stm.addBatch(dbCreateUpdateSql(table.getName(), row, matchColumnName));
       }
       int[] results = stm.executeBatch();
       return IntStream.of(results).sum();
@@ -235,7 +237,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
 
-  public void dbCreate(String connectionName, Table table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
+  public void dbCreate(String connectionName, Matrix table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
     dbCreate(dbConnection(connectionName), table, primaryKey);
   }
   /**
@@ -245,9 +247,9 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param table the table to copy to the db
    * @param primaryKey name(s) of the primary key columns
    */
-  public void dbCreate(ConnectionInfo connectionInfo, Table table, String... primaryKey) throws SQLException {
+  public void dbCreate(ConnectionInfo connectionInfo, Matrix table, String... primaryKey) throws SQLException {
 
-    var tableName = table.name()
+    var tableName = table.getName()
         .replaceAll("\\.", "_")
         .replaceAll("-", "_")
         .replaceAll("\\*", "");
@@ -257,14 +259,14 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
     List<String> columns = new ArrayList<>();
     int i = 0;
-    List<ColumnType> types = table.types();
+    List<Class<?>> types = table.columnTypes();
     for (String name : table.columnNames()) {
       String column = "\"" + name + "\" " + sqlType(types.get(i++));
       columns.add(column);
     }
     sql += String.join(",\n", columns);
     if (primaryKey.length > 0) {
-      sql += "\n , CONSTRAINT pk_" + table.name() + " PRIMARY KEY (\"" + String.join("\", \"", primaryKey) + "\")";
+      sql += "\n , CONSTRAINT pk_" + table.getName() + " PRIMARY KEY (\"" + String.join("\", \"", primaryKey) + "\")";
     }
     sql += "\n);";
 
@@ -324,22 +326,22 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return sql;
   }
 
-  private int dbInsert(String connectionName, Table table) throws SQLException {
+  private int dbInsert(String connectionName, Matrix table) throws SQLException {
     try(Connection con = dbConnect(connectionName)) {
       return dbInsert(con, table);
     }
   }
 
-  private int dbInsert(ConnectionInfo ci, Table table) throws SQLException {
+  private int dbInsert(ConnectionInfo ci, Matrix table) throws SQLException {
     try(Connection con = dbConnect(ci)) {
       return dbInsert(con, table);
     }
   }
 
-  private int dbInsert(Connection con, Table table) throws SQLException {
+  private int dbInsert(Connection con, Matrix table) throws SQLException {
     try(Statement stm = con.createStatement()) {
       for (Row row : table) {
-        stm.addBatch(createInsertSql(table.name(), row));
+        stm.addBatch(createInsertSql(table.getName(), row));
       }
       int[] results = stm.executeBatch();
       return IntStream.of(results).sum();
@@ -350,7 +352,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     throw new RuntimeException("Not yet implemented");
   }
 
-  private int dbUpsert(String connectionName, Table table, String... primaryKeyName) {
+  private int dbUpsert(String connectionName, Matrix table, String... primaryKeyName) {
     throw new RuntimeException("Not yet implemented");
   }
 
@@ -382,7 +384,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
-        return Table.read().db(stm.getResultSet());
+        return Matrix.create(stm.getResultSet());
       } else {
         return stm.getUpdateCount();
       }
@@ -394,7 +396,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
-        return Table.read().db(stm.getResultSet());
+        return Matrix.create(stm.getResultSet());
       } else {
         return stm.getUpdateCount();
       }
@@ -480,27 +482,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return new File(gui.getInoutComponent().projectDir(), relativePath);
   }
 
+
   public void display(Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
     display(Plot.jfx(chart), false, title);
-  }
-
-  public void display(se.alipsa.groovy.charts.Chart chart, String... titleOpt) {
-    String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    display(se.alipsa.groovy.charts.Plot.jfx(chart), false, title);
-  }
-
-  public void display(Figure figure, String... titleOpt) {
-    String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    Page page = Page.pageBuilder(figure, "target").build();
-    String output = page.asJavascript();
-    //viewHtml(output, title);
-    Platform.runLater(() -> {
-      WebView webView = new WebView();
-      webView.getEngine().setJavaScriptEnabled(true);
-      webView.getEngine().loadContent(output);
-      display(webView, title);
-    });
   }
 
   public void display(Node node, String... title) {
@@ -586,11 +571,6 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     gui.getInoutComponent().view(tableMatrix, tableMatrix.getName() == null ? determineTitle(title) : tableMatrix.getName());
   }
 
-  public void view(Table table, String... title) {
-    gui.getInoutComponent().viewTable(table,
-        table.name() == null ? determineTitle(title) : table.name());
-  }
-
   private String determineTitle(String... title) {
     String tit = title.length > 0 ? title[0] : null;
     if (tit == null) {
@@ -609,7 +589,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param table the tablesaw table to view
    * @param title the title for the view tab (optional)
    */
-  public void View(Table table, String... title) {
+  public void View(Matrix table, String... title) {
     view(table, title);
   }
 
@@ -743,16 +723,6 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       Platform.runLater(() -> ExceptionAlert.showAlert("A runtime exception occurred when trying to save", e));
     }
   }
-
-/*  public String getContentType(String fileName) throws IOException {
-    return readImage.getContentType(fileName);
-  }*/
-
-/*
-  public boolean urlExists(String urlString, int timeout) {
-    return urlUtil.exists(urlString, timeout);
-  }
-*/
 
   public String help() {
     return "Inout: Providing interaction capabilities between Groovy Code and Gade\n" + helpText(InOut.class, false);

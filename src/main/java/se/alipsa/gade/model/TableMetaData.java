@@ -1,6 +1,6 @@
 package se.alipsa.gade.model;
 
-import tech.tablesaw.api.Row;
+import se.alipsa.groovy.matrix.Row;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class TableMetaData {
     setColumnName(row.getString(2));
     setOrdinalPosition(row.getInt(3)); // Usually an int but on hsqldb this is a double
     setIsNullable(row.getString(4));
-    setDataType(String.valueOf(row.getObject(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
+    setDataType(String.valueOf(row.get(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
     // On h2 this is a Long, on most other db's it is an int
     Object maxLengthObj = row.getObject(6);
     Integer maxLength = maxLengthObj == null ? null : Long.valueOf(String.valueOf(maxLengthObj)).intValue();

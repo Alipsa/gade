@@ -30,7 +30,7 @@
         <include>org.openjfx:javafx-media:jar:${javafx.version}</include>
         <include>org.openjfx:javafx-web:jar:${javafx.version}</include>
         <include>org.openjfx:javafx-swing:jar:${javafx.version}</include>
-        <include>org.openjfx:javafx-graphics:jar:mac:${javafx.version}</include>
+        <include>org.openjfx:javafx-graphics:jar:mac-aarch64:${javafx.version}</include>
       </includes>
       <excludes>
         <exclude>org.openjfx:javafx-base:jar:linux:${javafx.version}</exclude>
@@ -59,15 +59,15 @@
         <include>org.openjfx:javafx-graphics:jar:linux:${javafx.version}</include>
       </includes>
       <excludes>
-        <exclude>org.openjfx:javafx-base:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-base:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-base:jar:win:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-controls:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-controls:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-controls:jar:win:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-media:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-media:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-media:jar:win:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-web:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-web:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-web:jar:win:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-swing:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-swing:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-swing:jar:win:${javafx.version}</exclude>
       </excludes>
     </dependencySet>
@@ -86,15 +86,15 @@
       </includes>
       <excludes>
         <exclude>org.openjfx:javafx-base:jar:linux:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-base:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-base:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-controls:jar:linux:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-controls:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-controls:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-media:jar:linux:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-media:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-media:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-web:jar:linux:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-web:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-web:jar:mac-aarch64:${javafx.version}</exclude>
         <exclude>org.openjfx:javafx-swing:jar:linux:${javafx.version}</exclude>
-        <exclude>org.openjfx:javafx-swing:jar:mac:${javafx.version}</exclude>
+        <exclude>org.openjfx:javafx-swing:jar:mac-aarch64:${javafx.version}</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>

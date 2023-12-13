@@ -238,7 +238,7 @@ public class MainMenu extends MenuBar {
   private String createTest(String camelCasedProjectName) {
     return """
         import org.junit.jupiter.api.*
-        import tech.tablesaw.api.*
+        import se.alipsa.groovy.matrix.*
         import org.codehaus.groovy.runtime.InvokerHelper
                 
         class [className]Test {

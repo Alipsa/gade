@@ -25,8 +25,8 @@ import se.alipsa.gade.Gade;
 import se.alipsa.groovy.gmd.HtmlDecorator;
 import se.alipsa.groovy.matrix.Grid;
 import se.alipsa.groovy.matrix.Matrix;
-import tech.tablesaw.api.ColumnType;
-import tech.tablesaw.api.Table;
+//import tech.tablesaw.api.ColumnType;
+//import tech.tablesaw.api.Table;
 import se.alipsa.gade.utils.*;
 
 import java.io.File;
@@ -58,11 +58,12 @@ public class ViewTab extends Tab {
     viewPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
   }
 
+  /*
   public void viewTable(Table table, String... title) {
     List<String> types = new ArrayList<>();
     table.types().forEach(t -> types.add(t.name()));
     viewTable(table.columnNames(), TableUtil.toRowList(table), types, title);
-  }
+  }*/
 
   public void viewTable(Matrix tableMatrix, String... title) {
     viewTable(tableMatrix.columnNames(), tableMatrix.rowList(), tableMatrix.columnTypeNames(), title);

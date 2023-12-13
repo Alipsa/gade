@@ -158,7 +158,6 @@ public class SqlTab extends TextAreaTab {
               while (hasMoreResultSets || stm.getUpdateCount() != -1) {
                 if (hasMoreResultSets) {
                   try (ResultSet rs = stm.getResultSet()) {
-                    // We used to use tablesaw but switched to Matrix, the column types are different
                     //Table table = Table.read().db(rs);
                     Matrix table = Matrix.create(rs);
                     Platform.runLater(() ->
