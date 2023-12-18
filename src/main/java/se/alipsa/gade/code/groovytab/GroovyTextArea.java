@@ -96,7 +96,7 @@ public class GroovyTextArea extends CodeTextArea {
           if (getCaretPosition() > totalLength) {
             moveTo(totalLength);
           }
-        } else if (KeyCode.SPACE.equals(e.getCode())) {
+        } else if (KeyCode.SPACE.equals(e.getCode()) || KeyCode.PERIOD.equals(e.getCode())) {
           autoComplete();
         }
       }
