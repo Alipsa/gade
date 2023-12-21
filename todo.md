@@ -13,3 +13,8 @@ A more proper approach would be to parse the code up to the current point and in
 
 ###  gui testing
 - gui tests are quite limited, add a more appropriate javafx gui testing tool, https://github.com/TestFX/TestFX looks promising
+
+### database access through SSH
+https://stackoverflow.com/questions/1968293/connect-to-remote-mysql-database-through-ssh-using-java
+https://kahimyang.com/kauswagan/code-blogs/1337/ssh-tunneling-with-java-a-database-connection-example
+https://cryptofreek.org/2012/06/06/howto-jdbc-over-an-ssh-tunnel/
