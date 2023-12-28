@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.knowm.xchart.XChartPanel;
 import se.alipsa.gade.Gade;
 //import se.alipsa.gade.utils.m2.DependencyResolver;
 //import se.alipsa.gade.utils.m2.ResolvingException;
@@ -518,6 +519,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     SwingNode swingNode = new SwingNode();
     swingNode.setContent(swingComponent);
     display(swingNode, title);
+  }
+
+  public void display(org.knowm.xchart.internal.chartpart.Chart<?,?> xchart, String... title) {
+    display(new XChartPanel<>(xchart), title.length > 0 ? title[0] : xchart.getTitle());
   }
 
   public void display(File file, String... title) {

@@ -12,3 +12,4 @@
 /platform
 /examples/candles/.gradle/
 /examples/candles/build/
+/examples/xcharts/.gradle/

@@ -1,0 +1,67 @@
+plugins {
+  // Apply the groovy Plugin to add support for Groovy.
+  id 'groovy'
+}
+
+group = 'se.alipsa'
+version = '1.0.0-SNAPSHOT'
+description = 'TODO: write a short description here'
+
+// Set location for groovy source files and tests
+sourceSets {
+  main {
+    groovy {
+      srcDirs = ['src']
+    }
+  }
+  test {
+    groovy {
+      srcDirs = ['test']
+    }
+  }
+}
+
+repositories {
+  // Use Maven Central for resolving dependencies.
+  mavenCentral()
+}
+
+dependencies {
+  // Use the latest Groovy version for building this project
+  implementation 'org.apache.groovy:groovy-all:4.0.16'
+
+  implementation 'org.knowm.xchart:xchart:3.8.6'
+  implementation 'org.slf4j:slf4j-api:2.0.0'
+  implementation 'org.slf4j:slf4j-simple:2.0.0'
+
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+}
+
+tasks.named('test') {
+  // Use JUnit Platform for unit tests.
+  useJUnitPlatform()
+
+  // Show println in the console
+  testLogging {
+    showStandardStreams = true
+  }
+}
+
+
+// Create a jar with dependencies
+jar {
+  manifest {
+    // define the main script to run when executing the jar (java -jar exampleProject.jar)
+    attributes "Main-Class": "Xcharts.groovy"
+    // make log4j work in a fat jar:
+    attributes 'Multi-Release': 'true'
+  }
+  // If the dependencies have identical files then skip the duplicates
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+  from {
+    // THis makes gradle include all dependencies
+    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
+

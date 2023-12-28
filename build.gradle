@@ -151,6 +151,8 @@ dependencies {
     implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:dependency-resolver:1.0.0-SNAPSHOT'
 
+    implementation 'org.knowm.xchart:xchart:3.8.6'
+
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
     testImplementation 'com.h2database:h2:2.2.224'
