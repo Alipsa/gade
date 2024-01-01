@@ -17,6 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.knowm.xchart.XChartPanel;
+import org.knowm.xchart.internal.series.Series;
+import org.knowm.xchart.style.Styler;
 import se.alipsa.gade.Gade;
 //import se.alipsa.gade.utils.m2.DependencyResolver;
 //import se.alipsa.gade.utils.m2.ResolvingException;
@@ -518,11 +520,18 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public void display(JComponent swingComponent, String... title) {
     SwingNode swingNode = new SwingNode();
     swingNode.setContent(swingComponent);
+    if (title.length == 0 && swingComponent instanceof XChartPanel<?> xChartPanel) {
+      title = new String[]{xChartPanel.getChart().getTitle()};
+    }
     display(swingNode, title);
   }
 
   public void display(org.knowm.xchart.internal.chartpart.Chart<?,?> xchart, String... title) {
-    display(new XChartPanel<>(xchart), title.length > 0 ? title[0] : xchart.getTitle());
+    // We must play some tricks here otherwise swing will not be initialized in time
+    SwingUtilities.invokeLater(() -> {
+      var panel = new XChartPanel<>(xchart);
+      Platform.runLater(() -> display(panel, title.length > 0 ? title[0] : xchart.getTitle()));
+    });
   }
 
   public void display(File file, String... title) {
