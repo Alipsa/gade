@@ -276,7 +276,7 @@ public class ConsoleComponent extends BorderPane {
    */
   @SuppressWarnings("deprecation")
   public void interruptProcess() {
-    log.info("Interrupting runnning process");
+    log.info("Interrupting running process");
     // This is a nasty piece of code but a brutal stop() is the only thing that will break out of the script engine
     if (runningThread != null && runningThread.isAlive()) {
       console.appendFx("\nInterrupting process...", true);

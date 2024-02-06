@@ -15,6 +15,8 @@ empData = new Matrix(
     [int, String, BigDecimal, Number, LocalDate]
 )
 
+println empData.content()
+
 chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.STACKED, "salary", "bonus")
 io.display(chart, "charts barchart as native jfx")
 
