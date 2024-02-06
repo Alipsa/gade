@@ -9,7 +9,7 @@ plugins {
     id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.50.0"
+    id "com.github.ben-manes.versions" version "0.51.0"
 }
 
 group = 'se.alipsa'
@@ -17,7 +17,7 @@ version = '1.0.0-SNAPSHOT'
 description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
-def jfxVersion="21.0.1"
+def jfxVersion="21.0.2"
 
 javafx {
     version = "${jfxVersion}" // must be in sync with install.sh
@@ -68,13 +68,13 @@ configurations {
 }
 
 dependencies {
-    def jacksonVersion = '2.16.0'
+    def jacksonVersion = '2.16.1'
     def tikaVersion = '2.9.1'
     //def jgitVersion = '6.6.0.202305301015-r'
     def jgitVersion = '6.8.0.202311291450-r'
     def tablesawVersion = "0.43.1"
-    def log4jVersion = "2.22.0"
-    def groovyVersion = "4.0.16"
+    def log4jVersion = "2.22.1"
+    def groovyVersion = "4.0.18"
 
 
     jfxWin (
@@ -109,13 +109,11 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
 
-    // Used by se.alipsa.gade.utils.SemanticVersion, sync with maven-utils
-    implementation 'org.apache.maven:maven-artifact:3.8.4'
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.14.0'
-    implementation 'org.jsoup:jsoup:1.17.1'
+    implementation 'org.jsoup:jsoup:1.17.2'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation 'org.fxmisc.richtext:richtextfx:0.11.2'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
@@ -124,12 +122,12 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
     implementation 'commons-io:commons-io:2.15.1'
-    implementation 'com.github.jsqlparser:jsqlparser:4.7'
+    implementation 'com.github.jsqlparser:jsqlparser:4.8'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.5'
+    implementation 'org.gradle:gradle-tooling-api:8.6'
     implementation 'org.jetbrains:annotations:24.1.0'
     implementation 'io.github.classgraph:classgraph:4.8.165'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.3'
@@ -147,20 +145,22 @@ dependencies {
     implementation 'se.alipsa.groovy:matrix-charts:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-json:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-csv:1.0.1-SNAPSHOT'
-    implementation 'se.alipsa:maven-3.9.4-utils:1.0.3-SNAPSHOT'
+    implementation 'se.alipsa:maven-3.9.4-utils:1.0.3'
+    // Used by se.alipsa.gade.utils.SemanticVersion, sync with maven-utils
+    implementation 'org.apache.maven:maven-artifact:3.9.4'
     implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
-    implementation 'se.alipsa.groovy:dependency-resolver:1.0.0-SNAPSHOT'
+    implementation 'se.alipsa.groovy:dependency-resolver:1.0.0'
 
-    implementation 'org.knowm.xchart:xchart:3.8.6'
+    implementation 'org.knowm.xchart:xchart:3.8.7'
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
     testImplementation 'com.h2database:h2:2.2.224'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
-    testImplementation 'org.eclipse.jetty:jetty-server:10.0.15'
-    testImplementation 'org.eclipse.jetty:jetty-servlet:10.0.15'
+    testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'
+    testImplementation 'org.eclipse.jetty:jetty-servlet:10.0.20'
     //testImplementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
     testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
     //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
@@ -324,11 +324,11 @@ runtime {
     launcher {
         noConsole = true
     }
-    // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-17-lts
-    //https://download.bell-sw.com/java/21.0.1+12/bellsoft-jdk21.0.1+12-macos-aarch64-full.tar.gz
+    // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-21-lts
+    //https://download.bell-sw.com/java/21.0.2+14/bellsoft-jdk21.0.2+14-macos-aarch64-full.tar.gz
     def baseUrl = "https://download.bell-sw.com/java"
     // if you change version, remember to delete the platform dir to trigger download of the new version
-    def version = "21.0.1+12"
+    def version = "21.0.2+14"
 
     targetPlatform("linux") {
         jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-linux-amd64-full.tar.gz") {
