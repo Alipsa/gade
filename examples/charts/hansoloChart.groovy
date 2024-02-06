@@ -1,4 +1,5 @@
-@Grab('eu.hansolo.fx:charts:17.1.27')
+//@Grab('eu.hansolo.fx:charts:17.1.27')
+io.addDependency('eu.hansolo.fx:charts:17.1.27')
 import eu.hansolo.fx.charts.*
 import eu.hansolo.fx.charts.data.ChartItem;
 import eu.hansolo.fx.charts.data.Connection;

@@ -4,7 +4,6 @@ import se.alipsa.groovy.charts.*
 
 import static se.alipsa.groovy.matrix.ListConverter.*
 
-
 empData = new Matrix(
     emp_id: 1..5,
     emp_name: ["Rick","Dan","Michelle","Ryan","Gary"],

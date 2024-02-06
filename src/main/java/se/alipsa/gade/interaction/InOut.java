@@ -607,6 +607,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     view(table, title);
   }
 
+  // TODO rename to viewHtml or show
   public void view(String html, String... title) {
     gui.getInoutComponent().viewHtml(html, title);
   }
@@ -615,6 +616,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     gui.getInoutComponent().viewMarkdown(markdown, title);
   }
 
+  // TODO rename to viewHtml or show
   public void view(File file, String... title) {
     if (file == null) {
       gui.getConsoleComponent().addWarning("view file", "File argument cannot be null", true);

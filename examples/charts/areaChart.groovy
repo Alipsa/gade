@@ -5,7 +5,7 @@ import se.alipsa.groovy.charts.*
 import static se.alipsa.groovy.matrix.ListConverter.*
 
 
-empData = Matrix.create(
+empData = new Matrix(
     emp_id: 1..5,
     emp_name: ["Rick","Dan","Michelle","Ryan","Gary"],
     salary: [623.3,515.2,611.0,729.0,843.25],
