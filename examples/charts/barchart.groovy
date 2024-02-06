@@ -5,7 +5,7 @@ import se.alipsa.groovy.charts.*
 import static se.alipsa.groovy.matrix.ListConverter.*
 
 
-empData = Matrix.create(
+empData = new Matrix(
     emp_id: 1..5,
     emp_name: ["Rick","Dan","Michelle","Ryan","Gary"],
     salary: [623.3,515.2,611.0,729.0,843.25],
@@ -14,7 +14,16 @@ empData = Matrix.create(
 )
 
 chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary")
+chart.style.legendVisible = true
+chart.style.setLegendPosition('LEFT')
 io.display(chart, "charts barchart")
+
+swingChart = SwingPlot.swing(chart)
+//c = swingChart.getChart()
+//c.getStyler().setLegendPosition(org.knowm.xchart.style.Styler.LegendPosition.OutsideN)
+io.display(swingChart)
+
+
 file = io.projectFile("barchart.png")
 
 jfxChart = Plot.jfx(chart)
