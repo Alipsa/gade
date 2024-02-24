@@ -24,30 +24,24 @@ public class GroovyTest {
 
     @Test
     public void testGrape() throws ScriptException {
-        GroovyClassLoader gcl = new GroovyClassLoader();
-        GroovyShell groovyShell = new GroovyShell(gcl);
         StringBuilder sb = new StringBuilder()
-                //.append("@Grab(group='commons-codec', module='commons-codec', version='1.14')\n")
-                .append("@Grab('commons-codec:commons-codec:1.14')\n")
+                .append("@Grab(group='commons-codec', module='commons-codec', version='1.14')\n")
+                //.append("@Grab('commons-codec:commons-codec:1.14')\n")
                 .append("import org.apache.commons.codec.language.bm.Lang\n")
                 .append("import org.apache.commons.codec.language.bm.NameType\n")
                 .append("lang = Lang.instance(NameType.GENERIC)\n")
                 .append("lang.guessLanguage('båtflykting')\n");
 
-        //System.out.println(sb);
-        Object result = groovyShell.evaluate(sb.toString());
-        //System.out.println(result);
-        assertEquals("any",result);
+
 
         var engine = new GroovyScriptEngineImpl();
-        result = engine.eval(sb.toString());
+        var result = engine.eval(sb.toString());
         assertEquals("any",result);
 
         //System.setProperty("groovy.grape.report.downloads","true");
         //System.setProperty("ivy.message.logger.level","4");
         String script = """
-            import groovy.grape.Grape
-            Grape.grab('org.apache.httpcomponents:httpclient:4.2.1')
+            @Grab('org.apache.httpcomponents:httpclient:4.2.1')
             import org.apache.http.impl.client.DefaultHttpClient
             import org.apache.http.client.methods.HttpGet
                     
@@ -57,8 +51,6 @@ public class GroovyTest {
                     
             def httpResponse = httpClient.execute(httpGet)    
             """;
-        result = groovyShell.evaluate(script);
-        System.out.println(result);
         result = engine.eval(script);
         System.out.println(result);
     }

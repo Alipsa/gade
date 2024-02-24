@@ -107,7 +107,7 @@ public class ConsoleComponent extends BorderPane {
   }
    */
 
-  public void initGroovy(ClassLoader parentClassLoader) {
+  public void initGroovy(GroovyClassLoader parentClassLoader) {
     Task<Void> initTask = new Task<>() {
 
       @Override
@@ -144,7 +144,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   @Nullable
-  private Void resetClassloaderAndGroovy(ClassLoader parentClassLoader) throws Exception {
+  private Void resetClassloaderAndGroovy(GroovyClassLoader parentClassLoader) throws Exception {
     try {
 
       if (gui.getInoutComponent() == null) {
@@ -198,25 +198,9 @@ public class ConsoleComponent extends BorderPane {
           if (gradleFile.exists() && gradleHome.exists()) {
             log.debug("Parsing build.gradle to use gradle classloader");
             console.appendFx("* Parsing build.gradle to create Gradle classloader...", true);
-
             var gradleUtils = new GradleUtils(gui);
-            /*
-            gradleUtils.getProjectDependencies().forEach(f -> {
-              try {
-                if (f.exists()) {
-                  classLoader.addURL(f.toURI().toURL());
-                } else {
-                  log.warn("Dependency file {} does not exist", f);
-                  console.appendWarningFx("Dependency file " + f + " does not exist");
-                }
-              } catch (MalformedURLException e) {
-                log.warn("Error adding gradle dependency {} to classpath", f);
-                console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
-              }
-            });
-
-             */
-            classLoader = new GroovyClassLoader(gradleUtils.createGradleCLassLoader(classLoader, console));
+            gradleUtils.addGradleDependencies(classLoader, console);
+            //classLoader = new GroovyClassLoader(gradleUtils.createGradleCLassLoader(classLoader, console));
           } else {
             log.info("Use gradle class loader is set but gradle build file {} does not exist", gradleFile);
           }
@@ -298,23 +282,6 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
-  /*
-  public Object runScript(String script) throws Exception {
-    return runScript(script, null);
-  }
-
-   */
-
-  /*
-  public void addVariableToSession(String key, Object val) {
-    engine.put(key, val);
-  }
-
-  public void removeVariableFromSession(String varName) {
-    engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
-  }
-
-   */
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
     if (engine == null) {
       Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");

@@ -1,7 +1,7 @@
-//@Grab('org.jfree:jfreechart:1.5.3')
-//@Grab(group='org.jfree', module='jfreechart-fx', version='1.0.1')
-io.addDependency('org.jfree:jfreechart:1.5.3')
-io.addDependency('org.jfree:jfreechart-fx:1.0.1')
+@Grab('org.jfree:jfreechart:1.5.3')
+@Grab(group='org.jfree', module='jfreechart-fx', version='1.0.1')
+//io.addDependency('org.jfree:jfreechart:1.5.3')
+//io.addDependency('org.jfree:jfreechart-fx:1.0.1')
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font

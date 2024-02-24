@@ -1,8 +1,10 @@
 package se.alipsa.gade.code.groovytab;
 
+import groovy.lang.GroovyClassLoader;
 import javafx.scene.control.Button;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
@@ -14,6 +16,7 @@ import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.model.GroovyCodeHeader;
 import se.alipsa.gade.utils.ExceptionAlert;
 
+import javax.script.ScriptException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +36,7 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     super(gui, CodeType.GROOVY);
     setTitle(title);
     runButton = new Button("Run");
-    runButton.setOnAction(a -> runGroovy());
+    runButton.setOnAction(a -> runGroovy(getTextContent()));
     buttonPane.getChildren().add(runButton);
 
     if (addSessionRestartButton.length <= 0 || addSessionRestartButton[0]) {
@@ -81,7 +84,14 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     ConsoleComponent consoleComponent = gui.getConsoleComponent();
     final String title = getTitle();
     consoleComponent.running();
-    consoleComponent.runScriptAsync(content, title, this);
+    try {
+      //var result = getGroovyEngine().eval(content);
+      //consoleComponent.addOutput(title, String.valueOf(result), true, true);
+      //consoleComponent.waiting();
+      consoleComponent.runScriptAsync(content, title, this);
+    } catch (Exception e) {
+      ExceptionAlert.showAlert("Failed to run script", e);
+    }
   }
 
   @Override

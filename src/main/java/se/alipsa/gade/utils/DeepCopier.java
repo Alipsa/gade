@@ -1,7 +1,6 @@
 package se.alipsa.gade.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.javafx.scene.control.LabeledText;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -136,9 +135,9 @@ public class DeepCopier {
     return new Label(label.getText(), label.getGraphic());
   }
 
-  public static LabeledText deepCopy(LabeledText labeledText) {
+  /*public static LabeledText deepCopy(LabeledText labeledText) {
     return labeledText;
-  }
+  }*/
 
   public static <T extends Chart> T deepCopy(Chart chart) {
     if (chart instanceof AreaChart areaChart) {

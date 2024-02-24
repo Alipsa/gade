@@ -558,11 +558,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       try {
         String contentType = TikaUtils.instance().detectContentType(file);
         if ("image/svg+xml".equals(contentType)) {
-          Platform.runLater(() -> {
-            final WebView browser = new WebView();
-            browser.getEngine().load(url.toExternalForm());
-            display(browser, title);
-          });
+          displaySvg(file, title);
           return;
         }
       } catch (IOException e) {
@@ -571,6 +567,25 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
     Image img = new Image(url.toExternalForm());
     display(img, title);
+  }
+
+  public void displaySvg(File svg, String... title) {
+    Platform.runLater(() -> {
+      final WebView browser = new WebView();
+      try {
+        browser.getEngine().load(svg.toURI().toURL().toExternalForm());
+      } catch (MalformedURLException e) {
+        ExceptionAlert.showAlert("Failed to load svg file", e);
+      }
+      display(browser, title);
+    });
+  }
+  public void displaySvg(String svg, String... title) {
+    Platform.runLater(() -> {
+      final WebView browser = new WebView();
+      browser.getEngine().loadContent(svg);
+      display(browser, title);
+    });
   }
 
   public void view(Integer o, String... title) {

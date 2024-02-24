@@ -45,7 +45,7 @@ RELEASE_TAG=$(getProperty "release.tag")
 export JAVA_HOME="${DIR}"
 BIN_DIR="${DIR}/bin"
 LIB_DIR="${DIR}/lib"
-export PATH=$PATH:${LIB_DIR}
+export PATH=$JAVA_HOME/bin:$PATH:${LIB_DIR}
 
 # Allow for any kind of customization of variables or paths etc. without having to change this script
 # which would otherwise be overwritten on a subsequent install.
@@ -67,30 +67,24 @@ if [[ "${OS}" == "mac" ]]; then
   JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$DIR/gade-icon.png"
 fi
 
-MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
-
-# Note: It is possible to force the initial package loader by adding:
-# -DConsoleComponent.PackageLoader=ClasspathPackageLoader
-# to the command below, but even better to add it to JAVA_OPTS variable in env.sh
-
 if [[ "${OS}" == "win" ]]; then
   if [[ -z "$JAVA_CMD" ]]; then
 	  JAVA_CMD="javaw"
 	fi
-	CLASSPATH="${JAR_NAME};$(winpath "${LIB_DIR}")/*"
+	CLASSPATH="$(winpath "${LIB_DIR}")/*"
 	LD_PATH=$(winpath "${LIB_DIR}")
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
-	start "${BIN_DIR}\${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
+	start "${BIN_DIR}\${JAVA_CMD}" -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
-	start "${BIN_DIR}\${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
+	start "${BIN_DIR}\${JAVA_CMD}" -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
 
 else
 	JAVA_CMD="java"
-	CLASSPATH="${JAR_NAME}:${LIB_DIR}/*"
+	CLASSPATH="${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
-	"${BIN_DIR}/${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
+	"${BIN_DIR}/${JAVA_CMD}" -cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
-	"${BIN_DIR}/${JAVA_CMD}" --module-path "${LIB_DIR}/${OS}" --add-modules ${MODULES} -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
+	"${BIN_DIR}/${JAVA_CMD}" -Djava.library.path="${LD_PATH}" -cp "$CLASSPATH" $JAVA_OPTS se.alipsa.gade.Gade &
 fi

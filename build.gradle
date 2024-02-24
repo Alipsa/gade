@@ -5,7 +5,6 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'org.beryx.runtime' version '1.13.0'
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
@@ -17,12 +16,6 @@ version = '1.0.0-SNAPSHOT'
 description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
-def jfxVersion="21.0.2"
-
-javafx {
-    version = "${jfxVersion}" // must be in sync with install.sh
-    modules = ['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing']
-}
 
 application {
     mainClass = 'se.alipsa.gade.Gade'
@@ -43,67 +36,17 @@ repositories {
     }
 }
 
-configurations {
-    jfxWin {
-        attributes {
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
-            attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "win"))
-            attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "x86-64"))
-        }
-    }
-    jfxLinux {
-        attributes {
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
-            attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "linux"))
-            attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "x86-64"))
-        }
-    }
-    jfxMac {
-        attributes {
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
-            attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "mac"))
-            attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "aarch64"))
-        }
-    }
-}
-
 dependencies {
     def jacksonVersion = '2.16.1'
-    def tikaVersion = '2.9.1'
+    def tikaVersion = '3.0.0-BETA' // Note '2.9.1' breaks @Grab
     //def jgitVersion = '6.6.0.202305301015-r'
     def jgitVersion = '6.8.0.202311291450-r'
-    def tablesawVersion = "0.43.1"
     def log4jVersion = "2.22.1"
     def groovyVersion = "4.0.18"
 
-
-    jfxWin (
-        "org.openjfx:javafx-base:${jfxVersion}:win",
-        "org.openjfx:javafx-controls:${jfxVersion}:win",
-        "org.openjfx:javafx-graphics:${jfxVersion}:win",
-        "org.openjfx:javafx-media:${jfxVersion}:win",
-        "org.openjfx:javafx-web:${jfxVersion}:win",
-        "org.openjfx:javafx-swing:${jfxVersion}:win"
-        )
-    jfxLinux (
-        "org.openjfx:javafx-base:${jfxVersion}:linux",
-        "org.openjfx:javafx-controls:${jfxVersion}:linux",
-        "org.openjfx:javafx-graphics:${jfxVersion}:linux",
-        "org.openjfx:javafx-media:${jfxVersion}:linux",
-        "org.openjfx:javafx-web:${jfxVersion}:linux",
-        "org.openjfx:javafx-swing:${jfxVersion}:linux"
-    )
-    jfxMac (
-        "org.openjfx:javafx-base:${jfxVersion}:mac-aarch64",
-        "org.openjfx:javafx-controls:${jfxVersion}:mac-aarch64",
-        "org.openjfx:javafx-graphics:${jfxVersion}:mac-aarch64",
-        "org.openjfx:javafx-media:${jfxVersion}:mac-aarch64",
-        "org.openjfx:javafx-web:${jfxVersion}:mac-aarch64",
-        "org.openjfx:javafx-swing:${jfxVersion}:mac-aarch64"
-    )
     implementation 'org.apache.commons:commons-text:1.11.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
-    implementation 'org.apache.ivy:ivy:2.5.2'
+    //implementation 'org.apache.ivy:ivy:2.5.2'
 
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
@@ -149,6 +92,7 @@ dependencies {
     // Used by se.alipsa.gade.utils.SemanticVersion, sync with maven-utils
     implementation 'org.apache.maven:maven-artifact:3.9.4'
     implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
+    // TODO: this should not be needed as @Grab is working again
     implementation 'se.alipsa.groovy:dependency-resolver:1.0.0'
 
     implementation 'org.knowm.xchart:xchart:3.8.7'
@@ -161,9 +105,7 @@ dependencies {
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'
     testImplementation 'org.eclipse.jetty:jetty-servlet:10.0.20'
-    //testImplementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
     testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
-    //spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
 }
 
 java {
@@ -257,69 +199,6 @@ runtime {
                'jdk.security.auth', 'java.security.jgss', 'java.instrument', 'jdk.zipfs',
                'jdk.jartool', 'jdk.javadoc'
     ])
-    /*modules.set([
-            'javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing',
-            'java.base',
-            'java.compiler',
-            'java.datatransfer',
-            'java.desktop',
-            'java.instrument',
-            'java.logging',
-            'java.management',
-            'java.management.rmi',
-            'java.naming',
-            'java.net.http',
-            'java.prefs',
-            'java.rmi',
-            'java.scripting',
-            'java.se',
-            'java.security.jgss',
-            'java.security.sasl',
-            //'java.smartcardio',
-            'java.sql',
-            'java.sql.rowset',
-            'java.transaction.xa',
-            'java.xml',
-            'java.xml.crypto',
-            'jdk.accessibility',
-            'jdk.attach',
-            'jdk.charsets',
-            'jdk.compiler',
-            'jdk.crypto.cryptoki',
-            'jdk.crypto.ec',
-            'jdk.dynalink',
-            //'jdk.editpad',
-            'jdk.hotspot.agent',
-            //'jdk.httpserver',
-            //'jdk.incubator.foreign',
-            //'jdk.incubator.vector',
-            'jdk.jartool',
-            'jdk.javadoc',
-            'jdk.jcmd',
-            //'jdk.jconsole',
-            'jdk.jdeps',
-            'jdk.jdi',
-            'jdk.jdwp.agent',
-            'jdk.jfr',
-            'jdk.jlink',
-            'jdk.jpackage',
-            //'jdk.jshell',
-            //'jdk.jsobject',
-            'jdk.jstatd',
-            'jdk.localedata',
-            'jdk.management',
-            'jdk.management.agent',
-            'jdk.management.jfr',
-            'jdk.naming.dns',
-            'jdk.naming.rmi',
-            'jdk.net',
-            'jdk.nio.mapmode',
-            'jdk.sctp',
-            'jdk.security.auth',
-            'jdk.security.jgss',
-            'jdk.xml.dom',
-            'jdk.zipfs'
-    ])*/
 
     launcher {
         noConsole = true
@@ -348,18 +227,6 @@ runtime {
 }
 
 tasks.runtime.doLast {
-    copy {
-        from configurations.jfxLinux
-        into(project.layout.buildDirectory.dir("image/gade-linux/lib/"))
-    }
-    copy {
-        from configurations.jfxWin
-        into(project.layout.buildDirectory.dir("image/gade-win/lib/"))
-    }
-    copy {
-        from configurations.jfxMac
-        into(project.layout.buildDirectory.dir("image/gade-mac/lib/"))
-    }
     copy {
         from("$projectDir/src/bin/")
         into(project.layout.buildDirectory.dir("image/gade-linux/"))
@@ -409,44 +276,6 @@ tasks.runtime.doLast {
         into(project.layout.buildDirectory.dir("image/gade-win/"))
         include 'version.properties'
     }
-
-    /* included if the right jdk module is included
-    copy {
-        from("${tasks.runtime.targetPlatforms['linux'].jdkHome}/bin")
-        into(project.layout.buildDirectory.dir("image/${project.name}-linux/bin"))
-        //into("${project.buildDir}/image/${project.name}-linux/bin")
-        include 'javac'
-    }
-    copy {
-        from("${tasks.runtime.targetPlatforms['win'].jdkHome}/bin")
-        into(project.layout.buildDirectory.dir("image/${project.name}-win/bin"))
-        //into("${project.buildDir}/image/${project.name}-win/bin")
-        include 'javac.exe'
-    }
-    copy {
-        from("${tasks.runtime.targetPlatforms['mac'].jdkHome}/bin")
-        into(project.layout.buildDirectory.dir("image/${project.name}-mac/bin"))
-        include 'javac'
-    }*/
-
-    // Depending on the build environment, platform specific jars are included in
-    // all the platform specific dirs so we need to clean up
-    project.layout.buildDirectory.dir("image/gade-win/lib/").get().asFileTree
-    //delete fileTree("$project.buildDir/image/gade-win/lib/").matching {
-    delete project.layout.buildDirectory.dir("image/${project.name}-win/lib/").get().asFileTree.matching {
-        include '*-mac*.jar'
-        include '*-linux*.jar'
-    }
-    //delete fileTree("$project.buildDir/image/gade-linux/lib/").matching {
-    delete project.layout.buildDirectory.dir("image/${project.name}-linux/lib/").get().asFileTree.matching {
-        include '*-mac*.jar'
-        include '*-win*.jar'
-    }
-    //delete fileTree("$project.buildDir/image/gade-mac/lib/").matching {
-    delete project.layout.buildDirectory.dir("image/${project.name}-mac/lib/").get().asFileTree.matching {
-        include '*-win*.jar'
-        include '*-linux*.jar'
-    }
 }
 
 tasks.runtimeZip.doLast {
@@ -479,21 +308,3 @@ tasks.named("dependencyUpdates").configure {
         }
     }
 }
-
-/* 4.7.1 is the default version for plugin version 5.09
-spotbugs {
-    toolVersion = '4.7.1'
-}
- */
-
-/*
-spotbugsMain {
-    reports {
-        html {
-            required = true
-            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
-            stylesheet = 'fancy-hist.xsl'
-        }
-    }
-}
-*/

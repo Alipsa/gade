@@ -3,6 +3,7 @@ package se.alipsa.gade.utils.gradle;
 import static se.alipsa.gade.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
 import static se.alipsa.gade.menu.GlobalOptions.GRADLE_HOME;
 
+import groovy.lang.GroovyClassLoader;
 import javafx.application.Platform;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.logging.log4j.LogManager;
@@ -238,6 +239,34 @@ public class GradleUtils {
       outPutDir = new File(moduleDir, "build/classes/groovy/main/");
     }
     return outPutDir;
+  }
+
+  public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console) {
+    for (File f : getProjectDependencies()) {
+      try {
+        if (f.exists()) {
+          classLoader.addURL(f.toURI().toURL());
+        } else {
+          log.warn("Dependency file {} does not exist", f);
+          console.appendWarningFx("Dependency file " + f + " does not exist");
+        }
+      } catch (MalformedURLException e) {
+        log.warn("Error adding gradle dependency {} to classpath", f);
+        console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
+      }
+    }
+    try (ProjectConnection connection = connector.connect()) {
+      IdeaProject project = connection.getModel(IdeaProject.class);
+      for (IdeaModule module : project.getModules()) {
+        var outputDir = getOutputDir(module);
+        try {
+          classLoader.addURL(outputDir.toURI().toURL());
+        } catch (MalformedURLException e) {
+          log.warn("Error adding gradle output dir {} to classpath", outputDir);
+          console.appendWarningFx("Error adding gradle output dir {} " + outputDir + " to classpath");
+        }
+      }
+    }
   }
 
   public ClassLoader createGradleCLassLoader(ClassLoader parent, ConsoleTextArea console) {

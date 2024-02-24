@@ -56,7 +56,7 @@ public class Gade extends Application {
   private File gadeBaseDir;
   private FileOpener fileOpener;
   private static Gade instance;
-  // Drivers that uses dll files (e.g. for integrated security) cannot load the dll twice byt different classloaders
+  // Drivers that uses dll files (e.g. for integrated security) cannot load the dll twice by different classloaders
   // so we need to cache the classloader and reuse it.
   public GroovyClassLoader dynamicClassLoader = new GroovyClassLoader();
 
@@ -73,7 +73,8 @@ public class Gade extends Application {
   @Override
   public void start(Stage primaryStage) {
     log.info("Starting Gade...");
-    //Thread.currentThread().setContextClassLoader(new GroovyClassLoader());
+    //System.setProperty("groovy.grape.report.downloads","true");
+    //System.setProperty("ivy.message.logger.level","4");
     instance = this;
     gadeBaseDir = Path.of("").toAbsolutePath().toFile();
 

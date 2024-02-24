@@ -1,9 +1,10 @@
 package se.alipsa.gade.model;
 
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlRootElement;
+// Not sure if jaxb is needed, trying to remove it implementation 'javax.xml.bind:jaxb-api:2.3.1'
+//import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement
+//@XmlRootElement
 public class MuninReport {
 
   public static final String FILE_EXTENSION = ".mr";

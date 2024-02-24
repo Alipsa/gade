@@ -77,9 +77,9 @@ public class GitTest {
   @Test
   public void testGitClone() throws Exception {
     GitServer server = new GitServer();
-    server.start(8080);
+    server.start(8085);
     File targetDir = Files.createTempDirectory("gitrepo").toFile();
-    String url = "http://localhost:8080/TestRepo";
+    String url = "http://localhost:8085/TestRepo";
     log.info("Cloning {} to {}", url, targetDir);
     try(var call = Git.cloneRepository()
             .setURI(url)
