@@ -1,15 +1,12 @@
 //System.setProperty('groovy.grape.report.downloads', 'true')
 //System.setProperty('ivy.message.logger.level', '4')
 
-//groovy.grape.Grape.grab('org.jfree:jfreechart:1.5.3')
-//groovy.grape.Grape.grab(group:'org.jfree', module:'jfreechart-fx', version:'1.0.1')
-
-//@Grab('org.jfree:jfreechart:1.5.3')
-//@Grab('org.jfree:jfreechart-fx:1.0.1')
+@Grab('org.jfree:jfreechart:1.5.3')
+@Grab('org.jfree:jfreechart-fx:1.0.1')
 
 //System.err.println('hello')
-io.addDependency('org.jfree:jfreechart:1.5.3')
-io.addDependency('org.jfree:jfreechart-fx:1.0.1')
+//io.addDependency('org.jfree:jfreechart:1.5.3')
+//io.addDependency('org.jfree:jfreechart-fx:1.0.1')
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
