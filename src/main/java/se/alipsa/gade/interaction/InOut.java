@@ -930,8 +930,12 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     gui.getInoutComponent().viewHtml(jdocUrl, artifactId);
   }
 
+  /**
+   * This is an alternative to @Grab
+   * @param dependency the gradle short version string corresponding to the dependency
+   */
   public void addDependency(String dependency) {
-    DependencyResolver resolver = new DependencyResolver(gui.dynamicClassLoader);
+    DependencyResolver resolver = new DependencyResolver(gui.getConsoleComponent().getClassLoader());
     try {
       resolver.addDependency(dependency);
     } catch (ResolvingException e) {
@@ -941,7 +945,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   public void addToClassPath(File dirOrJar) {
     try {
-      gui.dynamicClassLoader.addURL(dirOrJar.toURI().toURL());
+      gui.getConsoleComponent().getClassLoader().addURL(dirOrJar.toURI().toURL());
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }

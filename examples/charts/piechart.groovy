@@ -16,9 +16,8 @@ empData = new Matrix(
 chart = PieChart.create("Salaries", empData, "emp_name", "salary")
 chart.style.plotBackgroundColor = new java.awt.Color(30, 30, 128)
 chart.style.chartBackgroundColor = new java.awt.Color(60, 100, 170)
-chart.style.legendBackgroundColor = new java.awt.Color(80, 120, 200)
 chart.style.legendVisible = true
-chart.style.legendPosition = 'RIGHT'
+chart.style.legendPosition = 'BOTTOM'
 chart.style.titleVisible = true
 
 // show jfx and swing plotting
