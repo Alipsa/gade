@@ -84,7 +84,7 @@ public class PackagesTab extends Tab {
       // AetherPackageLoader might have picked up new packages, so we need to do this each time
       Set<Library> availablePackages;
       try {
-        availablePackages = LibraryUtils.getAvailableLibraries(Gade.instance().getConsoleComponent().getGroovyClassLoader());
+        availablePackages = LibraryUtils.getAvailableLibraries(Gade.instance().getConsoleComponent().getClassLoader());
       } catch (IOException | RuntimeException e) {
         ExceptionAlert.showAlert("Failed to scan for available libraries", e);
         return;
