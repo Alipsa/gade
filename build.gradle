@@ -37,12 +37,12 @@ repositories {
 }
 
 dependencies {
-    def jacksonVersion = '2.16.1'
+    def jacksonVersion = '2.17.0'
     def tikaVersion = '3.0.0-BETA' // Note '2.9.1' breaks @Grab
-    //def jgitVersion = '6.6.0.202305301015-r'
-    def jgitVersion = '6.8.0.202311291450-r'
-    def log4jVersion = "2.23.0"
-    def groovyVersion = "4.0.18"
+    //def jgitVersion = '6.8.0.202311291450-r'
+    def jgitVersion = '6.9.0.202403050737-r'
+    def log4jVersion = "2.23.1"
+    def groovyVersion = "4.0.20"
 
     implementation 'org.apache.commons:commons-text:1.11.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
@@ -65,14 +65,14 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
     implementation 'commons-io:commons-io:2.15.1'
-    implementation 'com.github.jsqlparser:jsqlparser:4.8'
+    implementation 'com.github.jsqlparser:jsqlparser:4.9'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     implementation 'org.gradle:gradle-tooling-api:8.6'
     implementation 'org.jetbrains:annotations:24.1.0'
-    implementation 'io.github.classgraph:classgraph:4.8.165'
+    implementation 'io.github.classgraph:classgraph:4.8.168'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.3'
     implementation "se.alipsa:gi-fx:1.0.0-SNAPSHOT"
 
@@ -81,7 +81,7 @@ dependencies {
     implementation 'se.alipsa.groovy:data-utils:1.0.5-SNAPSHOT'
     implementation 'se.alipsa.groovy:gmd:1.0.8-SNAPSHOT'
     implementation 'se.alipsa:simple-rest:1.0.5'
-    implementation 'se.alipsa.groovy:matrix-core:1.2.3-SNAPSHOT'
+    implementation 'se.alipsa.groovy:matrix-core:1.2.3'
     implementation 'se.alipsa.groovy:matrix-stats:1.0.1-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-datasets:1.0.3-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-spreadsheet:1.0.2-SNAPSHOT'
