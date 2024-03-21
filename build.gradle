@@ -17,6 +17,8 @@ description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
+def jdkVersion = "21.0.2+14"
+
 application {
     mainClass = 'se.alipsa.gade.Gade'
 }
@@ -122,13 +124,30 @@ static def getDate() {
     return formattedDate
 }
 
-/*
+// due to late binding, the jdkVersion needs to be passed as a parameter
+def deleteIfDiff(String jdkVersion, String path) {
+    boolean platformDiff = true
+    if (jdkVersion.contains('+')) {
+        String matchString = jdkVersion.substring(0, jdkVersion.indexOf('+'))
+        logger.info("matching $matchString on platform jdks")
+        file(path).listFiles().each {
+            if (it.getName().contains(matchString)) {
+                platformDiff = false
+            }
+        }
+    }
+    if (platformDiff) {
+        logger.info("$jdkVersion not found in $path, deleting it")
+        delete path
+    }
+}
+
 clean {
     // include the platform jdks as otherwise, updating the version will not "take"
-    delete "$projectDir/platform/linux"
-    delete "$projectDir/platform/win"
-    delete "$projectDir/platform/mac"
-}*/
+    deleteIfDiff(jdkVersion, "$projectDir/platform/linux")
+    deleteIfDiff(jdkVersion, "$projectDir/platform/win")
+    deleteIfDiff(jdkVersion, "$projectDir/platform/mac")
+}
 
 processResources.doLast {
     ant.propertyfile(file: "${projectDir}/version.properties") {
@@ -206,21 +225,19 @@ runtime {
     // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-21-lts
     //https://download.bell-sw.com/java/21.0.2+14/bellsoft-jdk21.0.2+14-macos-aarch64-full.tar.gz
     def baseUrl = "https://download.bell-sw.com/java"
-    // if you change version, remember to delete the platform dir to trigger download of the new version
-    def version = "21.0.2+14"
 
     targetPlatform("linux") {
-        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-linux-amd64-full.tar.gz") {
+        jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-linux-amd64-full.tar.gz") {
             downloadDir = "$projectDir/platform/linux"
         }
     }
     targetPlatform("win") {
-        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-windows-amd64-full.zip") {
+        jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-windows-amd64-full.zip") {
             downloadDir = "$projectDir/platform/win"
         }
     }
     targetPlatform("mac") {
-        jdkHome = jdkDownload("${baseUrl}/${version}/bellsoft-jdk${version}-macos-aarch64-full.tar.gz") {
+        jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-macos-aarch64-full.tar.gz") {
             downloadDir = "$projectDir/platform/mac"
         }
     }
