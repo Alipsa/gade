@@ -64,7 +64,7 @@ else
 fi
 
 if [[ "${OS}" == "mac" ]]; then
-  JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$DIR/gade-icon.png"
+  JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$DIR/Contents/Resources/gade.icns"
 fi
 
 if [[ "${OS}" == "win" ]]; then

@@ -79,7 +79,7 @@ fi
 MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 
 if [[ "${OS}" == "mac" ]]; then
-  JAVA_OPTS="$JAVA_OPTS -Xdock:name=gade -Xdock:icon=\"$DIR/gade-icon.png\""
+  JAVA_OPTS="$JAVA_OPTS -Xdock:name=gade -Xdock:icon=\"$DIR/Contents/Resources/gade.icns\""
 fi
 
 if [[ "${OS}" == "win" ]]; then
