@@ -107,6 +107,11 @@ public class ConsoleComponent extends BorderPane {
   }
    */
 
+  /**
+   * Initialize the groovy engine
+   *
+   * @param parentClassLoader the classloader to use as the parent classloader for the GroovyClassloader
+   */
   public void initGroovy(GroovyClassLoader parentClassLoader) {
     Task<Void> initTask = new Task<>() {
 
@@ -787,11 +792,17 @@ public class ConsoleComponent extends BorderPane {
     threadMap.put(thread, context);
   }
 
+  /**
+   * Set the cursor to running / busy mode
+   */
   public void busy() {
     this.setCursor(Cursor.WAIT);
     console.setCursor(Cursor.WAIT);
   }
 
+  /**
+   * Set the cursor to ready/waiting mode
+   */
   public void ready() {
     this.setCursor(Cursor.DEFAULT);
     console.setCursor(Cursor.DEFAULT);
