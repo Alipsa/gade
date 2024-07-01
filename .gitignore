@@ -13,3 +13,4 @@
 /examples/candles/.gradle/
 /examples/candles/build/
 /examples/xcharts/.gradle/
+.DS_Store

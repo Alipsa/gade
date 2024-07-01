@@ -1,6 +1,6 @@
 package groovy
 
-@Grab('com.h2database:h2:2.1.214')
+@Grab('com.h2database:h2:2.2.224')
 import groovy.sql.Sql
 
 import java.sql.Driver
