@@ -1,6 +1,5 @@
 package groovy
 
-//@GrabConfig(systemClassLoader=true)
 @Grab('com.h2database:h2:2.2.224')
 
 import groovy.sql.Sql
