@@ -3,8 +3,6 @@ package se.alipsa.gade.inout.viewer;
 import static se.alipsa.gade.Constants.KEY_CODE_COPY;
 import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 
-import se.alipsa.groovy.datautil.TableUtil;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;

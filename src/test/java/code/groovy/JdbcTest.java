@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SuppressFBWarnings()
 public class JdbcTest {
@@ -74,8 +76,13 @@ public class JdbcTest {
     System.out.println("--------------");
     var scriptPath = "/groovy/SqlNewInstance.groovy";
     URL url = getClass().getResource(scriptPath);
-    String groovyCode = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A").next();
+    assertNotNull(url, "failed to find " + scriptPath);
+    String groovyCode;
+    try (InputStream is = url.openStream()) {
+      groovyCode = new Scanner(is, "UTF-8").useDelimiter("\\A").next();
+    }
     System.out.println("***** runWithShell");
+    //System.out.println(groovyCode);
     var idList = (List<?>)runWithShell(groovyCode, variables);
     assertEquals(2, idList.size());
 
@@ -95,7 +102,11 @@ public class JdbcTest {
     System.out.println("--------------");
     var scriptPath = "/groovy/SqlWithInstance.groovy";
     URL url = getClass().getResource(scriptPath);
-    String groovyCode = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A").next();
+    assertNotNull(url, "failed to find " + scriptPath);
+    String groovyCode;
+    try (InputStream is = url.openStream()) {
+      groovyCode = new Scanner(is, "UTF-8").useDelimiter("\\A").next();
+    }
     System.out.println("***** runWithShell");
     var idList = (List<?>)runWithShell(groovyCode, variables);
     assertEquals(2, idList.size());
