@@ -1,5 +1,5 @@
 # <a id="explore"/>Explore
-
+TODO: Change this from Tablesaw to Matrix
 By exploring I mean getting a basic understanding of the data e.g. what kind of columns are in a table, how are values distributed,
 etc. Exploring typically means looking at the variables and their distribution.
 Tablesaw provides many ways to do this.

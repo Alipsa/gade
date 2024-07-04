@@ -24,7 +24,7 @@ public class QueryBuilder {
         """);
     str.append("@Grab('").append(con.getDependency()).append("')\n")
         .append("""
-        @Grab('se.alipsa.groovy:data-utils:1.0-SNAPSHOT')
+        @Grab('se.alipsa.groovy:data-utils:1.0.5')
         import se.alipsa.groovy.datautil.SqlUtil
         import tech.tablesaw.api.Table
         

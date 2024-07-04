@@ -73,12 +73,12 @@ Groovy has excellent built-in support for reading from relational databases in t
 There is a snag when using @Grab however. The Sql class uses DriverManager to get the connection which
 requires that the Driver is available from the System classloader i.e. it must reside the the Grade lib dir.
 A better alternative is to use the SqlUtil class from the data-utils library which collaborates much
-better with the Groovy Classloader that @Grab interacts with. The static methods of SqlUtil corresponds to the
+better with the Groovy Classloader that @Grab interacts with. The static methods of SqlUtil corresponds to
 the methods available from the Sql class and, just like Sql, returns an instance of the Sql class that can be
 used to insert, update, delete and select data. Below is an example:
 
 ```groovy
-@Grab('se.alipsa.groovy:data-utils:1.0.3')
+@Grab('se.alipsa.groovy:data-utils:1.0.5')
 @Grab('com.h2database:h2:2.1.214')
 
 import se.alipsa.groovy.datautil.SqlUtil
