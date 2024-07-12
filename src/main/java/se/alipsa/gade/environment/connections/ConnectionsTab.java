@@ -628,7 +628,7 @@ public class ConnectionsTab extends Tab {
     task.setOnSucceeded(e -> {
       try {
         createTableTree(task.get(), con);
-      } catch (Exception ex) {
+      } catch (Throwable ex) {
         setNormalCursor();
         ExceptionAlert.showAlert("Failed to create connection tree view", ex);
       }
@@ -641,8 +641,8 @@ public class ConnectionsTab extends Tab {
       if (ex == null) {
         ex = throwable;
       }
+      log.warn("Exception when running sql code {}", sql, throwable);
       String msg = gui.getConsoleComponent().createMessageFromEvalException(ex);
-      log.warn("Exception when running sql code {}", sql);
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
     });
     Thread scriptThread = new Thread(task);
