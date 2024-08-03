@@ -41,7 +41,7 @@ public class SqlTextArea extends CodeTextArea {
 
       "general", "get", "global", "goto", "group", "grouping",
 
-      "handler", "hash", "hour",
+      "handler", "hash", "having", "hour",
 
       "identity", "if", "ignore", "immediate", "in", "indicator", "initialize", "initially", "inner",
       "inout", "input", "insert", "int", "integer", "intersect", "intersection", "interval", "into",
@@ -58,13 +58,13 @@ public class SqlTextArea extends CodeTextArea {
       "object", "of", "off", "old", "on", "only", "open", "operation", "option",
       "or", "order", "ordinality", "out", "outer", "output",
 
-      "pad", "parameter", "parameters", "partial", "path", "period",
+      "pad", "parameter", "parameters", "partial", "path", "period", "pivot",
       "postfix", "precedes", "precision", "prefix", "preorder", "prepare", "preserve", "primary",
       "prior", "privileges", "procedure", "public",
 
       "read", "reads", "real", "recursive", "redo", "ref", "references", "referencing",
       "relative", "repeat", "resignal", "restrict", "result", "return", "returns", "revoke",
-      "right", "role", "rollback", "rollup", "routine", "row", "rows",
+      "right", "role", "rollback", "rollup", "routine", "row", "rownum", "rows",
 
       "savepoint", "schema", "scroll", "search", "second", "section", "select", "sequence", "session",
       "session_user", "set", "sets", "signal", "size", "smallint", "specific", "specifictype",
@@ -72,10 +72,10 @@ public class SqlTextArea extends CodeTextArea {
       "submultiset", "succeeds", "sum", "system_user",
 
       "table", "tablesample", "temporary", "terminate", "than", "then", "time", "timestamp",
-      "timezone_hour", "timezone_minute", "to", "trailing", "transaction", "translation", "treat",
+      "timezone_hour", "timezone_minute", "to", "top", "trailing", "transaction", "translation", "treat",
       "trigger", "true", "uescape",
 
-      "under", "undo", "union", "unique", "unknown", "until", "update", "usage", "user", "using",
+      "under", "undo", "union", "unique", "unknown", "until", "unpivot", "update", "usage", "user", "using",
 
       "value", "values", "varchar", "variable", "varying", "view",
 
