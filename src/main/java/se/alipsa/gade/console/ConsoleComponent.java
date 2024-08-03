@@ -411,16 +411,25 @@ public class ConsoleComponent extends BorderPane {
     return msg;
   }
 
+  /**
+   * print the prompt (>) and scroll to the end of the output
+   */
   public void promptAndScrollToEnd() {
     console.appendText(">");
     scrollToEnd();
   }
 
+  /**
+   * scroll to the end of the output
+   */
   public void scrollToEnd() {
     console.moveTo(console.getLength());
     console.requestFollowCaret();
   }
 
+  /**
+   * Update the environment after a run
+   */
   public void updateEnvironment() {
     Task<Void> task = new Task<>() {
       @Override

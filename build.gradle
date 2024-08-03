@@ -40,7 +40,7 @@ repositories {
 
 dependencies {
     def jacksonVersion = '2.17.2'
-    def tikaVersion = '3.0.0-BETA' // Note '2.9.1' breaks @Grab
+    def tikaVersion = '3.0.0-BETA2' // Note '2.9.1' breaks @Grab
     def jgitVersion = '6.10.0.202406032230-r'
     //def jgitVersion = '6.9.0.202403050737-r'
     def log4jVersion = "2.23.1"
@@ -57,7 +57,7 @@ dependencies {
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
-    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'org.apache.commons:commons-lang3:3.15.0'
     implementation 'org.jsoup:jsoup:1.18.1'
     implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
     implementation 'org.fxmisc.richtext:richtextfx:0.11.3'
@@ -102,7 +102,7 @@ dependencies {
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
-    testImplementation 'com.h2database:h2:2.2.224'
+    testImplementation 'com.h2database:h2:2.3.230'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
