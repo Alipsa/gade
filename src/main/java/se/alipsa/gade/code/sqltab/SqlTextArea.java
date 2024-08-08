@@ -153,7 +153,7 @@ public class SqlTextArea extends CodeTextArea {
   //  styling on the AST model or create an eventparser (like SAX) and apply styling that way.
   @Override
   protected StyleSpans<Collection<String>> computeHighlighting(String text) {
-    log.info("Computing highlighting for sql");
+    log.trace("Computing highlighting for sql");
     Matcher matcher = PATTERN.matcher(text);
     int lastKwEnd = 0;
     StyleSpansBuilder<Collection<String>> spansBuilder

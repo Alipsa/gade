@@ -250,6 +250,7 @@ public class InoutComponent extends TabPane  {
       }
     });
   }
+
   public void viewHtmlWithBootstrap(String html, String... title) {
     Platform.runLater(() -> {
       viewer.viewHtmlWithBootstrap(html, title);

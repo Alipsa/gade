@@ -25,10 +25,7 @@ import se.alipsa.gade.utils.StringUtils;
 import se.alipsa.groovy.matrix.Matrix;
 
 import java.io.File;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -129,11 +126,10 @@ public class SqlTab extends TextAreaTab {
     // The parser will not be able to understand more complex queries in which case
     // the whole sql code will be in batchedQry[0]
     String[] batchedQry = SqlParser.split(sqlCode, parseMessage);
-    if (parseMessage.length() > 0) {
+    if (!parseMessage.isEmpty()) {
       consoleComponent.addWarning(getTitle(), parseMessage.toString() + '\n', false);
-    } else {
-      consoleComponent.addOutput(getTitle(), "Query contains " + batchedQry.length + " statements", false, true);
     }
+    consoleComponent.addOutput(getTitle(), "Query contains " + batchedQry.length + " statements", false, true);
 
     Task<Void> updateTask = new Task<>() {
       @Override
@@ -147,18 +143,26 @@ public class SqlTab extends TextAreaTab {
           if (con == null) {
             throw new Exception("Failed to establish a connection");
           }
+          con.setAutoCommit(false);
+          con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+
           AtomicInteger queryCount = new AtomicInteger(1);
           try (Statement stm = con.createStatement()) {
             for (String qry : batchedQry) {
+              if (qry.isBlank()) {
+                continue;
+              }
+              //log.info("{}. Executing SQL: {}", stmCount++, qry);
               boolean hasMoreResultSets = stm.execute(qry);
-
               int capLen = Math.min(qry.length(), PRINT_QUERY_LENGTH);
               String queryCapture = StringUtils.fixedLengthString(qry.substring(0, capLen).trim(), PRINT_QUERY_LENGTH);
 
               while (hasMoreResultSets || stm.getUpdateCount() != -1) {
+                printWarnings("statement", stm.getWarnings());
+                stm.clearWarnings();
                 if (hasMoreResultSets) {
                   try (ResultSet rs = stm.getResultSet()) {
-                    //Table table = Table.read().db(rs);
+                    printWarnings("resultset", rs.getWarnings());
                     Matrix table = Matrix.create(rs);
                     Platform.runLater(() ->
                         gui.getInoutComponent().viewTable(table, SqlTab.this.getTitle() + " " + queryCount.getAndIncrement() + ".")
@@ -167,7 +171,7 @@ public class SqlTab extends TextAreaTab {
                 } else { // if ddl/dml/...
                   int queryResult = stm.getUpdateCount();
                   if (queryResult == -1) { // no more queries processed
-                    break;
+                    continue;
                   }
 
                   Platform.runLater(() ->
@@ -182,8 +186,20 @@ public class SqlTab extends TextAreaTab {
                 }
                 hasMoreResultSets = stm.getMoreResults();
               }
+              con.commit();
+              // We must have one printWarnings here if the statement only contains messages
+              printWarnings("statement", stm.getWarnings());
+              stm.clearWarnings();
             }
           }
+          printWarnings("connection", con.getWarnings());
+          con.clearWarnings();
+          con.setAutoCommit(true);
+        } catch (SQLException e) {
+          if (con != null) {
+            con.rollback();
+          }
+          throw e;
         } finally {
           if (!keepConnectionOpenCheckBox.isSelected()) {
             con.close();
@@ -211,6 +227,23 @@ public class SqlTab extends TextAreaTab {
     scriptThread.setContextClassLoader(gui.getConsoleComponent().getSession().getClass().getClassLoader());
     scriptThread.setDaemon(false);
     scriptThread.start();
+  }
+
+  private void printWarnings(String context, SQLWarning warning) {
+    final ConsoleComponent consoleComponent = getGui().getConsoleComponent();
+    while (warning != null) {
+      String message = warning.getMessage();
+      if ("statement".equals(context)) {
+        Platform.runLater(
+            () -> consoleComponent.addOutput("", message, false, true)
+        );
+      } else {
+        Platform.runLater(
+            () -> consoleComponent.addWarning(context, message + "\n", false)
+        );
+      }
+      warning = warning.getNextWarning();
+    }
   }
 
   @Override

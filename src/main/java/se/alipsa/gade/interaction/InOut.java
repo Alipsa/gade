@@ -76,6 +76,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     readImage = new ReadImage();
   }
 
+  public Set<String> dbConnectionNames() {
+    return gui.getEnvironmentComponent().getDefinedConnectionsNames();
+  }
+
   /**
    * Create and save a connection in the Environments section, Connections tab
    */
@@ -882,6 +886,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public void javadoc(Object obj) throws IOException {
     javadoc(obj.getClass());
   }
+
   public void javadoc(Class<?> clazz) throws IOException {
     javadocForFcqn(clazz.getPackageName(), clazz.getSimpleName());
   }
@@ -890,7 +895,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     var url = "https://search.maven.org/solrsearch/select?q=fc:" + pkgName + "." + className + "&rows=20&wt=json";
     var searchResult = new ObjectMapper().readValue(new URL(url), CentralSearchResult.class);
     if (searchResult == null || searchResult.response == null || searchResult.response.docs == null || searchResult.response.docs.isEmpty()) {
-      Alerts.warn("Failed to find suitable artifact", "The search result from maven central did not contain anything useful");
+      Alerts.warnFx("Failed to find suitable artifact", "The search result from maven central did not contain anything useful");
       return;
     }
     var doc = searchResult.response.docs.stream()

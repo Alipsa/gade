@@ -683,7 +683,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void addOutput(String title, String content, boolean addPrompt, boolean addNewLine) {
-    if (title != null && title.length() != 0) {
+    if (title != null && !title.isEmpty()) {
       console.append(title, true);
     }
     console.append(content, addNewLine);
@@ -695,7 +695,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void addWarning(String title, String content, boolean addPrompt) {
-    console.appendWarning(title);
+    console.appendWarning(title + ": ");
     console.appendWarning(content);
     if (addPrompt) {
       promptAndScrollToEnd();

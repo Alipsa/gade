@@ -19,6 +19,7 @@ import se.alipsa.groovy.matrix.Matrix;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class EnvironmentComponent extends TabPane {
 
@@ -115,5 +116,9 @@ public class EnvironmentComponent extends TabPane {
 
   public Set<ConnectionInfo> getDefinedConnections() {
     return connectionsTab.getDefinedConnections();
+  }
+
+  public Set<String> getDefinedConnectionsNames() {
+    return connectionsTab.getDefinedConnections().stream().map(ConnectionInfo::getName).collect(Collectors.toSet());
   }
 }

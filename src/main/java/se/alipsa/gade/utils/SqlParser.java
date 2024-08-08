@@ -17,14 +17,13 @@ public class SqlParser {
   public static String[] split(String sql, StringBuilder warnings) {
     try {
       Statements statements = CCJSqlParserUtil.parseStatements(sql);
-      List<Statement> statementList = statements.getStatements();
-      List<String> list = new ArrayList<>(statementList.size());
-      for (Statement stmt : statementList) {
+      List<String> list = new ArrayList<>(statements.size());
+      for (Statement stmt : statements) {
         list.add(stmt.toString());
       }
       return list.toArray(new String[0]);
     } catch (JSQLParserException e) {
-      log.warn("Failed to parse sql", e);
+      log.debug("Failed to parse sql: {}", e.toString());
       int numlines = org.apache.commons.lang3.StringUtils.countMatches(sql,"\n") + 1;
       warnings.append("Failed to parse statement(s), will try the whole string (")
           .append(numlines).append(" lines, ").append(sql.length()).append(" chars)\n");
