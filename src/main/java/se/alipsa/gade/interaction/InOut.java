@@ -816,8 +816,8 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       if (param.isVarArgs()) {
         name = name.substring(0, name.length() -2) + "...";
       }
+      name += " " + param.getName();
       paramList.add(name);
-
     }
     sb.append(String.join(", ", paramList)).append(")");
 

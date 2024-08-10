@@ -16,8 +16,8 @@ public class SqlParserTest {
         select * from SomeTable where key = '11331607'
         """, warnings);
 
-    System.out.println(warnings);
-    System.out.println(statementsString(statements));
+    assertTrue(warnings.toString().contains("Failed to parse statement(s), will try the whole string"), warnings.toString());
+    assertEquals(1, statements.length, "Expected 1 statement but was: \n" + statementsString(statements));
   }
 
   @Test
