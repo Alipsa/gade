@@ -205,6 +205,10 @@
     -fx-fill: lightskyblue;
 }
 
+.info {
+    -fx-fill: green;
+}
+
 .keyword {
     -fx-fill: lightskyblue;
     color: lightskyblue; /* web view */

@@ -94,7 +94,7 @@ public class ConsoleTextArea extends UnStyledCodeArea {
     }
   }
 
-  private void appendWithStyle(String text, String styleClass, boolean... addNewline) {
+  public void appendWithStyle(String text, String styleClass, boolean... addNewline) {
     //log.info("Appending warning lenght = {} for {}", text.length(), text);
     int start = getCaretPosition();
     int end = getCaretPosition() + text.length();

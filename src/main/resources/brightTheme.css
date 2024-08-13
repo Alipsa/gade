@@ -62,6 +62,10 @@
     -fx-fill: mediumblue;
 }
 
+.info {
+    -fx-fill: green;
+}
+
 .keyword {
     -fx-fill: mediumblue;
     /* -fx-font-weight: bold; */

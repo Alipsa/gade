@@ -682,6 +682,18 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
+  public void addExternalMessage(String title, String content, boolean addPrompt, boolean addNewLine) {
+    if (title != null && !title.isEmpty()) {
+      console.appendWithStyle(title, "info", addNewLine);
+    }
+    console.appendWithStyle(content, "info", addNewLine);
+    if (addPrompt) {
+      promptAndScrollToEnd();
+    } else {
+      scrollToEnd();
+    }
+  }
+
   public void addOutput(String title, String content, boolean addPrompt, boolean addNewLine) {
     if (title != null && !title.isEmpty()) {
       console.append(title, true);

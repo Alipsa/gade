@@ -186,24 +186,25 @@ public class SqlTab extends TextAreaTab {
                 }
                 hasMoreResultSets = stm.getMoreResults();
               }
-              con.commit();
               // We must have one printWarnings here if the statement only contains messages
               printWarnings("statement", stm.getWarnings());
               stm.clearWarnings();
             }
           }
+          con.commit(); // maybe only commit if keepConnectionOpenCheckBox is unselected
           printWarnings("connection", con.getWarnings());
           con.clearWarnings();
-          con.setAutoCommit(true);
         } catch (SQLException e) {
           if (con != null) {
             con.rollback();
           }
           throw e;
         } finally {
-          if (!keepConnectionOpenCheckBox.isSelected()) {
-            con.close();
-            con = null;
+          if (con != null) {
+            if (!keepConnectionOpenCheckBox.isSelected()) {
+              con.close();
+              con = null;
+            }
           }
         }
         return null;
@@ -235,7 +236,7 @@ public class SqlTab extends TextAreaTab {
       String message = warning.getMessage();
       if ("statement".equals(context)) {
         Platform.runLater(
-            () -> consoleComponent.addOutput("", message, false, true)
+            () -> consoleComponent.addExternalMessage("", message, false, true)
         );
       } else {
         Platform.runLater(
