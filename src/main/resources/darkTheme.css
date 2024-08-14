@@ -206,7 +206,7 @@
 }
 
 .info {
-    -fx-fill: green;
+    -fx-fill: lightgreen;
 }
 
 .keyword {
@@ -239,7 +239,7 @@
 }
 
 .warning {
-    -fx-fill: red;
+    -fx-fill: #FF7518; /* Pumpkin Orange /*
 }
 
 .xml_tagmark {

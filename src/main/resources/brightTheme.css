@@ -101,7 +101,7 @@
 }
 
 .warning {
-    -fx-fill: darkred;
+    -fx-fill: #CC5500; /* Burnt Orange */
 }
 
 .xml_tagmark {
