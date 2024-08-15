@@ -122,6 +122,8 @@ public class SqlTab extends TextAreaTab {
     }
     setWaitCursor();
     final ConsoleComponent consoleComponent = getGui().getConsoleComponent();
+    // TODO: Make it possible to interrupt the process when clicking the icon
+    consoleComponent.running();
     StringBuilder parseMessage = new StringBuilder();
     // The parser will not be able to understand more complex queries in which case
     // the whole sql code will be in batchedQry[0]
@@ -212,11 +214,13 @@ public class SqlTab extends TextAreaTab {
     };
     updateTask.setOnSucceeded(e -> {
       setNormalCursor();
+      consoleComponent.waiting();
       consoleComponent.addOutput("", "Success", true, true);
     });
 
     updateTask.setOnFailed(e -> {
       setNormalCursor();
+      consoleComponent.waiting();
       Throwable exc = updateTask.getException();
       consoleComponent.addWarning("","\nFailed to execute query\n" + exc, true);
       String clazz = exc.getClass().getName();
