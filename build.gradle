@@ -72,7 +72,7 @@ dependencies {
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.9'
+    implementation 'org.gradle:gradle-tooling-api:8.10'
     implementation 'org.jetbrains:annotations:24.1.0'
     implementation 'io.github.classgraph:classgraph:4.8.174'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.6'
@@ -83,7 +83,7 @@ dependencies {
     implementation 'se.alipsa.groovy:data-utils:1.0.5'
     implementation 'se.alipsa.groovy:gmd:1.0.8-SNAPSHOT'
     implementation 'se.alipsa:simple-rest:1.0.5'
-    implementation 'se.alipsa.groovy:matrix-core:1.2.4'
+    implementation 'se.alipsa.groovy:matrix-core:1.2.5-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-stats:1.0.1'
     implementation 'se.alipsa.groovy:matrix-datasets:1.0.3'
     implementation 'se.alipsa.groovy:matrix-spreadsheet:1.0.2'
@@ -91,9 +91,8 @@ dependencies {
     implementation 'se.alipsa.groovy:matrix-json:1.0.0-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-csv:1.0.1-SNAPSHOT'
     implementation 'se.alipsa.groovy:matrix-sql:1.0.0'
-    implementation 'se.alipsa:maven-3.9.4-utils:1.0.3'
-    // Used by se.alipsa.gade.utils.SemanticVersion, sync with maven-utils
-    implementation 'org.apache.maven:maven-artifact:3.9.4'
+    // Used by se.alipsa.gade.utils.SemanticVersion
+    implementation 'org.apache.maven:maven-artifact:3.9.9'
     implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
     // TODO: this should not be needed as @Grab is working again
     implementation 'se.alipsa.groovy:dependency-resolver:1.0.0'
@@ -102,8 +101,8 @@ dependencies {
 
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
-    testImplementation 'com.h2database:h2:2.3.230'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testImplementation 'com.h2database:h2:2.3.232'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'
