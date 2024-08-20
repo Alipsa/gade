@@ -56,9 +56,9 @@ public class SqlTextArea extends CodeTextArea {
       "not", "null", "numeric",
 
       "object", "of", "off", "old", "on", "only", "open", "operation", "option",
-      "or", "order", "ordinality", "out", "outer", "output",
+      "or", "order", "ordinality", "out", "outer", "output", "over",
 
-      "pad", "parameter", "parameters", "partial", "path", "period", "pivot",
+      "pad", "parameter", "parameters", "partial", "partition", "path", "period", "pivot",
       "postfix", "precedes", "precision", "prefix", "preorder", "prepare", "preserve", "primary",
       "prior", "privileges", "procedure", "public",
 
