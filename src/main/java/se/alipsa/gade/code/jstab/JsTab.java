@@ -91,9 +91,10 @@ public class JsTab extends TextAreaTab {
     final ConsoleTextArea console = consoleComponent.getConsole();
     final String title = getTitle();
 
-    Task<Void> task = new Task<>() {
+    JsTask task = new JsTask() {
+
       @Override
-      public Void call() throws Exception {
+      public Void execute() throws Exception {
         try (
             AppenderWriter out = new AppenderWriter(console);
             WarningAppenderWriter err = new WarningAppenderWriter(console);
@@ -135,9 +136,7 @@ public class JsTab extends TextAreaTab {
       ExceptionAlert.showAlert(ex.getMessage(), ex);
       gui.getConsoleComponent().promptAndScrollToEnd();
     });
-    Thread thread = new Thread(task);
-    thread.setDaemon(false);
-    consoleComponent.startThreadWhenOthersAreFinished(thread, "javascript");
+    consoleComponent.startTaskWhenOthersAreFinished(task, "javascript");
   }
 
   @Override

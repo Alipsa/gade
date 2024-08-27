@@ -40,7 +40,7 @@ public class SqlTab extends TextAreaTab {
 
   private static final Logger log = LogManager.getLogger(SqlTab.class);
 
-  private static final int PRINT_QUERY_LENGTH = 30;
+  public static final int PRINT_QUERY_LENGTH = 30;
 
   public SqlTab(String title, Gade gui) {
     super(gui, CodeType.SQL);
@@ -105,7 +105,7 @@ public class SqlTab extends TextAreaTab {
     connectionCombo.getItems().removeIf(c -> c.getName().equals(connectionName));
   }
 
-  private void setNormalCursor() {
+  public void setNormalCursor() {
     gui.setNormalCursor();
     sqlTextArea.setCursor(Cursor.DEFAULT);
   }
@@ -132,123 +132,28 @@ public class SqlTab extends TextAreaTab {
       consoleComponent.addWarning(getTitle(), parseMessage.toString() + '\n', false);
     }
     consoleComponent.addOutput(getTitle(), "Query contains " + batchedQry.length + " statements", false, true);
+    SqlTask task = new SqlTask(connectionCombo.getValue(), con, gui, batchedQry, keepConnectionOpenCheckBox.isSelected(), SqlTab.this);
 
-    Task<Void> updateTask = new Task<>() {
-      @Override
-      protected Void call() throws Exception {
-        ConnectionInfo ci = connectionCombo.getValue();
-
-        if (con == null) {
-          con = gui.getEnvironmentComponent().connect(ci);
-        }
-        try {
-          if (con == null) {
-            throw new Exception("Failed to establish a connection");
-          }
-          con.setAutoCommit(false);
-          con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
-
-          AtomicInteger queryCount = new AtomicInteger(1);
-          try (Statement stm = con.createStatement()) {
-            for (String qry : batchedQry) {
-              if (qry.isBlank()) {
-                continue;
-              }
-              //log.info("{}. Executing SQL: {}", stmCount++, qry);
-              boolean hasMoreResultSets = stm.execute(qry);
-              int capLen = Math.min(qry.length(), PRINT_QUERY_LENGTH);
-              String queryCapture = StringUtils.fixedLengthString(qry.substring(0, capLen).trim(), PRINT_QUERY_LENGTH);
-
-              while (hasMoreResultSets || stm.getUpdateCount() != -1) {
-                printWarnings("statement", stm.getWarnings());
-                stm.clearWarnings();
-                if (hasMoreResultSets) {
-                  try (ResultSet rs = stm.getResultSet()) {
-                    printWarnings("resultset", rs.getWarnings());
-                    Matrix table = Matrix.create(rs);
-                    Platform.runLater(() ->
-                        gui.getInoutComponent().viewTable(table, SqlTab.this.getTitle() + " " + queryCount.getAndIncrement() + ".")
-                    );
-                  }
-                } else { // if ddl/dml/...
-                  int queryResult = stm.getUpdateCount();
-                  if (queryResult == -1) { // no more queries processed
-                    continue;
-                  }
-
-                  Platform.runLater(() ->
-                      consoleComponent.addOutput("", new StringBuilder()
-                              .append(queryCount.getAndIncrement())
-                              .append(". [")
-                              .append(queryCapture)
-                              .append("...], Rows affected: ")
-                              .append(queryResult).toString()
-                          , false, true)
-                  );
-                }
-                hasMoreResultSets = stm.getMoreResults();
-              }
-              // We must have one printWarnings here if the statement only contains messages
-              printWarnings("statement", stm.getWarnings());
-              stm.clearWarnings();
-            }
-          }
-          con.commit(); // maybe only commit if keepConnectionOpenCheckBox is unselected
-          printWarnings("connection", con.getWarnings());
-          con.clearWarnings();
-        } catch (SQLException e) {
-          if (con != null) {
-            con.rollback();
-          }
-          throw e;
-        } finally {
-          if (con != null) {
-            if (!keepConnectionOpenCheckBox.isSelected()) {
-              con.close();
-              con = null;
-            }
-          }
-        }
-        return null;
-      }
-    };
-    updateTask.setOnSucceeded(e -> {
+    task.setOnSucceeded(e -> {
       setNormalCursor();
       consoleComponent.waiting();
       consoleComponent.addOutput("", "Success", true, true);
+      con = task.getValue();
     });
 
-    updateTask.setOnFailed(e -> {
+    task.setOnFailed(e -> {
       setNormalCursor();
       consoleComponent.waiting();
-      Throwable exc = updateTask.getException();
+      Throwable exc = task.getException();
       consoleComponent.addWarning("","\nFailed to execute query\n" + exc, true);
       String clazz = exc.getClass().getName();
       String message = exc.getMessage() == null ? "" : "\n" + exc.getMessage();
       ExceptionAlert.showAlert("Query failed: " + clazz + message, exc );
     });
-
-    Thread scriptThread = new Thread(updateTask);
+    Thread scriptThread = new SqlThread(task, this);
     scriptThread.setContextClassLoader(gui.getConsoleComponent().getSession().getClass().getClassLoader());
     scriptThread.setDaemon(false);
-    scriptThread.start();
-  }
-
-  private void printWarnings(String context, SQLWarning warning) {
-    final ConsoleComponent consoleComponent = getGui().getConsoleComponent();
-    while (warning != null) {
-      String message = warning.getMessage();
-      if ("statement".equals(context)) {
-        Platform.runLater(
-            () -> consoleComponent.addExternalMessage("", message, false, true)
-        );
-      } else {
-        Platform.runLater(
-            () -> consoleComponent.addWarning(context, message + "\n", false)
-        );
-      }
-      warning = warning.getNextWarning();
-    }
+    consoleComponent.startTaskWhenOthersAreFinished(task, "sql");
   }
 
   @Override

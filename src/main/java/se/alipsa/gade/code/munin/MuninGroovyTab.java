@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import netscape.javascript.JSObject;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
+import se.alipsa.gade.console.GroovyTask;
 import se.alipsa.gade.inout.viewer.ViewHelper;
 import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.model.ReportType;
@@ -48,9 +49,10 @@ public class MuninGroovyTab extends MuninTab {
       }
     }
     gui.setWaitCursor();
-    Task<String> task = new Task<>() {
+
+    MuninTask task = new MuninTask() {
       @Override
-      protected String call() throws Exception {
+      public String execute() throws Exception {
         try {
           String muninBaseUrl;
           if (getMuninConnection() == null) {
@@ -87,9 +89,7 @@ public class MuninGroovyTab extends MuninTab {
       ExceptionAlert.showAlert(ex.getMessage(), ex);
     });
 
-    Thread thread = new Thread(task);
-    thread.setDaemon(false);
-    gui.getConsoleComponent().startThreadWhenOthersAreFinished(thread, "muninReport");
+    gui.getConsoleComponent().startTaskWhenOthersAreFinished(task, "muninReport");
   }
 
   private final Console console = new Console();

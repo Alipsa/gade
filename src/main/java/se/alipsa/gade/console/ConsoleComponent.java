@@ -262,20 +262,29 @@ public class ConsoleComponent extends BorderPane {
 
   /**
    * TODO: while we can stop the timeline with this we cannot interrupt the scriptengines eval.
+   *  see https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting for some possible options
    */
-  @SuppressWarnings("deprecation")
   public void interruptProcess() {
     log.info("Interrupting running process");
-    // This is a nasty piece of code but a brutal stop() is the only thing that will break out of the script engine
     if (runningThread != null && runningThread.isAlive()) {
       console.appendFx("\nInterrupting process...", true);
-      runningThread.interrupt();
-      // allow two seconds for graceful shutdown
-      sleep(2000);
-      console.appendFx("Stopping process...", true);
-      runningThread.stop();
-      threadMap.remove(runningThread);
-      console.appendText("\n>");
+
+      Task<Void> task = new Task<>() {
+        @Override
+        protected Void call() {
+          runningThread.interrupt();
+          // allow two seconds for graceful shutdown
+          sleep(2000);
+          return null;
+        }
+      };
+      task.setOnSucceeded(e -> {
+        console.appendFx("Process stopped!", false);
+        threadMap.remove(runningThread);
+        Platform.runLater(() -> console.appendText("\n>"));
+        waiting();
+      });
+      new Thread(task).start();
     }
   }
 
@@ -349,9 +358,9 @@ public class ConsoleComponent extends BorderPane {
 
     running();
 
-    Task<Void> task = new Task<>() {
+    GroovyTask task = new GroovyTask() {
       @Override
-      public Void call() throws Exception {
+      public Void execute() throws Exception {
         try {
           taskListener.taskStarted();
           executeScriptAndReport(script, title);
@@ -386,9 +395,7 @@ public class ConsoleComponent extends BorderPane {
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
       promptAndScrollToEnd();
     });
-    Thread thread = new Thread(task);
-    thread.setDaemon(false);
-    startThreadWhenOthersAreFinished(thread, "runScriptAsync: " + title);
+    startTaskWhenOthersAreFinished(task, "runScriptAsync: " + title);
   }
 
   public String createMessageFromEvalException(Throwable ex) {
@@ -431,9 +438,9 @@ public class ConsoleComponent extends BorderPane {
    * Update the environment after a run
    */
   public void updateEnvironment() {
-    Task<Void> task = new Task<>() {
+    GroovyTask task = new GroovyTask() {
       @Override
-      protected Void call() throws Exception {
+      public Void execute() throws Exception {
         try {
           // TODO get library dependencies from Grab and maven?
           gui.getEnvironmentComponent().setEnvironment(getContextObjects());
@@ -443,24 +450,20 @@ public class ConsoleComponent extends BorderPane {
           System.out.println("Exception caught, rethrowing as wrapped Exception");
           throw new Exception(e);
         }
-
         return null;
       }
     };
+
     task.setOnFailed(e -> {
       Throwable throwable = task.getException();
       Throwable ex = throwable.getCause();
       if (ex == null) {
         ex = throwable;
       }
-
       String msg = createMessageFromEvalException(ex);
-
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
     });
-    Thread thread = new Thread(task);
-    thread.setDaemon(false);
-    startThreadWhenOthersAreFinished(thread, "updateEnvironment");
+    startTaskWhenOthersAreFinished(task, "updateEnvironment");
   }
 
   public Map<String, Object> getContextObjects() {
@@ -788,17 +791,19 @@ public class ConsoleComponent extends BorderPane {
     return console;
   }
 
-  public void startThreadWhenOthersAreFinished(Thread thread, String context) {
+  public void startTaskWhenOthersAreFinished(CountDownTask<?> task, String context) {
+    Thread thread = task.createThread();
     if (runningThread == null) {
       log.debug("Starting thread {}", context);
       thread.start();
     } else if (runningThread.getState() == Thread.State.WAITING || runningThread.getState() == Thread.State.TIMED_WAITING) {
       log.debug("Waiting for thread {} to finish", threadMap.get(runningThread));
       try {
-        // This is bit ugly as now the console output will not show until the thread has finished.
-        runningThread.join();
+        task.countDownLatch.await();
+        // runningThread.join();
         thread.start();
       } catch (InterruptedException e) {
+        task.cancel(true);
         log.warn("Thread was interrupted", e);
         log.info("Running thread {}", context);
         thread.start();
