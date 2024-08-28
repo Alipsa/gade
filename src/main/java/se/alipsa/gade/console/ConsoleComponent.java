@@ -5,6 +5,7 @@ import static se.alipsa.gade.menu.GlobalOptions.*;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
+import groovy.transform.ThreadInterrupt;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -21,6 +22,8 @@ import javafx.stage.Stage;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.Nullable;
@@ -159,7 +162,12 @@ public class ConsoleComponent extends BorderPane {
 
       //log.info("USE_GRADLE_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
 
-      classLoader = new GroovyClassLoader(parentClassLoader);
+      // TODO: consider making this a configurable option if performance is heavily affected
+      CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+      //automatically apply the @ThreadInterrupt AST transformations on all scripts
+      // see https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting for details
+      config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
+      classLoader = new GroovyClassLoader(parentClassLoader, config);
 
       boolean useGradleCLassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
 
