@@ -133,7 +133,7 @@ public class SqlTab extends TextAreaTab implements TaskListener {
       consoleComponent.addWarning(getTitle(), parseMessage.toString() + '\n', false);
     }
     consoleComponent.addOutput(getTitle(), "Query contains " + batchedQry.length + " statements", false, true);
-    SqlTask task = new SqlTask(connectionCombo.getValue(), con, gui, batchedQry, keepConnectionOpenCheckBox.isSelected(), SqlTab.this);
+    SqlTask task = new SqlTask(connectionCombo.getValue(), con, gui, batchedQry, SqlTab.this);
 
     task.setOnSucceeded(e -> {
       taskEnded();
@@ -157,6 +157,10 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     scriptThread.setContextClassLoader(gui.getConsoleComponent().getSession().getClass().getClassLoader());
     scriptThread.setDaemon(false);
     consoleComponent.startTaskWhenOthersAreFinished(task, "sql");
+  }
+
+  public boolean keepConnectionOpen() {
+    return keepConnectionOpenCheckBox.isSelected();
   }
 
   @Override

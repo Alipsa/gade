@@ -26,13 +26,13 @@ public class SqlTask extends CountDownTask<Connection> {
   String title;
   SqlTab sqlTab;
 
-  public SqlTask(ConnectionInfo ci, Connection con, Gade gui, String[] batchedQry, boolean keepConnectionOpen, SqlTab sqlTab) {
+  public SqlTask(ConnectionInfo ci, Connection con, Gade gui, String[] batchedQry, SqlTab sqlTab) {
     super(sqlTab);
     this.ci = ci;
     this.con = con;
     this.gui = gui;
     this.batchedQry = batchedQry;
-    this.keepConnectionOpen = keepConnectionOpen;
+    this.keepConnectionOpen = sqlTab.keepConnectionOpen();
     this.title = sqlTab.getTitle();
     this.sqlTab = sqlTab;
   }
