@@ -126,9 +126,11 @@ public class JsTab extends TextAreaTab implements TaskListener {
       }
       gui.getConsoleComponent().promptAndScrollToEnd();
       consoleComponent.waiting();
+      taskEnded();
     });
 
     task.setOnFailed(e -> {
+      taskEnded();
       Throwable throwable = task.getException();
       Throwable ex = throwable.getCause();
       if (ex == null) {

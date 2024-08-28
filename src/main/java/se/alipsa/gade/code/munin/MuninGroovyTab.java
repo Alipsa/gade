@@ -72,6 +72,7 @@ public class MuninGroovyTab extends MuninTab {
       }
     };
     task.setOnSucceeded(e -> {
+      taskEnded();
       String result = task.getValue();
       if (result != null) {
         gui.getInoutComponent().viewHtmlWithBootstrap(result, getTitle());
@@ -80,6 +81,7 @@ public class MuninGroovyTab extends MuninTab {
       gui.setNormalCursor();
     });
     task.setOnFailed(e -> {
+      taskEnded();
       gui.setNormalCursor();
       Throwable throwable = task.getException();
       Throwable ex = throwable.getCause();

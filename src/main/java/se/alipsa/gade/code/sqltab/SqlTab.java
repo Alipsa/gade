@@ -136,6 +136,7 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     SqlTask task = new SqlTask(connectionCombo.getValue(), con, gui, batchedQry, keepConnectionOpenCheckBox.isSelected(), SqlTab.this);
 
     task.setOnSucceeded(e -> {
+      taskEnded();
       setNormalCursor();
       consoleComponent.waiting();
       consoleComponent.addOutput("", "Success", true, true);
@@ -143,6 +144,7 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     });
 
     task.setOnFailed(e -> {
+      taskEnded();
       setNormalCursor();
       consoleComponent.waiting();
       Throwable exc = task.getException();
