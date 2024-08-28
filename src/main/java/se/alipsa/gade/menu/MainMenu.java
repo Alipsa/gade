@@ -734,7 +734,7 @@ public class MainMenu extends MenuBar {
     gui.getPrefs().putBoolean(ADD_DEPENDENCIES, result.getBoolean(ADD_DEPENDENCIES));
 
     if (shouldRestart) {
-      restartR();
+      restartEngine();
     }
 
     gui.setNormalCursor();
@@ -751,9 +751,9 @@ public class MainMenu extends MenuBar {
   private Menu createSessionMenu() {
     Menu sessionMenu = new Menu("Session");
     MenuItem restartMI = new MenuItem("Restart Groovy");
-    restartMI.setOnAction(this::restartR);
+    restartMI.setOnAction(this::restartEngine);
     interruptMI = new MenuItem("Interrupt Groovy");
-    interruptMI.setOnAction(this::interruptR);
+    interruptMI.setOnAction(this::interruptProcess);
     disableInterruptMenuItem();
 
     MenuItem sessionInfo = new MenuItem("SessionInfo");
@@ -786,18 +786,18 @@ public class MainMenu extends MenuBar {
     showInfoAlert("Session info", content, 600, 300);
   }
 
-  private void interruptR(ActionEvent actionEvent) {
+  private void interruptProcess(ActionEvent actionEvent) {
     gui.getConsoleComponent().interruptProcess();
   }
 
-  private void restartR(ActionEvent evt) {
-    restartR();
+  private void restartEngine(ActionEvent evt) {
+    restartEngine();
   }
 
-  private void restartR() {
+  private void restartEngine() {
     gui.getConsoleComponent().restartGroovy();
     gui.getInoutComponent().setPackages(null);
-    gui.getEnvironmentComponent().rRestarted();
+    gui.getEnvironmentComponent().restarted();
   }
 
   private Menu createFileMenu() {

@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
@@ -29,7 +30,7 @@ import java.sql.*;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SqlTab extends TextAreaTab {
+public class SqlTab extends TextAreaTab implements TaskListener {
 
   private final SqlTextArea sqlTextArea;
   private final Button executeButton;
@@ -189,5 +190,15 @@ public class SqlTab extends TextAreaTab {
   @Override
   public CodeTextArea getCodeArea() {
     return sqlTextArea;
+  }
+
+  @Override
+  public void taskStarted() {
+    executeButton.setDisable(true);
+  }
+
+  @Override
+  public void taskEnded() {
+    executeButton.setDisable(false);
   }
 }

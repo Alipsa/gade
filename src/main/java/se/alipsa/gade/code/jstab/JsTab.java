@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
@@ -26,7 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class JsTab extends TextAreaTab {
+public class JsTab extends TextAreaTab implements TaskListener {
 
   public static final String RESTART_JS_SESSION_AFTER_RUN = "JsTab.RestartJsSessionAfterRun";
   private final JsTextArea jsTextArea;
@@ -35,6 +36,7 @@ public class JsTab extends TextAreaTab {
   private static final Logger log = LogManager.getLogger(JsTab.class);
   private ScriptEngine engine;
   private static String initScript;
+  private Button executeButton;
 
   static {
     try {
@@ -47,7 +49,7 @@ public class JsTab extends TextAreaTab {
   public JsTab(String title, Gade gui) {
     super(gui, CodeType.JAVA_SCRIPT);
     setTitle(title);
-    Button executeButton = new Button("Run");
+    executeButton = new Button("Run");
     executeButton.setOnAction(a -> runJavascript());
     buttonPane.getChildren().add(executeButton);
     Button resetButton = new Button("Restart session");
@@ -91,7 +93,7 @@ public class JsTab extends TextAreaTab {
     final ConsoleTextArea console = consoleComponent.getConsole();
     final String title = getTitle();
 
-    JsTask task = new JsTask() {
+    JsTask task = new JsTask(this) {
 
       @Override
       public Void execute() throws Exception {
@@ -172,5 +174,15 @@ public class JsTab extends TextAreaTab {
   @Override
   public CodeTextArea getCodeArea() {
     return jsTextArea;
+  }
+
+  @Override
+  public void taskStarted() {
+    executeButton.setDisable(true);
+  }
+
+  @Override
+  public void taskEnded() {
+    executeButton.setDisable(false);
   }
 }

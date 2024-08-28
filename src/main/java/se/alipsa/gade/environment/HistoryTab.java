@@ -53,7 +53,7 @@ public class HistoryTab extends Tab {
     historyTa.clear();
   }
 
-  public void rRestarted() {
+  public void restarted() {
     historyTa.appendText("\n\n*********************\n* Session Restarted *\n*********************\n");
     scrollToEnd();
   }

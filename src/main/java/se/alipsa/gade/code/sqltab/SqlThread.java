@@ -1,14 +1,16 @@
 package se.alipsa.gade.code.sqltab;
 
+import se.alipsa.gade.console.ScriptThread;
+
 import java.sql.SQLException;
 
-public class SqlThread extends Thread {
+public class SqlThread extends ScriptThread {
 
   SqlTask task;
   SqlTab sqlTab;
 
   public SqlThread(SqlTask task, SqlTab sqlTab) {
-    super(task);
+    super(task, sqlTab);
     this.task = task;
     this.sqlTab = sqlTab;
   }

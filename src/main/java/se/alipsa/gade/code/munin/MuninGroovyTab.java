@@ -50,7 +50,7 @@ public class MuninGroovyTab extends MuninTab {
     }
     gui.setWaitCursor();
 
-    MuninTask task = new MuninTask() {
+    MuninTask task = new MuninTask(this) {
       @Override
       public String execute() throws Exception {
         try {

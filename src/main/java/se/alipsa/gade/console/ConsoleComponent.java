@@ -55,7 +55,7 @@ public class ConsoleComponent extends BorderPane {
   private final Gade gui;
   private GroovyClassLoader classLoader;
 
-  private Thread runningThread;
+  private ScriptThread runningThread;
   private final Map<Thread, String> threadMap = new HashMap<>();
   private ScriptEngine engine;
 
@@ -268,7 +268,6 @@ public class ConsoleComponent extends BorderPane {
     log.info("Interrupting running process");
     if (runningThread != null && runningThread.isAlive()) {
       console.appendFx("\nInterrupting process...", true);
-
       Task<Void> task = new Task<>() {
         @Override
         protected Void call() {
@@ -282,6 +281,7 @@ public class ConsoleComponent extends BorderPane {
         console.appendFx("Process stopped!", false);
         threadMap.remove(runningThread);
         Platform.runLater(() -> console.appendText("\n>"));
+        gui.setNormalCursor();
         waiting();
       });
       new Thread(task).start();
@@ -358,11 +358,10 @@ public class ConsoleComponent extends BorderPane {
 
     running();
 
-    GroovyTask task = new GroovyTask() {
+    GroovyTask task = new GroovyTask(taskListener) {
       @Override
       public Void execute() throws Exception {
         try {
-          taskListener.taskStarted();
           executeScriptAndReport(script, title);
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
@@ -389,11 +388,15 @@ public class ConsoleComponent extends BorderPane {
       if (ex == null) {
         ex = throwable;
       }
-
-      String msg = createMessageFromEvalException(ex);
-      log.warn("Error running script {}", script);
-      ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
-      promptAndScrollToEnd();
+      if (ex.getCause() != null && ex.getCause() instanceof InterruptedException) {
+        log.info("Groovy script execution was interrupted");
+        // let the interruptProcess() method handle the rest
+      } else {
+        String msg = createMessageFromEvalException(ex);
+        log.warn("Error running script {}", script);
+        ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
+        promptAndScrollToEnd();
+      }
     });
     startTaskWhenOthersAreFinished(task, "runScriptAsync: " + title);
   }
@@ -438,7 +441,15 @@ public class ConsoleComponent extends BorderPane {
    * Update the environment after a run
    */
   public void updateEnvironment() {
-    GroovyTask task = new GroovyTask() {
+    TaskListener listener = new TaskListener() {
+      @Override
+      public void taskStarted() {
+      }
+      @Override
+      public void taskEnded() {
+      }
+    };
+    GroovyTask task = new GroovyTask(listener) {
       @Override
       public Void execute() throws Exception {
         try {
@@ -792,7 +803,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void startTaskWhenOthersAreFinished(CountDownTask<?> task, String context) {
-    Thread thread = task.createThread();
+    ScriptThread thread = task.createThread();
     if (runningThread == null) {
       log.debug("Starting thread {}", context);
       thread.start();
@@ -813,7 +824,10 @@ public class ConsoleComponent extends BorderPane {
       log.warn("There is already a process running: {} in state {}, Overriding existing running thread", threadMap.get(runningThread), runningThread.getState());
       thread.start();
     } else {
-      if (runningThread.getState() != Thread.State.TERMINATED) {
+      if (runningThread.getState() == Thread.State.NEW) {
+        // if we get here, we have created a thread but forgot to start it
+        log.error("Running thread {} is created but not started, this is bug that should be fixed", runningThread);
+      } else if (runningThread.getState() != Thread.State.TERMINATED) {
         log.error("Missed some condition, running thread {} is {}", threadMap.get(runningThread), runningThread.getState());
       }
       thread.start();

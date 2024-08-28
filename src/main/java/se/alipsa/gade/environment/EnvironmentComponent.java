@@ -14,7 +14,6 @@ import se.alipsa.gade.UnStyledCodeArea;
 //import se.alipsa.gade.environment.connections.ConnectionInfo;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.environment.connections.ConnectionsTab;
-import se.alipsa.groovy.matrix.Matrix;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -97,8 +96,8 @@ public class EnvironmentComponent extends TabPane {
     historyTab.addOutputHistory(text);
   }
 
-  public void rRestarted() {
-    historyTab.rRestarted();
+  public void restarted() {
+    historyTab.restarted();
   }
 
   public void setNormalCursor() {

@@ -7,6 +7,7 @@ import javafx.concurrent.Task;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.CountDownTask;
+import se.alipsa.gade.console.ScriptThread;
 import se.alipsa.gade.utils.StringUtils;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.groovy.matrix.Matrix;
@@ -26,6 +27,7 @@ public class SqlTask extends CountDownTask<Connection> {
   SqlTab sqlTab;
 
   public SqlTask(ConnectionInfo ci, Connection con, Gade gui, String[] batchedQry, boolean keepConnectionOpen, SqlTab sqlTab) {
+    super(sqlTab);
     this.ci = ci;
     this.con = con;
     this.gui = gui;
@@ -36,7 +38,7 @@ public class SqlTask extends CountDownTask<Connection> {
   }
 
   @Override
-  public Thread createThread() {
+  public ScriptThread createThread() {
     SqlThread thread = new SqlThread(this, sqlTab);
     thread.setDaemon(false);
     return thread;
