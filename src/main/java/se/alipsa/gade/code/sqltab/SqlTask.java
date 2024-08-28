@@ -119,7 +119,7 @@ public class SqlTask extends CountDownTask<Connection> {
         }
       }
     }
-    return null;
+    return con;
   }
 
   private void printWarnings(String context, SQLWarning warning) {
