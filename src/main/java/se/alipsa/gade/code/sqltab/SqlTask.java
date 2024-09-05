@@ -56,7 +56,7 @@ public class SqlTask extends CountDownTask<Connection> {
         throw new Exception("Failed to establish a connection");
       }
       if (!runOutsideTransaction) {
-        con.setAutoCommit(true);
+        con.setAutoCommit(false);
       } else {
         con.setAutoCommit(false);
         con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
@@ -109,7 +109,9 @@ public class SqlTask extends CountDownTask<Connection> {
           stm.clearWarnings();
         }
       }
-      con.commit(); // maybe only commit if keepConnectionOpenCheckBox is unselected
+      if (!runOutsideTransaction) {
+        con.commit(); // maybe only commit if keepConnectionOpenCheckBox is unselected
+      }
       printWarnings("connection", con.getWarnings());
       con.clearWarnings();
     } catch (SQLException e) {
