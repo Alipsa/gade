@@ -3,7 +3,6 @@ package se.alipsa.gade.code.sqltab;
 import static se.alipsa.gade.code.sqltab.SqlTab.PRINT_QUERY_LENGTH;
 
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.CountDownTask;
@@ -23,6 +22,7 @@ public class SqlTask extends CountDownTask<Connection> {
   Gade gui;
   String[] batchedQry;
   boolean keepConnectionOpen;
+  boolean runOutsideTransaction;
   String title;
   SqlTab sqlTab;
 
@@ -33,6 +33,7 @@ public class SqlTask extends CountDownTask<Connection> {
     this.gui = gui;
     this.batchedQry = batchedQry;
     this.keepConnectionOpen = sqlTab.keepConnectionOpen();
+    this.runOutsideTransaction = sqlTab.runOutsideTransaction();
     this.title = sqlTab.getTitle();
     this.sqlTab = sqlTab;
   }
@@ -54,8 +55,12 @@ public class SqlTask extends CountDownTask<Connection> {
       if (con == null) {
         throw new Exception("Failed to establish a connection");
       }
-      con.setAutoCommit(false);
-      con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+      if (!runOutsideTransaction) {
+        con.setAutoCommit(true);
+      } else {
+        con.setAutoCommit(false);
+        con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+      }
 
       AtomicInteger queryCount = new AtomicInteger(1);
       try (Statement stm = con.createStatement()) {
@@ -65,7 +70,8 @@ public class SqlTask extends CountDownTask<Connection> {
             continue;
           }
           //log.info("{}. Executing SQL: {}", stmCount++, qry);
-          boolean hasMoreResultSets = statement.execute(qry);
+          boolean hasMoreResultSets;
+          hasMoreResultSets = statement.execute(qry);
           int capLen = Math.min(qry.length(), PRINT_QUERY_LENGTH);
           String queryCapture = StringUtils.fixedLengthString(qry.substring(0, capLen).trim(), PRINT_QUERY_LENGTH);
 
@@ -107,7 +113,7 @@ public class SqlTask extends CountDownTask<Connection> {
       printWarnings("connection", con.getWarnings());
       con.clearWarnings();
     } catch (SQLException e) {
-      if (con != null) {
+      if (con != null && !runOutsideTransaction) {
         con.rollback();
       }
       throw e;
