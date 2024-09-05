@@ -22,7 +22,6 @@ public class SqlTask extends CountDownTask<Connection> {
   Gade gui;
   String[] batchedQry;
   boolean keepConnectionOpen;
-  boolean runOutsideTransaction;
   String title;
   SqlTab sqlTab;
 
@@ -33,7 +32,6 @@ public class SqlTask extends CountDownTask<Connection> {
     this.gui = gui;
     this.batchedQry = batchedQry;
     this.keepConnectionOpen = sqlTab.keepConnectionOpen();
-    this.runOutsideTransaction = sqlTab.runOutsideTransaction();
     this.title = sqlTab.getTitle();
     this.sqlTab = sqlTab;
   }
@@ -55,12 +53,9 @@ public class SqlTask extends CountDownTask<Connection> {
       if (con == null) {
         throw new Exception("Failed to establish a connection");
       }
-      if (!runOutsideTransaction) {
-        con.setAutoCommit(false);
-      } else {
-        con.setAutoCommit(false);
-        con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
-      }
+
+      con.setAutoCommit(false);
+      con.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
 
       AtomicInteger queryCount = new AtomicInteger(1);
       try (Statement stm = con.createStatement()) {
@@ -109,13 +104,11 @@ public class SqlTask extends CountDownTask<Connection> {
           stm.clearWarnings();
         }
       }
-      if (!runOutsideTransaction) {
-        con.commit(); // maybe only commit if keepConnectionOpenCheckBox is unselected
-      }
+      con.commit(); // maybe only commit if keepConnectionOpenCheckBox is unselected
       printWarnings("connection", con.getWarnings());
       con.clearWarnings();
     } catch (SQLException e) {
-      if (con != null && !runOutsideTransaction) {
+      if (con != null) {
         con.rollback();
       }
       throw e;

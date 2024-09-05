@@ -37,7 +37,6 @@ public class SqlTab extends TextAreaTab implements TaskListener {
   private final ComboBox<ConnectionInfo> connectionCombo;
 
   private final CheckBox keepConnectionOpenCheckBox;
-  private final CheckBox runOutsideTransactionCheckBox;
   private Connection con;
 
   private static final Logger log = LogManager.getLogger(SqlTab.class);
@@ -76,9 +75,6 @@ public class SqlTab extends TextAreaTab implements TaskListener {
         }
       }
     });
-
-    runOutsideTransactionCheckBox = new CheckBox("Run outside transaction");
-    buttonPane.getChildren().add(runOutsideTransactionCheckBox);
 
     setOnCloseRequest(r -> {
       boolean isClosing = super.checkSave(getGui());
@@ -168,10 +164,6 @@ public class SqlTab extends TextAreaTab implements TaskListener {
 
   public boolean keepConnectionOpen() {
     return keepConnectionOpenCheckBox.isSelected();
-  }
-
-  public boolean runOutsideTransaction() {
-    return runOutsideTransactionCheckBox.isSelected();
   }
 
   @Override
