@@ -11,6 +11,8 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 public class CssUtil {
@@ -21,7 +23,7 @@ public class CssUtil {
     CssParser parser = new CssParser();
     Color fallback = defaultColor.length > 0 ? defaultColor[0] : Color.TRANSPARENT;
     try {
-      URL styleSheetUrl = new URL(Gade.instance().getStyleSheets().get(0));
+      URL styleSheetUrl = new URI(Gade.instance().getStyleSheets().get(0)).toURL();
       log.info("Using stylesheet {}", styleSheetUrl);
       Stylesheet css = parser.parse(styleSheetUrl);
       final Rule rootRule = css.getRules().get(0); // .root
@@ -30,7 +32,7 @@ public class CssUtil {
           .findFirst()
           .map(d -> ColorConverter.getInstance().convert(d.getParsedValue(), null))
           .orElse(fallback);
-    } catch (IOException ex) {
+    } catch (IOException | URISyntaxException ex) {
       log.warn(ex);
     }
     return fallback;

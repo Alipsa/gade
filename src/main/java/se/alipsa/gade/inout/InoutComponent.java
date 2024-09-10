@@ -196,7 +196,7 @@ public class InoutComponent extends TabPane  {
       return;
     }
 
-    Matrix table = Matrix.create(matrix);
+    Matrix table = Matrix.builder().rows(matrix).build();
 
     /*
     var t = transposeAny(matrix);
@@ -236,7 +236,7 @@ public class InoutComponent extends TabPane  {
     for (Object[] row : matrix) {
       objList.add(Arrays.asList(row));
     }
-    Matrix table = Matrix.create(objList);
+    Matrix table = Matrix.builder().rows(objList).build();
     viewTable(table, title);
   }
 

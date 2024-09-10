@@ -10,6 +10,7 @@ import se.alipsa.gade.utils.gradle.GradleUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,7 +41,7 @@ public class GradleUtilsTest {
   }
 
   @Test
-  public void testDownloadArtifact() throws IOException {
+  public void testDownloadArtifact() throws IOException, URISyntaxException {
     Dependency dependency = new Dependency("org.slf4j:slf4j-api:1.7.36");
     File artifactDir = GradleUtils.cachedFile(dependency);
     if (artifactDir.exists()) {

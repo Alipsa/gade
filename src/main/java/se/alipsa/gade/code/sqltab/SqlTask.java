@@ -76,7 +76,7 @@ public class SqlTask extends CountDownTask<Connection> {
             if (hasMoreResultSets) {
               try (ResultSet rs = statement.getResultSet()) {
                 printWarnings("resultset", rs.getWarnings());
-                Matrix table = Matrix.create(rs);
+                Matrix table = Matrix.builder().data(rs).build();
                 Platform.runLater(() ->
                     gui.getInoutComponent().viewTable(table, title + " " + queryCount.getAndIncrement() + ".")
                 );

@@ -47,6 +47,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -134,7 +136,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Matrix.create(rs);
+      return Matrix.builder().data(rs).build();
     }
   }
 
@@ -145,7 +147,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement();
         ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Matrix.create(rs);
+      return Matrix.builder().data(rs).build();
     }
   }
 
@@ -391,7 +393,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
-        return Matrix.create(stm.getResultSet());
+        return Matrix.builder().data(stm.getResultSet()).build();
       } else {
         return stm.getUpdateCount();
       }
@@ -403,7 +405,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
-        return Matrix.create(stm.getResultSet());
+        return Matrix.builder().data(stm.getResultSet()).build();
       } else {
         return stm.getUpdateCount();
       }
@@ -593,7 +595,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   public void view(Integer o, String... title) {
-    view(Matrix.create(List.of(List.of("Update count", o))), title.length > 0 ? title : new String[] {"Updated rows"});
+    view(Matrix.builder()
+        .rows(List.of(List.of("Update count", o)))
+        .build()
+        , title.length > 0 ? title : new String[] {"Updated rows"});
   }
 
   public void view(List<List<?>> matrix, String... title) {
@@ -870,7 +875,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param dependencyStringOrFcqn in the format groupId:artifactId:version, e.g. "org.knowm.xchart:xchart:3.8.1"
    *                               OR the fully qualified classname, e.g. "org.apache.commons.io.input.CharSequenceReader"
    */
-  public void javadoc(String dependencyStringOrFcqn) throws IOException {
+  public void javadoc(String dependencyStringOrFcqn) throws IOException, URISyntaxException {
     if (dependencyStringOrFcqn == null) {
       return;
     }
@@ -883,17 +888,18 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  public void javadoc(Object obj) throws IOException {
+  public void javadoc(Object obj) throws IOException, URISyntaxException {
     javadoc(obj.getClass());
   }
 
-  public void javadoc(Class<?> clazz) throws IOException {
+  public void javadoc(Class<?> clazz) throws IOException, URISyntaxException {
     javadocForFcqn(clazz.getPackageName(), clazz.getSimpleName());
   }
-  private void javadocForFcqn(String pkgName, String className) throws IOException {
+
+  private void javadocForFcqn(String pkgName, String className) throws IOException, URISyntaxException {
     // https://search.maven.org/solrsearch/select?q=fc:tech.tablesaw.columns.Columnt&rows=20&wt=json
     var url = "https://search.maven.org/solrsearch/select?q=fc:" + pkgName + "." + className + "&rows=20&wt=json";
-    var searchResult = new ObjectMapper().readValue(new URL(url), CentralSearchResult.class);
+    var searchResult = new ObjectMapper().readValue(new URI(url).toURL(), CentralSearchResult.class);
     if (searchResult == null || searchResult.response == null || searchResult.response.docs == null || searchResult.response.docs.isEmpty()) {
       Alerts.warnFx("Failed to find suitable artifact", "The search result from maven central did not contain anything useful");
       return;

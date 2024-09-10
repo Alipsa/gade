@@ -71,7 +71,7 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
 
       locals = new ComboBox<>();
       Set<String> languageTags = new TreeSet<>();
-      languageTags.add(new Locale("sv", "SE").toLanguageTag());
+      languageTags.add(Locale.of("sv", "SE").toLanguageTag());
       for (var loc : Locale.getAvailableLocales()) {
         languageTags.add(loc.toLanguageTag());
       }

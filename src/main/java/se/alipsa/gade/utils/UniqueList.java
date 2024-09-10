@@ -8,7 +8,7 @@ import java.util.Collection;
  * Works fine for small lists but for bigger lists something more advanced is needed due to
  * performance issues with contains methods used to guarantee uniqueness.
  *
- * @param <T>
+ * @param <T> the type of data in the list
  */
 public class UniqueList<T> extends ArrayList<T> {
 

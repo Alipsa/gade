@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.*;
 import java.sql.Driver;
@@ -596,7 +597,7 @@ public class ConnectionsTab extends Tab {
   Matrix runQuery(String sql, ConnectionInfo con) throws SQLException {
     try (Connection connection = connect(con)){
       ResultSet rs = connection.createStatement().executeQuery(sql);
-      return Matrix.create(rs);
+      return Matrix.builder().data(rs).build();
     }
   }
 
@@ -617,7 +618,7 @@ public class ConnectionsTab extends Tab {
       public Matrix call() throws Exception {
         try (Connection connection = connect(con)){
           ResultSet rs = connection.createStatement().executeQuery(sql);
-          return Matrix.create(rs);
+          return Matrix.builder().data(rs).build();
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -757,7 +758,7 @@ public class ConnectionsTab extends Tab {
             Matrix table;
             try (ResultSet rs = stm.executeQuery("SELECT * from " + tableName)) {
               rs.setFetchSize(200);
-              table = Matrix.create(rs);
+              table = Matrix.builder().data(rs).build();
             }
             gui.getInoutComponent().viewTable(table, tableName);
 
@@ -814,7 +815,7 @@ public class ConnectionsTab extends Tab {
         gui.dynamicClassLoader.addURL(url);
       }
 
-    } catch (IOException e) {
+    } catch (IOException | URISyntaxException e) {
       Platform.runLater(() ->
           ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
       );

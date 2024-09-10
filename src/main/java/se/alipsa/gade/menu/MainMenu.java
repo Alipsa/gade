@@ -49,6 +49,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -534,7 +536,7 @@ public class MainMenu extends MenuBar {
 
       Platform.runLater(() -> {
         try {
-          URL url = new URL("https://api.github.com/repos/perNyfelt/gade/releases/latest");
+          URL url = new URI("https://api.github.com/repos/perNyfelt/gade/releases/latest").toURL();
           ObjectMapper mapper = new ObjectMapper();
           JsonNode rootNode = mapper.readTree(url);
           JsonNode tagNode = rootNode.findValue("tag_name");
@@ -574,7 +576,7 @@ public class MainMenu extends MenuBar {
           }
           textArea.setText(sb.toString());
           gui.setNormalCursor();
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
           gui.setNormalCursor();
           ExceptionAlert.showAlert("Failed to get latest version", e);
         }

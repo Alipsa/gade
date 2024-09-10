@@ -27,9 +27,7 @@ import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.MavenRepoLookup;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.net.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
@@ -326,13 +324,13 @@ public class GradleUtils {
     return new File(getCacheDir(), subDir + fileName);
   }
 
-  public static File downloadArtifact(Dependency dependency) throws IOException {
+  public static File downloadArtifact(Dependency dependency) throws IOException, URISyntaxException {
     File cachedFile = cachedFile(dependency);
     if (cachedFile.exists()) {
       return cachedFile;
     }
     String url = MavenRepoLookup.artifactUrl(dependency, MAVEN_CENTRAL.baseUrl);
-    URL artifactUrl = new URL(url);
+    URL artifactUrl = new URI(url).toURL();
     if (!cachedFile.getParentFile().exists()) {
       if (!cachedFile.getParentFile().mkdirs()) {
         throw new IOException("Failed to create directory " + cachedFile.getParentFile());

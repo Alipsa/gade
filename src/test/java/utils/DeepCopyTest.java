@@ -31,11 +31,11 @@ public class DeepCopyTest {
   public void testDeepCopyAreaChart() {
     final NumberAxis xAxis = new NumberAxis(1, 31, 1);
     final NumberAxis yAxis = new NumberAxis();
-    final AreaChart<Number,Number> ac =
-            new AreaChart<>(xAxis, yAxis);
+    final AreaChart<Number, Number> ac =
+        new AreaChart<>(xAxis, yAxis);
     ac.setTitle("Temperature Monitoring (in Degrees C)");
 
-    XYChart.Series seriesApril= new XYChart.Series();
+    XYChart.Series seriesApril = new XYChart.Series();
     seriesApril.setName("April");
     seriesApril.getData().add(new XYChart.Data(1, 4));
     seriesApril.getData().add(new XYChart.Data(3, 10));
@@ -71,10 +71,10 @@ public class DeepCopyTest {
     for (int i = 0; i < ac.getData().size(); i++) {
       var acSeries = ac.getData().get(i);
       XYChart.Series copySeries = (XYChart.Series) copy.getData().get(i);
-      assertEquals(acSeries.getName(),  copySeries.getName());
+      assertEquals(acSeries.getName(), copySeries.getName());
       for (int j = 0; j < acSeries.getData().size(); j++) {
         var acData = acSeries.getData().get(j);
-        var copyData = (XYChart.Data)copySeries.getData().get(j);
+        var copyData = (XYChart.Data) copySeries.getData().get(j);
         assertEquals(acData.getXValue(), copyData.getXValue(), "XYChart.Data for index " + j);
         assertEquals(acData.getYValue(), copyData.getYValue());
       }
@@ -90,8 +90,8 @@ public class DeepCopyTest {
     final String usa = "USA";
     final CategoryAxis xAxis = new CategoryAxis();
     final NumberAxis yAxis = new NumberAxis();
-    final BarChart<String,Number> bc =
-        new BarChart<String,Number>(xAxis,yAxis);
+    final BarChart<String, Number> bc =
+        new BarChart<String, Number>(xAxis, yAxis);
     bc.setTitle("Country Summary");
     xAxis.setLabel("Country");
     yAxis.setLabel("Value");
@@ -129,10 +129,10 @@ public class DeepCopyTest {
     for (int i = 0; i < bc.getData().size(); i++) {
       var acSeries = bc.getData().get(i);
       XYChart.Series copySeries = (XYChart.Series) copy.getData().get(i);
-      assertEquals(acSeries.getName(),  copySeries.getName());
+      assertEquals(acSeries.getName(), copySeries.getName());
       for (int j = 0; j < acSeries.getData().size(); j++) {
         var acData = acSeries.getData().get(j);
-        var copyData = (XYChart.Data)copySeries.getData().get(j);
+        var copyData = (XYChart.Data) copySeries.getData().get(j);
         assertEquals(acData.getXValue(), copyData.getXValue(), "XYChart.Data for index " + j);
         assertEquals(acData.getYValue(), copyData.getYValue());
       }
@@ -145,31 +145,32 @@ public class DeepCopyTest {
   @Test
   public void testCopyBarchart2() {
 
-    var empData = new Matrix (Map.of(
-        "emp_id", Arrays.asList(1,2,3,4,5),
-        "emp_name", Arrays.asList("Rick","Dan","Michelle","Ryan","Gary"),
-        "salary", Arrays.asList(623.3,515.2,611.0,729.0,843.25),
-        "start_date", toLocalDates("2012-01-01", "2013-09-23", "2014-11-15", "2014-05-11", "2015-03-27")),
-        List.of(int.class, String.class, Number.class, LocalDate.class));
+    var empData = Matrix.builder().columns(Map.of(
+            "emp_id", Arrays.asList(1, 2, 3, 4, 5),
+            "emp_name", Arrays.asList("Rick", "Dan", "Michelle", "Ryan", "Gary"),
+            "salary", Arrays.asList(623.3, 515.2, 611.0, 729.0, 843.25),
+            "start_date", toLocalDates("2012-01-01", "2013-09-23", "2014-11-15", "2014-05-11", "2015-03-27")))
+        .dataTypes(int.class, String.class, Number.class, LocalDate.class)
+        .build();
 
     var chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
     Node jChart = Plot.jfx(chart);
     var c = DeepCopier.deepCopy(jChart);
-    var jfxChart = (BarChart<?, ?>)jChart;
-    var copy = (BarChart<?, ?>)c;
+    var jfxChart = (BarChart<?, ?>) jChart;
+    var copy = (BarChart<?, ?>) c;
     assertEquals(jfxChart.getStyle(), copy.getStyle(), "Style");
     assertEquals(jfxChart.getTitle(), copy.getTitle(), "Title");
     assertEquals(jfxChart.getData().size(), copy.getData().size(), "Data size");
     assertEquals(jfxChart.getXAxis().getClass(), copy.getXAxis().getClass(), "X axis class");
     assertEquals(jfxChart.getYAxis().getClass(), copy.getYAxis().getClass(), "Y axis class");
-    assertEquals(((NumberAxis)jfxChart.getYAxis()).getUpperBound(), ((NumberAxis)copy.getYAxis()).getUpperBound(), "Upper bound");
+    assertEquals(((NumberAxis) jfxChart.getYAxis()).getUpperBound(), ((NumberAxis) copy.getYAxis()).getUpperBound(), "Upper bound");
     for (int i = 0; i < jfxChart.getData().size(); i++) {
       var acSeries = jfxChart.getData().get(i);
       XYChart.Series copySeries = copy.getData().get(i);
-      assertEquals(acSeries.getName(),  copySeries.getName());
+      assertEquals(acSeries.getName(), copySeries.getName());
       for (int j = 0; j < acSeries.getData().size(); j++) {
         var acData = acSeries.getData().get(j);
-        var copyData = (XYChart.Data)copySeries.getData().get(j);
+        var copyData = (XYChart.Data) copySeries.getData().get(j);
         assertEquals(acData.getXValue(), copyData.getXValue(), "XYChart.Data for index " + j);
         assertEquals(acData.getYValue(), copyData.getYValue());
       }
