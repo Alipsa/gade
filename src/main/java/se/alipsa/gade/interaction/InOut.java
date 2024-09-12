@@ -25,6 +25,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.groovy.charts.Chart;
 import se.alipsa.groovy.charts.Plot;
 import se.alipsa.groovy.matrix.Row;
+import se.alipsa.groovy.matrix.sql.MatrixSql;
 import se.alipsa.groovy.resolver.*;
 //import se.alipsa.groovy.datautil.gtable.Gtable;
 import se.alipsa.groovy.matrix.Matrix;
@@ -129,60 +130,6 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return gui.getEnvironmentComponent().connect(ci);
   }
 
-  private Matrix dbSelect(String connectionName, String sqlQuery) throws SQLException {
-    if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
-      sqlQuery = "select " + sqlQuery;
-    }
-    try(Connection con = dbConnect(connectionName);
-        Statement stm = con.createStatement();
-        ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Matrix.builder().data(rs).build();
-    }
-  }
-
-  private Matrix dbSelect(ConnectionInfo ci, String sqlQuery) throws SQLException {
-    if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
-      sqlQuery = "select " + sqlQuery;
-    }
-    try(Connection con = dbConnect(ci);
-        Statement stm = con.createStatement();
-        ResultSet rs = stm.executeQuery(sqlQuery)) {
-      return Matrix.builder().data(rs).build();
-    }
-  }
-
-  private int dbUpdate(String connectionName, String sqlQuery) throws SQLException {
-    try(Connection con = dbConnect(connectionName);
-        Statement stm = con.createStatement()) {
-      return dbExecuteUpdate(stm, sqlQuery);
-    }
-  }
-
-  private int dbUpdate(ConnectionInfo ci, String sqlQuery) throws SQLException  {
-    try(Connection con = dbConnect(ci);
-        Statement stm = con.createStatement()) {
-      return dbExecuteUpdate(stm, sqlQuery);
-    }
-  }
-
-  private int dbExecuteUpdate(Statement stm, String sqlQuery) throws SQLException {
-    if (sqlQuery.trim().toLowerCase().startsWith("update ")) {
-      return stm.executeUpdate(sqlQuery);
-    } else {
-      return stm.executeUpdate("update " + sqlQuery);
-    }
-  }
-
-  private int dbUpdate(String connectionName, String tableName, Row row, String... matchColumnName) throws SQLException {
-    String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
-    return dbUpdate(connectionName, sql);
-  }
-
-  private int dbUpdate(ConnectionInfo ci, String tableName, Row row, String... matchColumnName) throws SQLException {
-    String sql = dbCreateUpdateSql(tableName, row, matchColumnName);
-    return dbUpdate(ci, sql);
-  }
-
   @NotNull
   private String dbCreateUpdateSql(String tableName, Row row, String[] matchColumnName) {
     String sql = "update " + tableName + " set ";
@@ -245,6 +192,20 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return rs.next();
   }
 
+  public boolean dbDropTable(String connectionName, String tableName) throws SQLException {
+    try(MatrixSql sql = new MatrixSql(dbConnection(connectionName))) {
+      if (sql.tableExists(tableName)) {
+        var result = (Number)sql.dropTable(tableName);
+        return result.intValue() > 0;
+      }
+      return false;
+    }
+  }
+
+  public boolean dbDropTable(String connectionName, Matrix table) throws SQLException {
+    return dbDropTable(connectionName, MatrixSql.tableName(table));
+  }
+
 
   public void dbCreate(String connectionName, Matrix table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
     dbCreate(dbConnection(connectionName), table, primaryKey);
@@ -258,126 +219,12 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    */
   public void dbCreate(ConnectionInfo connectionInfo, Matrix table, String... primaryKey) throws SQLException {
 
-    var tableName = table.getName()
-        .replaceAll("\\.", "_")
-        .replaceAll("-", "_")
-        .replaceAll("\\*", "");
-
-
-    String sql = "create table " + tableName + "(\n";
-
-    List<String> columns = new ArrayList<>();
-    int i = 0;
-    List<Class<?>> types = table.columnTypes();
-    for (String name : table.columnNames()) {
-      String column = "\"" + name + "\" " + sqlType(types.get(i++));
-      columns.add(column);
-    }
-    sql += String.join(",\n", columns);
-    if (primaryKey.length > 0) {
-      sql += "\n , CONSTRAINT pk_" + table.getName() + " PRIMARY KEY (\"" + String.join("\", \"", primaryKey) + "\")";
-    }
-    sql += "\n);";
-
-    try(Connection con = dbConnect(connectionInfo);
-        Statement stm = con.createStatement()) {
-      if (dbTableExists(con, tableName)) {
-        Alerts.warnFx("Table " + tableName + " already exists", "Cannot create " + tableName + " since it already exists, no data copied to db");
-        return;
+    try(MatrixSql sql = new MatrixSql(connectionInfo)) {
+      String tableName = MatrixSql.tableName(table);
+      if (sql.tableExists(tableName)) {
+        throw new SQLException("Table '" + tableName + "' already exists, cannot be created");
       }
-      log.info("Creating table using DDL: {}", sql);
-      stm.execute(sql);
-      dbInsert(con, table);
-    }
-  }
-
-  private int dbInsert(String connectionName, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
-    if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
-      return (int)dbExecuteSql(connectionName, sqlQuery);
-    } else {
-      return (int)dbExecuteSql(connectionName, "insert into " + sqlQuery);
-    }
-  }
-
-  private int dbInsert(ConnectionInfo ci, String sqlQuery) throws SQLException, ExecutionException, InterruptedException {
-    if (sqlQuery.trim().toLowerCase().startsWith("insert into ")) {
-      return (int)dbExecuteSql(ci, sqlQuery);
-    } else {
-      return (int)dbExecuteSql(ci, "insert into " + sqlQuery);
-    }
-  }
-
-  private int dbInsert(String connectionName, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
-    String sql = createInsertSql(tableName, row);
-    log.info("Executing insert query: {}", sql);
-    return dbInsert(connectionName, sql);
-  }
-
-  private int dbInsert(ConnectionInfo ci, String tableName, Row row) throws SQLException, ExecutionException, InterruptedException {
-    String sql = createInsertSql(tableName, row);
-    log.info("Executing insert query: {}", sql);
-    return dbInsert(ci, sql);
-  }
-
-  private String createInsertSql(String tableName, Row row) {
-    String sql = "insert into " + tableName + " ( ";
-    List<String> columnNames = row.columnNames();
-
-    sql += "\"" + String.join("\", \"", columnNames) + "\"";
-    sql += " ) values ( ";
-
-    List<String> values = new ArrayList<>();
-    columnNames.forEach(n -> {
-      values.add(quoteIfString(row, n));
-    });
-    sql += String.join(", ", values);
-    sql += " ); ";
-    return sql;
-  }
-
-  private int dbInsert(String connectionName, Matrix table) throws SQLException {
-    try(Connection con = dbConnect(connectionName)) {
-      return dbInsert(con, table);
-    }
-  }
-
-  private int dbInsert(ConnectionInfo ci, Matrix table) throws SQLException {
-    try(Connection con = dbConnect(ci)) {
-      return dbInsert(con, table);
-    }
-  }
-
-  private int dbInsert(Connection con, Matrix table) throws SQLException {
-    try(Statement stm = con.createStatement()) {
-      for (Row row : table) {
-        stm.addBatch(createInsertSql(table.getName(), row));
-      }
-      int[] results = stm.executeBatch();
-      return IntStream.of(results).sum();
-    }
-  }
-
-  private int dbUpsert(String connectionName, Row row, String... primaryKeyName) {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  private int dbUpsert(String connectionName, Matrix table, String... primaryKeyName) {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  private int dbDelete(String connectionName, String sqlQuery) throws SQLException {
-    if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
-      return (int)dbExecuteSql(connectionName, sqlQuery);
-    } else {
-      return (int)dbExecuteSql(connectionName, "delete from " + sqlQuery);
-    }
-  }
-
-  private int dbDelete(ConnectionInfo ci, String sqlQuery) throws SQLException {
-    if (sqlQuery.trim().toLowerCase().startsWith("delete from ")) {
-      return (int)dbExecuteSql(ci, sqlQuery);
-    } else {
-      return (int)dbExecuteSql(ci, "delete from " + sqlQuery);
+      sql.create(table, primaryKey);
     }
   }
 
@@ -390,18 +237,6 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    */
   private Object dbExecuteSql(String connectionName, String sql) throws SQLException {
     try(Connection con = dbConnect(connectionName);
-        Statement stm = con.createStatement()) {
-      boolean hasResultSet = stm.execute(sql);
-      if (hasResultSet) {
-        return Matrix.builder().data(stm.getResultSet()).build();
-      } else {
-        return stm.getUpdateCount();
-      }
-    }
-  }
-
-  private Object dbExecuteSql(ConnectionInfo ci, String sql) throws SQLException {
-    try(Connection con = dbConnect(ci);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
