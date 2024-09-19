@@ -64,7 +64,7 @@ public class ViewTab extends Tab {
   }*/
 
   public void viewTable(Matrix tableMatrix, String... title) {
-    viewTable(tableMatrix.columnNames(), tableMatrix.rowList(), tableMatrix.columnTypeNames(), title);
+    viewTable(tableMatrix.columnNames(), tableMatrix.rowList(), tableMatrix.typeNames(), title);
   }
 
   public void viewTable(Grid grid, String... title) {

@@ -150,7 +150,7 @@ public class DeepCopyTest {
             "emp_name", Arrays.asList("Rick", "Dan", "Michelle", "Ryan", "Gary"),
             "salary", Arrays.asList(623.3, 515.2, 611.0, 729.0, 843.25),
             "start_date", toLocalDates("2012-01-01", "2013-09-23", "2014-11-15", "2014-05-11", "2015-03-27")))
-        .dataTypes(int.class, String.class, Number.class, LocalDate.class)
+        .types(int.class, String.class, Number.class, LocalDate.class)
         .build();
 
     var chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
