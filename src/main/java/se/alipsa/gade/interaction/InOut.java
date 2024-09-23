@@ -156,6 +156,17 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return String.valueOf(value);
   }
 
+  public Matrix dbSelect(String connectionName, String sqlQuery) throws SQLException {
+    if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
+      sqlQuery = "select " + sqlQuery;
+    }
+    try(Connection con = dbConnect(connectionName);
+        Statement stm = con.createStatement();
+        ResultSet rs = stm.executeQuery(sqlQuery)) {
+      return Matrix.builder().data(rs).build();
+    }
+  }
+
   public int dbUpdate(String connectionName, Matrix table, String... matchColumnName) throws SQLException {
     return dbExecuteBatchUpdate(table, dbConnect(connectionName), matchColumnName);
   }
