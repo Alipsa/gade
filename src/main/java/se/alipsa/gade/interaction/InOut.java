@@ -55,6 +55,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -246,7 +247,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @return if the sql returns a result set, a Table containing the data is returned, else the number of rows affected is returned
    * @throws SQLException if there is something wrong with the sql
    */
-  private Object dbExecuteSql(String connectionName, String sql) throws SQLException {
+  public Object dbExecuteSql(String connectionName, String sql) throws SQLException {
     try(Connection con = dbConnect(connectionName);
         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
@@ -258,14 +259,13 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
   }
 
-  public Object sql(String connectionName, String projectFile) throws IOException,
+  public Object dbExecuteSql(String connectionName, File projectFile) throws IOException,
       SQLException, ExecutionException, InterruptedException {
-
-    String s = FileUtils.readContent(projectFile(projectFile));
+    String s = FileUtils.readContent(projectFile);
     return dbExecuteSql(connectionName, s);
   }
 
-  public Object sql(String connectionName, String projectFile, @NotNull Map<String, Object> replacements, boolean... logSql) throws IOException,
+  public Object dbExecuteSql(String connectionName, String projectFile, @NotNull Map<String, Object> replacements, boolean... logSql) throws IOException,
       SQLException, ExecutionException, InterruptedException {
 
     String s = FileUtils.readContent(projectFile(projectFile));

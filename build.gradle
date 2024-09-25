@@ -69,15 +69,15 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-    implementation "commons-io:commons-io:2.16.1"
+    implementation "commons-io:commons-io:2.17.0"
     implementation 'com.github.jsqlparser:jsqlparser:5.0'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.10.1'
-    implementation 'org.jetbrains:annotations:24.1.0'
-    implementation 'io.github.classgraph:classgraph:4.8.175'
+    implementation 'org.gradle:gradle-tooling-api:8.10.2'
+    implementation 'org.jetbrains:annotations:25.0.0'
+    implementation 'io.github.classgraph:classgraph:4.8.176'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.6'
     implementation "se.alipsa:gi-fx:1.0.0-SNAPSHOT"
 
@@ -105,7 +105,7 @@ dependencies {
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.1'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'
