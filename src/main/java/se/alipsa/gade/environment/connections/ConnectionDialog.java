@@ -46,7 +46,11 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
 
     VBox userBox = new VBox();
     Label userLabel = new Label("User:");
-    userText = new TextField(connectionsTab.getPrefOrBlank(USER_PREF));
+    String user = connectionsTab.getUser();
+    if (user != null) {
+      user = connectionsTab.getPrefOrBlank(USER_PREF);
+    }
+    userText = new TextField();
     HBox.setHgrow(userBox, Priority.SOMETIMES);
     userBox.getChildren().addAll(userLabel, userText);
     topInputPane.getChildren().add(userBox);
@@ -60,14 +64,22 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
 
     VBox dependencyBox = new VBox();
     Label dependencyLabel = new Label("Dependency:");
-    dependencyText = new TextField(connectionsTab.getPrefOrBlank(DEPENDENCY_PREF));
+    String dependency = connectionsTab.getDependency();
+    if (dependency != null) {
+      dependency = connectionsTab.getPrefOrBlank(DEPENDENCY_PREF);
+    }
+    dependencyText = new TextField(dependency);
     HBox.setHgrow(dependencyBox, Priority.SOMETIMES);
     dependencyBox.getChildren().addAll(dependencyLabel, dependencyText);
     middleInputPane.getChildren().add(dependencyBox);
 
     VBox driverBox = new VBox();
     Label driverLabel = new Label("Driver:");
-    driverText = new TextField(connectionsTab.getPrefOrBlank(DRIVER_PREF));
+    String driver = connectionsTab.getDriver();
+    if (driver != null) {
+      driver = connectionsTab.getPrefOrBlank(DRIVER_PREF);
+    }
+    driverText = new TextField(driver);
     HBox.setHgrow(driverBox, Priority.SOMETIMES);
     driverBox.getChildren().addAll(driverLabel, driverText);
     middleInputPane.getChildren().add(driverBox);
@@ -75,7 +87,11 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
     VBox urlBox = new VBox();
     urlBox.setFillWidth(true);
     Label urlLabel = new Label("Url:");
-    urlText = new TextField(connectionsTab.getPrefOrBlank(URL_PREF));
+    String url = connectionsTab.getUrl();
+    if (url != null) {
+      url = connectionsTab.getPrefOrBlank(URL_PREF);
+    }
+    urlText = new TextField(url);
     urlText.setPrefColumnCount(50);
     HBox urlTextBox = new HBox();
     urlTextBox.getChildren().add(urlText);

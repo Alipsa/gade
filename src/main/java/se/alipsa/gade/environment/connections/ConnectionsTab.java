@@ -41,6 +41,7 @@ import se.alipsa.groovy.matrix.Row;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -721,8 +722,25 @@ public class ConnectionsTab extends Tab {
     Clipboard.getSystemClipboard().setContent(clipboardContent);
   }
 
+  public String getUrl() {
+    return urlText.getText();
+  }
+
+  public String getDriver() {
+    return name.getValue().getDriver();
+  }
+
+  public String getDependency() {
+    return name.getValue().getDependency();
+  }
+
+  public String getUser() {
+    return userText.getText();
+  }
+
   private static class TreeItemComparator implements Comparator<TreeItem<String>>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -7997376258097396238L;
 
     @Override

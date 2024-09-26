@@ -30,11 +30,10 @@ dependencies {
   // Use the latest Groovy version for building this project
   implementation 'org.apache.groovy:groovy-all:[groovyVersion]'
 
-  implementation 'tech.tablesaw:tablesaw-core:0.43.1'
-  implementation 'org.slf4j:slf4j-api:2.0.0'
-  implementation 'org.slf4j:slf4j-simple:2.0.0'
+  //implementation 'org.slf4j:slf4j-api:2.0.0'
+  //implementation 'org.slf4j:slf4j-simple:2.0.0'
 
-  testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
 }
 
 tasks.named('test') {
