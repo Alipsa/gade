@@ -87,7 +87,7 @@ public class GroovyTextArea extends CodeTextArea {
             gCode += getText(getCurrentParagraph()); // current line
           }
           if (parent instanceof GroovyTab groovyTab) {
-            groovyTab.runGroovy(gCode);
+            groovyTab.runGroovy(gCode, true);
           } else {
             Alerts.warn("Run code", "Not implemented");
           }

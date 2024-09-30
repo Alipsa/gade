@@ -29,7 +29,7 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     super(gui, CodeType.GROOVY);
     setTitle(title);
     runButton = new Button("Run");
-    runButton.setOnAction(a -> runGroovy(getTextContent()));
+    runButton.setOnAction(a -> runGroovy());
     buttonPane.getChildren().add(runButton);
 
     if (addSessionRestartButton.length <= 0 || addSessionRestartButton[0]) {
@@ -69,6 +69,18 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
       List<String> headers = groovyTextArea.getImports();
       String imports = String.join("\n", headers);
       code = imports + "\n" + code;
+    }
+    runGroovy(code);
+  }
+
+  public void runGroovy(final String content, boolean addImportsIfPreferred) {
+    String code;
+    if (addImportsIfPreferred && gui.getPrefs().getBoolean(ADD_IMPORTS, true)) {
+      List<String> headers = groovyTextArea.getImports();
+      String imports = String.join("\n", headers);
+      code = imports + "\n" + content;
+    } else {
+      code = content;
     }
     runGroovy(code);
   }
