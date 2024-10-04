@@ -222,6 +222,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public void dbCreate(String connectionName, Matrix table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
     dbCreate(dbConnection(connectionName), table, primaryKey);
   }
+
+  public void dbCreate(String connectionName, String tableName, Matrix table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
+    dbCreate(dbConnection(connectionName), tableName, table, primaryKey);
+  }
   /**
    * create table and insert the table data.
    *
@@ -237,6 +241,16 @@ public class InOut extends se.alipsa.gi.fx.InOut {
         throw new SQLException("Table '" + tableName + "' already exists, cannot be created");
       }
       sql.create(table, primaryKey);
+    }
+  }
+
+  public void dbCreate(ConnectionInfo connectionInfo, String tableName, Matrix table, String... primaryKey) throws SQLException {
+
+    try(MatrixSql sql = new MatrixSql(connectionInfo)) {
+      if (sql.tableExists(tableName)) {
+        throw new SQLException("Table '" + tableName + "' already exists, cannot be created");
+      }
+      sql.create(tableName, table, primaryKey);
     }
   }
 
