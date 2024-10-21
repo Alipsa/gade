@@ -180,7 +180,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     try(Connection con = connect;
         Statement stm = con.createStatement()) {
       for (Row row : table) {
-        stm.addBatch(dbCreateUpdateSql(table.getName(), row, matchColumnName));
+        stm.addBatch(dbCreateUpdateSql(table.getMatrixName(), row, matchColumnName));
       }
       int[] results = stm.executeBatch();
       return IntStream.of(results).sum();
@@ -466,7 +466,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   public void view(Matrix tableMatrix, String... title) {
-    gui.getInoutComponent().view(tableMatrix, tableMatrix.getName() == null ? determineTitle(title) : tableMatrix.getName());
+    gui.getInoutComponent().view(tableMatrix, tableMatrix.getMatrixName() == null ? determineTitle(title) : tableMatrix.getMatrixName());
   }
 
   private String determineTitle(String... title) {
