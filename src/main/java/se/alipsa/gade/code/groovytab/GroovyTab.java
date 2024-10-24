@@ -50,7 +50,8 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     if (runDeps) {
       List<String> headers = groovyTextArea.getDependencies();
       String deps = String.join("\n", headers);
-      if (headers.contains("@Grab")){
+      if (deps.contains("@Grab")){
+        // if we are using @Grab then we must have something else (e.g. an import statement) to be able to run it
         deps += "\nimport java.lang.Object";
       }
       try {
