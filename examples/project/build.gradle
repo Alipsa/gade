@@ -20,11 +20,13 @@ sourceSets {
 repositories {
   // Use Maven Central for resolving dependencies.
   mavenCentral()
+  mavenLocal()
 }
 
 dependencies {
   // Use the latest Groovy version for building this project
   implementation 'org.apache.groovy:groovy-all:4.0.23'
+  implementation('se.alipsa.groovy:matrix-core:2.0.0-SNAPSHOT')
 
   implementation 'org.slf4j:slf4j-api:2.0.0'
   implementation 'org.slf4j:slf4j-simple:2.0.0'

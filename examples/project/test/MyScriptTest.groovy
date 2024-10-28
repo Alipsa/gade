@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import tech.tablesaw.api.Table
 import org.codehaus.groovy.runtime.InvokerHelper
+import se.alipsa.groovy.matrix.Matrix
 
 class MyScriptTest {
 
@@ -13,7 +13,7 @@ class MyScriptTest {
     Script script = InvokerHelper.createScript(MyScript.class, context);
     script.run()
 
-    Table table = context.getVariable("table") as Table
-    Assertions.assertEquals("John", table.column("borrower").getString(0), "Who borrowed the first book")
+    Matrix table = context.getVariable("table") as Matrix
+    Assertions.assertEquals("John", table[0, "borrower"], "Who borrowed the first book")
   }
 }

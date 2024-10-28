@@ -36,19 +36,19 @@ public class TableMetaData {
   }
 
   public TableMetaData(Row row) {
-    setTableName(row.getString(0));
-    setTableType(row.getString(1));
-    setColumnName(row.getString(2));
-    setOrdinalPosition(row.getInt(3)); // Usually an int but on hsqldb this is a double
-    setIsNullable(row.getString(4));
+    setTableName(row.getAt(0, String.class));
+    setTableType(row.getAt(1, String.class));
+    setColumnName(row.getAt(2, String.class));
+    setOrdinalPosition(row.getAt(3, Number.class).intValue()); // Usually an int but on hsqldb this is a double
+    setIsNullable(row.getAt(4, String.class));
     setDataType(String.valueOf(row.get(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
     // On h2 this is a Long, on most other db's it is an int
-    Object maxLengthObj = row.getObject(6);
+    Object maxLengthObj = row.get(6);
     Integer maxLength = maxLengthObj == null ? null : Long.valueOf(String.valueOf(maxLengthObj)).intValue();
     setCharacterMaximumLength(maxLength);
-    setNumericPrecision(toInteger(row.getObject(7))); // On SQL Server, NUMERIC_PRECISION is of type SHORT and cannot be cast to INTEGER
-    setNumericScale(row.getInt(8));
-    setCollationName(row.getString(9));
+    setNumericPrecision(toInteger(row.get(7))); // On SQL Server, NUMERIC_PRECISION is of type SHORT and cannot be cast to INTEGER
+    setNumericScale(row.getAt(8, Integer.class));
+    setCollationName(row.getAt(9, String.class));
   }
 
   private Integer toInteger(Object obj) {

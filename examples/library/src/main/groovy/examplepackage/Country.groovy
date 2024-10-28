@@ -2,7 +2,7 @@ package examplepackage
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import tech.tablesaw.api.*
+import se.alipsa.groovy.matrix.Matrix
 
 /**
  * Represents a country with additional ISO code info
@@ -267,24 +267,18 @@ enum Country {
   private static Logger logger = LoggerFactory.getLogger(Country.class)
 
   private static final int CALL_STACK_DEPTH = 2
-  private static Table table
+  private static Matrix table
   
   static {
-    table = Table.create("Countries",
-      IntColumn.create("countryId"),
-      StringColumn.create("name"),
-      StringColumn.create("a2Code"),
-      StringColumn.create("a3Code"),
-      StringColumn.create("numCode")
-    )
+    List rows = []
     for (c in COUNTRIES) {
-      def row = table.appendRow()
-      row.setInt(0, c.countryId)
-      row.setString(1, c.name)
-      row.setString(2, c.a2Code)
-      row.setString(3, c.a3Code)
-      row.setString(4, c.numCode)
+      def row = [c.countryId, c.name, c.a2Code, c.a3Code, c.numCode]
+      rows << row
     }
+    table = Matrix.builder("Countries")
+        .columnNames("countryId", "name", "a2Code","a3Code", "numCode")
+    .rows(rows)
+    .build()
   }
   
   private final int countryId
@@ -395,7 +389,7 @@ enum Country {
   }
   
   
-  static Table asTable() {
+  static Matrix asTable() {
     return table
   }
 
