@@ -592,11 +592,27 @@ public class MainMenu extends MenuBar {
     String version = "unknown";
     String releaseTag = "unknown";
     String buildDate = "unknown";
+    String matrixCoreVersion = "unknown";
+    String matrixStatsVersion = "unknown";
+    String matrixDatasetsVersion = "unknown";
+    String matrixSpreadsheetVersion = "unknown";
+    String matrixJsonVersion = "unknown";
+    String matrixCsvVersion = "unknown";
+    String matrixSqlVersion = "unknown";
+    String matrixChartsVersion = "unknown";
     try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
       props.load(is);
       version = props.getProperty("version");
       releaseTag = props.getProperty("release.tag");
       buildDate = props.getProperty("build.date");
+      matrixCoreVersion = props.getProperty("matrixCoreVersion");
+      matrixStatsVersion = props.getProperty("matrixStatsVersion");
+      matrixDatasetsVersion = props.getProperty("matrixDatasetsVersion");
+      matrixSpreadsheetVersion = props.getProperty("matrixSpreadsheetVersion");
+      matrixJsonVersion = props.getProperty("matrixJsonVersion");
+      matrixCsvVersion = props.getProperty("matrixCsvVersion");
+      matrixSqlVersion = props.getProperty("matrixSqlVersion");
+      matrixChartsVersion = props.getProperty("matrixChartsVersion");
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to load properties file", e);
     }
@@ -615,10 +631,18 @@ public class MainMenu extends MenuBar {
         .append("\n Groovy version: ").append(GroovySystem.getVersion())
         .append("\n Nashorn version: ").append(nashornScriptEngineFactory.getEngineVersion())
         .append(" (").append(nashornScriptEngineFactory.getLanguageName())
-        .append(" ").append(nashornScriptEngineFactory.getLanguageVersion()).append(")");
+        .append(" ").append(nashornScriptEngineFactory.getLanguageVersion()).append(")")
+        .append("\n Matrix-core version: ").append(matrixCoreVersion)
+        .append("\n Matrix-stats version: ").append(matrixStatsVersion)
+        .append("\n Matrix-spreadsheet version: ").append(matrixSpreadsheetVersion)
+        .append("\n Matrix-sql version: ").append(matrixSqlVersion)
+        .append("\n Matrix-csv version: ").append(matrixCsvVersion)
+        .append("\n Matrix-json version: ").append(matrixJsonVersion)
+        .append("\n Matrix-charts version: ").append(matrixChartsVersion)
+        .append("\n Matrix-datasets version: ").append(matrixDatasetsVersion);
 
-    content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues");
-    showInfoAlert("About Gade", content, 615, 220);
+    content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues.");
+    showInfoAlert("About Gade", content, 625, 325);
 
   }
 

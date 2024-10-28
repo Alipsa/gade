@@ -184,7 +184,7 @@ public class InoutComponent extends TabPane  {
 
 
 
-  public void view(List<List<?>> matrix, String... title) {
+  public void view(List<List> matrix, String... title) {
     if (matrix == null) {
       Alerts.warnFx("View", "matrix is null, cannot View");
       return;
@@ -232,7 +232,7 @@ public class InoutComponent extends TabPane  {
   }
 
   private void view2dArray(Object[][] matrix, String... title) {
-    List<List<?>> objList = new ArrayList<>();
+    List<List> objList = new ArrayList<>();
     for (Object[] row : matrix) {
       objList.add(Arrays.asList(row));
     }
