@@ -3,7 +3,9 @@ import static se.alipsa.groovy.matrix.Stat.*
 import static se.alipsa.groovy.matrix.Matrix.*
 import se.alipsa.groovy.charts.*
 
-data = Matrix.create(new File(io.scriptDir(), "../../data/airquality.csv")).convert(
+data = Matrix.builder().data(new File(io.scriptDir(), "../../data/airquality.csv"))
+    .build()
+    .convert(
   [
   Ozone: Integer,
   'Solar.R': Integer,

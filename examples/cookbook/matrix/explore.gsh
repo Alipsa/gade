@@ -2,7 +2,9 @@ import se.alipsa.groovy.matrix.*
 import static se.alipsa.groovy.matrix.Stat.*
 import se.alipsa.groovy.charts.*
 
-aq = Matrix.create(new File(io.scriptDir(), "../../data/airquality.csv"))
+aq = Matrix.builder()
+    .data(new File(io.scriptDir(), "../../data/airquality.csv"))
+    .build()
 
 aq.name
 // print basic layout of the table
