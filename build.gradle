@@ -25,8 +25,8 @@ ext.matrixSpreadsheetVersion="1.0.3"
 ext.matrixJsonVersion="1.0.0"
 ext.matrixCsvVersion="1.0.1"
 ext.matrixSqlVersion="1.0.1"
-ext.jacksonVersion = '2.18.0'
-ext.tikaVersion = '3.0.0-BETA2' // Note '2.9.1' breaks @Grab
+ext.jacksonVersion = '2.18.1'
+ext.tikaVersion = '3.0.0' // Note '2.9.1' breaks @Grab
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.1"
@@ -85,14 +85,14 @@ dependencies {
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     implementation 'org.gradle:gradle-tooling-api:8.10.2'
-    implementation 'org.jetbrains:annotations:25.0.0'
+    implementation 'org.jetbrains:annotations:26.0.1'
     implementation 'io.github.classgraph:classgraph:4.8.177'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.6'
     implementation "se.alipsa:gi-fx:1.0.0-SNAPSHOT"
 
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-    implementation 'se.alipsa.groovy:data-utils:1.0.5'
+    implementation 'se.alipsa.groovy:data-utils:1.0.6'
     implementation 'se.alipsa.groovy:gmd:1.0.8-SNAPSHOT'
     implementation 'se.alipsa:simple-rest:1.0.5'
     implementation "se.alipsa.groovy:matrix-core:$matrixCoreVersion"
@@ -114,7 +114,7 @@ dependencies {
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'
