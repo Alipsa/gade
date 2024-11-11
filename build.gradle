@@ -17,7 +17,7 @@ description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.matrixCoreVersion = "2.0.0"
+ext.matrixCoreVersion = "2.1.0-SNAPSHOT"
 ext.matrixChartsVersion='1.0.0-SNAPSHOT'
 ext.matrixStatsVersion="1.0.2"
 ext.matrixDatasetsVersion="1.0.4"
