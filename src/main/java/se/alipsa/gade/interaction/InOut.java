@@ -4,13 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
+import javafx.geometry.Insets;
 import javafx.scene.*;
+import javafx.scene.control.*;
 import javafx.scene.control.SingleSelectionModel;
-import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -55,6 +59,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -161,9 +166,9 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     if (!sqlQuery.trim().toLowerCase().startsWith("select ")) {
       sqlQuery = "select " + sqlQuery;
     }
-    try(Connection con = dbConnect(connectionName);
-        Statement stm = con.createStatement();
-        ResultSet rs = stm.executeQuery(sqlQuery)) {
+    try (Connection con = dbConnect(connectionName);
+         Statement stm = con.createStatement();
+         ResultSet rs = stm.executeQuery(sqlQuery)) {
       return Matrix.builder().data(rs).build();
     }
   }
@@ -177,8 +182,8 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   private int dbExecuteBatchUpdate(Matrix table, Connection connect, String[] matchColumnName) throws SQLException {
-    try(Connection con = connect;
-        Statement stm = con.createStatement()) {
+    try (Connection con = connect;
+         Statement stm = con.createStatement()) {
       for (Row row : table) {
         stm.addBatch(dbCreateUpdateSql(table.getMatrixName(), row, matchColumnName));
       }
@@ -188,13 +193,13 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   public boolean dbTableExists(String connectionName, String tableName) throws SQLException {
-    try(Connection con = dbConnect(connectionName)) {
+    try (Connection con = dbConnect(connectionName)) {
       return dbTableExists(con, tableName);
     }
   }
 
   public boolean dbTableExists(ConnectionInfo connectioInfo, String tableName) throws SQLException {
-    try(Connection con = dbConnect(connectioInfo)) {
+    try (Connection con = dbConnect(connectioInfo)) {
       return dbTableExists(con, tableName);
     }
   }
@@ -205,9 +210,9 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   public boolean dbDropTable(String connectionName, String tableName) throws SQLException {
-    try(MatrixSql sql = new MatrixSql(dbConnection(connectionName))) {
+    try (MatrixSql sql = new MatrixSql(dbConnection(connectionName))) {
       if (sql.tableExists(tableName)) {
-        var result = (Number)sql.dropTable(tableName);
+        var result = (Number) sql.dropTable(tableName);
         return result.intValue() > 0;
       }
       return false;
@@ -226,16 +231,17 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public void dbCreate(String connectionName, String tableName, Matrix table, String... primaryKey) throws SQLException, ExecutionException, InterruptedException {
     dbCreate(dbConnection(connectionName), tableName, table, primaryKey);
   }
+
   /**
    * create table and insert the table data.
    *
    * @param connectionInfo the connection info defined in the Connections tab
-   * @param table the table to copy to the db
-   * @param primaryKey name(s) of the primary key columns
+   * @param table          the table to copy to the db
+   * @param primaryKey     name(s) of the primary key columns
    */
   public void dbCreate(ConnectionInfo connectionInfo, Matrix table, String... primaryKey) throws SQLException {
 
-    try(MatrixSql sql = new MatrixSql(connectionInfo)) {
+    try (MatrixSql sql = new MatrixSql(connectionInfo)) {
       String tableName = MatrixSql.tableName(table);
       if (sql.tableExists(tableName)) {
         throw new SQLException("Table '" + tableName + "' already exists, cannot be created");
@@ -246,7 +252,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   public void dbCreate(ConnectionInfo connectionInfo, String tableName, Matrix table, String... primaryKey) throws SQLException {
 
-    try(MatrixSql sql = new MatrixSql(connectionInfo)) {
+    try (MatrixSql sql = new MatrixSql(connectionInfo)) {
       if (sql.tableExists(tableName)) {
         throw new SQLException("Table '" + tableName + "' already exists, cannot be created");
       }
@@ -255,15 +261,14 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   /**
-   *
    * @param connectionName the name of the connection defined in the connection tab
-   * @param sql the sql string to execute
+   * @param sql            the sql string to execute
    * @return if the sql returns a result set, a Table containing the data is returned, else the number of rows affected is returned
    * @throws SQLException if there is something wrong with the sql
    */
   public Object dbExecuteSql(String connectionName, String sql) throws SQLException {
-    try(Connection con = dbConnect(connectionName);
-        Statement stm = con.createStatement()) {
+    try (Connection con = dbConnect(connectionName);
+         Statement stm = con.createStatement()) {
       boolean hasResultSet = stm.execute(sql);
       if (hasResultSet) {
         return Matrix.builder().data(stm.getResultSet()).build();
@@ -369,10 +374,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       displayNode = node;
     }
     Platform.runLater(() -> {
-      var plotsTab = gui.getInoutComponent().getPlotsTab();
+          var plotsTab = gui.getInoutComponent().getPlotsTab();
 
-      plotsTab.showPlot(displayNode, title);
-      SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
+          plotsTab.showPlot(displayNode, title);
+          SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
           selectionModel.select(plotsTab);
         }
     );
@@ -392,7 +397,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     display(swingNode, title);
   }
 
-  public void display(org.knowm.xchart.internal.chartpart.Chart<?,?> xchart, String... title) {
+  public void display(org.knowm.xchart.internal.chartpart.Chart<?, ?> xchart, String... title) {
     // We must play some tricks here otherwise swing will not be initialized in time
     SwingUtilities.invokeLater(() -> {
       var panel = new XChartPanel<>(xchart);
@@ -446,6 +451,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       display(browser, title);
     });
   }
+
   public void displaySvg(String svg, String... title) {
     Platform.runLater(() -> {
       final WebView browser = new WebView();
@@ -456,9 +462,9 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   public void view(Integer o, String... title) {
     view(Matrix.builder()
-        .rows(List.of(List.of("Update count", o)))
-        .build()
-        , title.length > 0 ? title : new String[] {"Updated rows"});
+            .rows(List.of(List.of("Update count", o)))
+            .build()
+        , title.length > 0 ? title : new String[]{"Updated rows"});
   }
 
   public void view(List<List<?>> matrix, String... title) {
@@ -484,6 +490,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   /**
    * For ease of portability between R (Ride)
    * and Groovy (Gade)
+   *
    * @param table the tablesaw table to view
    * @param title the title for the view tab (optional)
    */
@@ -533,10 +540,11 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   /**
    * Save a chart to a png file
-   * @param chart the chart to save
-   * @param file the file to save to
-   * @param width the intended width of the png image
-   * @param height the intended height of the png image
+   *
+   * @param chart        the chart to save
+   * @param file         the file to save to
+   * @param width        the intended width of the png image
+   * @param height       the intended height of the png image
    * @param useGadeStyle style the chart with the same style as the current Gade style
    */
   public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height, boolean useGadeStyle) {
@@ -559,7 +567,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     save(region, file, width, height, useGadeStyle, true);
   }
 
-  public void save(Parent region, File file, double width, double height, boolean useGadeStyle, boolean displayCopy ) {
+  public void save(Parent region, File file, double width, double height, boolean useGadeStyle, boolean displayCopy) {
     if (region == null) {
       Alerts.warnFx("Cannot save", "the javafx region to save was null, nothing to do!");
       return;
@@ -661,7 +669,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       if (Object.class.equals(method.getDeclaringClass())) {
         continue;
       }
-      if ( Modifier.isStatic(method.getModifiers())) {
+      if (Modifier.isStatic(method.getModifiers())) {
         continue;
       }
       sb.append(methodDescription(method));
@@ -679,7 +687,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     for (Parameter param : params) {
       String name = param.getType().getSimpleName();
       if (param.isVarArgs()) {
-        name = name.substring(0, name.length() -2) + "...";
+        name = name.substring(0, name.length() - 2) + "...";
       }
       name += " " + param.getName();
       paramList.add(name);
@@ -709,9 +717,9 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   /**
    * Display javadoc in the help tab
    *
-   * @param groupId the group id e.g: org.knowm.xchart
+   * @param groupId    the group id e.g: org.knowm.xchart
    * @param artifactId the artifact id, e.g. xchart
-   * @param version the semantic version e.g. 3.8.1
+   * @param version    the semantic version e.g. 3.8.1
    */
   public void javadoc(String groupId, String artifactId, String version) {
     String url = "https://javadoc.io/doc/" + groupId + "/" + artifactId + "/" + version;
@@ -723,7 +731,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   /**
    * Display javadoc in the help tab
    *
-   * @param groupId the group id e.g: org.knowm.xchart
+   * @param groupId    the group id e.g: org.knowm.xchart
    * @param artifactId the artifact id, e.g. xchart
    */
   public void javadoc(String groupId, String artifactId) {
@@ -732,6 +740,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   /**
    * Display javadoc in the help tab
+   *
    * @param dependencyStringOrFcqn in the format groupId:artifactId:version, e.g. "org.knowm.xchart:xchart:3.8.1"
    *                               OR the fully qualified classname, e.g. "org.apache.commons.io.input.CharSequenceReader"
    */
@@ -803,6 +812,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   /**
    * This is an alternative to @Grab
+   *
    * @param dependency the gradle short version string corresponding to the dependency
    */
   public void addDependency(String dependency) {
@@ -820,6 +830,102 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Dynamically create an input dialog with an arbitrary number of input parts e.g:
+   * <code><pre>
+   * Map creds = io.prompt( 'create user', [
+   *   'username': [TextField, 'username'],
+   *   'password': [PasswordField, 'password'],
+   *   'pref': [ComboBox, 'drink preference', 'coffee', 'tea', 'beer', 'water']
+   * ])
+   * </pre></code>
+   * The resulting map will contain values for each key e.g.
+   * <code><pre>
+   *   {password=123poi, pref=tea, username=pern}
+   * </pre></code>
+   * assuming the pref selected was tea and the username was pern
+   * <code><pre>
+   *  assert creds.username == 'pern'
+   *  assert creds.pref == 'tea'
+   * </pre></code>
+   * @param title the dialog title
+   * @param params a Map&lt;String, List&lt;Object&gt;&gt; the key is the name of the control, the first item in the list is the
+   *               Node type (TextField, PasswordField, Combobox), the second list param is the Label text for the control
+   *               subsequent elements are values for the Combobox.
+   *
+   * @return a Map of the keys supplied, and the user input value
+   */
+  Map<String, Object> prompt(String title, Map<String, List<Object>> params) {
+    FutureTask<Map<String, Object>> task = new FutureTask<>(() -> {
+      Dialog<Map<String, Object>> dialog = createDialog(title);
+      Map<String, Node> elements = new HashMap<>();
+      VBox vbox = (VBox) dialog.getDialogPane().getContent();
+      params.forEach((paramName, args) -> {
+            Class<?> type = (Class<?>) args.getFirst();
+            Label label = new Label((String) args.get(1));
+            HBox hBox = new HBox();
+            hBox.setSpacing(5.0);
+            hBox.setPadding(new Insets(5));
+            hBox.getChildren().add(label);
+            if (type == TextField.class) {
+              TextField tf = new TextField();
+              elements.put(paramName, tf);
+              hBox.getChildren().add(tf);
+            } else if (type == PasswordField.class) {
+              PasswordField pf = new PasswordField();
+              elements.put(paramName, pf);
+              hBox.getChildren().add(pf);
+            } else if (type == ComboBox.class) {
+              List<Object> values = args.subList(2, args.size());
+              ComboBox<Object> select = new ComboBox<>();
+              select.getItems().addAll(values);
+              elements.put(paramName, select);
+              hBox.getChildren().add(select);
+            } else {
+              throw new IllegalArgumentException("There is no implementation for " + type + ", supported types are TextField, PasswordField, Combobox");
+            }
+            vbox.getChildren().add(hBox);
+          }
+      );
+      dialog.setResultConverter(buttonType -> {
+        Map<String, Object> map = new HashMap<>();
+        if (buttonType == ButtonType.OK) {
+          elements.forEach((k, v) -> {
+            if (v instanceof TextField tf) {
+              map.put(k, tf.getText());
+            } else if (v instanceof ComboBox<?> cb) {
+              map.put(k, cb.getValue());
+            }
+          });
+        }
+        return map;
+      });
+      return dialog.showAndWait().orElse(new HashMap<>());
+    });
+    Platform.runLater(task);
+    try {
+      return task.get();
+    } catch (InterruptedException | ExecutionException | IllegalArgumentException e) {
+      ExceptionAlert.showAlert("Failed to create prompt dialog", e);
+      return null;
+    }
+  }
+
+  private Dialog<Map<String, Object>> createDialog(String title) {
+    Dialog<Map<String, Object>> dialog = new Dialog<>();
+    dialog.setTitle(title);
+    VBox content = new VBox();
+    content.setPadding(new Insets(5));
+    dialog.getDialogPane().setContent(content);
+    dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+    dialog.setResizable(true);
+    dialog.getDialogPane().getScene().getWindow().sizeToScene();
+    //if (styleSheetUrls != null) {
+    //  dialog.getDialogPane().getStylesheets().addAll(styleSheetUrls)
+    //}
+    return dialog;
   }
 
   @Override

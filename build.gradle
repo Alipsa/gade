@@ -93,8 +93,8 @@ dependencies {
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
-    implementation 'se.alipsa.groovy:gmd:1.0.8-SNAPSHOT'
-    implementation 'se.alipsa:simple-rest:1.0.5'
+    implementation 'se.alipsa.groovy:gmd:1.1.0-SNAPSHOT'
+    implementation 'se.alipsa:simple-rest:1.0.6-SNAPSHOT'
     implementation "se.alipsa.groovy:matrix-core:$matrixCoreVersion"
     implementation "se.alipsa.groovy:matrix-stats:$matrixStatsVersion"
     implementation "se.alipsa.groovy:matrix-datasets:$matrixDatasetsVersion"
