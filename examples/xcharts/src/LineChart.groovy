@@ -1,7 +1,4 @@
-import se.alipsa.groovy.matrix.*
-import se.alipsa.groovy.charts.LineChart
-import se.alipsa.groovy.charts.SwingPlot
-
+import se.alipsa.matrix.core.*
 
   
 salesData = new Matrix('Salesdata',

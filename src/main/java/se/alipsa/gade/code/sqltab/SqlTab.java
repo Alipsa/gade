@@ -23,7 +23,7 @@ import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.SqlParser;
 import se.alipsa.gade.utils.StringUtils;
-import se.alipsa.groovy.matrix.Matrix;
+import se.alipsa.matrix.core.Matrix;
 
 import java.io.File;
 import java.sql.*;

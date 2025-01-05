@@ -9,7 +9,7 @@ import se.alipsa.gade.console.CountDownTask;
 import se.alipsa.gade.console.ScriptThread;
 import se.alipsa.gade.utils.StringUtils;
 import se.alipsa.groovy.datautil.ConnectionInfo;
-import se.alipsa.groovy.matrix.Matrix;
+import se.alipsa.matrix.core.Matrix;
 
 import java.sql.*;
 import java.util.concurrent.atomic.AtomicInteger;

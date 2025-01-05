@@ -1,7 +1,7 @@
 package utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static se.alipsa.groovy.matrix.ListConverter.toLocalDates;
+import static se.alipsa.matrix.core.ListConverter.toLocalDates;
 
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
@@ -9,9 +9,9 @@ import javafx.scene.chart.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.utils.DeepCopier;
-import se.alipsa.groovy.charts.ChartType;
-import se.alipsa.groovy.charts.Plot;
-import se.alipsa.groovy.matrix.Matrix;
+import se.alipsa.matrix.charts.ChartType;
+import se.alipsa.matrix.charts.Plot;
+import se.alipsa.matrix.core.Matrix;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -153,7 +153,7 @@ public class DeepCopyTest {
         .types(int.class, String.class, Number.class, LocalDate.class)
         .build();
 
-    var chart = se.alipsa.groovy.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
+    var chart = se.alipsa.matrix.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
     Node jChart = Plot.jfx(chart);
     var c = DeepCopier.deepCopy(jChart);
     var jfxChart = (BarChart<?, ?>) jChart;

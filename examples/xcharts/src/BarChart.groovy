@@ -1,9 +1,9 @@
 import java.time.LocalDate
-import se.alipsa.groovy.matrix.*
-import se.alipsa.groovy.charts.*
+import se.alipsa.matrix.core.*
+import se.alipsa.matrix.charts.*
 import org.knowm.xchart.CategoryChartBuilder
 
-import static se.alipsa.groovy.matrix.ListConverter.*
+import static se.alipsa.matrix.core.ListConverter.*
 
 
 empData = new Matrix(

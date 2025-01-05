@@ -2,7 +2,7 @@ package examplepackage
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import se.alipsa.groovy.matrix.Matrix
+import se.alipsa.matrix.core.Matrix
 
 /**
  * Represents a country with additional ISO code info

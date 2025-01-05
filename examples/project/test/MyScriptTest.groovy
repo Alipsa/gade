@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.codehaus.groovy.runtime.InvokerHelper
-import se.alipsa.groovy.matrix.Matrix
+import se.alipsa.matrix.core.Matrix
 
 class MyScriptTest {
 

@@ -1,7 +1,6 @@
 import org.knowm.xchart.*
-import org.knowm.xchart.style.Styler.ChartTheme
-import se.alipsa.groovy.matrix.*
-import se.alipsa.groovy.charts.SwingPlot
+import se.alipsa.matrix.core.*
+import se.alipsa.matrix.charts.swing.SwingPlot
 
 boxData = new Matrix(
     aaa: [40, 30, 20, 60, 50],

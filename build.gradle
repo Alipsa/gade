@@ -17,20 +17,20 @@ description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.matrixCoreVersion = "2.1.0-SNAPSHOT"
-ext.matrixChartsVersion='1.0.0-SNAPSHOT'
-ext.matrixStatsVersion="1.0.2"
-ext.matrixDatasetsVersion="1.0.4"
-ext.matrixSpreadsheetVersion="1.0.3"
-ext.matrixJsonVersion="1.0.0"
-ext.matrixCsvVersion="1.0.1"
-ext.matrixSqlVersion="1.0.1"
-ext.jacksonVersion = '2.18.1'
-ext.tikaVersion = '3.0.0' // Note '2.9.1' breaks @Grab
+ext.groovyVersion = "4.0.24"
+ext.jacksonVersion = '2.18.2'
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
-ext.log4jVersion = "2.24.1"
-ext.groovyVersion = "4.0.23"
+ext.log4jVersion = "2.24.3"
+ext.matrixCoreVersion = "2.2.0-SNAPSHOT"
+ext.matrixChartsVersion='1.0.0-SNAPSHOT'
+ext.matrixStatsVersion="1.1.0-SNAPSHOT"
+ext.matrixDatasetsVersion="1.1.0-SNAPSHOT"
+ext.matrixSpreadsheetVersion="1.1.0-SNAPSHOT"
+ext.matrixJsonVersion="1.1.0-SNAPSHOT"
+ext.matrixCsvVersion="1.1.0-SNAPSHOT"
+ext.matrixSqlVersion="1.1.0-SNAPSHOT"
+ext.tikaVersion = '3.0.0' // Note '2.9.1' breaks @Grab
 
 def jdkVersion = "21.0.2+14"
 
@@ -56,7 +56,7 @@ repositories {
 
 
 dependencies {
-    implementation 'org.apache.commons:commons-text:1.12.0'
+    implementation 'org.apache.commons:commons-text:1.13.0'
     implementation "org.apache.groovy:groovy-all:${groovyVersion}"
     implementation "org.apache.groovy:groovy-macro-library:${groovyVersion}"
     implementation "org.apache.groovy:groovy-ginq:$groovyVersion"
@@ -70,23 +70,23 @@ dependencies {
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.17.0'
-    implementation 'org.jsoup:jsoup:1.18.1'
+    implementation 'org.jsoup:jsoup:1.18.3'
     implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
-    implementation 'org.fxmisc.richtext:richtextfx:0.11.3'
+    implementation 'org.fxmisc.richtext:richtextfx:0.11.4'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-    implementation "commons-io:commons-io:2.17.0"
-    implementation 'com.github.jsqlparser:jsqlparser:5.0'
+    implementation "commons-io:commons-io:2.18.0"
+    implementation 'com.github.jsqlparser:jsqlparser:5.1'
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
-    implementation 'org.openjdk.nashorn:nashorn-core:15.4'
-    implementation 'org.gradle:gradle-tooling-api:8.10.2'
+    implementation 'org.openjdk.nashorn:nashorn-core:15.6'
+    implementation 'org.gradle:gradle-tooling-api:8.12'
     implementation 'org.jetbrains:annotations:26.0.1'
-    implementation 'io.github.classgraph:classgraph:4.8.177'
+    implementation 'io.github.classgraph:classgraph:4.8.179'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.6'
     implementation "se.alipsa:gi-fx:1.0.0-SNAPSHOT"
 
@@ -95,14 +95,14 @@ dependencies {
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
     implementation 'se.alipsa.groovy:gmd:1.1.0-SNAPSHOT'
     implementation 'se.alipsa:simple-rest:1.0.6-SNAPSHOT'
-    implementation "se.alipsa.groovy:matrix-core:$matrixCoreVersion"
-    implementation "se.alipsa.groovy:matrix-stats:$matrixStatsVersion"
-    implementation "se.alipsa.groovy:matrix-datasets:$matrixDatasetsVersion"
-    implementation "se.alipsa.groovy:matrix-spreadsheet:$matrixSpreadsheetVersion"
-    implementation "se.alipsa.groovy:matrix-charts:$matrixChartsVersion"
-    implementation "se.alipsa.groovy:matrix-json:$matrixJsonVersion"
-    implementation "se.alipsa.groovy:matrix-csv:$matrixCsvVersion"
-    implementation "se.alipsa.groovy:matrix-sql:$matrixSqlVersion"
+    implementation "se.alipsa.matrix:matrix-core:$matrixCoreVersion"
+    implementation "se.alipsa.matrix:matrix-stats:$matrixStatsVersion"
+    implementation "se.alipsa.matrix:matrix-datasets:$matrixDatasetsVersion"
+    implementation "se.alipsa.matrix:matrix-spreadsheet:$matrixSpreadsheetVersion"
+    implementation "se.alipsa.matrix:matrix-charts:$matrixChartsVersion"
+    implementation "se.alipsa.matrix:matrix-json:$matrixJsonVersion"
+    implementation "se.alipsa.matrix:matrix-csv:$matrixCsvVersion"
+    implementation "se.alipsa.matrix:matrix-sql:$matrixSqlVersion"
     // Used by se.alipsa.gade.utils.SemanticVersion
     implementation 'org.apache.maven:maven-artifact:3.9.9'
     implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
@@ -114,7 +114,7 @@ dependencies {
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
 
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'

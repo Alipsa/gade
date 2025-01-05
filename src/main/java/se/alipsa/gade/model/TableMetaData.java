@@ -1,6 +1,6 @@
 package se.alipsa.gade.model;
 
-import se.alipsa.groovy.matrix.Row;
+import se.alipsa.matrix.core.Row;
 
 import java.util.List;
 

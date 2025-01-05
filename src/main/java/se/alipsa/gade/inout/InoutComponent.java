@@ -27,7 +27,7 @@ import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
 import se.alipsa.gade.utils.*;
-import se.alipsa.groovy.matrix.Matrix;
+import se.alipsa.matrix.core.Matrix;
 
 import java.io.File;
 import java.util.*;

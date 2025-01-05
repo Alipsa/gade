@@ -1,5 +1,4 @@
-import se.alipsa.groovy.datasets.Dataset
-import se.alipsa.groovy.charts.*
+import se.alipsa.matrix.datasets.Dataset
 
 data = Dataset.airquality()
 scatterChart = ScatterChart.create("Temperature and Ozone", data, "Temp", "Ozone")

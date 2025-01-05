@@ -26,13 +26,13 @@ import org.knowm.xchart.style.Styler;
 import se.alipsa.gade.Gade;
 //import se.alipsa.gade.utils.m2.DependencyResolver;
 //import se.alipsa.gade.utils.m2.ResolvingException;
-import se.alipsa.groovy.charts.Chart;
-import se.alipsa.groovy.charts.Plot;
-import se.alipsa.groovy.matrix.Row;
-import se.alipsa.groovy.matrix.sql.MatrixSql;
+import se.alipsa.matrix.charts.Chart;
+import se.alipsa.matrix.charts.Plot;
+import se.alipsa.matrix.core.Row;
+import se.alipsa.matrix.sql.MatrixSql;
 import se.alipsa.groovy.resolver.*;
 //import se.alipsa.groovy.datautil.gtable.Gtable;
-import se.alipsa.groovy.matrix.Matrix;
+import se.alipsa.matrix.core.Matrix;
 //import tech.tablesaw.chart.Chart;
 //import tech.tablesaw.chart.Plot;
 //import se.alipsa.gade.environment.connections.ConnectionInfo;
@@ -69,7 +69,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static se.alipsa.gade.utils.FileUtils.removeExt;
-import static se.alipsa.groovy.charts.DataType.sqlType;
+import static se.alipsa.matrix.charts.DataType.sqlType;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -528,13 +528,13 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return readImage.read(file);
   }
 
-  public void save(se.alipsa.groovy.charts.Chart chart, File file) {
+  public void save(se.alipsa.matrix.charts.Chart chart, File file) {
     double width = gui.getInoutComponent().getPlotsTab().getTabPane().getWidth();
     double height = gui.getInoutComponent().getPlotsTab().getTabPane().getHeight() - 20.0;
     save(chart, file, width, height, true);
   }
 
-  public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height) {
+  public void save(se.alipsa.matrix.charts.Chart chart, File file, double width, double height) {
     save(chart, file, width, height, true);
   }
 
@@ -547,8 +547,8 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param height       the intended height of the png image
    * @param useGadeStyle style the chart with the same style as the current Gade style
    */
-  public void save(se.alipsa.groovy.charts.Chart chart, File file, double width, double height, boolean useGadeStyle) {
-    save(se.alipsa.groovy.charts.Plot.jfx(chart), file, width, height, useGadeStyle, false);
+  public void save(se.alipsa.matrix.charts.Chart chart, File file, double width, double height, boolean useGadeStyle) {
+    save(se.alipsa.matrix.charts.Plot.jfx(chart), file, width, height, useGadeStyle, false);
   }
 
   public void save(Region region, File file) {

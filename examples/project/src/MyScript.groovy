@@ -1,6 +1,6 @@
 // Simplistic groovy project
 
-import se.alipsa.groovy.matrix.Matrix
+import se.alipsa.matrix.core.Matrix
 import java.time.LocalDate
 
 def borrower = args.length > 0 ? args[0] : "Per"

@@ -35,8 +35,8 @@ import se.alipsa.gade.model.TableMetaData;
 import se.alipsa.gade.utils.*;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.groovy.datautil.ConnectionInfo;
-import se.alipsa.groovy.matrix.Matrix;
-import se.alipsa.groovy.matrix.Row;
+import se.alipsa.matrix.core.Matrix;
+import se.alipsa.matrix.core.Row;
 //import tech.tablesaw.api.Table;
 
 import java.io.File;
