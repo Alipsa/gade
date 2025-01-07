@@ -22,10 +22,10 @@ ext.jacksonVersion = '2.18.2'
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.3"
-ext.matrixCoreVersion = "2.2.0-SNAPSHOT"
+ext.matrixCoreVersion = "2.2.0"
 ext.matrixChartsVersion='1.0.0-SNAPSHOT'
-ext.matrixStatsVersion="1.1.0-SNAPSHOT"
-ext.matrixDatasetsVersion="1.1.0-SNAPSHOT"
+ext.matrixStatsVersion="1.1.0"
+ext.matrixDatasetsVersion="1.1.0"
 ext.matrixSpreadsheetVersion="1.1.0-SNAPSHOT"
 ext.matrixJsonVersion="1.1.0-SNAPSHOT"
 ext.matrixCsvVersion="1.1.0-SNAPSHOT"
@@ -326,6 +326,10 @@ tasks.runtime.doLast {
         include 'version.properties'
     }
 }
+
+tasks.distTar.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+tasks.distZip.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+tasks.installDist.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
 tasks.runtimeZip.doLast {
 
