@@ -26,10 +26,10 @@ ext.matrixCoreVersion = "2.2.0"
 ext.matrixChartsVersion='1.0.0-SNAPSHOT'
 ext.matrixStatsVersion="1.1.0"
 ext.matrixDatasetsVersion="1.1.0"
-ext.matrixSpreadsheetVersion="1.1.0-SNAPSHOT"
-ext.matrixJsonVersion="1.1.0-SNAPSHOT"
-ext.matrixCsvVersion="1.1.0-SNAPSHOT"
-ext.matrixSqlVersion="1.1.0-SNAPSHOT"
+ext.matrixSpreadsheetVersion="1.1.0"
+ext.matrixJsonVersion="1.1.0"
+ext.matrixCsvVersion="1.1.0"
+ext.matrixSqlVersion="1.1.0"
 ext.tikaVersion = '3.0.0' // Note '2.9.1' breaks @Grab
 
 def jdkVersion = "21.0.5+11"
