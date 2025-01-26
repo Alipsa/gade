@@ -463,7 +463,9 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   public void view(Matrix tableMatrix, String... title) {
-    gui.getInoutComponent().view(tableMatrix, tableMatrix.getMatrixName() == null ? determineTitle(title) : tableMatrix.getMatrixName());
+    String t = title.length > 0 ? title[0] : tableMatrix.getMatrixName();
+    if (t == null) t = determineTitle(title);
+    gui.getInoutComponent().view(tableMatrix, t);
   }
 
   private String determineTitle(String... title) {

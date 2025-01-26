@@ -17,16 +17,16 @@ description = 'Gade, A Groovy Analytics Development Environment'
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "4.0.24"
+ext.groovyVersion = "4.0.25"
 ext.jacksonVersion = '2.18.2'
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.3"
-ext.matrixCoreVersion = "2.2.0"
+ext.matrixCoreVersion = "2.3.0-SNAPSHOT"
 ext.matrixChartsVersion='1.0.0-SNAPSHOT'
 ext.matrixStatsVersion="1.1.0"
 ext.matrixDatasetsVersion="1.1.0"
-ext.matrixSpreadsheetVersion="1.1.0"
+ext.matrixSpreadsheetVersion="1.2.0-SNAPSHOT"
 ext.matrixJsonVersion="1.1.0"
 ext.matrixCsvVersion="1.1.0"
 ext.matrixSqlVersion="1.1.0"
@@ -84,8 +84,8 @@ dependencies {
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
     implementation 'org.openjdk.nashorn:nashorn-core:15.6'
-    implementation 'org.gradle:gradle-tooling-api:8.12'
-    implementation 'org.jetbrains:annotations:26.0.1'
+    implementation 'org.gradle:gradle-tooling-api:8.12.1'
+    implementation 'org.jetbrains:annotations:26.0.2'
     implementation 'io.github.classgraph:classgraph:4.8.179'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.6'
     implementation "se.alipsa:gi-fx:1.0.0-SNAPSHOT"

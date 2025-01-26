@@ -794,6 +794,11 @@ public class ConsoleComponent extends BorderPane {
      */
   }
 
+  /**
+   * Return a reference to the current scripting session (the script engine)
+   *
+   * @return a reference to the current scripting session (the script engine)
+   */
   public ScriptEngine getSession() {
     return engine;
   }
@@ -873,6 +878,11 @@ public class ConsoleComponent extends BorderPane {
     engine.put(key, value);
   }
 
+  /**
+   * Remove a binding from the engine.
+   *
+   * @param varName the bound variable to remove.
+   */
   public void removeVariableFromSession(String varName) {
     engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
   }
