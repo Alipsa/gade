@@ -484,42 +484,48 @@ public class ConnectionsTab extends Tab {
         ExceptionAlert.showAlert("Failed to query sqlite_master", e);
       }
       if (hasTables) {
-        sql = "SELECT \n" +
-           "  m.name as TABLE_NAME \n" +
-           ", m.type as TABLE_TYPE \n" +
-           ", p.name as COLUMN_NAME\n" +
-           ", p.cid as ORDINAL_POSITION\n" +
-           ", case when p.[notnull] = 0 then 1 else 0 end as IS_NULLABLE\n" +
-           ", p.type as DATA_TYPE\n" +
-           ", 0 as CHARACTER_MAXIMUM_LENGTH\n" +
-           ", 0 as NUMERIC_PRECISION\n" +
-           ", 0 as NUMERIC_SCALE\n" +
-           ", '' as COLLATION_NAME\n" +
-           "FROM \n" +
-           "  sqlite_master AS m\n" +
-           "JOIN \n" +
-           "  pragma_table_info(m.name) AS p";
+        sql = """
+           SELECT
+           m.name as TABLE_NAME
+           , m.type as TABLE_TYPE
+           , p.name as COLUMN_NAME
+           , p.cid as ORDINAL_POSITION
+           , case when p.[notnull] = 0 then 1 else 0 end as IS_NULLABLE
+           , p.type as DATA_TYPE
+           , 0 as CHARACTER_MAXIMUM_LENGTH
+           , 0 as NUMERIC_PRECISION
+           , 0 as NUMERIC_SCALE
+           , '' as COLLATION_NAME
+           , TABLE_SCHEMA
+           FROM
+             sqlite_master AS m
+           JOIN
+             pragma_table_info(m.name) AS p
+           """;
       } else {
         setNormalCursor();
         Alerts.info("Empty database", "This sqlite database has no tables yet");
         return;
       }
     } else {
-      sql = "select col.TABLE_NAME\n" +
-         ", TABLE_TYPE\n" +
-         ", COLUMN_NAME\n" +
-         ", ORDINAL_POSITION\n" +
-         ", IS_NULLABLE\n" +
-         ", DATA_TYPE\n" +
-         ", CHARACTER_MAXIMUM_LENGTH\n" +
-         ", NUMERIC_PRECISION\n" +
-         ", NUMERIC_SCALE\n" +
-         ", COLLATION_NAME\n" +
-         "from INFORMATION_SCHEMA.COLUMNS col\n" +
-         "inner join INFORMATION_SCHEMA.TABLES tab " +
-         "      on col.TABLE_NAME = tab.TABLE_NAME and col.TABLE_SCHEMA = tab.TABLE_SCHEMA\n" +
-         "where TABLE_TYPE <> 'SYSTEM TABLE'\n" +
-         "and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')";
+      sql = """
+         select col.TABLE_NAME
+         , TABLE_TYPE
+         , COLUMN_NAME
+         , ORDINAL_POSITION
+         , IS_NULLABLE
+         , DATA_TYPE
+         , CHARACTER_MAXIMUM_LENGTH
+         , NUMERIC_PRECISION
+         , NUMERIC_SCALE
+         , COLLATION_NAME
+         , tab.TABLE_SCHEMA
+         from INFORMATION_SCHEMA.COLUMNS col
+         inner join INFORMATION_SCHEMA.TABLES tab
+               on col.TABLE_NAME = tab.TABLE_NAME and col.TABLE_SCHEMA = tab.TABLE_SCHEMA
+         where TABLE_TYPE <> 'SYSTEM TABLE'
+         and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')
+         """;
     }
 
     runQueryInThread(sql, con);
@@ -685,7 +691,7 @@ public class ConnectionsTab extends Tab {
     TreeItem<String> root = new TreeItem<>(connectionName);
     tree.setRoot(root);
     Map<String, List<TableMetaData>> tableMap = table.stream()
-        .collect(Collectors.groupingBy(TableMetaData::getTableName));
+        .collect(Collectors.groupingBy(md -> addSchemaNameIfExists(md) + md.getTableName()));
     tableMap.forEach((k, v) -> {
       TreeItem<String> tableName = new TreeItem<>(k);
       root.getChildren().add(tableName);
@@ -704,6 +710,14 @@ public class ConnectionsTab extends Tab {
     });
     tree.setCellFactory(p -> new TableNameTreeCell(con));
     return tree;
+  }
+
+  private String addSchemaNameIfExists(TableMetaData md) {
+    String schemaName = md.getSchemaName();
+    if (schemaName == null || schemaName.isBlank()) {
+      return "";
+    }
+    return schemaName + ".";
   }
 
   private void copySelectionToClipboard(final TreeView<String> treeView) {

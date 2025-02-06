@@ -20,6 +20,7 @@ public class TableMetaData {
   private Integer numericPrecision;
   private Integer numericScale;
   private String collationName;
+  private String schemaName;
 
 
   public TableMetaData(List<Object> row) {
@@ -33,6 +34,7 @@ public class TableMetaData {
     setNumericPrecision(toInt(row.get(7)));
     setNumericScale(toInt(row.get(8)));
     setCollationName(String.valueOf(row.get(9)));
+    setSchemaName(String.valueOf(row.get(10)));
   }
 
   public TableMetaData(Row row) {
@@ -49,6 +51,7 @@ public class TableMetaData {
     setNumericPrecision(toInteger(row.get(7))); // On SQL Server, NUMERIC_PRECISION is of type SHORT and cannot be cast to INTEGER
     setNumericScale(row.getAt(8, Integer.class));
     setCollationName(row.getAt(9, String.class));
+    setSchemaName(row.getAt(10, String.class));
   }
 
   private Integer toInteger(Object obj) {
@@ -57,7 +60,7 @@ public class TableMetaData {
 
   public TableMetaData(Object tableName, Object tableType, Object columnName, Object ordinalPosition,
                        Object isNullable, Object dataType, Object characterMaximumLength, Object numericPrecision,
-                       Object numericScale, Object collationName) {
+                       Object numericScale, Object collationName, Object schemaName) {
 
     setTableName((String) tableName);
     setTableType((String) tableType);
@@ -69,6 +72,7 @@ public class TableMetaData {
     setNumericPrecision((Integer) numericPrecision);
     setNumericScale((Integer) numericScale);
     setCollationName((String) collationName);
+    setSchemaName(String.valueOf(schemaName));
   }
 
   public String getTableName() {
@@ -213,6 +217,14 @@ public class TableMetaData {
 
   public void setCollationName(String collationName) {
     this.collationName = collationName;
+  }
+
+  public String getSchemaName() {
+    return schemaName;
+  }
+
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
   }
 
   public String asColumnString() {
