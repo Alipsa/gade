@@ -685,22 +685,32 @@ public class ConnectionsTab extends Tab {
     connectionsTable.setCursor(Cursor.WAIT);
   }
 
-  private TreeView<String> createMetaDataTree(List<TableMetaData> table, ConnectionInfo con) {
+  private TreeView<String> createMetaDataTree(List<TableMetaData> tableMetaDataList, ConnectionInfo con) {
     String connectionName = con.getName();
     TreeView<String> tree = new TreeView<>();
     TreeItem<String> root = new TreeItem<>(connectionName);
     tree.setRoot(root);
-    Map<String, List<TableMetaData>> tableMap = table.stream()
-        .collect(Collectors.groupingBy(md -> addSchemaNameIfExists(md) + md.getTableName()));
-    tableMap.forEach((k, v) -> {
-      TreeItem<String> tableName = new TreeItem<>(k);
-      root.getChildren().add(tableName);
-      v.forEach(c -> {
-        TreeItem<String> column = new TreeItem<>(c.asColumnString());
-        tableName.getChildren().add(column);
+
+    Map<String, List<TableMetaData>> schemaMap = tableMetaDataList.stream()
+        .collect(Collectors.groupingBy(TableMetaData::getSchemaName));
+
+    schemaMap.forEach((schemaName, schemaTables) -> {
+      TreeItem<String> schema = new TreeItem<>(schemaName);
+      root.getChildren().add(schema);
+      var tableGroup = schemaTables.stream().collect(Collectors.groupingBy(TableMetaData::getTableName));
+      tableGroup.forEach((tableName, tableMetadataList) -> {
+        TreeItem<String> tableNode = new TreeItem<>(tableName);
+        schema.getChildren().add(tableNode);
+        tableMetadataList.forEach( columnRows -> {
+          TreeItem<String> columnNode = new TreeItem<>(columnRows.asColumnString());
+          tableNode.getChildren().add(columnNode);
+        });
+        tableNode.getChildren().sort(treeItemComparator);
       });
-      tableName.getChildren().sort(treeItemComparator);
+      schema.getChildren().sort(treeItemComparator);
+      schema.setExpanded(true);
     });
+
     root.getChildren().sort(treeItemComparator);
     root.setExpanded(true);
     tree.setOnKeyPressed(event -> {
@@ -712,27 +722,33 @@ public class ConnectionsTab extends Tab {
     return tree;
   }
 
-  private String addSchemaNameIfExists(TableMetaData md) {
-    String schemaName = md.getSchemaName();
-    if (schemaName == null || schemaName.isBlank()) {
-      return "";
-    }
-    return schemaName + ".";
-  }
-
   private void copySelectionToClipboard(final TreeView<String> treeView) {
     TreeItem<String> treeItem = treeView.getSelectionModel().getSelectedItem();
     copySelectionToClipboard(treeItem);
   }
 
+  private String getSqlNodeValue(final TreeItem<String> treeItem) {
+    String columnName = treeItem.getValue();
+    int idx = columnName.indexOf(TableMetaData.COLUMN_META_START);
+    if (idx > -1) {
+      // it's a column
+      columnName = columnName.substring(0, idx);
+    } else {
+      var parent = treeItem.getParent();
+      if (parent != null) {
+        if (parent.getParent() != null) {
+          // it's a table, add the schema name
+          columnName = treeItem.getParent().getValue() + "." + columnName;
+        }
+      }
+    }
+    return columnName;
+  }
+
   private void copySelectionToClipboard(final TreeItem<String> treeItem) {
     final ClipboardContent clipboardContent = new ClipboardContent();
-    String value = treeItem.getValue();
-    int idx = value.indexOf(TableMetaData.COLUMN_META_START);
-    if (idx > -1) {
-      value = value.substring(0, idx);
-    }
-    clipboardContent.putString(value);
+    String columnName = getSqlNodeValue(treeItem);
+    clipboardContent.putString(columnName);
     Clipboard.getSystemClipboard().setContent(clipboardContent);
   }
 
@@ -779,7 +795,7 @@ public class ConnectionsTab extends Tab {
       MenuItem sampleContent = new MenuItem("View 200 rows");
       tableRightClickMenu.getItems().add(sampleContent);
       sampleContent.setOnAction(event -> {
-        String tableName = getTreeItem().getValue();
+        String tableName = getSqlNodeValue(getTreeItem());
         try (Connection connection = connect(con)){
           if (connection == null) {
             Alerts.warn("Failed to connect to database", "Failed to establish a connection to the database");
