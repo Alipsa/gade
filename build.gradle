@@ -22,14 +22,7 @@ ext.jacksonVersion = '2.18.2'
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.3"
-ext.matrixCoreVersion = "2.3.0-SNAPSHOT"
-ext.matrixChartsVersion='1.0.0-SNAPSHOT'
-ext.matrixStatsVersion="1.1.0"
-ext.matrixDatasetsVersion="1.1.0"
-ext.matrixSpreadsheetVersion="1.2.0-SNAPSHOT"
-ext.matrixJsonVersion="1.1.0"
-ext.matrixCsvVersion="1.1.0"
-ext.matrixSqlVersion="1.1.0"
+ext.matrixBomVersion = "1.1.0-SNAPSHOT"
 ext.tikaVersion = '3.0.0' // Note '2.9.1' breaks @Grab
 
 def jdkVersion = "21.0.5+11"
@@ -95,14 +88,17 @@ dependencies {
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
     implementation 'se.alipsa.groovy:gmd:1.1.0-SNAPSHOT'
     implementation 'se.alipsa:simple-rest:1.0.6-SNAPSHOT'
-    implementation "se.alipsa.matrix:matrix-core:$matrixCoreVersion"
-    implementation "se.alipsa.matrix:matrix-stats:$matrixStatsVersion"
-    implementation "se.alipsa.matrix:matrix-datasets:$matrixDatasetsVersion"
-    implementation "se.alipsa.matrix:matrix-spreadsheet:$matrixSpreadsheetVersion"
-    implementation "se.alipsa.matrix:matrix-charts:$matrixChartsVersion"
-    implementation "se.alipsa.matrix:matrix-json:$matrixJsonVersion"
-    implementation "se.alipsa.matrix:matrix-csv:$matrixCsvVersion"
-    implementation "se.alipsa.matrix:matrix-sql:$matrixSqlVersion"
+    implementation(platform("se.alipsa.matrix:matrix-bom:$matrixBomVersion"))
+    implementation("se.alipsa.matrix:matrix-core")
+    implementation "se.alipsa.matrix:matrix-stats"
+    implementation "se.alipsa.matrix:matrix-datasets"
+    implementation "se.alipsa.matrix:matrix-spreadsheet"
+    implementation "se.alipsa.matrix:matrix-charts"
+    implementation "se.alipsa.matrix:matrix-json"
+    implementation "se.alipsa.matrix:matrix-csv"
+    implementation "se.alipsa.matrix:matrix-sql"
+    implementation "se.alipsa.matrix:matrix-parquet"
+    implementation "se.alipsa.matrix:matrix-bigquery"
     // Used by se.alipsa.gade.utils.SemanticVersion
     implementation 'org.apache.maven:maven-artifact:3.9.9'
     implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
@@ -173,6 +169,37 @@ clean {
 }
 
 processResources.doLast {
+
+    def extractVersionNumber = { artifactName, fileName ->
+        fileName.substring("${artifactName}-".length(), fileName.indexOf(".jar"))
+    }
+
+    project.configurations.getByName('runtimeClasspath').files
+        .findAll({it.getName().contains('matrix')}).each { file ->
+            def fileName = file.name
+            if (fileName.contains('matrix-core')) {
+                ext.matrixCoreVersion = extractVersionNumber('matrix-core', fileName)
+            } else if (fileName.contains('matrix-charts')) {
+                ext.matrixChartsVersion = extractVersionNumber('matrix-charts', fileName)
+            } else if (fileName.contains('matrix-stats')) {
+                ext.matrixStatsVersion = extractVersionNumber('matrix-stats', fileName)
+            } else if (fileName.contains('matrix-datasets')) {
+                ext.matrixDatasetsVersion = extractVersionNumber('matrix-datasets', fileName)
+            } else if (fileName.contains('matrix-spreadsheet')) {
+                ext.matrixSpreadsheetVersion = extractVersionNumber('matrix-spreadsheet', fileName)
+            } else if (fileName.contains('matrix-json')) {
+                ext.matrixJsonVersion = extractVersionNumber('matrix-json', fileName)
+            } else if (fileName.contains('matrix-csv')) {
+                ext.matrixCsvVersion = extractVersionNumber('matrix-csv', fileName)
+            } else if (fileName.contains('matrix-sql')) {
+                ext.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
+            } else if (fileName.contains('matrix-parquet')) {
+                ext.matrixParquetVersion = extractVersionNumber('matrix-parquet', fileName)
+            } else if (fileName.contains('matrix-bigquery')) {
+                ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
+            }
+    }
+
     ant.propertyfile(file: "${projectDir}/version.properties") {
         ant.entry(key: "version", value: "${project.version}")
         ant.entry(key: "jar.name", value: "${jarName}")
@@ -186,6 +213,8 @@ processResources.doLast {
         ant.entry(key: "matrixJsonVersion", value: "${matrixJsonVersion}")
         ant.entry(key: "matrixCsvVersion", value: "${matrixCsvVersion}")
         ant.entry(key: "matrixSqlVersion", value: "${matrixSqlVersion}")
+        ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
+        ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
     }
     ant.copy(
             file: "${projectDir}/version.properties",

@@ -261,6 +261,9 @@ public class ConsoleComponent extends BorderPane {
     return "*".repeat(Math.max(0, length));
   }
 
+  /**
+   * Restart (reset) the Groovy engine.
+   */
   public void restartGroovy() {
     console.append("Restarting Groovy..\n");
     //initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
@@ -304,6 +307,14 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
+  /**
+   * Execute a script.
+   *
+   * @param script the script code to execute
+   * @param additionalParams a map of parameters to bind.
+   * @return the result of the script.
+   * @throws Exception if something goes wrong.
+   */
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
     if (engine == null) {
       Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
@@ -738,6 +749,9 @@ public class ConsoleComponent extends BorderPane {
     }
   }
 
+  /**
+   * Indicates that a script is running.
+   */
   public void running() {
     Platform.runLater(() -> {
       runningView.setImage(IMG_RUNNING);
@@ -748,6 +762,9 @@ public class ConsoleComponent extends BorderPane {
     sleep(20);
   }
 
+  /**
+   * Indicates that the engine is idle.
+   */
   public void waiting() {
     Platform.runLater(() -> {
       runningView.setImage(IMG_WAITING);

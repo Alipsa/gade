@@ -600,6 +600,8 @@ public class MainMenu extends MenuBar {
     String matrixCsvVersion = "unknown";
     String matrixSqlVersion = "unknown";
     String matrixChartsVersion = "unknown";
+    String matrixParquetVersion = "unknown";
+    String matrixBigQueryVersion = "unknown";
     try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
       props.load(is);
       version = props.getProperty("version");
@@ -613,6 +615,8 @@ public class MainMenu extends MenuBar {
       matrixCsvVersion = props.getProperty("matrixCsvVersion");
       matrixSqlVersion = props.getProperty("matrixSqlVersion");
       matrixChartsVersion = props.getProperty("matrixChartsVersion");
+      matrixParquetVersion = props.getProperty("matrixParquetVersion");
+      matrixBigQueryVersion = props.getProperty("matrixBigQueryVersion");
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to load properties file", e);
     }
@@ -639,10 +643,12 @@ public class MainMenu extends MenuBar {
         .append("\n Matrix-csv version: ").append(matrixCsvVersion)
         .append("\n Matrix-json version: ").append(matrixJsonVersion)
         .append("\n Matrix-charts version: ").append(matrixChartsVersion)
-        .append("\n Matrix-datasets version: ").append(matrixDatasetsVersion);
+        .append("\n Matrix-datasets version: ").append(matrixDatasetsVersion)
+        .append("\n Matrix-parquet version: ").append(matrixParquetVersion)
+        .append("\n Matrix-bigquery version: ").append(matrixBigQueryVersion);
 
     content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues.");
-    showInfoAlert("About Gade", content, 625, 325);
+    showInfoAlert("About Gade", content, 630, 365);
 
   }
 
