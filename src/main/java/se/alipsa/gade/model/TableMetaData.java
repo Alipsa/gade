@@ -41,7 +41,8 @@ public class TableMetaData {
     setTableName(row.getAt(0, String.class));
     setTableType(row.getAt(1, String.class));
     setColumnName(row.getAt(2, String.class));
-    setOrdinalPosition(row.getAt(3, Number.class).intValue()); // Usually an int but on hsqldb this is a double
+    Number ordinal = row.getAt(3, Number.class);
+    setOrdinalPosition(ordinal == null ? null : ordinal.intValue()); // Usually an int but on hsqldb this is a double
     setIsNullable(row.getAt(4, String.class));
     setDataType(String.valueOf(row.get(5))); // On h2 this is an INT, on SQL Server it is VARCHAR
     // On h2 this is a Long, on most other db's it is an int

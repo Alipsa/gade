@@ -622,11 +622,11 @@ public class MainMenu extends MenuBar {
     }
     NashornScriptEngineFactory nashornScriptEngineFactory = new NashornScriptEngineFactory();
     StringBuilder content = new StringBuilder();
-    content.append("\n Version: ")
+    content.append("\n Gade Version: ")
         .append(version)
-        .append("\n Release tag: ")
+        .append("\n Gade Release tag: ")
         .append(releaseTag)
-        .append("\n Build date: ")
+        .append("\n Gade Build date: ")
         .append(buildDate)
         .append("\n Java Runtime Version: ")
         .append(System.getProperty("java.runtime.version"))

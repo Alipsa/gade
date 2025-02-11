@@ -26,6 +26,7 @@ import org.knowm.xchart.style.Styler;
 import se.alipsa.gade.Gade;
 //import se.alipsa.gade.utils.m2.DependencyResolver;
 //import se.alipsa.gade.utils.m2.ResolvingException;
+import se.alipsa.gade.environment.connections.ConnectionHandler;
 import se.alipsa.matrix.charts.Chart;
 import se.alipsa.matrix.charts.Plot;
 import se.alipsa.matrix.core.Row;
@@ -124,7 +125,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       String pwd = promptPassword("Password required", "Enter password to " + ci.getName() + " for " + ci.getUser());
       ci.setPassword(pwd);
     }
-    return gui.getEnvironmentComponent().connect(ci);
+    return new ConnectionHandler(ci).connect();
   }
 
   @NotNull

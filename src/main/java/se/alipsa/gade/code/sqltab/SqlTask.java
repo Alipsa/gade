@@ -7,6 +7,8 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.CountDownTask;
 import se.alipsa.gade.console.ScriptThread;
+import se.alipsa.gade.environment.connections.ConnectionException;
+import se.alipsa.gade.environment.connections.ConnectionHandler;
 import se.alipsa.gade.utils.StringUtils;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.matrix.core.Matrix;
@@ -14,40 +16,31 @@ import se.alipsa.matrix.core.Matrix;
 import java.sql.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SqlTask extends CountDownTask<Connection> {
+public class SqlTask extends QueryTask {
 
   Statement statement;
-  ConnectionInfo ci;
+  ConnectionHandler ch;
   Connection con;
   Gade gui;
   String[] batchedQry;
   boolean keepConnectionOpen;
   String title;
-  SqlTab sqlTab;
 
-  public SqlTask(ConnectionInfo ci, Connection con, Gade gui, String[] batchedQry, SqlTab sqlTab) {
+  public SqlTask(ConnectionHandler ch, Connection con, Gade gui, String[] batchedQry, SqlTab sqlTab) {
     super(sqlTab);
-    this.ci = ci;
+    this.ch = ch;
     this.con = con;
     this.gui = gui;
     this.batchedQry = batchedQry;
     this.keepConnectionOpen = sqlTab.keepConnectionOpen();
     this.title = sqlTab.getTitle();
-    this.sqlTab = sqlTab;
-  }
-
-  @Override
-  public ScriptThread createThread() {
-    SqlThread thread = new SqlThread(this, sqlTab);
-    thread.setDaemon(false);
-    return thread;
   }
 
 
   @Override
-  public Connection execute() throws Exception {
+  public Object execute() throws Exception {
     if (con == null) {
-      con = gui.getEnvironmentComponent().connect(ci);
+      con = ch.connect();
     }
     try {
       if (con == null) {
@@ -140,9 +133,13 @@ public class SqlTask extends CountDownTask<Connection> {
     }
   }
 
-  public void abort() throws SQLException {
+  public void abort() throws ConnectionException {
     if (statement != null) {
-      statement.cancel();
+      try {
+        statement.cancel();
+      } catch (SQLException e) {
+        throw new ConnectionException("Failed to cancel statement", e);
+      }
     }
   }
 }

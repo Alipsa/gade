@@ -5,6 +5,7 @@ import static se.alipsa.gade.Constants.THEME;
 import static se.alipsa.gade.menu.GlobalOptions.*;
 
 import groovy.lang.GroovyClassLoader;
+import java.awt.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -153,6 +154,16 @@ public class Gade extends Application {
     primaryStage.getIcons().add(
         new Image(Objects.requireNonNull(getClass().getResourceAsStream("/image/logo.png")))
     );
+    //Set icon on the taskbar/dock
+    if (Taskbar.isTaskbarSupported()) {
+      var taskbar = Taskbar.getTaskbar();
+
+      if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
+        final Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
+        var dockIcon = defaultToolkit.getImage(getClass().getResource("/image/logo.png"));
+        taskbar.setIconImage(dockIcon);
+      }
+    }
     primaryStage.setScene(scene);
     enableDragDrop(scene);
     //consoleComponent.initGroovy(Gade.this.getClass().getClassLoader());

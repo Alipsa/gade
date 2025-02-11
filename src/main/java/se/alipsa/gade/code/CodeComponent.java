@@ -1,5 +1,6 @@
 package se.alipsa.gade.code;
 
+import javafx.collections.ObservableList;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -205,5 +206,9 @@ public class CodeComponent extends BorderPane {
     } else {
       log.info("User tried to reload {} but this is not possible", file);
     }
+  }
+
+  public ObservableList<Tab> getTabs() {
+    return pane.getTabs();
   }
 }

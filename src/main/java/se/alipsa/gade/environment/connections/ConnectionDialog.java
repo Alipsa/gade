@@ -25,7 +25,12 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
   private final TextField urlText;
   private final TextField userText;
   private PasswordField passwordField;
+  private Label urlLabel;
+  private Button wizardButton;
+
   public ConnectionDialog(ConnectionsTab connectionsTab) {
+    HBox toggleBox = new HBox();
+    HBox.setHgrow(toggleBox, Priority.ALWAYS);
     HBox topInputPane = new HBox();
     HBox.setHgrow(topInputPane, Priority.ALWAYS);
     HBox middleInputPane = new HBox();
@@ -34,6 +39,15 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
     HBox.setHgrow(bottomInputPane, Priority.ALWAYS);
     HBox buttonInputPane = new HBox();
     HBox.setHgrow(buttonInputPane, Priority.ALWAYS);
+
+    ToggleGroup group = new ToggleGroup();
+    ToggleButton dbButton = new ToggleButton("Relational Database");
+    dbButton.setToggleGroup(group);
+    dbButton.setOnAction(a -> setRelationalDbMode());
+    ToggleButton bqButton = new ToggleButton("Google Big Query");
+    bqButton.setToggleGroup(group);
+    bqButton.setOnAction(a -> setBigQueryMode());
+    toggleBox.getChildren().addAll(dbButton, bqButton);
 
     VBox nameBox = new VBox();
     Label nameLabel = new Label("Connection name:");
@@ -86,7 +100,7 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
 
     VBox urlBox = new VBox();
     urlBox.setFillWidth(true);
-    Label urlLabel = new Label("Url:");
+    urlLabel = new Label("Url:");
     String url = connectionsTab.getUrl();
     if (url != null) {
       url = connectionsTab.getPrefOrBlank(URL_PREF);
@@ -101,7 +115,7 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
 
     Image wizIMage = new Image("image/wizard.png", ICON_WIDTH, ICON_HEIGHT, true, true);
     ImageView wizImg =  new ImageView(wizIMage);
-    Button wizardButton = new Button("Url Wizard", wizImg);
+    wizardButton = new Button("Url Wizard", wizImg);
     wizardButton.setOnAction(a -> openUrlWizard(connectionsTab.getGui()));
     wizardButton.setTooltip(new Tooltip("create/update the url using the wizard"));
     buttonInputPane.setAlignment(Pos.CENTER);
@@ -118,11 +132,39 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
     }
     VBox content = new VBox();
     content.setSpacing(5);
-    content.getChildren().addAll(topInputPane, middleInputPane, bottomInputPane, buttonInputPane);
+    content.getChildren().addAll(toggleBox, topInputPane, middleInputPane, bottomInputPane, buttonInputPane);
     getDialogPane().setContent(content);
     content.setPrefWidth(600);
     getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
     setResultConverter(button -> button == ButtonType.OK ? createResult() : null);
+  }
+
+  private void setBigQueryMode() {
+    urlLabel.setText("Big Query project id:");
+    urlText.setText("");
+    userText.setText("");
+    userText.setDisable(true);
+    passwordField.setText("");
+    passwordField.setDisable(true);
+    dependencyText.setText("");
+    dependencyText.setDisable(true);
+    driverText.setText("");
+    driverText.setDisable(true);
+    wizardButton.setDisable(true);
+  }
+
+  private void setRelationalDbMode() {
+    urlLabel.setText("Url:");
+    urlText.setText("");
+    userText.setText("");
+    userText.setDisable(false);
+    passwordField.setText("");
+    passwordField.setDisable(false);
+    dependencyText.setText("");
+    dependencyText.setDisable(false);
+    driverText.setText("");
+    driverText.setDisable(false);
+    wizardButton.setDisable(false);
   }
 
   private void openUrlWizard(Gade gui) {

@@ -249,34 +249,17 @@ public class ConnectionsTab extends Tab {
   }
 
   public boolean validateAndAddConnection(ConnectionInfo con) {
-    try {
-      log.info("Connecting to " + con.getUrl());
-      Connection connection = connect(con);
-      if (connection == null) {
-        boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
-            "Do you still want to save this connection?");
-        if (dontSave) {
-          return false;
-        }
+    log.info("Connecting to " + con.getUrl());
+    ConnectionHandler ch = new ConnectionHandler(con);
+    boolean canConnect = ch.verifyConnection();
+    if (!canConnect) {
+      boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
+          "Do you still want to save this connection?");
+      if (dontSave) {
+        return false;
       }
-      if (connection != null) {
-        connection.close();
-      }
-      log.info("Connection created successfully, all good!");
-    } catch (SQLException ex) {
-      Exception exceptionToShow = ex;
-      try {
-        var ci = name.getValue();
-        JdbcUrlParser.validate(ci.getDriver(), ci.getUrl());
-      } catch (MalformedURLException exc) {
-        exceptionToShow = exc;
-      }
-      ExceptionAlert.showAlert("Failed to connect to database: " + exceptionToShow, ex);
-      if (exceptionToShow.getMessage().contains("authentication")) {
-        log.warn("Connection attempted to '{}' using userName '{}', and password '{}'", con.getName(), con.getUser(), con.getPassword());
-      }
-      return false;
     }
+    log.info("Connection established successfully, all good!");
     addConnection(con);
     saveConnection(con);
     return true;
@@ -468,92 +451,48 @@ public class ConnectionsTab extends Tab {
    */
   private void showConnectionMetaData(ConnectionInfo con) {
     setWaitCursor();
-    String sql;
-    if (con.getDriver().equals(Constants.Driver.SQLLITE.getDriverClass())) {
-      boolean hasTables = false;
-      try {
-        Connection jdbcCon = connect(con);
-        if (jdbcCon == null) {
-          Alerts.warn("Failed to connect", "Failed to establish a connection to SQLite");
-          return;
-        }
-        ResultSet rs = jdbcCon.createStatement().executeQuery("select * from sqlite_master");
-        if (rs.next()) hasTables = true;
-        jdbcCon.close();
-      } catch (SQLException e) {
-        ExceptionAlert.showAlert("Failed to query sqlite_master", e);
-      }
-      if (hasTables) {
-        sql = """
-           SELECT
-           m.name as TABLE_NAME
-           , m.type as TABLE_TYPE
-           , p.name as COLUMN_NAME
-           , p.cid as ORDINAL_POSITION
-           , case when p.[notnull] = 0 then 1 else 0 end as IS_NULLABLE
-           , p.type as DATA_TYPE
-           , 0 as CHARACTER_MAXIMUM_LENGTH
-           , 0 as NUMERIC_PRECISION
-           , 0 as NUMERIC_SCALE
-           , '' as COLLATION_NAME
-           , TABLE_SCHEMA
-           FROM
-             sqlite_master AS m
-           JOIN
-             pragma_table_info(m.name) AS p
-           """;
-      } else {
-        setNormalCursor();
-        Alerts.info("Empty database", "This sqlite database has no tables yet");
-        return;
-      }
-    } else {
-      sql = """
-         select col.TABLE_NAME
-         , TABLE_TYPE
-         , COLUMN_NAME
-         , ORDINAL_POSITION
-         , IS_NULLABLE
-         , DATA_TYPE
-         , CHARACTER_MAXIMUM_LENGTH
-         , NUMERIC_PRECISION
-         , NUMERIC_SCALE
-         , COLLATION_NAME
-         , tab.TABLE_SCHEMA
-         from INFORMATION_SCHEMA.COLUMNS col
-         inner join INFORMATION_SCHEMA.TABLES tab
-               on col.TABLE_NAME = tab.TABLE_NAME and col.TABLE_SCHEMA = tab.TABLE_SCHEMA
-         where TABLE_TYPE <> 'SYSTEM TABLE'
-         and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')
-         """;
-    }
 
-    runQueryInThread(sql, con);
+    Task<Matrix> task = new Task<>() {
+      @Override
+      public Matrix call() throws Exception {
+          ConnectionHandler ch = new ConnectionHandler(con);
+          return ch.getConnectionMetadata();
+      }
+    };
+    task.setOnSucceeded(e -> {
+      try {
+        createTableTree(task.get(), con);
+        setNormalCursor();
+      } catch (Throwable ex) {
+        ExceptionAlert.showAlert("Failed to create connection tree view", ex);
+      }
+    });
+
+    task.setOnFailed(e -> {
+      setNormalCursor();
+      Throwable throwable = task.getException();
+      Throwable ex = throwable.getCause();
+      if (ex == null) {
+        ex = throwable;
+      }
+      log.warn("Exception when running metadata sql", throwable);
+      String msg = gui.getConsoleComponent().createMessageFromEvalException(ex);
+      ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
+    });
+    Thread scriptThread = new Thread(task);
+    scriptThread.setDaemon(false);
+    scriptThread.start();
   }
 
   private void showDatabases(ConnectionInfo connectionInfo) {
-
-    try(Connection con = connect(connectionInfo)) {
-
-      if (con == null) {
-        Alerts.warn("Failed to connect to db", "Failed to establish a connection to the database");
-        return;
-      }
-
-      DatabaseMetaData meta = con.getMetaData();
-      ResultSet res = meta.getCatalogs();
-      List<String> dbList = new ArrayList<>();
-      while (res.next()) {
-        dbList.add(res.getString("TABLE_CAT"));
-      }
-      res.close();
+    try {
+      ConnectionHandler ch = new ConnectionHandler(connectionInfo);
+      List<String> dbList = ch.getDatabases();
       String content = String.join("\n", dbList);
       String title = "Databases for connection " + connectionInfo.getName();
-
       displayTextInWindow(title, content, CodeType.TXT);
-
-    } catch (SQLException e) {
-      String msg = gui.getConsoleComponent().createMessageFromEvalException(e);
+    } catch (ConnectionException e) {
+      String msg = gui.getConsoleComponent().createMessageFromEvalException(e.getCause());
       ExceptionAlert.showAlert(msg + e.getMessage(), e);
     }
   }
@@ -601,11 +540,9 @@ public class ConnectionsTab extends Tab {
     createAndShowWindow(title, scrollPane);
   }
 
-  Matrix runQuery(String sql, ConnectionInfo con) throws SQLException {
-    try (Connection connection = connect(con)){
-      ResultSet rs = connection.createStatement().executeQuery(sql);
-      return Matrix.builder().data(rs).build();
-    }
+  Matrix runQuery(String sql, ConnectionInfo con) throws ConnectionException {
+    ConnectionHandler ch = new ConnectionHandler(con);
+    return ch.query(sql);
   }
 
   void createTableTree(Matrix table, ConnectionInfo con) {
@@ -617,45 +554,6 @@ public class ConnectionsTab extends Tab {
     setNormalCursor();
     TreeView<String> treeView = createMetaDataTree(metaDataList, con);
     createAndShowWindow(connectionName + " connection view", treeView);
-  }
-
-  void runQueryInThread(String sql, ConnectionInfo con) {
-    Task<Matrix> task = new Task<>() {
-      @Override
-      public Matrix call() throws Exception {
-        try (Connection connection = connect(con)){
-          ResultSet rs = connection.createStatement().executeQuery(sql);
-          return Matrix.builder().data(rs).build();
-        } catch (RuntimeException e) {
-          // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
-          // this way we can get to the original one by extracting the cause from the thrown exception
-          throw new Exception(e);
-        }
-      }
-    };
-    task.setOnSucceeded(e -> {
-      try {
-        createTableTree(task.get(), con);
-      } catch (Throwable ex) {
-        setNormalCursor();
-        ExceptionAlert.showAlert("Failed to create connection tree view", ex);
-      }
-    });
-
-    task.setOnFailed(e -> {
-      setNormalCursor();
-      Throwable throwable = task.getException();
-      Throwable ex = throwable.getCause();
-      if (ex == null) {
-        ex = throwable;
-      }
-      log.warn("Exception when running sql code {}", sql, throwable);
-      String msg = gui.getConsoleComponent().createMessageFromEvalException(ex);
-      ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
-    });
-    Thread scriptThread = new Thread(task);
-    scriptThread.setDaemon(false);
-    scriptThread.start();
   }
 
   private void createAndShowWindow(String title, Parent view) {
@@ -796,27 +694,15 @@ public class ConnectionsTab extends Tab {
       tableRightClickMenu.getItems().add(sampleContent);
       sampleContent.setOnAction(event -> {
         String tableName = getSqlNodeValue(getTreeItem());
-        try (Connection connection = connect(con)){
-          if (connection == null) {
-            Alerts.warn("Failed to connect to database", "Failed to establish a connection to the database");
-            return;
-          }
-          try (Statement stm=connection.createStatement()){
-            stm.setMaxRows(200);
-            Matrix table;
-            try (ResultSet rs = stm.executeQuery("SELECT * from " + tableName)) {
-              rs.setFetchSize(200);
-              table = Matrix.builder().data(rs).build();
-            }
-            gui.getInoutComponent().viewTable(table, tableName);
-
-          }
-        } catch (SQLException e) {
+        try {
+          ConnectionHandler ch = new ConnectionHandler(con);
+          Matrix table = ch.query("SELECT * from " + tableName, 200);
+          gui.getInoutComponent().viewTable(table, tableName);
+        } catch (ConnectionException e) {
           ExceptionAlert.showAlert("Failed to sample table", e);
         }
       });
     }
-
 
     @Override
     public void updateItem(String item, boolean empty) {
@@ -834,84 +720,6 @@ public class ConnectionsTab extends Tab {
         }
       }
     }
-  }
-
-
-  @SuppressWarnings("unchecked")
-  public Connection connect(ConnectionInfo ci) throws SQLException {
-    log.info("Connecting to {} using {}", ci.getUrl(), ci.getDependency());
-    if (!ci.getUrl().contains("password")) {
-      ci.setPassword(passwordField.getText());
-    }
-    var gui = Gade.instance();
-    Driver driver;
-
-    try {
-      Dependency dep = new Dependency(ci.getDependency());
-      log.info("Resolving dependency {}", ci.getDependency());
-      File jar = GradleUtils.downloadArtifact(dep);
-      URL url = jar.toURI().toURL();
-      URL[] urls = new URL[]{url};
-      log.info("Dependency url is {}", urls[0]);
-      if (gui.dynamicClassLoader == null) {
-        ClassLoader cl;
-        cl = gui.getConsoleComponent().getClassLoader();
-        gui.dynamicClassLoader = new GroovyClassLoader(cl);
-      }
-
-      if (Arrays.stream(gui.dynamicClassLoader.getURLs()).noneMatch(p -> p.equals(url))) {
-        gui.dynamicClassLoader.addURL(url);
-      }
-
-    } catch (IOException | URISyntaxException e) {
-      Platform.runLater(() ->
-          ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
-      );
-      return null;
-    }
-
-
-    try {
-      log.info("Attempting to load the class {}", ci.getDriver());
-      Class<Driver> clazz = (Class<Driver>) gui.dynamicClassLoader.loadClass(ci.getDriver());
-      log.info("Loaded driver from session classloader, instating the driver {}", ci.getDriver());
-      try {
-        driver = clazz.getDeclaredConstructor().newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | NullPointerException e) {
-        log.error("Failed to instantiate the driver: {}, clazz is {}", ci.getDriver(), clazz, e);
-        Platform.runLater(() ->
-            Alerts.showAlert("Failed to instantiate the driver",
-                ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(),
-                Alert.AlertType.ERROR)
-        );
-        return null;
-      }
-    } catch (ClassCastException | ClassNotFoundException e) {
-      Platform.runLater(() ->
-          Alerts.showAlert("Failed to load driver",
-              ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(),
-              Alert.AlertType.ERROR)
-      );
-      return null;
-    }
-    Properties props = new Properties();
-    if ( urlContainsLogin(ci.getUrlSafe()) ) {
-      log.info("Skipping specified user/password since it is part of the url");
-    } else {
-      if (ci.getUser() != null) {
-        props.put("user", ci.getUser());
-        if (ci.getPassword() != null) {
-          props.put("password", ci.getPassword());
-        }
-      }
-    }
-    gui.setNormalCursor();
-    return driver.connect(ci.getUrl(), props);
-  }
-
-  public boolean urlContainsLogin(String url) {
-    String safeLcUrl = url.toLowerCase();
-    return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") ) || safeLcUrl.contains("@");
   }
 
   public Gade getGui() {

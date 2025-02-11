@@ -109,9 +109,6 @@ public class EnvironmentComponent extends TabPane {
   public void addConnection(ConnectionInfo connectionInfo) {
     connectionsTab.validateAndAddConnection(connectionInfo);
   }
-  public Connection connect(ConnectionInfo ci) throws SQLException {
-    return connectionsTab.connect(ci);
-  }
 
   public Set<ConnectionInfo> getDefinedConnections() {
     return connectionsTab.getDefinedConnections();

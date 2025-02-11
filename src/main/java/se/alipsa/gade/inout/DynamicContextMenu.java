@@ -162,10 +162,22 @@ public class DynamicContextMenu extends ContextMenu {
             Alerts.warn("Rename failed", "Failed to rename" + fileType + currentFile.getName() + " to " + file2.getAbsolutePath());
             return;
          }
+         // If we renamed a file that is currently opened in a tab then
+         // change that tab to reflect the rename
+         if (file2.isFile()) {
+            var activeTab = gui.getCodeComponent().getActiveTab();
+            gui.getCodeComponent().getTabs().forEach(tab -> {
+               if (activeTab.getFile().equals(currentFile)) {
+                  activeTab.setFile(file2);
+                  activeTab.setTitle(file2.getName());
+               }
+            });
+         }
          currentFile = file2;
          log.info("Renamed file to {}", currentFile);
          currentNode.setValue(null); // need to set null first, otherwise it will not refresh
          currentNode.setValue(new FileItem(currentFile));
+
       });
       getItems().add(renameMI);
 

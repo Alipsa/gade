@@ -1,15 +1,17 @@
 package se.alipsa.gade.code.sqltab;
 
+import se.alipsa.gade.console.CountDownTask;
 import se.alipsa.gade.console.ScriptThread;
 
 import java.sql.SQLException;
+import se.alipsa.gade.environment.connections.ConnectionException;
 
 public class SqlThread extends ScriptThread {
 
-  SqlTask task;
+  QueryTask task;
   SqlTab sqlTab;
 
-  public SqlThread(SqlTask task, SqlTab sqlTab) {
+  public SqlThread(QueryTask task, SqlTab sqlTab) {
     super(task, sqlTab);
     this.task = task;
     this.sqlTab = sqlTab;
@@ -21,7 +23,7 @@ public class SqlThread extends ScriptThread {
       System.out.println("Cancelling query");
       task.abort();
       task.cancel(true);
-    } catch (SQLException e) {
+    } catch (ConnectionException e) {
       e.printStackTrace();
     }
     super.interrupt();

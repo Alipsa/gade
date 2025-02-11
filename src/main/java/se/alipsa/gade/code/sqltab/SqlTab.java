@@ -18,6 +18,8 @@ import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.console.ConsoleComponent;
 //import se.alipsa.gade.environment.connections.ConnectionInfo;
+import se.alipsa.gade.console.CountDownTask;
+import se.alipsa.gade.environment.connections.ConnectionHandler;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
@@ -136,14 +138,27 @@ public class SqlTab extends TextAreaTab implements TaskListener {
       consoleComponent.addWarning(getTitle(), parseMessage.toString() + '\n', false);
     }
     consoleComponent.addOutput(getTitle(), "Query contains " + batchedQry.length + " statements", false, true);
-    SqlTask task = new SqlTask(connectionCombo.getValue(), con, gui, batchedQry, SqlTab.this);
+    ConnectionInfo ci = connectionCombo.getValue();
+    QueryTask task;
+    ConnectionHandler ch = new ConnectionHandler(ci);
+    if (ch.isJdbc()) {
+      task = new SqlTask(ch, con, gui, batchedQry, SqlTab.this);
+    } else if (ch.isBigQuery()) {
+      task = new BigQueryTask(ch, gui, batchedQry, SqlTab.this);
+    } else {
+      Alerts.warn("Unknown connection type", "The connection is of unknown type: " + ch.getConnectionType());
+      return;
+    }
 
     task.setOnSucceeded(e -> {
       taskEnded();
       setNormalCursor();
       consoleComponent.waiting();
       consoleComponent.addOutput("", "Success", true, true);
-      con = task.getValue();
+      var result = task.getValue();
+      if (result instanceof Connection c) {
+        con = c;
+      }
     });
 
     task.setOnFailed(e -> {
