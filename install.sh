@@ -68,8 +68,8 @@ echo "- Building Gade"
 PROPERTY_FILE=version.properties
 
 #VERSION=$(getProperty "version")
-#JAR_NAME=$(getProperty "jar.name")
-RELEASE_TAG=$(getProperty "release.tag")
+#JAR_NAME=$(getProperty "jarName")
+RELEASE_TAG=$(getProperty "releaseTag")
 
 TARGET_DIR="${PREF_TARGET}/gade-${RELEASE_TAG}"
 

@@ -39,8 +39,8 @@ function getProperty {
 }
 
 VERSION=$(getProperty "version")
-JAR_NAME=$(getProperty "jar.name")
-RELEASE_TAG=$(getProperty "release.tag")
+JAR_NAME=$(getProperty "jarName")
+RELEASE_TAG=$(getProperty "releaseTag")
 
 export JAVA_HOME="${DIR}"
 BIN_DIR="${DIR}/bin"

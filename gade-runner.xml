@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- This module was also published with a richer model, Gradle metadata,  -->
+  <!-- which should be used instead. Do not delete the following line which  -->
+  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+  <!-- that they should prefer consuming it instead. -->
+  <!-- do_not_remove: published-with-gradle-metadata -->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>se.alipsa</groupId>
+  <artifactId>gade-runner</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Gade Runner</name>
+  <description>Gade, A Groovy Analytics Development Environment</description>
+  <url>https://github.com/Alipsa/gade</url>
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://raw.githubusercontent.com/Alipsa/gade/main/LICENSE</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>perNyfelt</id>
+      <name>Per Nyfelt</name>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/Alipsa/gade.git</connection>
+    <developerConnection>scm:git:https://github.com/Alipsa/gade.git</developerConnection>
+    <url>https://github.com/Alipsa/gade/tree/main</url>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>se.alipsa</groupId>
+      <artifactId>gade</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+  <repositories>
+    <repository>
+      <id>gradle</id>
+      <url>https://repo.gradle.org/gradle/libs-releases</url>
+    </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <skipMain>true</skipMain>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-testCompile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <configuration>
+          <mainClass>se.alipsa.gade.Gade</mainClass>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.1.3</version>
+      </plugin>
+    </plugins>
+  </build>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.7</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- See https://central.sonatype.org/pages/apache-maven.html for details -->
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.7.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

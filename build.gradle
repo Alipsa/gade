@@ -1,14 +1,21 @@
+buildscript {
+    dependencies {
+        classpath 'se.alipsa.groovy:nexus-release-plugin:1.0.0-SNAPSHOT'
+    }
+}
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 // Run `gradle runtimeZip` to create the distributions
 plugins {
-    id 'java'
-    id 'application'
-    id 'org.beryx.runtime' version '1.13.1'
+    id('java')
+    id('application')
+    id('org.beryx.runtime').version('1.13.1')
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id "com.github.ben-manes.versions" version "0.51.0"
+    id("com.github.ben-manes.versions").version("0.51.0")
+    id('signing')
+    id('maven-publish')
 }
 
 group = 'se.alipsa'
@@ -50,7 +57,9 @@ repositories {
 
 dependencies {
     implementation 'org.apache.commons:commons-text:1.13.0'
-    implementation "org.apache.groovy:groovy-all:${groovyVersion}"
+    implementation ("org.apache.groovy:groovy-all:${groovyVersion}@pom") {
+        transitive = true
+    }
     implementation "org.apache.groovy:groovy-macro-library:${groovyVersion}"
     implementation "org.apache.groovy:groovy-ginq:$groovyVersion"
     //implementation 'org.apache.ivy:ivy:2.5.2'
@@ -125,12 +134,14 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
-    withSourcesJar()
-    withJavadocJar()
+    //withSourcesJar()
+    //withJavadocJar()
 }
 
 tasks.withType(JavaCompile) {
     options.deprecation = true
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
 }
 
 tasks.withType(GroovyCompile) { task ->
@@ -202,9 +213,9 @@ processResources.doLast {
 
     ant.propertyfile(file: "${projectDir}/version.properties") {
         ant.entry(key: "version", value: "${project.version}")
-        ant.entry(key: "jar.name", value: "${jarName}")
-        ant.entry(key: "release.tag", value: "${releaseTag}")
-        ant.entry(key: "build.date", value: "${getDate()}")
+        ant.entry(key: "jarName", value: "${jarName}")
+        ant.entry(key: "releaseTag", value: "${releaseTag}")
+        ant.entry(key: "buildDate", value: "${getDate()}")
         ant.entry(key: "matrixCoreVersion", value: "${matrixCoreVersion}")
         ant.entry(key: "matrixChartsVersion", value: "${matrixChartsVersion}")
         ant.entry(key: "matrixStatsVersion", value: "${matrixStatsVersion}")
@@ -221,11 +232,6 @@ processResources.doLast {
             //todir: "${buildDir}/resources/main"
             todir: project.layout.buildDirectory.dir("resources/main").get().asFile
     )
-}
-
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
 }
 
 test {
@@ -265,10 +271,11 @@ test {
     }
 }
 
+/*
 artifacts {
     archives sourcesJar
     archives javadocJar
-}
+}*/
 
 runtime {
     //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
@@ -389,4 +396,119 @@ tasks.named("dependencyUpdates").configure {
             }
         }
     }
+}
+
+//Maven Central uploads
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+    archiveClassifier.set('javadoc')
+}
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifact(javadocJar)
+            artifact(sourcesJar)
+            pom {
+                name = 'Gade'
+                description = "${project.description}"
+                url = "https://github.com/Alipsa/gade"
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://raw.githubusercontent.com/Alipsa/gade/main/LICENSE'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'perNyfelt'
+                        name = 'Per Nyfelt'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/Alipsa/gade/tree/main'
+                    connection = 'scm:git:https://github.com/Alipsa/gade.git'
+                    developerConnection = 'scm:git:https://github.com/Alipsa/gade.git'
+                }
+                /*
+                build {
+                    plugin {
+                        groupId='org.openjfx'
+                        artifactId='javafx-maven-plugin'
+                        version='0.0.8'
+                        configuration {
+                            mainClass='se.alipsa.gade.Gade'
+                        }
+                    }
+                }*/
+            }
+            /*
+             <repositories>
+               <repository>
+                 <id>my-internal-site</id>
+                 <url>https://myserver/repo</url>
+               </repository>
+             </repositories>
+             */
+            /*
+            pom.withXml{
+                def repos = asNode()
+                    .appendNode('repositories')
+
+                def gradleRepo = repos.appendNode('repository')
+                gradleRepo.appendNode('id', 'gradle')
+                gradleRepo.appendNode('url', 'https://repo.gradle.org/gradle/libs-releases')
+
+                def jitpackRepo = repos.appendNode('repository')
+                jitpackRepo.appendNode('id', 'jitpack.io')
+                jitpackRepo.appendNode('url', 'https://jitpack.io')
+
+                def plugin = asNode()
+                    .appendNode('build')
+                    .appendNode('plugins')
+                    .appendNode('plugin')
+                plugin.appendNode('groupId', 'org.openjfx')
+                plugin.appendNode('artifactId','javafx-maven-plugin')
+                plugin.appendNode('version','0.0.8')
+                plugin.appendNode('configuration')
+                .appendNode('mainClass', 'se.alipsa.gade.Gade')
+            }  */
+        }
+    }
+    if (project.ext.properties.sonatypeUsername) {
+        repositories {
+            maven {
+                credentials {
+                    username = sonatypeUsername
+                    password = sonatypePassword
+                }
+                url = nexusUrl
+            }
+        }
+    }
+}
+
+signing {
+    if (project.properties['signing.keyId'] != null) {
+        project.logger.lifecycle("Signing artifacts...")
+        sign publishing.publications.maven
+    } else {
+        project.logger.lifecycle("signing.keyId is not defined, skipping signing of artifacts...")
+    }
+}
+
+if (project.ext.properties.sonatypeUsername) {
+
+    apply plugin: 'nexus-release-plugin'
+    //apply plugin: 'se.alipsa.groovy.NexusReleasePlugin'
+    nexusReleasePlugin.nexusUrl = nexusUrl
+    nexusReleasePlugin.userName = sonatypeUsername
+    nexusReleasePlugin.password = sonatypePassword
 }

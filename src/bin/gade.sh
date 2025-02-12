@@ -37,8 +37,8 @@ function getProperty {
 }
 
 VERSION=$(getProperty "version")
-JAR_NAME=$(getProperty "jar.name")
-RELEASE_TAG=$(getProperty "release.tag")
+JAR_NAME=$(getProperty "jarName")
+RELEASE_TAG=$(getProperty "releaseTag")
 
 LIB_DIR=${DIR}/lib
 export PATH=$PATH:${LIB_DIR}

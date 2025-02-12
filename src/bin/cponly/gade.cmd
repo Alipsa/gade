@@ -7,8 +7,8 @@ set PROPERTY_FILE=version.properties
 FOR /F "tokens=1,2 delims==" %%G IN (%PROPERTY_FILE%) DO (set %%G=%%H)
 
 set VERSION=%version%
-set JAR_NAME=%jar.name%
-set RELEASE_TAG=%release.tag%
+set JAR_NAME=%jarName%
+set RELEASE_TAG=%releaseTag%
 set "LIB_DIR=%DIR%\lib"
 set "BIN_DIR=%DIR%\bin"
 set "PATH=%PATH%;%LIB_DIR%"

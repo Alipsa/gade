@@ -547,7 +547,7 @@ public class MainMenu extends MenuBar {
           try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
             props.load(is);
             version = props.getProperty("version");
-            releaseTag = props.getProperty("release.tag");
+            releaseTag = props.getProperty("releaseTag");
           } catch (IOException e) {
             ExceptionAlert.showAlert("Failed to load properties file", e);
           }
@@ -605,8 +605,8 @@ public class MainMenu extends MenuBar {
     try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
       props.load(is);
       version = props.getProperty("version");
-      releaseTag = props.getProperty("release.tag");
-      buildDate = props.getProperty("build.date");
+      releaseTag = props.getProperty("releaseTag");
+      buildDate = props.getProperty("buildDate");
       matrixCoreVersion = props.getProperty("matrixCoreVersion");
       matrixStatsVersion = props.getProperty("matrixStatsVersion");
       matrixDatasetsVersion = props.getProperty("matrixDatasetsVersion");
