@@ -160,7 +160,7 @@ public class Gade extends Application {
 
       if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
         final Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-        var dockIcon = defaultToolkit.getImage(getClass().getResource("/image/logo.png"));
+        var dockIcon = defaultToolkit.getImage(getClass().getResource("/image/logo_taskbar.png"));
         taskbar.setIconImage(dockIcon);
       }
     }
