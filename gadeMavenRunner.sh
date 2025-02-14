@@ -10,9 +10,15 @@ localRepo=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceSt
 pomfile="gade-runner-$version.pom"
 pomfilePath="$localRepo/se/alipsa/gade-runner/$version/$pomfile"
 
+if [[ "$version" == *SNAPSHOT ]]; then
+  repo='-DremoteRepositories=snapshots::default::https://oss.sonatype.org/content/repositories/snapshots'
+else
+  repo='-DremoteRepositories=central::default::http://repo1.maven.apache.org/maven2'
+fi
+
 if [[ ! -f ./$pomfile ]]; then
   if [[ ! -f "$pomfilePath" ]]; then
-    mvn dependency:get -Dartifact="se.alipsa:gade-runner:$version"
+    mvn -U dependency:get "$repo" -Dartifact="se.alipsa:gade-runner:$version"
   fi
   cp "$pomfilePath" .
 fi

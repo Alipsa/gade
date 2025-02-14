@@ -21,6 +21,9 @@ plugins {
 group = 'se.alipsa'
 version = '1.0.0-SNAPSHOT'
 description = 'Gade, A Groovy Analytics Development Environment'
+ext.nexusUrl = version.contains("SNAPSHOT")
+    ? "https://oss.sonatype.org/content/repositories/snapshots/"
+    : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
@@ -449,37 +452,6 @@ publishing {
                     }
                 }*/
             }
-            /*
-             <repositories>
-               <repository>
-                 <id>my-internal-site</id>
-                 <url>https://myserver/repo</url>
-               </repository>
-             </repositories>
-             */
-            /*
-            pom.withXml{
-                def repos = asNode()
-                    .appendNode('repositories')
-
-                def gradleRepo = repos.appendNode('repository')
-                gradleRepo.appendNode('id', 'gradle')
-                gradleRepo.appendNode('url', 'https://repo.gradle.org/gradle/libs-releases')
-
-                def jitpackRepo = repos.appendNode('repository')
-                jitpackRepo.appendNode('id', 'jitpack.io')
-                jitpackRepo.appendNode('url', 'https://jitpack.io')
-
-                def plugin = asNode()
-                    .appendNode('build')
-                    .appendNode('plugins')
-                    .appendNode('plugin')
-                plugin.appendNode('groupId', 'org.openjfx')
-                plugin.appendNode('artifactId','javafx-maven-plugin')
-                plugin.appendNode('version','0.0.8')
-                plugin.appendNode('configuration')
-                .appendNode('mainClass', 'se.alipsa.gade.Gade')
-            }  */
         }
     }
     if (project.ext.properties.sonatypeUsername) {
