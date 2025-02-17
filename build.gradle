@@ -99,7 +99,7 @@ dependencies {
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
-    implementation 'se.alipsa.groovy:gmd:1.0.7'
+    implementation 'se.alipsa.groovy:gmd:2.0.0-SNAPSHOT'
     implementation 'se.alipsa:simple-rest:1.0.6-SNAPSHOT'
     implementation(platform("se.alipsa.matrix:matrix-bom:$matrixBomVersion"))
     implementation("se.alipsa.matrix:matrix-core")
@@ -275,12 +275,6 @@ test {
     }
 }
 
-/*
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}*/
-
 runtime {
     //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
@@ -410,8 +404,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    archiveClassifier.set('sources')
     from sourceSets.main.allSource
+    archiveClassifier.set('sources')
 }
 
 publishing {
