@@ -5,12 +5,12 @@ create dynamic content. The process is gmd - md - html - pdf
 # Test
 
 <!-- By enclosing groovy code in scriptlet tags, it can be used to create markdown, e.g: -->
-<%
+```{groovy}
 def a = 3
 for (i in 1..a) {
   out.println("Hello ${i}")  
 }
-%>
+```
 
 - first 
 - second
