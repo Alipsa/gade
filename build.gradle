@@ -100,7 +100,7 @@ dependencies {
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
     implementation 'se.alipsa.groovy:gmd:2.0.0'
-    implementation 'se.alipsa:simple-rest:1.0.6-SNAPSHOT'
+    implementation 'se.alipsa:simple-rest:1.1.0-SNAPSHOT'
     implementation(platform("se.alipsa.matrix:matrix-bom:$matrixBomVersion"))
     implementation("se.alipsa.matrix:matrix-core")
     implementation "se.alipsa.matrix:matrix-stats"
