@@ -13,6 +13,7 @@ import se.alipsa.simplerest.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import se.alipsa.simplerest.RestException;
 
 import static se.alipsa.simplerest.CommonHeaders.basicAuthHeader;
 
@@ -20,7 +21,8 @@ public class MuninClient {
 
   private static final Logger log = LogManager.getLogger();
   private static RestClient restClient;
-  private static RestClient createClient() {
+
+  private static RestClient createClient() throws RestException {
     if (restClient == null) {
       restClient = new RestClient();
     }
