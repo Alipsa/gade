@@ -215,7 +215,7 @@ public class ViewTab extends Tab {
       StringWriter sw = new StringWriter();
       CSVFormat format = CSVFormat.DEFAULT.builder()
           .setHeader(headerList.toArray(new String[0]))
-          .build();
+          .get();
       CSVPrinter prn = new CSVPrinter(sw, format);
       List<String> rowValues = new ArrayList<>(headerList.size());
       for (final Integer row : rows) {

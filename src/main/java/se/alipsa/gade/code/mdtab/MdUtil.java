@@ -34,7 +34,8 @@ public class MdUtil {
 
   public static void saveMdAsPdf(String textContent, File outFile) {
     try {
-      gmd.processHtmlAndSaveAsPdf(gmd.gmdToHtmlDoc(textContent), outFile);
+      //gmd.processHtmlAndSaveAsPdf(gmd.gmdToHtmlDoc(textContent), outFile);
+      gmd.gmdToPdf(textContent, outFile);
     } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save md as pdf", e);
     }

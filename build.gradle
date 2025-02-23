@@ -1,6 +1,6 @@
 buildscript {
     dependencies {
-        classpath 'se.alipsa.groovy:nexus-release-plugin:1.0.0-SNAPSHOT'
+        classpath 'se.alipsa:nexus-release-plugin:1.0.1'
     }
 }
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -34,7 +34,7 @@ ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.3"
 ext.tikaVersion = '3.1.0' // Note '2.9.1' breaks @Grab
 
-def jdkVersion = "21.0.5+11"
+def jdkVersion = "21.0.6+10"
 
 application {
     mainClass = 'se.alipsa.gade.Gade'
@@ -98,7 +98,13 @@ dependencies {
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
-    implementation 'se.alipsa.groovy:gmd:2.0.0'
+    implementation 'se.alipsa.groovy:gmd:2.1.0-SNAPSHOT'
+    def openhtmltopdfVersion = "1.1.24"
+    implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
+    implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
+    implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openhtmltopdfVersion}")
+    implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
+
     implementation 'se.alipsa:simple-rest:1.1.0'
     implementation(platform("se.alipsa.matrix:matrix-bom:1.1.2"))
     implementation("se.alipsa.matrix:matrix-core")
@@ -472,7 +478,7 @@ signing {
 
 if (project.ext.properties.sonatypeUsername) {
 
-    apply plugin: 'nexus-release-plugin'
+    apply plugin: 'se.alipsa.nexus-release-plugin'
     //apply plugin: 'se.alipsa.groovy.NexusReleasePlugin'
     nexusReleasePlugin.nexusUrl = nexusUrl
     nexusReleasePlugin.userName = sonatypeUsername

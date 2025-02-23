@@ -1,39 +1,38 @@
 package se.alipsa.gade.code.gmdtab;
 
+import com.openhtmltopdf.mathmlsupport.MathMLDrawer;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.openhtmltopdf.svgsupport.BatikSVGDrawer;
 import javafx.concurrent.Worker;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import org.jsoup.nodes.Entities;
 import org.w3c.dom.Document;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.groovy.gmd.Gmd;
 import se.alipsa.groovy.gmd.GmdException;
 import se.alipsa.groovy.gmd.HtmlDecorator;
 
-import javax.script.ScriptException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-
-import static se.alipsa.gade.utils.DocUtil.saveHtmlAsPdf;
-import static se.alipsa.groovy.gmd.HtmlDecorator.HIGHLIGHT_JS_CSS;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class GmdUtil {
 
+  private static WebView webView;
   private static final Logger log = LogManager.getLogger();
 
   private static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.css";
@@ -62,7 +61,23 @@ public class GmdUtil {
    * @param textContent the content to write
    */
   public static void saveGmdAsPdf(String textContent, File target) throws GmdException {
-    saveHtmlAsPdf(convertGmdToHtml(textContent), target);
+
+    //gmd.gmdToPdf(textContent, target); this is much slower due to threading and Grab
+    //Gade.instance().getConsoleComponent().addOutput("", target + " saved", true, true);
+
+    ConsoleComponent console = Gade.instance().getConsoleComponent();
+    console.addOutput("saveGmdAsPdf", "converting gmd to html", false, true);
+    String html = gmd.gmdToHtmlDoc(textContent);
+    final AtomicReference<Throwable> exc = new AtomicReference<>(null);
+
+    webView = new WebView();
+    webView.getEngine().setOnError(handler -> ExceptionAlert.showAlert("Error loading content", handler.getException()));
+
+    runHtmlAndSavePdf(html, target, webView, exc);
+    if (exc.get() != null) {
+      ExceptionAlert.showAlert("Error processing gmd content", exc.get());
+    }
+    //webView = null;
   }
 
   public static void saveGmdAsHtml(File target, String textContent) throws GmdException {
@@ -74,4 +89,50 @@ public class GmdUtil {
     }
   }
 
+
+  static void runHtmlAndSavePdf(String html, File target, WebView webView, AtomicReference<Throwable> exc) {
+    WebEngine webEngine = webView.getEngine();
+    webEngine.setJavaScriptEnabled(true);
+    webEngine.setUserStyleSheetLocation(HtmlDecorator.BOOTSTRAP_CSS);
+    webEngine.getLoadWorker().stateProperty().addListener(( ov,  oldState, newState) ->  {
+        //log.info("loading html document, state is {}", newState);
+        if (newState == Worker.State.SUCCEEDED) {
+          try {
+            Document doc = webEngine.getDocument();
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+            transformer.setOutputProperty(OutputKeys.METHOD, "html");
+            transformer.setOutputProperty(OutputKeys.INDENT, "no");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+
+            StringWriter sw = new StringWriter();
+            transformer.transform(new DOMSource(doc), new StreamResult(sw));
+            String viewContent = sw.toString();
+            // the raw DOM document will not work so we have to parse it again with jsoup to get
+            // something that the PdfRendererBuilder (used in gmd) understands
+            org.jsoup.nodes.Document doc2 = Jsoup.parse(viewContent);
+            doc2.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+                .escapeMode(Entities.EscapeMode.extended)
+                .charset(StandardCharsets.UTF_8)
+                .prettyPrint(false);
+            Document doc3 = new W3CDom().fromJsoup(doc2);
+            try (OutputStream os = new FileOutputStream(target)) {
+              PdfRendererBuilder builder = new PdfRendererBuilder()
+                  .useSVGDrawer(new BatikSVGDrawer())
+                  .useMathMLDrawer(new MathMLDrawer())
+                  .withW3cDocument(doc3, new File(".").toURI().toString())
+                  .toStream(os);
+              builder.run();
+              Gade.instance().getConsoleComponent().addOutput("", target + " saved", true, true);
+            }
+          } catch (Throwable t) {
+            log.warn(t);
+            exc.set(t);
+          } finally {
+            Gade.instance().setNormalCursor();
+          }
+        }
+    });
+    webEngine.loadContent(html);
+  }
 }

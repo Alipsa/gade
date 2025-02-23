@@ -78,7 +78,9 @@ public class GmdTab extends TextAreaTab implements TaskListener {
       if (outFile == null) {
         return;
       }
+      gui.setWaitCursor();
       GmdUtil.saveGmdAsPdf(getTextContent(), outFile);
+      gui.setNormalCursor();
     } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save gmd as pdf", e);
     }
