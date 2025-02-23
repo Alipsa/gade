@@ -32,12 +32,13 @@ repositories {
 
 dependencies {
   // Use the latest Groovy version for building this project
-  implementation 'org.apache.groovy:groovy-all:4.0.24'
+  implementation 'org.apache.groovy:groovy-all:4.0.25'
 
   implementation 'org.knowm.xchart:xchart:3.8.6'
-  implementation 'se.alipsa.matrix:matrix-core:2.2.0-SNAPSHOT'
-  implementation 'se.alipsa.matrix:matrix-charts:1.0.0-SNAPSHOT'
-  implementation 'se.alipsa.matrix:matrix-datasets:1.1.0-SNAPSHOT'
+  implementation(platform("se.alipsa.matrix:matrix-bom:1.1.2"))
+  implementation 'se.alipsa.matrix:matrix-core'
+  implementation 'se.alipsa.matrix:matrix-charts'
+  implementation 'se.alipsa.matrix:matrix-datasets'
   implementation 'org.slf4j:slf4j-api:2.0.0'
   implementation 'org.slf4j:slf4j-simple:2.0.0'
   implementation 'org.openjfx:javafx-controls:21.0.1'

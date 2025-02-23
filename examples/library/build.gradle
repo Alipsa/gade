@@ -14,11 +14,11 @@ repositories {
 
 dependencies {
     // Use the latest Groovy version for building this library
-    implementation 'org.apache.groovy:groovy-all:4.0.24'
+    implementation 'org.apache.groovy:groovy-all:4.0.25'
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'org.slf4j:slf4j-api:2.0.0'
-    implementation('se.alipsa.matrix:matrix-core:2.2.0-SNAPSHOT')
+    implementation('se.alipsa.matrix:matrix-core:2.3.1')
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
     testImplementation 'org.slf4j:slf4j-simple:2.0.0'
