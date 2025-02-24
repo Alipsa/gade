@@ -98,7 +98,7 @@ dependencies {
     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
-    implementation 'se.alipsa.groovy:gmd:2.1.0-SNAPSHOT'
+    implementation 'se.alipsa.groovy:gmd:2.1.0'
     def openhtmltopdfVersion = "1.1.24"
     implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
@@ -119,14 +119,11 @@ dependencies {
     implementation "se.alipsa.matrix:matrix-bigquery"
     // Used by se.alipsa.gade.utils.SemanticVersion
     implementation 'org.apache.maven:maven-artifact:3.9.9'
-    implementation 'se.alipsa:gi-fx:1.0.0-SNAPSHOT'
+
     // TODO: this should not be needed as @Grab is working again
     implementation 'se.alipsa.groovy:dependency-resolver:1.0.0'
-
     implementation 'org.knowm.xchart:xchart:3.8.8'
-
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
-
     testImplementation 'com.h2database:h2:2.3.232'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
