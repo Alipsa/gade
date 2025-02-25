@@ -27,7 +27,7 @@ import java.util.List;
 
 import static se.alipsa.gade.Constants.*;
 import static se.alipsa.gade.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
-import static se.alipsa.gade.utils.MavenRepoLookup.*;
+import static se.alipsa.groovy.resolver.MavenRepoLookup.*;
 
 public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
   private static final Logger log = LogManager.getLogger();

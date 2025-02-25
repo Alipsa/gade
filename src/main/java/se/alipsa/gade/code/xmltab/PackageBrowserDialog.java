@@ -1,7 +1,7 @@
 package se.alipsa.gade.code.xmltab;
 
 import static se.alipsa.gade.Constants.FLOWPANE_INSETS;
-import static se.alipsa.gade.utils.MavenRepoLookup.metaDataUrl;
+import static se.alipsa.groovy.resolver.MavenRepoLookup.metaDataUrl;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -27,7 +27,7 @@ import org.xml.sax.SAXException;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.GuiUtils;
-import se.alipsa.gade.utils.MavenRepoLookup;
+import se.alipsa.groovy.resolver.MavenRepoLookup;
 
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;

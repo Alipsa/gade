@@ -34,7 +34,6 @@ import se.alipsa.matrix.sql.MatrixSql;
 import se.alipsa.groovy.resolver.*;
 import se.alipsa.matrix.core.Matrix;
 import se.alipsa.groovy.datautil.ConnectionInfo;
-import se.alipsa.gade.model.Dependency;
 import se.alipsa.gade.model.centralsearch.CentralSearchResult;
 import se.alipsa.gade.utils.*;
 

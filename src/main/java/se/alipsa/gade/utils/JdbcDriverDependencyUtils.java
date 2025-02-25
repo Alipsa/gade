@@ -5,7 +5,7 @@ import static se.alipsa.gade.Constants.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.model.Dependency;
+import se.alipsa.groovy.resolver.Dependency;
 
 import java.io.File;
 

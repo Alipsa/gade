@@ -21,10 +21,9 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.console.WarningAppenderWriter;
-import se.alipsa.gade.model.Dependency;
-import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
-import se.alipsa.gade.utils.MavenRepoLookup;
+import se.alipsa.groovy.resolver.Dependency;
+import se.alipsa.groovy.resolver.MavenRepoLookup;
 
 import java.io.*;
 import java.net.*;

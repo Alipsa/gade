@@ -3,7 +3,7 @@ package utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
-import se.alipsa.gade.model.Dependency;
+import se.alipsa.groovy.resolver.Dependency;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 

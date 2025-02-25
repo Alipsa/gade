@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.model.Dependency;
+import se.alipsa.groovy.resolver.Dependency;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.JdbcUrlParser;
