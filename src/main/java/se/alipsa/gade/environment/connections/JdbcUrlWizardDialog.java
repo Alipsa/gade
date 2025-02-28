@@ -210,8 +210,10 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     integratedSecurity.setOnAction(a -> {
       if (integratedSecurity.isSelected()) {
         options.add("integratedsecurity=true");
+        options.add(";authenticationScheme=JavaKerberos");
       } else {
         options.remove("integratedsecurity=true");
+        options.remove("authenticationScheme=JavaKerberos");
       }
       updateUrl();
     });
