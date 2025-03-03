@@ -112,6 +112,7 @@ dependencies {
     implementation "se.alipsa.matrix:matrix-datasets"
     implementation "se.alipsa.matrix:matrix-spreadsheet"
     implementation "se.alipsa.matrix:matrix-charts"
+    implementation "se.alipsa.matrix:matrix-xchart"
     implementation "se.alipsa.matrix:matrix-json"
     implementation "se.alipsa.matrix:matrix-csv"
     implementation "se.alipsa.matrix:matrix-sql"
@@ -213,6 +214,8 @@ processResources.doLast {
                 ext.matrixParquetVersion = extractVersionNumber('matrix-parquet', fileName)
             } else if (fileName.contains('matrix-bigquery')) {
                 ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
+            } else if (fileName.contains('matrix-xchart')) {
+                ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
             }
     }
 
@@ -231,6 +234,7 @@ processResources.doLast {
         ant.entry(key: "matrixSqlVersion", value: "${matrixSqlVersion}")
         ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
         ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
+        ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
     }
     ant.copy(
             file: "${projectDir}/version.properties",
