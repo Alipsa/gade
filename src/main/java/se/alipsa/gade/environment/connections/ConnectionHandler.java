@@ -1,5 +1,6 @@
 package se.alipsa.gade.environment.connections;
 
+import com.google.cloud.resourcemanager.v3.Project;
 import groovy.lang.GroovyClassLoader;
 import java.io.File;
 import java.io.IOException;
@@ -184,7 +185,7 @@ public class ConnectionHandler {
         return listDatabaseJdbc();
       } else {
         Bq bq = new Bq(connectionInfo.getUrl());
-        return bq.getProjects();
+        return bq.getProjects().stream().map(Project::getName).toList();
       }
     } catch (BqException e) {
       throw new ConnectionException("Failed to get list of databases", e);
