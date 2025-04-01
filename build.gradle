@@ -106,7 +106,7 @@ dependencies {
     implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
     implementation 'se.alipsa:simple-rest:1.1.0'
-    implementation(platform("se.alipsa.matrix:matrix-bom:2.1.1-SNAPSHOT"))
+    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.0"))
     implementation("se.alipsa.matrix:matrix-core")
     implementation "se.alipsa.matrix:matrix-stats"
     implementation "se.alipsa.matrix:matrix-datasets"
@@ -217,6 +217,8 @@ processResources.doLast {
                 ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
             } else if (fileName.contains('matrix-xchart')) {
                 ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
+            } else if (fileName.contains('matrix-tablesaw')) {
+                ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
             }
     }
 
@@ -236,6 +238,7 @@ processResources.doLast {
         ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
         ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
         ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
+        ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
     }
     ant.copy(
             file: "${projectDir}/version.properties",
