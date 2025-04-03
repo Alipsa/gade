@@ -1,5 +1,6 @@
 package se.alipsa.gade.environment.connections;
 
+import com.google.cloud.resourcemanager.v3.Project;
 import groovy.lang.GroovyClassLoader;
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
+
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import org.apache.logging.log4j.LogManager;
@@ -184,10 +187,10 @@ public class ConnectionHandler {
         return listDatabaseJdbc();
       } else {
         Bq bq = new Bq(connectionInfo.getUrl());
-        return bq.getProjects();
+        return bq.getProjects().stream().map(Project::getName).collect(Collectors.toList());
       }
     } catch (BqException e) {
-      throw new ConnectionException("Failed to get list of databases", e);
+      throw new ConnectionException("Failed to get list of databases (projects)", e);
     }
   }
 

@@ -6,8 +6,11 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.FileUtils;
+import se.alipsa.gade.utils.GuiUtils;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 
 import java.net.URL;
@@ -19,6 +22,7 @@ import static se.alipsa.gade.environment.connections.ConnectionsTab.*;
 
 public class ConnectionDialog extends Dialog<ConnectionInfo> {
 
+  private static final Logger log = LoggerFactory.getLogger(ConnectionDialog.class);
   private final TextField name;
   private final TextField dependencyText;
   private final TextField driverText;
@@ -64,7 +68,7 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
     if (user != null) {
       user = connectionsTab.getPrefOrBlank(USER_PREF);
     }
-    userText = new TextField();
+    userText = new TextField(user);
     HBox.setHgrow(userBox, Priority.SOMETIMES);
     userBox.getChildren().addAll(userLabel, userText);
     topInputPane.getChildren().add(userBox);
@@ -125,11 +129,7 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
     buttonInputPane.getChildren().addAll(wizardButton);
 
     setResizable(true);
-    String styleSheetPath = connectionsTab.getGui().getPrefs().get(THEME, BRIGHT_THEME);
-    URL styleSheetUrl = FileUtils.getResourceUrl(styleSheetPath);
-    if (styleSheetUrl != null) {
-      getDialogPane().getStylesheets().add(styleSheetUrl.toExternalForm());
-    }
+    GuiUtils.addStyle(connectionsTab.getGui(), this);
     VBox content = new VBox();
     content.setSpacing(5);
     content.getChildren().addAll(toggleBox, topInputPane, middleInputPane, bottomInputPane, buttonInputPane);
