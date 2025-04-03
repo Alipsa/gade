@@ -3,6 +3,7 @@ package se.alipsa.gade.inout.viewer;
 import static se.alipsa.gade.Constants.KEY_CODE_COPY;
 import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 
+import java.util.StringJoiner;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -93,19 +94,13 @@ public class ViewTab extends Tab {
       tableView.getSelectionModel().setCellSelectionEnabled(true);
       tableView.setOnMouseClicked(click -> {
         if (click.getClickCount() == 2) {
-          TablePosition pos = tableView.getSelectionModel().getSelectedCells().get(0);
-          int row = pos.getRow();
-          TableColumn column = pos.getTableColumn();
-          Object value = column.getCellData(row);
-          final ClipboardContent clipboardContent = new ClipboardContent();
-          clipboardContent.putString(String.valueOf(value));
-          Clipboard.getSystemClipboard().setContent(clipboardContent);
-          Gade.instance().getConsoleComponent().addOutput("copied " + value + " to clipboard", "", true, true);
+          copySelectionToClipboard(tableView, headerList);
+          Gade.instance().getConsoleComponent().addOutput("copied selection to clipboard", "", true, false);
         }
       });
       tableView.setOnKeyPressed(event -> {
         if (KEY_CODE_COPY.match(event)) {
-          copySelectionToClipboard(tableView);
+          copySelectionToClipboard(tableView, headerList);
           /*
           // Include header if all rows are selected
           boolean includeHeader = tableView.getSelectionModel().getSelectedCells().size() == rowList.size();
@@ -121,7 +116,7 @@ public class ViewTab extends Tab {
         final TableRow<List<String>> row = new TableRow<>();
         final ContextMenu contextMenu = new ContextMenu();
         final MenuItem copyCellsItem = new MenuItem("copy selection");
-        copyCellsItem.setOnAction(event -> copySelectionToClipboard(tv));
+        copyCellsItem.setOnAction(event -> copySelectionToClipboard(tv, headerList));
         final MenuItem copyMenuItem = new MenuItem("copy row(s)");
         copyMenuItem.setOnAction(event -> copyRowSelectionToClipboard(tv, null));
         final MenuItem copyWithHeaderMenuItem = new MenuItem("copy row(s) with header");
@@ -191,32 +186,36 @@ public class ViewTab extends Tab {
     return isNumeric;
   }
 
+  private void copySelectionToClipboard(final TableView<?> table, List<String> headerList) {
+    StringBuilder strb = new StringBuilder();
+    int previousRow = -1;
+    StringJoiner joiner = new StringJoiner("\t");
+    boolean doColumnCount = true;
+    int ncols = 0;
 
-  private void copySelectionToClipboard(final TableView<?> table) {
-    final StringBuilder strb = new StringBuilder();
-    int rowCount = 0;
-    boolean firstRow = true;
-    for (final TablePosition tablePosition : table.getSelectionModel().getSelectedCells()) {
-      int row = tablePosition.getRow();
-      if (firstRow) {
-        rowCount = row;
-        firstRow = false;
+    for (TablePosition<List<String>, String> tablePosition : table.getSelectionModel().getSelectedCells()) {
+      int currentRow = tablePosition.getRow();
+      if (currentRow != previousRow && previousRow != -1) {
+        strb.append(joiner).append('\n');
+        joiner = new StringJoiner("\t");
+        doColumnCount = false;
       }
-      if (rowCount != row) {
-        strb.deleteCharAt(strb.length() - 1); // replace the tab with newline
-        strb.append('\n');
-        rowCount = row;
+      if (doColumnCount) {
+        ncols ++;
       }
-      Object value = tablePosition.getTableColumn().getCellData(row);
-      strb.append(value == null ? "" : value.toString());
-      strb.append('\t');
+      String value = tablePosition.getTableColumn().getCellData(currentRow);
+      joiner.add(value == null ? "" : value);
+      previousRow = currentRow;
     }
-    String values = strb.toString();
-    if (values.endsWith("\t")) {
-      values = values.substring(0, values.length() - 1);
+
+    strb.append(joiner);
+
+    // Everything is selected: add header
+    if (table.getItems().size() -1 == previousRow && ncols == headerList.size()) {
+      strb.insert(0, String.join("\t", headerList) + "\n");
     }
-    final ClipboardContent clipboardContent = new ClipboardContent();
-    clipboardContent.putString(values);
+    ClipboardContent clipboardContent = new ClipboardContent();
+    clipboardContent.putString(strb.toString());
     Clipboard.getSystemClipboard().setContent(clipboardContent);
   }
 
