@@ -106,7 +106,7 @@ dependencies {
     implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
     implementation 'se.alipsa:simple-rest:1.1.0'
-    implementation(platform("se.alipsa.matrix:matrix-bom:2.1.1-SNAPSHOT"))
+    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.0"))
     implementation("se.alipsa.matrix:matrix-core")
     implementation "se.alipsa.matrix:matrix-stats"
     implementation "se.alipsa.matrix:matrix-datasets"
@@ -118,10 +118,11 @@ dependencies {
     implementation "se.alipsa.matrix:matrix-sql"
     implementation "se.alipsa.matrix:matrix-parquet"
     implementation "se.alipsa.matrix:matrix-bigquery"
+    implementation "se.alipsa.matrix:matrix-tablesaw"
     // Used by se.alipsa.gade.utils.SemanticVersion
     implementation 'org.apache.maven:maven-artifact:3.9.9'
 
-    implementation 'se.alipsa.groovy:dependency-resolver:1.0.1-SNAPSHOT'
+    implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
     implementation 'org.knowm.xchart:xchart:3.8.8'
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
     testImplementation 'com.h2database:h2:2.3.232'
@@ -216,6 +217,8 @@ processResources.doLast {
                 ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
             } else if (fileName.contains('matrix-xchart')) {
                 ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
+            } else if (fileName.contains('matrix-tablesaw')) {
+                ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
             }
     }
 
@@ -235,6 +238,7 @@ processResources.doLast {
         ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
         ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
         ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
+        ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
     }
     ant.copy(
             file: "${projectDir}/version.properties",
@@ -479,7 +483,6 @@ signing {
 if (project.ext.properties.sonatypeUsername) {
 
     apply plugin: 'se.alipsa.nexus-release-plugin'
-    //apply plugin: 'se.alipsa.groovy.NexusReleasePlugin'
     nexusReleasePlugin.nexusUrl = nexusUrl
     nexusReleasePlugin.userName = sonatypeUsername
     nexusReleasePlugin.password = sonatypePassword

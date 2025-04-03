@@ -187,7 +187,7 @@ public class ConnectionHandler {
         return listDatabaseJdbc();
       } else {
         Bq bq = new Bq(connectionInfo.getUrl());
-        return bq.getProjects().stream().map(Project::getName).collect(Collectors.toList());
+        return bq.getProjects().stream().map(Project::getName).toList();
       }
     } catch (BqException e) {
       throw new ConnectionException("Failed to get list of databases (projects)", e);

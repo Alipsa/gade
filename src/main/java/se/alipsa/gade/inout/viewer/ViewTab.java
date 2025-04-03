@@ -3,6 +3,7 @@ package se.alipsa.gade.inout.viewer;
 import static se.alipsa.gade.Constants.KEY_CODE_COPY;
 import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 
+import java.util.StringJoiner;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -90,29 +91,40 @@ public class ViewTab extends Tab {
 
       TableView<List<String>> tableView = new TableView<>();
       tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+      tableView.getSelectionModel().setCellSelectionEnabled(true);
+      tableView.setOnMouseClicked(click -> {
+        if (click.getClickCount() == 2) {
+          copySelectionToClipboard(tableView, headerList);
+          Gade.instance().getConsoleComponent().addOutput("copied selection to clipboard", "", true, false);
+        }
+      });
       tableView.setOnKeyPressed(event -> {
         if (KEY_CODE_COPY.match(event)) {
+          copySelectionToClipboard(tableView, headerList);
+          /*
           // Include header if all rows are selected
           boolean includeHeader = tableView.getSelectionModel().getSelectedCells().size() == rowList.size();
           if (includeHeader) {
-            copySelectionToClipboard(tableView, headerList);
+            copyRowSelectionToClipboard(tableView, headerList);
           } else {
-            copySelectionToClipboard(tableView, null);
-          }
+            copyRowSelectionToClipboard(tableView, null);
+          }*/
         }
       });
 
       tableView.setRowFactory(tv -> {
         final TableRow<List<String>> row = new TableRow<>();
         final ContextMenu contextMenu = new ContextMenu();
-        final MenuItem copyMenuItem = new MenuItem("copy");
-        copyMenuItem.setOnAction(event -> copySelectionToClipboard(tv, null));
-        final MenuItem copyWithHeaderMenuItem = new MenuItem("copy with header");
-        copyWithHeaderMenuItem.setOnAction(event -> copySelectionToClipboard(tv, headerList));
-        final MenuItem exportToCsvMenuItem = new MenuItem("export to csv");
-        exportToCsvMenuItem.setOnAction(event -> exportToCsv(tv, headerList, title));
+        final MenuItem copyCellsItem = new MenuItem("copy selection");
+        copyCellsItem.setOnAction(event -> copySelectionToClipboard(tv, headerList));
+        final MenuItem copyMenuItem = new MenuItem("copy row(s)");
+        copyMenuItem.setOnAction(event -> copyRowSelectionToClipboard(tv, null));
+        final MenuItem copyWithHeaderMenuItem = new MenuItem("copy row(s) with header");
+        copyWithHeaderMenuItem.setOnAction(event -> copyRowSelectionToClipboard(tv, headerList));
+        final MenuItem exportToCsvMenuItem = new MenuItem("export row(s) to csv");
+        exportToCsvMenuItem.setOnAction(event -> exportRowsToCsv(tv, headerList, title));
 
-        contextMenu.getItems().addAll(copyMenuItem, copyWithHeaderMenuItem, exportToCsvMenuItem);
+        contextMenu.getItems().addAll(copyCellsItem, copyMenuItem, copyWithHeaderMenuItem, exportToCsvMenuItem);
         row.contextMenuProperty().bind(
             Bindings.when(row.emptyProperty())
                 .then((ContextMenu) null)
@@ -174,9 +186,41 @@ public class ViewTab extends Tab {
     return isNumeric;
   }
 
+  private void copySelectionToClipboard(final TableView<?> table, List<String> headerList) {
+    StringBuilder strb = new StringBuilder();
+    int previousRow = -1;
+    StringJoiner joiner = new StringJoiner("\t");
+    boolean doColumnCount = true;
+    int ncols = 0;
+
+    for (TablePosition<List<String>, String> tablePosition : table.getSelectionModel().getSelectedCells()) {
+      int currentRow = tablePosition.getRow();
+      if (currentRow != previousRow && previousRow != -1) {
+        strb.append(joiner).append('\n');
+        joiner = new StringJoiner("\t");
+        doColumnCount = false;
+      }
+      if (doColumnCount) {
+        ncols ++;
+      }
+      String value = tablePosition.getTableColumn().getCellData(currentRow);
+      joiner.add(value == null ? "" : value);
+      previousRow = currentRow;
+    }
+
+    strb.append(joiner);
+
+    // Everything is selected: add header
+    if (table.getItems().size() -1 == previousRow && ncols == headerList.size()) {
+      strb.insert(0, String.join("\t", headerList) + "\n");
+    }
+    ClipboardContent clipboardContent = new ClipboardContent();
+    clipboardContent.putString(strb.toString());
+    Clipboard.getSystemClipboard().setContent(clipboardContent);
+  }
 
   @SuppressWarnings("rawtypes")
-  private void copySelectionToClipboard(final TableView<?> table, List<String> headerList) {
+  private void copyRowSelectionToClipboard(final TableView<?> table, List<String> headerList) {
     final Set<Integer> rows = new TreeSet<>();
     for (final TablePosition tablePosition : table.getSelectionModel().getSelectedCells()) {
       rows.add(tablePosition.getRow());
@@ -206,7 +250,7 @@ public class ViewTab extends Tab {
     Clipboard.getSystemClipboard().setContent(clipboardContent);
   }
 
-  private void exportToCsv(final TableView<?> table, List<String> headerList, String... title) {
+  private void exportRowsToCsv(final TableView<?> table, List<String> headerList, String... title) {
     final Set<Integer> rows = new TreeSet<>();
     for (final TablePosition<?, ?> tablePosition : table.getSelectionModel().getSelectedCells()) {
       rows.add(tablePosition.getRow());
