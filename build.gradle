@@ -16,6 +16,7 @@ plugins {
     id("com.github.ben-manes.versions").version("0.52.0")
     id('signing')
     id('maven-publish')
+    //id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 group = 'se.alipsa'
@@ -28,7 +29,7 @@ ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 ext.groovyVersion = "4.0.26"
-ext.jacksonVersion = '2.18.2'
+ext.jacksonVersion = '2.18.3'
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.3"
@@ -40,6 +41,10 @@ application {
     mainClass = 'se.alipsa.gade.Gade'
 }
 
+/*javafx {
+    version = '23.0.2'
+    modules = [ 'javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing' ]
+}*/
 
 repositories {
     if (version.contains('SNAPSHOT')) {
@@ -58,6 +63,12 @@ repositories {
 
 
 dependencies {
+    /*
+    implementation(implementation 'org.openjfx:javafx-controls:23.0.2')
+    implementation 'org.openjfx:javafx-web:23.0.2'
+    implementation 'org.openjfx:javafx-media:23.0.2'
+    implementation 'org.openjfx:javafx-swing:23.0.2'
+    */
     implementation 'org.apache.commons:commons-text:1.13.0'
     implementation ("org.apache.groovy:groovy-all:${groovyVersion}@pom") {
         transitive = true
@@ -74,9 +85,9 @@ dependencies {
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.17.0'
-    implementation 'org.jsoup:jsoup:1.18.3'
+    implementation 'org.jsoup:jsoup:1.19.1'
     implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
-    implementation 'org.fxmisc.richtext:richtextfx:0.11.4'
+    implementation 'org.fxmisc.richtext:richtextfx:0.11.5'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
@@ -91,15 +102,15 @@ dependencies {
     implementation 'org.gradle:gradle-tooling-api:8.13'
     implementation 'org.jetbrains:annotations:26.0.2'
     implementation 'io.github.classgraph:classgraph:4.8.179'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.1'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.3'
     implementation("se.alipsa.gi:gi-fx:1.0.0-SNAPSHOT") {
         exclude group: 'se.alipsa.matrix', module: '*'
     }
-    implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
+    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-    implementation 'se.alipsa.groovy:data-utils:1.0.6'
+    implementation 'se.alipsa.groovy:data-utils:2.0.0'
     implementation 'se.alipsa.groovy:gmd:2.2.0-SNAPSHOT'
-    def openhtmltopdfVersion = "1.1.24"
+    def openhtmltopdfVersion = "1.1.26"
     implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openhtmltopdfVersion}")
@@ -126,7 +137,7 @@ dependencies {
     implementation 'org.knowm.xchart:xchart:3.8.8'
     implementation 'com.github.hervegirod:fxsvgimage:1.1'
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'org.eclipse.jetty:jetty-server:10.0.20'

@@ -326,6 +326,8 @@ public class ViewTab extends Tab {
     viewPane.getTabs().add(tab);
     browser = new WebView();
     browser.setContextMenuEnabled(false);
+    tab.setContent(browser);
+
     WebEngine webEngine = browser.getEngine();
     webEngine.setJavaScriptEnabled(true);
     webEngine.setOnError(eh -> log.warn(eh.getMessage(), eh.getException()));
@@ -343,9 +345,6 @@ public class ViewTab extends Tab {
       } else if (newValue == Worker.State.SUCCEEDED) {
         createContextMenu(browser, pathUrl.get(), loadUrl.get());
         //document finished loading
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setContent(browser);
-        tab.setContent(scrollPane);
         viewPane.getSelectionModel().select(tab);
       } else if (newValue == Worker.State.FAILED) {
         log.warn("Failed to load content in view tab");
@@ -396,9 +395,7 @@ public class ViewTab extends Tab {
         webEngine.executeScript("window.onerror = function(msg, url, line, col, error) { return java.onError(msg, url, line, col, error);};");
       } else if (newValue == Worker.State.SUCCEEDED) {
         createContextMenu(browser, html);
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setContent(browser);
-        tab.setContent(scrollPane);
+        tab.setContent(browser);
         viewPane.getSelectionModel().select(tab);
       } else if (newValue == Worker.State.FAILED) {
         log.warn("Failed to load content in view tab");
