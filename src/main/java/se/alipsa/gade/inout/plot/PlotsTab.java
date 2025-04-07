@@ -41,7 +41,10 @@ public class PlotsTab extends Tab {
       tab.setText(title[0]);
     }
 
-    tab.setContent(node);
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setContent(node);
+
+    tab.setContent(scrollPane);
 
     final ContextMenu contextMenu = new ContextMenu();
     final MenuItem item = new MenuItem("save as image file");

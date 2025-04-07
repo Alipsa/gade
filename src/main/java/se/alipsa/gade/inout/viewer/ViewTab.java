@@ -6,8 +6,11 @@ import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 import java.util.StringJoiner;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Worker;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -15,6 +18,7 @@ import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
+import netscape.javascript.JSObject;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.logging.log4j.LogManager;
@@ -39,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ViewTab extends Tab {
 
@@ -47,6 +53,9 @@ public class ViewTab extends Tab {
       "NUMBER", "BYTE", "SHORT", "INTEGER", "INT", "LONG", "BIGINTEGER",
       "FLOAT", "DOUBLE", "BIGDECIMAL"
   );
+
+  // Keep a static reference to avoid aggressive cleanup by GC
+  private static WebView browser;
 
   private final TabPane viewPane;
 
@@ -315,33 +324,54 @@ public class ViewTab extends Tab {
     }
     tab.setTooltip(new Tooltip(url));
     viewPane.getTabs().add(tab);
-    WebView browser = new WebView();
+    browser = new WebView();
     browser.setContextMenuEnabled(false);
     WebEngine webEngine = browser.getEngine();
+    webEngine.setJavaScriptEnabled(true);
+    webEngine.setOnError(eh -> log.warn(eh.getMessage(), eh.getException()));
+
+    AtomicBoolean loadUrl = new AtomicBoolean(false);
+    AtomicReference<String> pathUrl = new AtomicReference<>(url);
+
+    webEngine.getLoadWorker().stateProperty().addListener( (observable, oldValue, newValue) -> {
+      //System.out.println(newValue);
+      if (newValue == Worker.State.RUNNING) {
+        var window = (JSObject) webEngine.executeScript("window");
+        window.setMember("java", new JsBridge());
+        webEngine.executeScript("console.log = function(message) { java.log(message); }");
+        webEngine.executeScript("window.onerror = function(msg, url, line, col, error) { return java.onError(msg, url, line, col, error);};");
+      } else if (newValue == Worker.State.SUCCEEDED) {
+        createContextMenu(browser, pathUrl.get(), loadUrl.get());
+        //document finished loading
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(browser);
+        tab.setContent(scrollPane);
+        viewPane.getSelectionModel().select(tab);
+      } else if (newValue == Worker.State.FAILED) {
+        log.warn("Failed to load content in view tab");
+      }
+    });
     if (url.startsWith("http") || url.startsWith("file:")) {
       log.info("Opening {} in view tab", url);
+      loadUrl.set(true);
       webEngine.load(url);
-      createContextMenu(browser, url, true);
     } else {
       try {
         if (Paths.get(url).toFile().exists()) {
           String path = Paths.get(url).toUri().toURL().toExternalForm();
           log.info("Opening {} in view tab", path);
+          pathUrl.set(path);
+          loadUrl.set(true);
           webEngine.load(path);
-          createContextMenu(browser, path, true);
         } else {
           log.info("url is not a http url nor a local path, assuming it is content...");
           webEngine.loadContent(url);
-          createContextMenu(browser, url);
         }
       } catch (MalformedURLException | InvalidPathException e) {
-        log.info("url is not a http url nor a local path, assuming it is content...");
+        log.info("{}, url is not a http url nor a local path, assuming it is content...", e.toString());
         webEngine.loadContent(url);
-        createContextMenu(browser, url);
       }
     }
-    tab.setContent(browser);
-    viewPane.getSelectionModel().select(tab);
   }
 
   public void viewHtmlWithBootstrap(String content, String... title) {
@@ -350,14 +380,30 @@ public class ViewTab extends Tab {
       tab.setText(title[0]);
     }
     viewPane.getTabs().add(tab);
-    WebView browser = new WebView();
+    browser = new WebView();
     browser.setContextMenuEnabled(false);
 
     WebEngine webEngine = browser.getEngine();
+    webEngine.setOnError(eh -> log.warn(eh.getMessage(), eh.getException()));
     String html = HtmlDecorator.decorate(content, true);
+    webEngine.setJavaScriptEnabled(true);
+    webEngine.getLoadWorker().stateProperty().addListener( (observable, oldValue, newValue) -> {
+      //System.out.println(newValue);
+      if (newValue == Worker.State.RUNNING) {
+        var window = (JSObject) webEngine.executeScript("window");
+        window.setMember("java", new JsBridge());
+        webEngine.executeScript("console.log = function(message) { java.log(message); }");
+        webEngine.executeScript("window.onerror = function(msg, url, line, col, error) { return java.onError(msg, url, line, col, error);};");
+      } else if (newValue == Worker.State.SUCCEEDED) {
+        createContextMenu(browser, html);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(browser);
+        tab.setContent(scrollPane);
+        viewPane.getSelectionModel().select(tab);
+      } else if (newValue == Worker.State.FAILED) {
+        log.warn("Failed to load content in view tab");
+      }
+    });
     webEngine.loadContent(html);
-    createContextMenu(browser, html);
-    tab.setContent(browser);
-    viewPane.getSelectionModel().select(tab);
   }
 }

@@ -71,6 +71,10 @@ public class Gade extends Application {
     return instance;
   }
 
+  public void openInBrowser(File outFile) {
+    getHostServices().showDocument(outFile.toURI().toString());
+  }
+
   @Override
   public void start(Stage primaryStage) {
     log.info("Starting Gade...");

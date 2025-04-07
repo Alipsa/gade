@@ -11,10 +11,13 @@ import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.groovy.gmd.GmdException;
 
+import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 
 public class GmdTab extends TextAreaTab implements TaskListener {
 
@@ -22,6 +25,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
   Button viewButton;
   Button htmlButton;
   Button pdfButton;
+  Button browserButton;
 
   public GmdTab(String title, Gade gui) {
     super(gui, CodeType.GMD);
@@ -51,11 +55,17 @@ public class GmdTab extends TextAreaTab implements TaskListener {
     pdfButton.setOnAction(this::exportToPdf);
     buttonPane.getChildren().add(pdfButton);
 
+    browserButton = new Button();
+    browserButton.setGraphic(new ImageView(IMG_BROWSER));
+    browserButton.setTooltip(new Tooltip("Open in browser"));
+    browserButton.setOnAction(this::openInBrowser);
+    buttonPane.getChildren().add(browserButton);
+
   }
 
   private void viewMdr(ActionEvent actionEvent) {
     try {
-      GmdUtil.viewGmd(gui, getTitle(), getTextContent());
+      GmdUtil.viewGmd(gui, getTitle(), getAllTextContent());
     } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to view gmd", e);
     }
@@ -79,12 +89,23 @@ public class GmdTab extends TextAreaTab implements TaskListener {
         return;
       }
       gui.setWaitCursor();
-      GmdUtil.saveGmdAsPdf(getTextContent(), outFile);
+      GmdUtil.saveGmdAsPdf(getAllTextContent(), outFile);
       gui.setNormalCursor();
     } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save gmd as pdf", e);
     }
   }
+
+  private void openInBrowser(ActionEvent actionEvent) {
+    try {
+      File outFile = File.createTempFile("gmd", ".html");
+      GmdUtil.saveGmdAsHtml(outFile, getAllTextContent());
+      gui.openInBrowser(outFile);
+    } catch (GmdException | IOException | RuntimeException e) {
+      ExceptionAlert.showAlert("Failed to view gmd", e);
+    }
+  }
+
 
   private void exportToHtml(ActionEvent actionEvent) {
     try {
@@ -103,7 +124,7 @@ public class GmdTab extends TextAreaTab implements TaskListener {
       if (outFile == null) {
         return;
       }
-      GmdUtil.saveGmdAsHtml(outFile, getTextContent());
+      GmdUtil.saveGmdAsHtml(outFile, getAllTextContent());
     } catch (GmdException e) {
       ExceptionAlert.showAlert("Failed to save gmd as html", e);
     }

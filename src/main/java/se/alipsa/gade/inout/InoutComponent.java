@@ -241,6 +241,7 @@ public class InoutComponent extends TabPane  {
   }
 
   public void viewHtml(String html, String... title) {
+    //System.out.println("viewHtml:\n" + html);
     Platform.runLater(() -> {
       try {
         viewer.viewHtml(html, title);

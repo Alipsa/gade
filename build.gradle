@@ -95,10 +95,10 @@ dependencies {
     implementation("se.alipsa.gi:gi-fx:1.0.0-SNAPSHOT") {
         exclude group: 'se.alipsa.matrix', module: '*'
     }
-    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
+    implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:1.0.6'
-    implementation 'se.alipsa.groovy:gmd:2.1.0'
+    implementation 'se.alipsa.groovy:gmd:2.2.0-SNAPSHOT'
     def openhtmltopdfVersion = "1.1.24"
     implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")

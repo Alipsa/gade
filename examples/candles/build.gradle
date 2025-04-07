@@ -16,7 +16,7 @@
 plugins {
   id 'groovy'
   // Allows us to do gradle dependencyUpdates -Drevision=release
-  id "com.github.ben-manes.versions" version "0.42.0"
+  id "com.github.ben-manes.versions" version "0.52.0"
 }
 
 repositories {
@@ -24,8 +24,8 @@ repositories {
 }
 
 dependencies {
-  def groovy4Version = "4.0.24"
-  def tablesawVersion = "0.43.1"
+  def groovy4Version = "4.0.26"
+  def tablesawVersion = "0.44.1"
   def slf4jVersion = "1.7.36"
   def log4j2Version = "2.18.0"
   implementation "org.apache.groovy:groovy:$groovy4Version"

@@ -53,6 +53,10 @@ public class GmdUtil {
     gui.getInoutComponent().viewHtml(convertGmdToHtml(textContent), title);
   }
 
+  public static void viewGmdWithBootstrap(Gade gui, String title, String textContent) throws GmdException {
+    gui.getInoutComponent().viewHtmlWithBootstrap(gmd.gmdToHtml(textContent), title);
+  }
+
   private static String convertGmdToHtml(String textContent) throws GmdException {
     return gmd.gmdToHtmlDoc(textContent);
   }
