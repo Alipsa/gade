@@ -52,7 +52,7 @@ def addJavaFxDependencies() {
     println "Unknown OS: $os, arch: $arch, unable to determine JavaFX classifier"
     System.exit(1)
   }
-  def javafxVersion = '21.0.6'
+  def javafxVersion = System.getProperty("java.version") //'21.0.6'
   Grape.grab(group: 'org.openjfx', module: 'javafx-base', version: "$javafxVersion", classifier: "$classifier")
   Grape.grab(group: 'org.openjfx', module: 'javafx-graphics', version: "$javafxVersion", classifier: "$classifier")
   Grape.grab(group: 'org.openjfx', module: 'javafx-controls', version: "$javafxVersion", classifier: "$classifier")
