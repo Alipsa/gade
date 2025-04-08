@@ -634,6 +634,7 @@ public class MainMenu extends MenuBar {
         .append(System.getProperty("java.runtime.version"))
         .append(" (").append(System.getProperty("os.arch")).append(")")
         .append(")")
+        .append("\n JavaFx Version: ").append(System.getProperty("javafx.runtime.version"))
         .append("\n Groovy version: ").append(GroovySystem.getVersion())
         .append("\n Nashorn version: ").append(nashornScriptEngineFactory.getEngineVersion())
         .append(" (").append(nashornScriptEngineFactory.getLanguageName())
@@ -651,7 +652,7 @@ public class MainMenu extends MenuBar {
         .append("\n Matrix-charts version: ").append(matrixChartsVersion);
 
     content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues.");
-    showInfoAlert("About Gade", content, 630, 380);
+    showInfoAlert("About Gade", content, 630, 390);
 
   }
 
