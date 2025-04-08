@@ -6,6 +6,7 @@
 #######################################
 set -e
 version='1.0.0-SNAPSHOT'
+echo "Locating local repository..."
 localRepo=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
 
 pomfile="gade-runner-$version.pom"
@@ -16,13 +17,14 @@ if [[ "$version" == *SNAPSHOT ]]; then
 else
   repo='-DremoteRepositories=central::default::http://repo1.maven.apache.org/maven2'
 fi
-
+echo "Updating gade dependencies"
 if [[ ! -f ./$pomfile ]]; then
   if [[ ! -f "$pomfilePath" ]]; then
     mvn -U dependency:get "$repo" -Dartifact="se.alipsa:gade-runner:$version"
   fi
-  cp "$pomfilePath" .
+  cp -f "$pomfilePath" .
 fi
-
+echo "Starting Gade..."
 mvn -q -f "$pomfile" javafx:run
+rm "$pomfile"
 
