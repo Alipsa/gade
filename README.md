@@ -21,7 +21,11 @@ for git and gradle making it a very convenient development environment for analy
 If you have maven and java 21 installed, the easiest way to run Gade is to
 copy the gadeMavenRunner.sh script from the releases tab to a directory of choice and just run the script to start Gade.
 
-#### To in stall a zipped distribution
+#### Run Gade via groovy
+If you have groovy installed, you can instead start gade using the gade.groovy script as follows
+`groovy gade.groovy`
+
+#### To install a zipped distribution
 The Zip distribution is a self-contained package of Gade which does not need any other pre-requisites.
 Go to the releases tab and expand the assets section at the bottom of the release.
 Unzip the zip file gade-platform-version.zip e.g. gade-linux-1.0.0.zip into a directory of choice.
