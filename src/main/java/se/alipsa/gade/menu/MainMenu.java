@@ -603,6 +603,7 @@ public class MainMenu extends MenuBar {
     String matrixParquetVersion = "unknown";
     String matrixBigQueryVersion = "unknown";
     String matrixXchartVersion = "unknown";
+    String matrixTablesawVersion = "unknown";
     try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
       props.load(is);
       version = props.getProperty("version");
@@ -619,6 +620,7 @@ public class MainMenu extends MenuBar {
       matrixParquetVersion = props.getProperty("matrixParquetVersion");
       matrixBigQueryVersion = props.getProperty("matrixBigQueryVersion");
       matrixXchartVersion = props.getProperty("matrixXchartVersion");
+      matrixTablesawVersion = props.getProperty("matrixTablesawVersion");
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to load properties file", e);
     }
@@ -649,10 +651,11 @@ public class MainMenu extends MenuBar {
         .append("\n Matrix-datasets version: ").append(matrixDatasetsVersion)
         .append("\n Matrix-parquet version: ").append(matrixParquetVersion)
         .append("\n Matrix-bigquery version: ").append(matrixBigQueryVersion)
-        .append("\n Matrix-charts version: ").append(matrixChartsVersion);
+        .append("\n Matrix-charts version: ").append(matrixChartsVersion)
+        .append("\n Matrix-tablesaw version: ").append(matrixTablesawVersion);
 
     content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues.");
-    showInfoAlert("About Gade", content, 630, 390);
+    showInfoAlert("About Gade", content, 630, 400);
 
   }
 
