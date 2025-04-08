@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #######################################
 # maven based launcher
-# requires maven and java 21 installed
+# requires maven 3.6.3 or later
+# and java 21 or later installed
 #######################################
 set -e
 version='1.0.0-SNAPSHOT'
