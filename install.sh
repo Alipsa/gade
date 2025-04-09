@@ -145,12 +145,8 @@ if [[ "${PLATFORM}" == "mac" ]]; then
   cp -r "$TARGET_DIR" "$APP_DIR"
   CONTENT_DIR="${APP_DIR}/Contents"
   MACOS_DIR="${CONTENT_DIR}/MacOS"
-  RESOURCE_DIR="${CONTENT_DIR}/Resources"
   mkdir -p "$MACOS_DIR"
-  mkdir -p "$RESOURCE_DIR"
-  cp "$SCRIPT_DIR/src/main/mac/Info.plist" "$CONTENT_DIR/"
-  cp "$SCRIPT_DIR/src/main/mac/gade.icns" "${RESOURCE_DIR}/"
-  cp "$SCRIPT_DIR/src/main/mac/gade" "${MACOS_DIR}/"
+  cp -r "$SCRIPT_DIR/src/main/resources/mac/Contents/" "$CONTENT_DIR/"
   chmod +x "${MACOS_DIR}/gade"
   SetFile -a B "${APP_DIR}"
 fi
