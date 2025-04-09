@@ -17,11 +17,10 @@ mvn dependency:copy -Dartifact=se.alipsa:gade-runner:$gadeVersion:pom -DoutputDi
 # Copy dependencies to target/dependency
 mvn -f gade-runner-$gadeVersion.pom dependency:copy-dependencies -DoutputDirectory="$libDir"
 mv "$libDir"/javafx-*.jar "$jfxDir/"
-
+JAR_NAME="gade-$gadeVersion.jar"
 # We now copy the gade.sh script so the below can be removed
 #MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 #LD_PATH="${libDir}"
-#JAR_NAME="gade-$gadeVersion.jar"
 #JAVA=$(command -v java)
 
 #cat > $appDir/gade.sh <<- EOM
@@ -43,7 +42,7 @@ mv "$appDir/mac/Contents" "$appDir/Contents"
 rm -r "$appDir/mac"
 
 unzip $libDir/$JAR_NAME 'script/*' -d "$appDir"
-mv "$appDir/script" "$appDir/"
+cp "$appDir"/script/* "$appDir/"
 rm -r "$appDir/script"
 
 # Cleanup

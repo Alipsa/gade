@@ -2,16 +2,15 @@
 set DIR=%~dp0%.
 cd %DIR%
 
-set PROPERTY_FILE=version.properties
-
-FOR /F "tokens=1,2 delims==" %%G IN (%PROPERTY_FILE%) DO (set %%G=%%H)
-
-set VERSION=%version%
-set JAR_NAME=%jarName%
-set RELEASE_TAG=%releaseTag%
 set "LIB_DIR=%DIR%\lib"
-set "BIN_DIR=%DIR%\bin"
 set "PATH=%PATH%;%LIB_DIR%"
+
+setlocal
+set "jars=gade-*.jar"
+pushd %LIB_DIR%
+for %%a in (%jars%) do set JAR_NAME=%%a
+popd
+endlocal
 
 :: Allow for any kind of customization of variables or paths etc. without having to change this script
 :: which would otherwise be overwritten on a subsequent install.
@@ -27,9 +26,16 @@ if not defined JAVA_CMD (
 	set JAVA_CMD=javaw
 )
 
-start %BIN_DIR%\%JAVA_CMD% -cp %LIB_DIR%/%JAR_NAME% %JAVA_OPTS% se.alipsa.gade.splash.SplashScreen
+set MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 
 start %BIN_DIR%\%JAVA_CMD% ^
--Djava.library.path="%LIB_DIR%" -cp %JAR_NAME%;%LIB_DIR%\* ^
+--enable-native-access=javafx.graphics,javafx.media,javafx.web ^
+--module-path %LIB_DIR%/win --add-modules %MODULES% ^
+-cp %LIB_DIR%/%JAR_NAME% %JAVA_OPTS% se.alipsa.gade.splash.SplashScreen
+
+start %BIN_DIR%\%JAVA_CMD% ^
+--enable-native-access=javafx.graphics,javafx.media,javafx.web ^
+--module-path %LIB_DIR%/win --add-modules %MODULES% ^
+-Djava.library.path="%LIB_DIR%" -cp %LIB_DIR%\* ^
 %JAVA_OPTS% ^
 se.alipsa.gade.Gade

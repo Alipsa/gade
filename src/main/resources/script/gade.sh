@@ -8,6 +8,8 @@ function notify() {
     zenity --info --text="$1"
   elif command -v notify-send > /dev/null 2>&1; then
     notify-send "$1"
+  elif command -v osascript > /dev/null 2>&1; then
+    osascript -e "display notification \"$1\" with title \"Gade\""
   elif [[ "${OSTYPE}" == "msys" ]]; then
     msg ${USERNAME} "$1" /time:30
   fi
@@ -28,17 +30,8 @@ function posixpath {
 
 cd "${DIR}" || { notify "Failed to cd to $DIR"; exit 1; }
 
-PROPERTY_FILE=version.properties
-
-function getProperty {
-   PROP_KEY=$1
-   PROP_VALUE=$(cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f2)
-   echo "$PROP_VALUE" | xargs
-}
-
-VERSION=$(getProperty "version")
-JAR_NAME=$(getProperty "jarName")
-RELEASE_TAG=$(getProperty "releaseTag")
+JAR_NAME=$(ls lib/gade-*.jar)
+JAR_NAME=$(basename "$JAR_NAME")
 
 LIB_DIR=${DIR}/lib
 export PATH=$PATH:${LIB_DIR}
@@ -57,7 +50,9 @@ function fullJavaPath {
     JAVA_CMD=$(command -v "${JAVA_CMD}")
   fi
   if [[ ! -f ${JAVA_CMD} ]]; then
-    echo "Failed to find $1 as $JAVA_CMD, set JAVA_HOME and/or PATH to $1 in env.sh and try again"
+    msg="Failed to find $1 as $JAVA_CMD, set JAVA_HOME and/or PATH to $1 in env.sh and try again"
+    echo "$msg"
+    notify "$msg"
     exit 1
   fi
   echo "${JAVA_CMD}"
@@ -89,14 +84,23 @@ if [[ "${OS}" == "win" ]]; then
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
-	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES} -cp "${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
+	start ${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES} \
+	-cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
-	start ${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
+	start ${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
+	-cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
 else
 	JAVA_CMD=$(fullJavaPath "java")
-	CLASSPATH="${JAR_NAME}:${LIB_DIR}/*"
+	CLASSPATH="${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
-	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -cp "${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
+	${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  \
+	-cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
-	${JAVA_CMD} --module-path ${LIB_DIR}/${OS} --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
+	${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  \
+	-Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
 fi
+exit 0
