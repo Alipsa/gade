@@ -25,6 +25,15 @@ copy the gadeMavenRunner.sh script from the releases tab to a directory of choic
 If you have groovy installed, you can instead start gade using the gade.groovy script as follows
 `groovy gade.groovy`
 
+#### Installing via the installFromMaven.sh script
+The installFromMaven.sh downloads all the dependencies from maven central and other nexus repositories and creates
+a local (off-line) installation. The distribution will be specific to the operating system you run the script in
+since javafx is OS specific. The resulting application will be created in the gade.app directory. 
+It is structured in the same way as a mac application but works perfectly fine on Linux and Windows.
+pre-requisites for this option are:
+1. A Java JDK version 21 or later installed and available on the path
+2. Maven version 3.6.3 or later installed and the mvn command available on the path 
+
 #### To install a zipped distribution
 The Zip distribution is a self-contained package of Gade which does not need any other pre-requisites.
 Go to the releases tab and expand the assets section at the bottom of the release.
