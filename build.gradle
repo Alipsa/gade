@@ -75,7 +75,7 @@ dependencies {
     }
     implementation "org.apache.groovy:groovy-macro-library:${groovyVersion}"
     implementation "org.apache.groovy:groovy-ginq:$groovyVersion"
-    //implementation 'org.apache.ivy:ivy:2.5.2'
+    //implementation 'org.apache.ivy:ivy:2.5.3' // needed for @Grab but included in groovy-console (part of groovy-all
 
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
@@ -106,10 +106,12 @@ dependencies {
     implementation("se.alipsa.gi:gi-fx:1.0.0-SNAPSHOT") {
         exclude group: 'se.alipsa.matrix', module: '*'
     }
-    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
+    //implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
+    implementation "org.commonmark:commonmark:0.24.0"
+    implementation "org.commonmark:commonmark-ext-gfm-tables:0.24.0"
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:2.0.0'
-    implementation 'se.alipsa.groovy:gmd:2.2.0-SNAPSHOT'
+    implementation 'se.alipsa.groovy:gmd:2.2.0'
     def openhtmltopdfVersion = "1.1.26"
     implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
