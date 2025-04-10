@@ -1,33 +1,31 @@
 #!/usr/bin/env bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+LOG="$DIR/startup.log"
+echo "Starting gade.sh" > "$LOG"
 
+echo "Define notify function" >> "$LOG"
 function notify() {
   echo "$1"
   if command -v zenity > /dev/null 2>&1; then
     zenity --info --text="$1"
   elif command -v notify-send > /dev/null 2>&1; then
     notify-send "$1"
-  elif command -v osascript > /dev/null 2>&1; then
-    osascript -e "display notification \"$1\" with title \"Gade\""
+  elif [[ -f /usr/bin/osascript ]]; then
+    # must define full path to osascript for his to work as an mac app.
+    /usr/bin/osascript -e "display notification \"$1\" with title \"Gade\""
   elif [[ "${OSTYPE}" == "msys" ]]; then
-    msg ${USERNAME} "$1" /time:30
+    msg "${USERNAME}" "$1" /time:30
   fi
 }
 
 # on gitbash (msys) we need to convert to windows style path for java
+echo "Define winpath function" >> "$LOG"
 function winpath {
   echo "${1}" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/'
 }
 
-function posixpath {
-  if [[ "${OSTYPE}" == "msys" ]]; then
-    echo "${1}" | sed -e 's/\\/\//g' -e 's/://' -e '/\/$/! s|$|/|'
-  else
-    echo "/${1}" | sed -e 's/\\/\//g' -e 's/://' -e '/\/$/! s|$|/|'
-  fi
-}
-
+echo "cd to script dir" >> "$LOG"
 cd "${DIR}" || { notify "Failed to cd to $DIR"; exit 1; }
 
 JAR_NAME=$(ls lib/gade-*.jar)
@@ -38,25 +36,22 @@ export PATH=$PATH:${LIB_DIR}
 
 # Allow for any kind of customization of variables or paths etc. without having to change this script
 # which would otherwise be overwritten on a subsequent install.
+echo "Call env.sh" >> "$LOG"
 if [[ -f $DIR/env.sh ]]; then
   source "$DIR/env.sh"
 fi
 
-function fullJavaPath {
-  JAVA_CMD=$1
-  if [[ -n "${JAVA_HOME}" ]] && [[ -d ${JAVA_HOME} ]]; then
-    JAVA_CMD=$(posixpath "${JAVA_HOME}")bin/${JAVA_CMD}
-  elif [[ $(command -v "${JAVA_CMD}") ]]; then
-    JAVA_CMD=$(command -v "${JAVA_CMD}")
-  fi
-  if [[ ! -f ${JAVA_CMD} ]]; then
-    msg="Failed to find $1 as $JAVA_CMD, set JAVA_HOME and/or PATH to $1 in env.sh and try again"
-    echo "$msg"
+if [[ -z ${JAVA_CMD+x} ]]; then
+  if command -v java > /dev/null 2>&1; then
+    JAVA_CMD=$(command -v java)
+  else
+    msg="Failed to find JAVA_CMD variable in env.sh or java on the path, cannot continue"
     notify "$msg"
+    echo "$msg" >> "$LOG"
     exit 1
   fi
-  echo "${JAVA_CMD}"
-}
+fi
+echo "JAVA_CMD=$JAVA_CMD" >> "$LOG"
 
 # freebsd and similar not supported with this construct, there are no javafx platform jars for those anyway
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -67,18 +62,18 @@ else
   # msys, cygwin, win32
   OS=win
 fi
-
+echo "OS is $OS" >> "$LOG"
 # Note: It is possible to force the initial package loader by adding:
 # -DConsoleComponent.PackageLoader=ClasspathPackageLoader
 # to the command below, but even better to add it to JAVA_OPTS variable in env.sh
-MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
+MODULES="javafx.controls,javafx.media,javafx.web,javafx.swing"
 
 if [[ "${OS}" == "mac" ]]; then
   JAVA_OPTS="$JAVA_OPTS -Xdock:name=gade -Xdock:icon=\"$DIR/Contents/Resources/gade.icns\""
 fi
+echo "JAVA_OPTS=$JAVA_OPTS" >> "$LOG"
 
 if [[ "${OS}" == "win" ]]; then
-	JAVA_CMD=$(fullJavaPath "javaw")
 	CLASSPATH="${JAR_NAME};$(winpath "${LIB_DIR}")/*"
 	LD_PATH=$(winpath "${LIB_DIR}")
 
@@ -92,15 +87,22 @@ if [[ "${OS}" == "win" ]]; then
 	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
 	-cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
 else
-	JAVA_CMD=$(fullJavaPath "java")
 	CLASSPATH="${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
+	echo "JAVA_CMD in env.sh is ${JAVA_CMD}" >> "$LOG"
+	# shellcheck disable=SC2154
+	echo "Display splash" >> "$LOG"
 	${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
 	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  \
 	-cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen &
+
+	echo 'Start Gade' >> "$LOG"
+	echo "${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+  --module-path ${LIB_DIR}/jfx --add-modules ${MODULES} \
+  -Djava.library.path=\"${LD_PATH}\" -cp \"${CLASSPATH}\" $JAVA_OPTS se.alipsa.gade.Gade &" >> "$LOG"
 	# shellcheck disable=SC2068
 	${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
 	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  \
-	-Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade &
+	-Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade >> "$LOG" 2>&1 &
 fi
 exit 0

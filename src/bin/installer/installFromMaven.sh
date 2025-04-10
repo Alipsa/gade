@@ -45,5 +45,8 @@ unzip $libDir/$JAR_NAME 'script/*' -d "$appDir"
 cp "$appDir"/script/* "$appDir/"
 rm -r "$appDir/script"
 
+if command -v java; then
+  echo "JAVA_CMD=$(command -v java)" >> "$appDir/env.sh"
+fi
 # Cleanup
 rm gade-runner*.pom
