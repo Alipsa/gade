@@ -48,5 +48,10 @@ rm -r "$appDir/script"
 if command -v java; then
   echo "JAVA_CMD=$(command -v java)" >> "$appDir/env.sh"
 fi
+
+chmod +x "$appDir/"*.sh
 # Cleanup
 rm gade-runner*.pom
+
+echo "Gade installed in $appDir finished, you can run it with $appDir/gade.sh"
+echo "You can create a shortcut to the app by running $appDir/createLauncher.sh (or createShortcut.ps1 on windows)"

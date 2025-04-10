@@ -52,11 +52,11 @@ def table = Table.read().csv(file)
 </div>
 Example:
 <div class="codeblock"><pre>
-<span class="keyword">import</span> tech.tablesaw.api.*
+<span class="keyword">import</span> se.alipsa.matrix.core.*
 <span class="keyword">import</span> se.alipsa.gade.chart.*
 
 <span class="comment">// read a csv file into a table</span>
-table = Table.read().csv(io.projectFile(<span class="string">"/data/sessions.csv"</span>))<br/>
+table = Matrix.builder.data(io.projectFile(<span class="string">"/data/sessions.csv"</span>)).build()<br/>
 chart = AreaChart.create(
     <span class="string">"dbsessions"</span>,
     table.column(<span class="string">"user_name"</span>),
@@ -100,17 +100,17 @@ that you can use depending on what gives the best result.
 <div class="codeblock">
    <div class="comment">
       /**<br/>
-      * display data in the Viewer tab, e.g. Table, List, 2D Array<br/>
+      * display data in the Viewer tab, e.g. Matrix, List, 2D Array<br/>
       */
    </div>
-   <span class="keyword">void</span> view(Table table, String... title)<br/>
+   <span class="keyword">void</span> view(Matrix table, String... title)<br/>
 </div>
 Here is an example:<br/>
 <div class="codeblock"><pre>
-<span class="keyword">import</span> tech.tablesaw.api.*
+<span class="keyword">import</span> se.alipsa.matrix.core.*
 
 <span class="comment">// read a csv file into a table</span>
-table = Table.read().csv(io.projectFile(<span class="string">"data/boston-robberies.csv"</span>))<br/>
+table = Matrix.builder.data(io.projectFile(<span class="string">"data/boston-robberies.csv"</span>)).build()<br/>
 io.view(table)
 </pre>
 </div>

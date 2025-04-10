@@ -1,7 +1,5 @@
 package se.alipsa.gade.environment.connections;
 
-import groovy.lang.GroovyClassLoader;
-import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -236,6 +234,12 @@ public class ConnectionsTab extends Tab {
     return deleteButton;
   }
 
+  /**
+   * Validate the connection and add it to the list of connections.
+   *
+   * @param con the connection to validate
+   * @return true if the connection was validated and added, false otherwise
+   */
   public boolean validateAndAddConnection(ConnectionInfo con) {
     log.info("Connecting to " + con.getUrl());
     ConnectionHandler ch = new ConnectionHandler(con);
@@ -420,6 +424,11 @@ public class ConnectionsTab extends Tab {
     return connectionsTable.getItems().stream().map(ConnectionInfo::new).collect(Collectors.toCollection(TreeSet::new));
   }
 
+  /**
+   * Get all the defined connections.
+   *
+   * @return a Set of copies of all the connections defined in Gade (saved in the profile)
+   */
   public Set<ConnectionInfo> getDefinedConnections() {
     Set<ConnectionInfo> definedConnections = getConnections();
     // add the ones not active (HashSet contract does not add if element is already present)
@@ -559,12 +568,18 @@ public class ConnectionsTab extends Tab {
     stage.toFront();
   }
 
+  /**
+   * Set the cursor to default
+   */
   public void setNormalCursor() {
     gui.setNormalCursor();
     contentPane.setCursor(Cursor.DEFAULT);
     connectionsTable.setCursor(Cursor.DEFAULT);
   }
 
+  /**
+   * Set the cursor to wait (timeglass)
+   */
   public void setWaitCursor() {
     gui.setWaitCursor();
     contentPane.setCursor(Cursor.WAIT);
@@ -638,6 +653,11 @@ public class ConnectionsTab extends Tab {
     Clipboard.getSystemClipboard().setContent(clipboardContent);
   }
 
+  /**
+   * Get the URL string of the connection.
+   *
+   * @return the url string
+   */
   public String getUrl() {
     return urlText.getText();
   }

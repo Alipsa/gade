@@ -10,8 +10,9 @@ function notify() {
     zenity --info --text="$1"
   elif command -v notify-send > /dev/null 2>&1; then
     notify-send "$1"
-  elif command -v osascript > /dev/null 2>&1; then
-    osascript -e "display notification \"$1\" with title \"Gade\""
+  elif [[ -f /usr/bin/osascript ]]; then
+      # must define full path to osascript for his to work as an mac app.
+      /usr/bin/osascript -e "display notification \"$1\" with title \"Gade\""
   elif [[ "${OSTYPE}" == "msys" ]]; then
     msg ${USERNAME} "$1" /time:30
   fi

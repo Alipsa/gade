@@ -331,7 +331,7 @@ runtime {
 
 tasks.runtime.doLast {
     copy {
-        from("$projectDir/src/bin/")
+        from("$projectDir/src/main/resources/script/")
         into(project.layout.buildDirectory.dir("image/gade-linux/"))
         include 'createLauncher.sh'
         include '*.png'
@@ -343,7 +343,7 @@ tasks.runtime.doLast {
     }
 
     copy {
-        from("$projectDir/src/bin/")
+        from("$projectDir/src/main/resources/script/")
         into(project.layout.buildDirectory.dir("image/gade-mac/"))
         include '*.png'
     }
@@ -354,7 +354,7 @@ tasks.runtime.doLast {
     }
 
     copy {
-        from("$projectDir/src/bin/")
+        from("$projectDir/src/main/resources/script/")
         into(project.layout.buildDirectory.dir("image/gade-win/"))
         include '*.ico'
         include '*.ps1'
