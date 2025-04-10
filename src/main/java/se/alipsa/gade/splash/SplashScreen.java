@@ -1,5 +1,6 @@
 package se.alipsa.gade.splash;
 
+import java.util.List;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -16,6 +17,11 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * Shows a "splash" screen while the main Application is starting up.
+ * The duration of the display time can be modified by passing the number of seconds as an argument
+ * to the main method
+ */
 public class SplashScreen extends Application {
 
   public static void main(String[] args) {
@@ -24,6 +30,11 @@ public class SplashScreen extends Application {
 
   @Override
   public void start(Stage primaryStage) {
+    List<String> args = getParameters().getRaw();
+    double timeout = 4;
+    if (!args.isEmpty()) {
+      timeout = Double.parseDouble(args.getFirst());
+    }
     BorderPane root = new BorderPane();
     Label altToImage = new Label(" Loading Gade, please wait...");
     root.setTop(altToImage);
@@ -38,7 +49,7 @@ public class SplashScreen extends Application {
     primaryStage.setScene(scene);
     primaryStage.show();
 
-    PauseTransition delay = new PauseTransition(Duration.seconds(5));
+    PauseTransition delay = new PauseTransition(Duration.seconds(timeout));
     delay.setOnFinished( event -> {
       primaryStage.close();
       Platform.exit();

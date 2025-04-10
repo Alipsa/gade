@@ -32,6 +32,11 @@ public class ConnectionDialog extends Dialog<ConnectionInfo> {
   private Label urlLabel;
   private Button wizardButton;
 
+  /**
+   * Constructor for creating a new connection dialog.
+   *
+   * @param connectionsTab the ConnectionsTab instance to use for getting user and dependency information
+   */
   public ConnectionDialog(ConnectionsTab connectionsTab) {
     HBox toggleBox = new HBox();
     HBox.setHgrow(toggleBox, Priority.ALWAYS);

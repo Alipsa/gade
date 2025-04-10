@@ -3,7 +3,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "${DIR}" || exit 1
 
-LAUNCHER=~/.local/share/applications/gade.desktop
+SHORTCUT_NAME=gade.desktop
+LAUNCHER=~/.local/share/applications/$SHORTCUT_NAME
 {
 echo "[Desktop Entry]
 Name=Gade
@@ -17,9 +18,9 @@ Categories=Development"
 
 chmod +x gade.sh
 chmod +x ${LAUNCHER}
-if [[ -f ~/Desktop/gade.desktop ]]; then
-  rm ~/Desktop/gade.desktop
+if [[ -f ~/Desktop/$SHORTCUT_NAME ]]; then
+  rm ~/Desktop/$SHORTCUT_NAME
 fi
-ln -s ${LAUNCHER} ~/Desktop/gade.desktop
+ln -s ${LAUNCHER} ~/Desktop/$SHORTCUT_NAME
 
 echo "Launcher shortcuts created!"

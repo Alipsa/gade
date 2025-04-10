@@ -80,6 +80,12 @@ public class ConnectionHandler {
     }
   }
 
+  /**
+   * Returns the connection metadata for the current connection.
+   *
+   * @return a Matrix object containing the connection metadata
+   * @throws ConnectionException if an error occurs while retrieving the metadata
+   */
   public Matrix getConnectionMetadata() throws ConnectionException {
     if (connectionType == ConnectionType.JDBC) {
       return getJdbcConnectionMetadata();
