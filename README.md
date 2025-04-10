@@ -59,8 +59,12 @@ set "JAVA_OPTS=-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.renderer=sun.java2d
 On Windows, you can also run Gade in java instead of javaw (so you can see the console) by setting the JAVA_CMD variable 
 in the env.cmd i.e:
 ```shell
-SET JAVA_CMD=java
+SET JAVA_CMD=path\to\java
 ```
+JAVA_CMD can also be used to set another java version than the "default".
+
+Other parameters in the env script are
+- SPLASH_TIME the number of seconds to show the splash screen e.g `SPLASH_TIME=5`
 
 ### A SQL script screenshot
 Showing the result of a select query in the viewer tab and the connection view that is shown when you right-click
