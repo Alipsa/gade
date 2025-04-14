@@ -119,7 +119,7 @@ dependencies {
     implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
     implementation 'se.alipsa:simple-rest:1.1.0'
-    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.0"))
+    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.1-SNAPSHOT"))
     implementation("se.alipsa.matrix:matrix-core")
     implementation "se.alipsa.matrix:matrix-stats"
     implementation "se.alipsa.matrix:matrix-datasets"
