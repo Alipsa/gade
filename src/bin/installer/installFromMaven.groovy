@@ -1,3 +1,4 @@
+#!/usr/bin/env groovy
 /* This installation script fetches the artifacts from the nexus repos using Grape.grab
    It requires
    1. Java 21 or later installed and on the path
@@ -6,6 +7,7 @@
    The directory layout and name is due to MacOS requirements but works in Linux and Windows as well
  */
 @Grab('org.slf4j:slf4j-simple:2.0.17')
+@GrabConfig(systemClassLoader=true)
 @Grab('se.alipsa:maven-3.9.4-utils:1.0.3')
 import se.alipsa.mavenutils.MavenUtils
 import groovy.ant.AntBuilder
