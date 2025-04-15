@@ -28,7 +28,7 @@ def mvnUtil = new MavenUtils()
 
 println "Creating installation of Gade version ${gadeVersion} in ${appDir.absolutePath}"
 File pomFile = mvnUtil.resolveArtifact("se.alipsa", "gade-runner", null, 'pom', gadeVersion)
-println "Pom file: ${pomFile}"
+println "Fetching dependencies declared in pom file: ${pomFile}"
 
 Set<File> dependencies = mvnUtil.resolveDependencies(pomFile)
 
@@ -69,6 +69,7 @@ ant.move(todir: contentsDir.canonicalPath) {
   }
 }
 ant.delete(dir: new File(appDir, "mac").canonicalPath)
+ant.chmod(dir: new File(contentsDir, "MacOS").canonicalPath, perm: "ugo+rx", includes: "*")
 
 ant.move(todir: appDir.canonicalPath, flatten: true) {
   fileset(dir: appDir.canonicalPath) {
@@ -80,7 +81,7 @@ ant.chmod(dir: appDir.canonicalPath, perm: "ugo+rx", includes: "*.sh")
 
 def javaHome = System.getProperty("java.home")
 new File(appDir, "env.sh")
-    .write("JAVA_CMD=$javaHome/java\n")
+    .write("JAVA_CMD=$javaHome/bin/java\n")
 
 println()
 println "Gade installed in $appDir finished, you can run it with $appDir/gade.sh"
