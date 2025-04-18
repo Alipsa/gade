@@ -8,7 +8,9 @@
  */
 @Grab('org.slf4j:slf4j-simple:2.0.17')
 @GrabConfig(systemClassLoader=true)
-@Grab('se.alipsa:maven-3.9.4-utils:1.0.3')
+@Grab('se.alipsa:maven-3.9.4-utils:1.1.0')
+@GrabResolver(name='oss.sonatype.org-snapshot', root='https://oss.sonatype.org/content/repositories/snapshots/')
+
 import se.alipsa.mavenutils.MavenUtils
 import groovy.ant.AntBuilder
 
@@ -27,6 +29,7 @@ if (!jfxDir.exists()) {
 }
 AntBuilder ant = new AntBuilder()
 def mvnUtil = new MavenUtils()
+mvnUtil.addRemoteRepository('oss.sonatype.org-snapshot', 'https://oss.sonatype.org/content/repositories/snapshots/')
 
 println "Creating installation of Gade version ${gadeVersion} in ${appDir.absolutePath}"
 File pomFile = mvnUtil.resolveArtifact("se.alipsa", "gade-runner", null, 'pom', gadeVersion)
@@ -82,8 +85,15 @@ ant.delete(dir: new File(appDir, "script").canonicalPath)
 ant.chmod(dir: appDir.canonicalPath, perm: "ugo+rx", includes: "*.sh")
 
 def javaHome = System.getProperty("java.home")
+def javaCmd
+if (System.getenv('MSYSTEM') != null) {
+    javaHome="/" + javaHome.replace(':', '').replace('\\', '/')
+	javaCmd="$javaHome/bin/javaw"
+} else {
+	javaCmd="$javaHome/bin/java"
+}
 new File(appDir, "env.sh")
-    .write("JAVA_CMD=$javaHome/bin/java\n")
+    .write("JAVA_CMD=$javaCmd\n")
 
 println()
 println "Gade installed in $appDir finished, you can run it with $appDir/gade.sh"
