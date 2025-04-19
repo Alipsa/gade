@@ -103,9 +103,7 @@ dependencies {
     implementation 'org.jetbrains:annotations:26.0.2'
     implementation 'io.github.classgraph:classgraph:4.8.179'
     implementation 'com.github.spotbugs:spotbugs-annotations:4.9.3'
-    implementation("se.alipsa.gi:gi-fx:1.0.0-SNAPSHOT") {
-        exclude group: 'se.alipsa.matrix', module: '*'
-    }
+    implementation "se.alipsa.gi:gi-fx:0.1.0"
     //implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
     implementation "org.commonmark:commonmark:0.24.0"
     implementation "org.commonmark:commonmark-ext-gfm-tables:0.24.0"
