@@ -1,17 +1,12 @@
 package se.alipsa.gade.code.mdtab;
 
 import java.io.FileWriter;
-import java.io.OutputStreamWriter;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.utils.DocUtil;
 import se.alipsa.gade.utils.ExceptionAlert;
-import se.alipsa.gade.utils.FileUtils;
-import se.alipsa.groovy.gmd.Gmd;
-import se.alipsa.groovy.gmd.GmdException;
+import se.alipsa.gmd.core.Gmd;
+import se.alipsa.gmd.core.GmdException;
 
-import javax.script.ScriptException;
 import java.io.File;
-import java.io.FileNotFoundException;
 
 public class MdUtil {
   static Gmd gmd = new Gmd();

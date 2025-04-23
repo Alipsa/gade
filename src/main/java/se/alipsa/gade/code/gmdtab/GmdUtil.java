@@ -3,7 +3,6 @@ package se.alipsa.gade.code.gmdtab;
 import com.openhtmltopdf.mathmlsupport.MathMLDrawer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.openhtmltopdf.svgsupport.BatikSVGDrawer;
-import java.util.concurrent.CountDownLatch;
 import javafx.concurrent.Worker;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -17,9 +16,9 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
-import se.alipsa.groovy.gmd.Gmd;
-import se.alipsa.groovy.gmd.GmdException;
-import se.alipsa.groovy.gmd.HtmlDecorator;
+import se.alipsa.gmd.core.Gmd;
+import se.alipsa.gmd.core.GmdException;
+import se.alipsa.gmd.core.HtmlDecorator;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -29,7 +28,6 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class GmdUtil {
 

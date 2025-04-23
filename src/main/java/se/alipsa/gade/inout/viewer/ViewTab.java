@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
-import se.alipsa.groovy.gmd.HtmlDecorator;
+import se.alipsa.gmd.core.HtmlDecorator;
 import se.alipsa.matrix.core.Grid;
 import se.alipsa.matrix.core.Matrix;
 //import tech.tablesaw.api.ColumnType;

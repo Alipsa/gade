@@ -5,7 +5,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.gmdtab.GmdUtil;
 import se.alipsa.gade.model.MuninReport;
 import se.alipsa.gade.utils.ExceptionAlert;
-import se.alipsa.groovy.gmd.GmdException;
+import se.alipsa.gmd.core.GmdException;
 
 public class MuninGmdTab extends MuninTab {
 

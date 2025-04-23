@@ -10,8 +10,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import org.jsoup.nodes.Entities;
 import org.w3c.dom.Document;
-import se.alipsa.groovy.gmd.Gmd;
-import se.alipsa.groovy.gmd.HtmlDecorator;
+import se.alipsa.gmd.core.Gmd;
+import se.alipsa.gmd.core.HtmlDecorator;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;

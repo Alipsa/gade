@@ -13,7 +13,7 @@ import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
-import se.alipsa.groovy.gmd.GmdException;
+import se.alipsa.gmd.core.GmdException;
 
 import java.awt.*;
 import java.io.File;
