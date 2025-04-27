@@ -78,8 +78,8 @@ public class GradleUtils {
       if (dir.exists()) {
         String[] files = dir.list();
         if (files != null) {
-          boolean foundMvn = Arrays.asList(files).contains("gradle");
-          if (foundMvn) {
+          boolean foundGradle = Arrays.asList(files).contains("gradle");
+          if (foundGradle) {
             return dir.getParentFile().getAbsolutePath();
           }
         }
