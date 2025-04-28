@@ -109,7 +109,7 @@ dependencies {
     implementation "org.commonmark:commonmark-ext-gfm-tables:0.24.0"
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:2.0.0'
-    implementation ('se.alipsa.gmd:gmd-core:3.0.0-SNAPSHOT') {
+    implementation ('se.alipsa.gmd:gmd-core:3.0.0') {
         exclude group: 'se.alipsa.matrix', module: 'matrix-core'
         exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
         exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
@@ -207,8 +207,7 @@ processResources.doLast {
         fileName.substring("${artifactName}-".length(), fileName.indexOf(".jar"))
     }
 
-    configurations.getByName('runtimeClasspath').files
-        .findAll({it.getName().contains('matrix')}).each { file ->
+    configurations.getByName('runtimeClasspath').files.each { file ->
             def fileName = file.name
             if (fileName.contains('matrix-core')) {
                 ext.matrixCoreVersion = extractVersionNumber('matrix-core', fileName)
@@ -234,6 +233,8 @@ processResources.doLast {
                 ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
             } else if (fileName.contains('matrix-tablesaw')) {
                 ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
+            } else if (fileName.contains('gmd-core')) {
+                ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
             }
     }
 
@@ -254,6 +255,7 @@ processResources.doLast {
         ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
         ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
         ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
+        ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
     }
     ant.copy(
             file: "${projectDir}/version.properties",
