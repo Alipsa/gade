@@ -167,10 +167,13 @@ public class ConsoleComponent extends BorderPane {
       //automatically apply the @ThreadInterrupt AST transformations on all scripts
       // see https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting for details
       config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
-      classLoader = new GroovyClassLoader(parentClassLoader, config);
 
       boolean useGradleCLassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
-
+      if (useGradleCLassLoader) {
+        classLoader = new GroovyClassLoader(null, config);
+      } else {
+        classLoader = new GroovyClassLoader(parentClassLoader, config);
+      }
 
       if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
         File wd = gui.getInoutComponent().projectDir();
