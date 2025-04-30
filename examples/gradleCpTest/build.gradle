@@ -23,14 +23,16 @@ sourceSets {
 
 repositories {
   // Use Maven Central for resolving dependencies.
+  mavenLocal()
   mavenCentral()
 }
 
 dependencies {
-  implementation(platform('se.alipsa.matrix:matrix-bom:2.2.0'))
+  implementation(platform('se.alipsa.matrix:matrix-bom:2.2.1-SNAPSHOT'))
   implementation("se.alipsa.matrix:matrix-core")
   implementation("se.alipsa.matrix:matrix-stats")
   implementation("se.alipsa.matrix:matrix-xchart")
+  implementation("se.alipsa.matrix:matrix-csv")
   implementation 'org.apache.groovy:groovy-all:4.0.26'
   implementation 'org.apache.groovy:groovy-ginq:4.0.26'
   implementation 'com.github.haifengl:smile-core:4.3.0'
@@ -38,7 +40,7 @@ dependencies {
   implementation 'org.bytedeco:openblas:0.3.28-1.5.11'
   implementation 'org.bytedeco:javacpp:1.5.11'
   //implementation 'org.slf4j:slf4j-api:2.0.0'
-  //implementation 'org.slf4j:slf4j-simple:2.0.0'
+  implementation 'org.slf4j:slf4j-simple:2.0.17'
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
 }

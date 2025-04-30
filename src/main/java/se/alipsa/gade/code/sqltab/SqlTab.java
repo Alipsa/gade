@@ -172,7 +172,7 @@ public class SqlTab extends TextAreaTab implements TaskListener {
       ExceptionAlert.showAlert("Query failed: " + clazz + message, exc );
     });
     Thread scriptThread = new SqlThread(task, this);
-    scriptThread.setContextClassLoader(gui.getConsoleComponent().getSession().getClass().getClassLoader());
+    scriptThread.setContextClassLoader(gui.getConsoleComponent().getSessionClassloader());
     scriptThread.setDaemon(false);
     consoleComponent.startTaskWhenOthersAreFinished(task, "sql");
   }
