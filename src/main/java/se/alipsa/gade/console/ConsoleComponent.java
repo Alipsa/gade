@@ -6,6 +6,7 @@ import static se.alipsa.gade.menu.GlobalOptions.*;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
 import groovy.transform.ThreadInterrupt;
+import java.lang.reflect.InvocationTargetException;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -24,7 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.Nullable;
 import se.alipsa.gade.Constants;
@@ -32,17 +32,16 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.environment.EnvironmentComponent;
 import se.alipsa.gade.utils.Alerts;
+import se.alipsa.gade.utils.ClassUtils;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import se.alipsa.gi.GuiInteraction;
 
 public class ConsoleComponent extends BorderPane {
 
@@ -60,7 +59,7 @@ public class ConsoleComponent extends BorderPane {
 
   private ScriptThread runningThread;
   private final Map<Thread, String> threadMap = new HashMap<>();
-  private ScriptEngine engine;
+  private GroovyEngine engine;
 
   public ConsoleComponent(Gade gui) {
     this.gui = gui;
@@ -90,25 +89,6 @@ public class ConsoleComponent extends BorderPane {
     vPane.setMaxHeight(Double.MAX_VALUE);
     setCenter(vPane);
   }
-
-
-
-  /* not used to commented out
-  public void initGroovy(ClassLoader parentClassLoader, boolean... sync) {
-    if (sync.length > 0 && sync[0]) {
-      try {
-        resetClassloaderAndGroovy(parentClassLoader);
-        printVersionInfoToConsole();
-        autoRunScripts();
-        updateEnvironment();
-      } catch (Exception e) {
-        ExceptionAlert.showAlert("Failed to reset classloader and Groovy, please report this!", e);
-      }
-    } else {
-      Platform.runLater(() -> initGroovy(parentClassLoader));
-    }
-  }
-   */
 
   /**
    * Initialize the groovy engine
@@ -170,7 +150,7 @@ public class ConsoleComponent extends BorderPane {
 
       boolean useGradleCLassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
       if (useGradleCLassLoader) {
-        classLoader = new GroovyClassLoader(null, config);
+        classLoader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
       } else {
         classLoader = new GroovyClassLoader(parentClassLoader, config);
       }
@@ -222,14 +202,24 @@ public class ConsoleComponent extends BorderPane {
           }
         }
       }
-      engine = new GroovyScriptEngineImpl(classLoader);
-      gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
+      engine = new GroovyEngineReflection(classLoader);
+      //engine = new GroovyEngineInvocation(classLoader);
+
+      //gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
+      addObjectsToBindings(gui.guiInteractions);
       return null;
     } catch (RuntimeException e) {
       // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
       // this way we can get to the original one by extracting the cause from the thrown exception
       System.out.println("Exception caught, rethrowing as wrapped Exception");
       throw new Exception(e);
+    }
+  }
+
+  private void addObjectsToBindings(Map<String, GuiInteraction> map)
+      throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    for (Map.Entry<String, GuiInteraction> entry : gui.guiInteractions.entrySet()) {
+      addVariableToSession(entry.getKey(), entry.getValue());
     }
   }
 
@@ -349,9 +339,8 @@ public class ConsoleComponent extends BorderPane {
     try (PrintWriter out = new PrintWriter(System.out);
          PrintWriter err = new PrintWriter(System.err)) {
       running();
+      engine.setOutputWriters(out, err);
       log.debug("Running script: {}", script);
-      engine.getContext().setWriter(out);
-      engine.getContext().setErrorWriter(err);
       var result = engine.eval(script);
       waiting();
       return result;
@@ -363,18 +352,8 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public Object fetchVar(String varName) {
-    return engine.get(varName);
+    return engine.fetchVar(varName);
   }
-
-  /*
-  public void runScriptAsync(String script, String title, TaskListener taskListener, Map<String, Object> additionalParams) {
-    for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
-      addVariableToSession(entry.getKey(), entry.getValue());
-    }
-    runScriptAsync(script, title, taskListener);
-  }
-
-   */
 
   public void runScriptAsync(String script, String title, TaskListener taskListener) {
 
@@ -500,9 +479,8 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public Map<String, Object> getContextObjects() {
-    Map<String, Object> contextObjects = new HashMap<>();
-    contextObjects.putAll(engine.getBindings(ScriptContext.ENGINE_SCOPE));
-    return contextObjects;
+    log.info("getContextObjects");
+    return engine.getContextObjects();
   }
 
   /*
@@ -690,15 +668,14 @@ public class ConsoleComponent extends BorderPane {
         Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
         return;
       }
-      gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
+      addObjectsToBindings(gui.guiInteractions);
+      //gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
 
       Platform.runLater(() -> {
         console.append(title, true);
         env.addInputHistory(script);
       });
-
-      engine.getContext().setWriter(outputWriter);
-      engine.getContext().setErrorWriter(errWriter);
+      engine.setOutputWriters(outputWriter, errWriter);
       System.setOut(outStream);
       System.setErr(errStream);
       var result = engine.eval(script);
@@ -707,9 +684,6 @@ public class ConsoleComponent extends BorderPane {
         gui.getConsoleComponent().getConsole().appendFx(result.toString(), true);
       }
       Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
-
-    } catch (ScriptException e) {
-      throw e;
     } catch (RuntimeException re) {
       throw new Exception(re.getMessage(), re);
     } finally {
@@ -800,7 +774,10 @@ public class ConsoleComponent extends BorderPane {
     if (dir == null) {
       return;
     }
-    // TODO: not sure how to do this
+
+    // TODO: not sure how to do this, user.dir property only partially works
+    //  and ORACLE recommends not to change it
+    // System.setProperty("user.dir", dir.getAbsolutePath());
     /*
     try {
       if (session != null) {
@@ -815,12 +792,12 @@ public class ConsoleComponent extends BorderPane {
   }
 
   /**
-   * Return a reference to the current scripting session (the script engine)
+   * Return a reference to the current scripting classloader
    *
-   * @return a reference to the current scripting session (the script engine)
+   * @return a reference to the current scripting classloader
    */
-  public ScriptEngine getSession() {
-    return engine;
+  public ClassLoader getSessionClassloader() {
+    return engine.getClass().getClassLoader();
   }
 
   public void setConsoleMaxSize(int size) {
@@ -895,7 +872,8 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void addVariableToSession(String key, Object value) {
-    engine.put(key, value);
+    log.info("adding {} to session", key);
+    engine.addVariableToSession(key, value);
   }
 
   /**
@@ -904,6 +882,6 @@ public class ConsoleComponent extends BorderPane {
    * @param varName the bound variable to remove.
    */
   public void removeVariableFromSession(String varName) {
-    engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(varName);
+    engine.removeVariableFromSession(varName);
   }
 }

@@ -374,8 +374,21 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public void display(JComponent swingComponent, String... title) {
     SwingNode swingNode = new SwingNode();
     swingNode.setContent(swingComponent);
-    if (title.length == 0 && swingComponent instanceof XChartPanel<?> xChartPanel) {
-      title = new String[]{xChartPanel.getChart().getTitle()};
+    if (title.length == 0) {
+      if (swingComponent instanceof XChartPanel<?> xChartPanel) {
+        title = new String[]{xChartPanel.getChart().getTitle()};
+      } else if (swingComponent.getClass().getPackageName().startsWith("org.knowm.xchart")) {
+        // it comes from the gradle classloader
+        try {
+          String t = ReflectUtils
+              .invoke(swingComponent, "getChart")
+              .invoke("getTitle")
+              .getResult(String.class);
+          title = new String[]{t};
+        } catch (Throwable e) {
+          log.warn("Failed to invoke getTitle() method", e);
+        }
+      }
     }
     display(swingNode, title);
   }
@@ -386,6 +399,11 @@ public class InOut extends se.alipsa.gi.fx.InOut {
       var panel = new XChartPanel<>(xchart);
       Platform.runLater(() -> display(panel, title.length > 0 ? title[0] : xchart.getTitle()));
     });
+  }
+
+  public void display(se.alipsa.matrix.xchart.abstractions.MatrixXChart<?> chart, String... title) {
+    //display(chart.exportSwing(), title); // Below is cleaner
+    display(chart.getXChart(), title);
   }
 
   public void display(File file, String... title) {

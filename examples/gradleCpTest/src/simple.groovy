@@ -1,7 +1,7 @@
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 
 def classLoader = new GroovyClassLoader(null as ClassLoader)
-def engine = new GroovyScriptEngineImpl(classLoader)
+GroovyScriptEngineImpl engine = new GroovyScriptEngineImpl(classLoader)
 
 engine.eval("""
   def numbers = [0, 1, 2]

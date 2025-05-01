@@ -28,8 +28,8 @@ dependencies {
   implementation 'org.apache.groovy:groovy-all:4.0.25'
   implementation('se.alipsa.matrix:matrix-core:2.3.1')
 
-  implementation 'org.slf4j:slf4j-api:2.0.0'
-  implementation 'org.slf4j:slf4j-simple:2.0.0'
+  implementation 'org.slf4j:slf4j-api:2.0.17'
+  implementation 'org.slf4j:slf4j-simple:2.0.17'
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }
