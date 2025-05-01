@@ -401,6 +401,11 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     });
   }
 
+  public void display(se.alipsa.matrix.xchart.abstractions.MatrixXChart<?> chart, String... title) {
+    //display(chart.exportSwing(), title); // Below is cleaner
+    display(chart.getXChart(), title);
+  }
+
   public void display(File file, String... title) {
     if (file == null || !file.exists()) {
       Alerts.warnFx("Cannot display image", "Failed to find " + file);

@@ -90,25 +90,6 @@ public class ConsoleComponent extends BorderPane {
     setCenter(vPane);
   }
 
-
-
-  /* not used to commented out
-  public void initGroovy(ClassLoader parentClassLoader, boolean... sync) {
-    if (sync.length > 0 && sync[0]) {
-      try {
-        resetClassloaderAndGroovy(parentClassLoader);
-        printVersionInfoToConsole();
-        autoRunScripts();
-        updateEnvironment();
-      } catch (Exception e) {
-        ExceptionAlert.showAlert("Failed to reset classloader and Groovy, please report this!", e);
-      }
-    } else {
-      Platform.runLater(() -> initGroovy(parentClassLoader));
-    }
-  }
-   */
-
   /**
    * Initialize the groovy engine
    *
@@ -221,8 +202,8 @@ public class ConsoleComponent extends BorderPane {
           }
         }
       }
-      //engine = new GroovyEngineReflection(classLoader);
-      engine = new GroovyEngineInvocation(classLoader);
+      engine = new GroovyEngineReflection(classLoader);
+      //engine = new GroovyEngineInvocation(classLoader);
 
       //gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
       addObjectsToBindings(gui.guiInteractions);
@@ -498,6 +479,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public Map<String, Object> getContextObjects() {
+    log.info("getContextObjects");
     return engine.getContextObjects();
   }
 
@@ -890,6 +872,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void addVariableToSession(String key, Object value) {
+    log.info("adding {} to session", key);
     engine.addVariableToSession(key, value);
   }
 
