@@ -13,7 +13,9 @@ libDir="$appDir/lib"
 mkdir "$libDir"
 jfxDir="$libDir/jfx"
 mkdir "$jfxDir"
-mvn dependency:copy -Dartifact=se.alipsa:gade-runner:$gadeVersion:pom -DoutputDirectory=.
+if [[ ! -f gade-runner-$gadeVersion.pom ]]; then
+  mvn dependency:copy -Dartifact=se.alipsa:gade-runner:$gadeVersion:pom -DoutputDirectory=.
+fi
 # Copy dependencies to target/dependency
 mvn -f gade-runner-$gadeVersion.pom dependency:copy-dependencies -DoutputDirectory="$libDir"
 mv "$libDir"/javafx-*.jar "$jfxDir/"
