@@ -836,7 +836,7 @@ public class MainMenu extends MenuBar {
     restartEngine();
   }
 
-  private void restartEngine() {
+  public void restartEngine() {
     gui.getConsoleComponent().restartGroovy();
     gui.getInoutComponent().setPackages(null);
     gui.getEnvironmentComponent().restarted();

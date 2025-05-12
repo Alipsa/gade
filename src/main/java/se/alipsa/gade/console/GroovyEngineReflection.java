@@ -1,17 +1,27 @@
 package se.alipsa.gade.console;
 
 import groovy.lang.GroovyClassLoader;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.alipsa.gade.Gade;
+import se.alipsa.gade.interaction.Dialogs;
+import se.alipsa.gade.utils.Alerts;
+import se.alipsa.gade.utils.GuiUtils;
 
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 
+import static se.alipsa.gade.menu.GlobalOptions.USE_GRADLE_CLASSLOADER;
 import static se.alipsa.gade.utils.ReflectUtils.*;
 
 // TODO: investigate invokevirtual and invokedynamic as alternatives to reflection invocation
@@ -21,13 +31,38 @@ public class GroovyEngineReflection implements GroovyEngine {
   //private final Class<?> engineClass;
 
   GroovyEngineReflection(GroovyClassLoader classLoader) {
+    Object tmpEngine;
     try {
       var engineClass = classLoader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
-      engine = engineClass.getDeclaredConstructor().newInstance();
+      tmpEngine = engineClass.getDeclaredConstructor().newInstance();
     } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException |
              IllegalAccessException | InstantiationException e) {
-      throw new GroovyEngineException("Failed to load 'org.codehaus.groovy.jsr223.GroovyScriptEngineImpl'", e);
+      if (Gade.instance().getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false)) {
+        tmpEngine = new GroovyScriptEngineImpl(classLoader);
+        Platform.runLater(()-> {
+        Alert alert =
+            new Alert(Alert.AlertType.WARNING,
+                """
+                    Failed to load 'org.codehaus.groovy.jsr223.GroovyScriptEngineImpl', 
+                    Gradle classloader enabled but no groovy jsr223 dependency defined. 
+                    Disable using gradle for dependencies?
+                    """,
+                ButtonType.YES,
+                ButtonType.NO);
+        alert.setTitle("Groovy Script engine creation error");
+        GuiUtils.addStyle(Gade.instance(), alert);
+        alert.showAndWait().ifPresent(r -> {
+          if (r == ButtonType.YES) {
+            Gade.instance().getPrefs().putBoolean(USE_GRADLE_CLASSLOADER, false);
+            Gade.instance().getMainMenu().restartEngine();
+          }
+        });
+        });
+      } else {
+        throw new GroovyEngineException("Failed to load 'org.codehaus.groovy.jsr223.GroovyScriptEngineImpl'", e);
+      }
     }
+    engine = tmpEngine;
   }
 
   @Override
