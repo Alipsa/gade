@@ -28,14 +28,14 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "4.0.26"
+ext.groovyVersion = "4.0.27"
 ext.jacksonVersion = '2.18.3'
 //def jgitVersion = '7.0.0.202409031743-r' // TODO does not work due to jetty
 ext.jgitVersion = '6.10.0.202406032230-r'
 ext.log4jVersion = "2.24.3"
 ext.tikaVersion = '3.1.0' // Note '2.9.1' breaks @Grab
 
-def jdkVersion = "21.0.6+10"
+def jdkVersion = "21.0.7+9"
 
 application {
     mainClass = 'se.alipsa.gade.Gade'
@@ -121,7 +121,7 @@ dependencies {
     implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
     implementation 'se.alipsa:simple-rest:1.1.0'
-    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.1-SNAPSHOT"))
+    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.1"))
     implementation("se.alipsa.matrix:matrix-core")
     implementation "se.alipsa.matrix:matrix-stats"
     implementation "se.alipsa.matrix:matrix-datasets"

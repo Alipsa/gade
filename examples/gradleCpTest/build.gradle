@@ -33,8 +33,8 @@ dependencies {
   implementation("se.alipsa.matrix:matrix-stats")
   implementation("se.alipsa.matrix:matrix-xchart")
   implementation("se.alipsa.matrix:matrix-csv")
-  implementation 'org.apache.groovy:groovy-all:4.0.26'
-  implementation 'org.apache.groovy:groovy-ginq:4.0.26'
+  implementation 'org.apache.groovy:groovy-all:4.0.27'
+  implementation 'org.apache.groovy:groovy-ginq:4.0.27'
   implementation 'com.github.haifengl:smile-core:4.3.0'
   implementation 'com.github.haifengl:smile-plot:4.3.0'
   implementation 'org.bytedeco:openblas:0.3.28-1.5.11'
