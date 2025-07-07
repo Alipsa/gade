@@ -66,6 +66,11 @@ else
   OS=win
 fi
 
+# Use GroovyClassloader as system cl enables @GrabConfig(systemClassLoader=true)
+if [[ ! "$JAVA_OPTS" =~ -Djava\.system\.class\.loader= ]]; then
+  JAVA_OPTS="$JAVA_OPTS -Djava.system.class.loader=groovy.lang.GroovyClassLoader"
+fi
+
 if [[ "${OS}" == "mac" ]]; then
   JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$DIR/Contents/Resources/gade.icns"
 fi

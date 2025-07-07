@@ -68,8 +68,11 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     if (runImports) {
       List<String> headers = groovyTextArea.getImports();
       String imports = String.join("\n", headers);
+      code = code.replace(imports, "");
       code = imports + "\n" + code;
     }
+    // Comment out shebangs
+    code = code.replace("#!/usr/bin/env groovy", "// #!/usr/bin/env groovy");
     runGroovy(code);
   }
 
