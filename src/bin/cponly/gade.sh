@@ -66,9 +66,9 @@ else
   OS=win
 fi
 
-# Use GroovyClassloader as system cl enables @GrabConfig(systemClassLoader=true)
+# enables @GrabConfig(systemClassLoader=true)
 if [[ ! "$JAVA_OPTS" =~ -Djava\.system\.class\.loader= ]]; then
-  JAVA_OPTS="$JAVA_OPTS -Djava.system.class.loader=groovy.lang.GroovyClassLoader"
+  JAVA_OPTS="$JAVA_OPTS -Djava.system.class.loader=org.codehaus.groovy.tools.RootLoader"
 fi
 
 if [[ "${OS}" == "mac" ]]; then
