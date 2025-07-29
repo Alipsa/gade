@@ -1,51 +1,53 @@
 package utils;
 
+// --- IMPORTANT: Package imports changed from javax.* to jakarta.* ---
+import jakarta.servlet.Servlet;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.http.server.GitServlet;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import se.alipsa.gade.utils.FileUtils;
+import se.alipsa.gade.utils.FileUtils; // Assuming this is your own utility class
 
 import java.io.File;
 import java.io.IOException;
 
 /*
- * Using jgit and Jetty to create a git server that
- * can be used for testing
+ * Using JGit and Jetty to create a git server that
+ * can be used for testing.
  */
 public class GitServer {
 
     File localPath;
     Server server;
-    GitServlet gitServlet;
+    Servlet gitServlet;
 
     public GitServer() throws Exception {
         Repository repository = createNewRepository();
-
         populateRepository(repository);
 
-        // Create the JGit Servlet which handles the Git protocol
+        // Create the JGit Servlet which handles the Git protocol.
+        // The GitServlet itself is compatible with the Jakarta Servlet API in recent versions.
         gitServlet = new GitServlet();
-        gitServlet.setRepositoryResolver((req, name) -> {
+        ((GitServlet) gitServlet).setRepositoryResolver((req, name) -> {
             repository.incrementOpen();
             return repository;
         });
-
     }
 
     public void start(int port) throws Exception {
         server = new Server(port);
 
-        ServletHandler handler = new ServletHandler();
-        server.setHandler(handler);
+        ServletContextHandler context = new ServletContextHandler();
+        context.setContextPath("/");
+        server.setHandler(context);
 
+        // Add the GitServlet to the context.
         ServletHolder holder = new ServletHolder(gitServlet);
-
-        handler.addServletWithMapping(holder, "/*");
+        context.addServlet(holder, "/*");
 
         server.start();
     }
@@ -61,9 +63,7 @@ public class GitServer {
             }
 
             git.add().addFilepattern("testfile").call();
-
             System.out.println("Added file " + myfile + " to repository at " + repository.getDirectory());
-
             git.commit().setMessage("Test-Checkin").call();
         }
     }
@@ -88,7 +88,11 @@ public class GitServer {
     }
 
     public void stop() throws Exception {
-        server.stop();
-        FileUtils.delete(localPath);
+        if (server != null && server.isStarted()) {
+            server.stop();
+        }
+        if (localPath != null && localPath.exists()) {
+            FileUtils.delete(localPath); // Assuming this is your recursive delete utility
+        }
     }
 }
