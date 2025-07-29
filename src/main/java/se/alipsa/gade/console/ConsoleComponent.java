@@ -814,6 +814,7 @@ public class ConsoleComponent extends BorderPane {
 
   public void startTaskWhenOthersAreFinished(CountDownTask<?> task, String context) {
     ScriptThread thread = task.createThread();
+    thread.setContextClassLoader(classLoader);
     if (runningThread == null) {
       log.debug("Starting thread {}", context);
       thread.start();
