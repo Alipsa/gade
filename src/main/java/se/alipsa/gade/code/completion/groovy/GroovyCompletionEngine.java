@@ -1,21 +1,18 @@
 package se.alipsa.gade.code.completion.groovy;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.ScanResult;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
+import  java.util.regex.Matcher;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import se.alipsa.gade.code.completion.CompletionItem;
 
 public final class GroovyCompletionEngine {
@@ -33,97 +30,145 @@ public final class GroovyCompletionEngine {
   ));
 
   private static final String[] SCAN_PACKAGES = {
-      "java.lang", "java.time", "Java.util",
+      "java.lang", "java.time", "java.util",
       "groovy.lang", "groovy.util", "groovy.json",
       "groovy.xml", "groovy.transform", "groovy.sql",
       "se.alipsa", "org.apache.groovy"
   };
 
-  private static final Pattern MEMBER_ACCESS = Pattern.compile("([\\p{L}_][\\p{L}\\p{N}_.]*)\\.(\\w*)$");
+  private static final Pattern MEMBER_ACCESS =
+      Pattern.compile("([\\p{L}_][\\p{L}\\p{N}_]*(?:\\.[\\p{L}_][\\p{L}\\p{N}_]*)*)\\.(\\w*)\\s*$");
+
+
 
   public static List<CompletionItem> complete(String lastWord, String fullText, int caret) {
     final List<CompletionItem> out = new ArrayList<>();
-    final String prefix = lastWord == null ? "" : lastWord;
-
     final String beforeCaret = fullText == null ? "" : fullText.substring(0, Math.max(0, caret));
 
-    // --- Member access with optional prefix: e.g. "LocalDate.n" or "LocalDate." ---
-    java.util.regex.Matcher m = MEMBER_ACCESS.matcher(beforeCaret);
+    // --- Member access (handles empty prefix, e.g. "LocalDateTime." and chained calls) ---
+    boolean inMemberContext = false;
+    Matcher m = MEMBER_ACCESS.matcher(beforeCaret);
     if (m.find()) {
-      String target = m.group(1);                         // "LocalDate"
-      String memberPrefix = m.group(2);                   // "n" ('' if just after the dot)
-      String memberLow = memberPrefix.toLowerCase(java.util.Locale.ROOT);
+      inMemberContext = true;
+      String target = m.group(1);       // e.g. "LocalDateTime" or "foo()" or "LocalDateTime.now()"
+      String memberPrefix = m.group(2); // may be "" right after the '.'
 
-      Class<?> cls = resolveClass(target);
+      // Try to infer type from chained calls, otherwise resolve simple class
+      Class<?> cls = inferType(target);
+      if (cls == null) cls = resolveClass(target);
+
       if (cls != null) {
-        java.lang.reflect.Method[] methods = cls.getMethods();
-        // stable-ish sort by name
-        java.util.Arrays.sort(methods, java.util.Comparator.comparing(java.lang.reflect.Method::getName));
+        final String memberLow = memberPrefix.toLowerCase(Locale.ROOT);
+        var methods = cls.getMethods();
+        Arrays.sort(methods, Comparator.comparing(Method::getName));
 
-        // If it looks like a class reference, prefer static methods first
-        boolean likelyClassRef = Character.isUpperCase(target.charAt(0)) || target.contains(".");
+        boolean classLike = Character.isUpperCase(target.charAt(0)) || target.contains(".");
+        var seen = new java.util.LinkedHashSet<String>();
 
-        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
-
-        // First pass: (optional) static-only when likely class ref
-        if (likelyClassRef) {
-          for (java.lang.reflect.Method method : methods) {
-            if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())) continue;
-            String name = method.getName();
-            if (!name.toLowerCase(java.util.Locale.ROOT).startsWith(memberLow)) continue;
-            if (name.equals("wait") || name.equals("notify") || name.equals("notifyAll") || name.equals("getClass")) continue;
-            if (seen.add(name)) {
-              String params = buildParamList(method);
-              out.add(new CompletionItem(name + "(", name + "(" + params + ")", CompletionItem.Kind.METHOD));
+        // Static fields first if class-like
+        if (classLike) {
+          for (var f : cls.getFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) continue;
+            String name = f.getName();
+            if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
+            if (seen.add("F:" + name)) {
+              out.add(new CompletionItem(
+                  name,                                // completion
+                  name + " : " + simple(f.getType()),  // label
+                  CompletionItem.Kind.FIELD));
             }
           }
         }
 
-        // Second pass: include instance methods (or all methods if not likely class ref)
-        for (Method method : methods) {
-          if (likelyClassRef && Modifier.isStatic(method.getModifiers())) continue; // already added
-          String name = method.getName();
-          if (!name.toLowerCase(java.util.Locale.ROOT).startsWith(memberLow)) continue;
-          if (name.equals("wait") || name.equals("notify") || name.equals("notifyAll") || name.equals("getClass")) continue;
-          if (seen.add(name)) {
-            String params = buildParamList(method);
-            out.add(new CompletionItem(name + "(", name + "(" + params + ")", CompletionItem.Kind.METHOD));
+        // Static methods (class-like)
+        if (classLike) {
+          for (var method : methods) {
+            if (!Modifier.isStatic(method.getModifiers())) continue;
+            String name = method.getName();
+            if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
+            if (name.equals("wait") || name.equals("notify") || name.equals("notifyAll") || name.equals("getClass")) continue;
+            if (seen.add("M:" + name)) {
+              String params = buildParamList(method); // NOTE: returns a string that already ENDS with ')'
+              String insert = name + "(" + params;    // so do NOT add another ')'
+              String label  = name + "(" + paramSig(method) + ") : " + simple(method.getReturnType());
+
+              out.add(new CompletionItem(insert, label, CompletionItem.Kind.METHOD));
+            }
           }
         }
 
-        return out; // member suggestions take precedence
+        // Instance fields
+        for (var f : cls.getFields()) {
+          if (classLike && Modifier.isStatic(f.getModifiers())) continue;
+          String name = f.getName();
+          if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
+          if (seen.add("F:" + name)) {
+            out.add(new CompletionItem(
+                name + " : " + simple(f.getType()), // label (shows type)
+                name,                                // what to insert
+                CompletionItem.Kind.FIELD));
+          }
+        }
+
+        // Instance methods (or all if not class-like)
+        for (var method : methods) {
+          if (classLike && Modifier.isStatic(method.getModifiers())) continue;
+          String name = method.getName();
+          if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
+          if (name.equals("wait") || name.equals("notify") || name.equals("notifyAll") || name.equals("getClass")) continue;
+          if (seen.add("M:" + name)) {
+            String insert = name + "(" + buildParamList(method);           // e.g. now()
+            String label  = name + "(" + paramSig(method) + ") : "          // e.g. now() : LocalDateTime
+                + simple(method.getReturnType());
+
+            out.add(new CompletionItem(insert, label, CompletionItem.Kind.METHOD));
+          }
+        }
+        return out; // IMPORTANT: in member context, return immediately
+      } else {
+        // Couldn’t resolve target; still in member context -> do not fall back to keywords
+        return out;
       }
     }
 
-    // --- Otherwise: keywords + classes from cached index ---
-    final String low = prefix.toLowerCase(java.util.Locale.ROOT);
+    // --- Not in member context: keywords + classes as before ---
+    final String prefix = (lastWord == null ? "" : lastWord);
+    final String low = prefix.toLowerCase(Locale.ROOT);
 
-    // 1) Groovy keywords
     for (String kw : GROOVY_KEYWORDS) {
       if (kw.startsWith(low)) {
         out.add(new CompletionItem(kw, CompletionItem.Kind.KEYWORD));
       }
     }
 
-    // 2) Classes via cached index (simpleName -> [fqcn...], preferred packages first)
-    final int cap = 200; // keep menu lean
-    int count = 0;
-    Map<String, java.util.List<String>> idx = simpleIndex(); // builds once, caches
-
-    outer:
-    for (Map.Entry<String, java.util.List<String>> e : idx.entrySet()) {
+    int cap = 200, count = 0;
+    for (var e : simpleIndex().entrySet()) {
       String simple = e.getKey();
-      if (simple != null && simple.toLowerCase(java.util.Locale.ROOT).startsWith(low)) {
+      if (simple != null && simple.toLowerCase(Locale.ROOT).startsWith(low)) {
         for (String fqn : e.getValue()) {
           out.add(new CompletionItem(simple, fqn, CompletionItem.Kind.CLASS));
-          if (++count >= cap) break outer;
+          if (++count >= cap) break;
         }
       }
+      if (count >= cap) break;
     }
-
     return out;
   }
 
+  public static Map<String, List<String>> simpleNameIndex() {
+    return simpleIndex(); // returns the cached simpleName -> [fqcn, ...]
+  }
+
+  private static String paramSig(Method m) {
+    Class<?>[] p = m.getParameterTypes();
+    if (p.length == 0) return "";
+    StringBuilder b = new StringBuilder();
+    for (int i = 0; i < p.length; i++) {
+      b.append(simple(p[i]));
+      if (i < p.length - 1) b.append(", ");
+    }
+    return b.toString();
+  }
 
   private static String buildParamList(Method m) {
     Class<?>[] p = m.getParameterTypes();
@@ -150,28 +195,25 @@ public final class GroovyCompletionEngine {
     if (idx != null) return idx;
     synchronized (GroovyCompletionEngine.class) {
       if (SIMPLE_TO_FQCN != null) return SIMPLE_TO_FQCN;
-
-      Map<String, List<String>> m = new HashMap<>();
+      java.util.Map<String, java.util.List<String>> m = new java.util.HashMap<>();
       try (io.github.classgraph.ScanResult sr = new io.github.classgraph.ClassGraph()
           .enableClassInfo()
-          .acceptPackages(SCAN_PACKAGES)  // <--- your proposal fits perfectly here
+          .enableSystemJarsAndModules()
+          .acceptPackages(SCAN_PACKAGES)
           .scan()) {
         for (io.github.classgraph.ClassInfo ci : sr.getAllClasses()) {
           String simple = ci.getSimpleName();
           if (simple == null || simple.isEmpty()) continue;
-          m.computeIfAbsent(simple, k -> new ArrayList<>()).add(ci.getName());
+          m.computeIfAbsent(simple, k -> new java.util.ArrayList<>()).add(ci.getName());
         }
-        // Preferred packages first
-        Comparator<String> byPreference = Comparator.comparingInt(fqn -> {
+        java.util.Comparator<String> byPref = java.util.Comparator.comparingInt(fqn -> {
           for (int i = 0; i < SCAN_PACKAGES.length; i++) {
             if (fqn.startsWith(SCAN_PACKAGES[i] + ".")) return i;
           }
           return SCAN_PACKAGES.length;
         });
-        for (List<String> list : m.values()) list.sort(byPreference);
-      } catch (Throwable ignore) {
-        // keep index empty on failure; keywords-only completion still works
-      }
+        for (java.util.List<String> list : m.values()) list.sort(byPref);
+      } catch (Throwable ignore) {}
       SIMPLE_TO_FQCN = m;
       return m;
     }
@@ -186,24 +228,65 @@ public final class GroovyCompletionEngine {
     }
   }
 
-  // REPLACE your existing resolveClass(...) with this:
+  // Infer the Class<?> of an expression like "ClassName.staticMethod(...)" or "...).method(...)"
+  private static Class<?> inferType(String expr) {
+    if (expr == null) return null;
+    String s = expr.trim();
+    if (!s.endsWith(")")) {
+      // not a call, try to resolve as a class
+      return resolveClass(s);
+    }
+    // We have a call expression ...(...) — find the last '('
+    int open = s.lastIndexOf('(');
+    if (open < 0) return null;
+
+    String argsText = s.substring(open + 1, s.length() - 1);
+    String call = s.substring(0, open);           // e.g. "LocalDate.now" or "foo().bar"
+    int lastDot = call.lastIndexOf('.');
+    if (lastDot < 0) return null;
+
+    String baseExpr = call.substring(0, lastDot); // e.g. "LocalDate" or "foo()"
+    String method   = call.substring(lastDot + 1);// e.g. "now" or "bar"
+
+    // Resolve base type (recurse if base is itself a call)
+    Class<?> baseType = baseExpr.endsWith(")") ? inferType(baseExpr) : resolveClass(baseExpr);
+    if (baseType == null) return null;
+
+    java.lang.reflect.Method best = pickBestMethod(baseType, method, argsText);
+    if (best == null) return null;
+
+    Class<?> rt = best.getReturnType();
+    return (rt == Void.TYPE) ? null : rt;
+  }
+
+  private static java.lang.reflect.Method pickBestMethod(Class<?> baseType, String name, String argsText) {
+    java.lang.reflect.Method fallback = null;
+    int desiredParams = argsText.trim().isEmpty() ? 0 : -1; // prefer 0-arg if no args typed
+    for (java.lang.reflect.Method m : baseType.getMethods()) {
+      if (!m.getName().equals(name)) continue;
+      if (desiredParams == 0 && m.getParameterCount() == 0) return m; // exact cheap match
+      if (fallback == null) fallback = m;
+    }
+    return fallback;
+  }
+
   private static Class<?> resolveClass(String token) {
     if (token == null || token.isEmpty()) return null;
 
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) cl = GroovyCompletionEngine.class.getClassLoader();
 
-    // 1) Fully qualified
+    // 1) FQCN
     Class<?> c = tryLoad(token, cl);
     if (c != null) return c;
 
-    // 2) Fast common packages (no scan)
-    for (String pkg : new String[] {"java.lang", "groovy.lang"}) {
+    // 2) fast common packages
+    for (String pkg : new String[]{"java.lang", "groovy.lang", "java.time"}) {
       c = tryLoad(pkg + "." + token, cl);
       if (c != null) return c;
     }
 
-    // 3) Fallback: cached ClassGraph index for simple names
+    // 3) fallback: cached index (must include java.time in SCAN_PACKAGES)
     java.util.List<String> candidates = simpleIndex().get(token);
     if (candidates != null) {
       for (String fqn : candidates) {

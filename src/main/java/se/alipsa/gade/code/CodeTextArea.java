@@ -1,13 +1,15 @@
 package se.alipsa.gade.code;
 
-import static se.alipsa.gade.Constants.INDENT;
-
 import javafx.application.Platform;
-import javafx.geometry.Bounds;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.IndexRange;
-import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.fxmisc.richtext.LineNumberFactory;
@@ -17,22 +19,32 @@ import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.UnStyledCodeArea;
-import se.alipsa.gade.utils.ExceptionAlert;
+import se.alipsa.gade.code.completion.CompletionItem;
+import se.alipsa.gade.code.completion.EnhancedCompletion;
 import se.alipsa.gade.utils.StringUtils;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static javafx.scene.input.KeyCode.ENTER;
+import static se.alipsa.gade.Constants.INDENT;
 
 
 /**
  * Base class for all code areas
-*/
+ */
 public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextArea {
 
-  /** The file this texarea is editing */
+  /**
+   * The file this texarea is editing
+   */
   protected File file;
 
   /**
@@ -44,7 +56,10 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
 
   private TextAreaTab parentTab;
 
-  private final Pattern whiteSpace = Pattern.compile( "^\\s+" );
+  private final Pattern whiteSpace = Pattern.compile("^\\s+");
+
+  // Tracks the currently open completion menu (if any)
+  private ContextMenu activeCompletionPopup;
 
   /**
    * Default ctor
@@ -68,18 +83,6 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
 
         // run the following code block when previous stream emits an event
         .subscribe(ignore -> highlightSyntax());
-
-    /*
-    Iterator<String> it = getStylesheets().iterator();
-    System.out.println("Stylesheets for " + getClass().getSimpleName());
-    for (String sheet : getStylesheets()) {
-      System.out.println(sheet);
-    }
-        System.out.println("Style classes for " + getClass().getSimpleName());
-    for (String styleClass : getStyleClass()) {
-      System.out.println(styleClass);
-    }
-    */
   }
 
   /**
@@ -127,7 +130,7 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
               replaceText(start, end, s);
               moveTo(orgPos - INDENT.length());
             } //else {
-              //NO tab in the beginning, nothing to do
+            //NO tab in the beginning, nothing to do
             //}
           } else {
             IndexRange range = getSelection();
@@ -138,11 +141,16 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
           }
           e.consume();
         }
-      } else if (KeyCode.ENTER.equals(keyCode)) {
+      } else if (ENTER.equals(keyCode)) {
+        // If completion popup is open, let the popup handler consume Enter (don’t insert newline/indent)
+        if (activeCompletionPopup != null && activeCompletionPopup.isShowing()) {
+          e.consume();
+          return;
+        }
         // Maintain indentation on the next line
-        Matcher m = whiteSpace.matcher( getParagraph( getCurrentParagraph() ).getSegments().get( 0 ) );
-        if ( m.find() ) {
-          Platform.runLater( () -> insertText( getCaretPosition(), m.group() ) );
+        Matcher m = whiteSpace.matcher(getParagraph(getCurrentParagraph()).getSegments().getFirst());
+        if (m.find()) {
+          Platform.runLater(() -> insertText(getCaretPosition(), m.group()));
         }
       }
     });
@@ -231,7 +239,7 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
    * @return the indented text
    */
   protected String indentText(String selected) {
-    if (selected == null || "".equals(selected)) {
+    if (selected == null || selected.isEmpty()) {
       return INDENT;
     }
     String[] lines = selected.split("\n");
@@ -263,7 +271,7 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
   public String getTextContent() {
     String code;
     String selected = selectedTextProperty().getValue();
-    if (selected == null || "".equals(selected)) {
+    if (selected == null || selected.isEmpty()) {
       code = getText();
     } else {
       code = selected;
@@ -319,104 +327,205 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     // do nothing per default
   }
 
-  protected void suggestCompletion(String lastWord, TreeMap<String, Boolean> keyWords, ContextMenu suggestionsPopup) {
+  protected void suggestCompletion(String lastWord,
+                                   TreeMap<String, Boolean> keyWords,
+                                   ContextMenu suggestionsPopup) {
+    activeCompletionPopup = suggestionsPopup;
     suggestionsPopup.hide();
-    final String word = lastWord == null ? "" : lastWord;
 
-    java.util.List<se.alipsa.gade.code.completion.CompletionItem> items =
-        se.alipsa.gade.code.completion.EnhancedCompletion.suggest(
-            word, keyWords, this.getText(), getCaretPosition());
+    final String initialWord = (lastWord == null ? "" : lastWord);
 
-    if (items.isEmpty()) {
-      return;
-    }
+    java.util.List<CompletionItem> items =
+        EnhancedCompletion.suggest(
+            initialWord, keyWords, this.getText(), getCaretPosition());
+    if (items.isEmpty()) return;
 
-    java.util.List<javafx.scene.control.MenuItem> menuItems = new java.util.ArrayList<>();
-    for (se.alipsa.gade.code.completion.CompletionItem ci : items) {
-      javafx.scene.control.MenuItem mi = new javafx.scene.control.MenuItem(ci.renderLabel());
-      final String completion = ci.completion();
-      mi.setOnAction(e -> {
-        int caret = getCaretPosition();
-        int start = Math.max(0, caret - word.length());
-        replaceText(start, caret, completion);
-        requestFocus();
-      });
-      menuItems.add(mi);
-    }
-    suggestionsPopup.getItems().setAll(menuItems);
+    // Anchor where replacement starts (fixed while popup is open)
+    final int anchorStart = Math.max(0, getCaretPosition() - initialWord.length());
 
-    java.util.Optional<javafx.geometry.Bounds> cb = this.getCaretBounds();
-    javafx.geometry.Point2D pos = cb
-        .map(bounds -> new javafx.geometry.Point2D(bounds.getMaxX(), bounds.getMaxY()))
-        .orElseGet(() -> new javafx.geometry.Point2D(this.getLayoutX(), this.getLayoutY()));
-    suggestionsPopup.show(this, pos.getX(), pos.getY());
+    // Full set + filtered view for the ListView
+    final ObservableList<CompletionItem> allItems = FXCollections.observableArrayList(items);
+    final ObservableList<CompletionItem> viewItems = FXCollections.observableArrayList(allItems);
 
-    this.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, evt -> {
-      if (!suggestionsPopup.isShowing()) {
-        return;
+    final ListView<CompletionItem> listView = new ListView<>(viewItems);
+    listView.getStyleClass().add("completion-list");
+    listView.setPrefWidth(520);
+    listView.setMaxHeight(300);
+    listView.setCellFactory(lv -> new ListCell<>() {
+      @Override
+      protected void updateItem(CompletionItem ci, boolean empty) {
+        super.updateItem(ci, empty);
+        setText(empty || ci == null ? "" : ci.renderLabel());
       }
+    });
+    if (!viewItems.isEmpty()) listView.getSelectionModel().select(0);
+    listView.setFocusTraversable(false);
 
-      boolean commit = evt.getCode() == javafx.scene.input.KeyCode.ENTER && evt.isAltDown(); // Alt+Enter
+    // Filter according to current editor text between anchorStart..caret
+    final Runnable refreshFilter = () -> {
+      int caret = Math.max(getCaretPosition(), anchorStart);
+      String prefix = "";
+      try {
+        prefix = getText(anchorStart, caret);
+      } catch (Exception ignore) {
+      }
+      final String low = (prefix == null ? "" : prefix).toLowerCase(Locale.ROOT);
 
-      if (commit) {
-        if (!suggestionsPopup.getItems().isEmpty()) {
-          suggestionsPopup.getItems().get(0).fire();
-          evt.consume();
-        }
-      } else if (evt.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+      // remember current selection
+      var prev = listView.getSelectionModel().getSelectedItem();
+
+      var filtered = allItems.filtered(ci ->
+          ci.completion() != null &&
+              ci.completion().toLowerCase(Locale.ROOT).startsWith(low));
+
+      viewItems.setAll(filtered);
+
+      if (!viewItems.isEmpty()) {
+        int idx = prev != null ? viewItems.indexOf(prev) : -1;
+        listView.getSelectionModel().select(Math.max(idx, 0));
+        listView.scrollTo(listView.getSelectionModel().getSelectedIndex());
+      }
+    };
+
+    // Commit currently highlighted suggestion
+    final Runnable commitSelected = () -> {
+      CompletionItem sel = listView.getSelectionModel().getSelectedItem();
+      if (sel == null && !viewItems.isEmpty()) sel = viewItems.getFirst();
+      if (sel != null) {
+        int caret = getCaretPosition();
+        if (caret < anchorStart) caret = anchorStart;
+        replaceText(anchorStart, caret, sel.completion());
         suggestionsPopup.hide();
+        requestFocus();
+      }
+    };
+
+    // Mouse double-click commits
+    listView.setOnMouseClicked(evt -> {
+      if (evt.getClickCount() >= 2) {
+        commitSelected.run();
         evt.consume();
       }
     });
-    /*
-    List<CustomMenuItem> menuItems = new LinkedList<>();
-    for (Map.Entry<String, Boolean> entry : keyWords.entrySet()) {
-      String result = entry.getKey();
-      Label entryLabel = new Label(result);
-      CustomMenuItem item = new CustomMenuItem(entryLabel, true);
-      item.setOnAction(actionEvent -> {
-        try {
-          String replacement;
-          if (lastWord.contains(".")) { // We are selecting from a list of methods
-            String start = lastWord.substring(lastWord.lastIndexOf('.') + 1);
-            //Gade.instance().getConsoleComponent().getConsole().appendFx("start is " + start + ", result is " + result, true);
-            replacement = result.substring(start.length());
-          } else { // We are completing a keyword or an object name
-            replacement = result.substring(lastWord.length());
-          }
-          //Gade.instance().getConsoleComponent().getConsole().appendFx("result is " + result + ", replacement is " + replacement, true);
-          insertText(getCaretPosition(), replacement);
-          int currentParagraph = getCurrentParagraph();
-          if (entry.getValue()) {
-            int lineEnd = getParagraphLength(currentParagraph);
-            int colIdx = replacement.endsWith(")") ? lineEnd - 1 : lineEnd;
-            moveTo(currentParagraph, colIdx);
-          } else {
-            moveTo(currentParagraph, getParagraphLength(currentParagraph));
-          }
-          suggestionsPopup.hide();
-          requestFocus();
-        } catch (Throwable t) {
-          ExceptionAlert.showAlert("Failed to process suggestion: " + t.getMessage(), t);
-        }
-      });
-      menuItems.add(item);
-    }
-    suggestionsPopup.getItems().clear();
-    suggestionsPopup.getItems().addAll(menuItems);
-    double screenX = 0;
-    double screenY = 0;
-    Optional<Bounds> bounds = this.caretBoundsProperty().getValue();
-    if (bounds.isPresent()) {
-      Bounds bound = bounds.get();
-      screenX = bound.getMaxX();
-      screenY = bound.getMaxY();
-    }
-    suggestionsPopup.setOnHiding(e -> this.requestFocus());
-    suggestionsPopup.show(this, screenX, screenY);
 
-     */
+    // Show the popup with a single CustomMenuItem
+    CustomMenuItem container = new CustomMenuItem(listView, false);
+    suggestionsPopup.getItems().setAll(container);
+
+    java.util.Optional<javafx.geometry.Bounds> cb = this.getCaretBounds();
+    javafx.geometry.Point2D pos = cb
+        .map(b -> new javafx.geometry.Point2D(b.getMaxX(), b.getMaxY()))
+        .orElseGet(() -> new javafx.geometry.Point2D(this.getLayoutX(), this.getLayoutY()));
+    suggestionsPopup.show(this, pos.getX(), pos.getY());
+
+    // Keep focus on the editor when the menu shows (helps routing keys)
+    suggestionsPopup.setOnShown(e -> this.requestFocus());
+
+// Attach nav handler to BOTH the owner scene and the popup scene
+    final Scene ownerScene = getScene();
+
+    final EventHandler<KeyEvent> sceneNav = evt -> {
+      if (!suggestionsPopup.isShowing()) return;
+
+      switch (evt.getCode()) {
+        case DOWN -> {
+          listView.getSelectionModel().selectNext();
+          // no scrollTo here
+          evt.consume();
+        }
+        case UP -> {
+          listView.getSelectionModel().selectPrevious();
+          // no scrollTo here
+          evt.consume();
+        }
+        case PAGE_DOWN -> {
+          int idx = Math.min(listView.getSelectionModel().getSelectedIndex() + 10,
+              Math.max(0, viewItems.size() - 1));
+          listView.getSelectionModel().select(idx);
+          listView.scrollTo(idx); // OK for paging
+          evt.consume();
+        }
+        case PAGE_UP -> {
+          int idx = Math.max(listView.getSelectionModel().getSelectedIndex() - 10, 0);
+          listView.getSelectionModel().select(idx);
+          listView.scrollTo(idx); // OK for paging
+          evt.consume();
+        }
+        case HOME -> {
+          if (!viewItems.isEmpty()) {
+            listView.getSelectionModel().select(0);
+            listView.scrollTo(0); // OK
+          }
+          evt.consume();
+        }
+        case END -> {
+          if (!viewItems.isEmpty()) {
+            int last = viewItems.size() - 1;
+            listView.getSelectionModel().select(last);
+            listView.scrollTo(last); // OK
+          }
+          evt.consume();
+        }
+        case ENTER -> { commitSelected.run(); evt.consume(); }
+        case ESCAPE -> { suggestionsPopup.hide(); evt.consume(); }
+        default -> { /* let typing flow */ }
+      }
+    };
+
+    if (ownerScene != null) {
+      ownerScene.addEventFilter(KeyEvent.KEY_PRESSED, sceneNav);
+    }
+    // The popup scene exists only after show(); add the filter on the next pulse
+    Platform.runLater(() -> {
+      Scene popupScene = listView.getScene();
+      if (popupScene != null) {
+        popupScene.addEventFilter(KeyEvent.KEY_PRESSED, sceneNav);
+      }
+    });
+
+    // Live filtering while typing/backspacing in the editor
+    final EventHandler<KeyEvent> typedHandler = evt -> {
+      if (!suggestionsPopup.isShowing()) return;
+
+      // Swallow typed Enter so it doesn't refresh the list (and doesn't insert a newline)
+      String ch = evt.getCharacter();
+      if ("\r".equals(ch) || "\n".equals(ch)) {
+        evt.consume(); // <-- this prevents the reset-to-top effect
+        return;
+      }
+
+      // For normal characters, re-filter after the text has updated
+      Platform.runLater(refreshFilter);
+    };
+
+    final EventHandler<KeyEvent> backDelHandler = evt -> {
+      if (!suggestionsPopup.isShowing()) return;
+      if (evt.getCode() == KeyCode.BACK_SPACE
+          || evt.getCode() == KeyCode.DELETE) {
+        Platform.runLater(refreshFilter);
+      }
+    };
+
+    // Attach (don’t consume)
+    this.addEventFilter(KeyEvent.KEY_TYPED, typedHandler);
+    this.addEventFilter(KeyEvent.KEY_PRESSED, backDelHandler);
+
+
+    suggestionsPopup.setOnHiding(e -> {
+      if (ownerScene != null) {
+        ownerScene.removeEventFilter(KeyEvent.KEY_PRESSED, sceneNav);
+      }
+      Scene popupScene = listView.getScene();
+      if (popupScene != null) {
+        popupScene.removeEventFilter(KeyEvent.KEY_PRESSED, sceneNav);
+      }
+      this.removeEventFilter(KeyEvent.KEY_TYPED, typedHandler);
+      this.removeEventFilter(KeyEvent.KEY_PRESSED, backDelHandler);
+      activeCompletionPopup = null;
+      this.requestFocus();
+    });
   }
+
 
   /**
    * compute and set syntax highlighting
@@ -424,4 +533,5 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
   public void highlightSyntax() {
     setStyleSpans(0, computeHighlighting(getText()));
   }
+
 }

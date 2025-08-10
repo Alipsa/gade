@@ -15,3 +15,6 @@
 /examples/xcharts/.gradle/
 /examples/**/*.png
 .DS_Store
+/examples/xcharts/build/
+/examples/gradleCpTest/.gradle/
+/examples/HousePrices/.gradle/
