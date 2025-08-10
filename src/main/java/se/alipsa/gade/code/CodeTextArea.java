@@ -320,6 +320,55 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
   }
 
   protected void suggestCompletion(String lastWord, TreeMap<String, Boolean> keyWords, ContextMenu suggestionsPopup) {
+    suggestionsPopup.hide();
+    final String word = lastWord == null ? "" : lastWord;
+
+    java.util.List<se.alipsa.gade.code.completion.CompletionItem> items =
+        se.alipsa.gade.code.completion.EnhancedCompletion.suggest(
+            word, keyWords, this.getText(), getCaretPosition());
+
+    if (items.isEmpty()) {
+      return;
+    }
+
+    java.util.List<javafx.scene.control.MenuItem> menuItems = new java.util.ArrayList<>();
+    for (se.alipsa.gade.code.completion.CompletionItem ci : items) {
+      javafx.scene.control.MenuItem mi = new javafx.scene.control.MenuItem(ci.renderLabel());
+      final String completion = ci.completion();
+      mi.setOnAction(e -> {
+        int caret = getCaretPosition();
+        int start = Math.max(0, caret - word.length());
+        replaceText(start, caret, completion);
+        requestFocus();
+      });
+      menuItems.add(mi);
+    }
+    suggestionsPopup.getItems().setAll(menuItems);
+
+    java.util.Optional<javafx.geometry.Bounds> cb = this.getCaretBounds();
+    javafx.geometry.Point2D pos = cb
+        .map(bounds -> new javafx.geometry.Point2D(bounds.getMaxX(), bounds.getMaxY()))
+        .orElseGet(() -> new javafx.geometry.Point2D(this.getLayoutX(), this.getLayoutY()));
+    suggestionsPopup.show(this, pos.getX(), pos.getY());
+
+    this.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, evt -> {
+      if (!suggestionsPopup.isShowing()) {
+        return;
+      }
+
+      boolean commit = evt.getCode() == javafx.scene.input.KeyCode.ENTER && evt.isAltDown(); // Alt+Enter
+
+      if (commit) {
+        if (!suggestionsPopup.getItems().isEmpty()) {
+          suggestionsPopup.getItems().get(0).fire();
+          evt.consume();
+        }
+      } else if (evt.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+        suggestionsPopup.hide();
+        evt.consume();
+      }
+    });
+    /*
     List<CustomMenuItem> menuItems = new LinkedList<>();
     for (Map.Entry<String, Boolean> entry : keyWords.entrySet()) {
       String result = entry.getKey();
@@ -365,6 +414,8 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     }
     suggestionsPopup.setOnHiding(e -> this.requestFocus());
     suggestionsPopup.show(this, screenX, screenY);
+
+     */
   }
 
   /**
