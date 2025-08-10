@@ -1,6 +1,7 @@
 package se.alipsa.gade.code.groovytab;
 
 import io.github.classgraph.*;
+import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -24,7 +25,20 @@ import static se.alipsa.gade.menu.GlobalOptions.ADD_IMPORTS;
 
 public class GroovyTextArea extends CodeTextArea {
 
-  TreeSet<String> contextObjects = new TreeSet<>();
+  private static final Pattern SIMPLE_TYPE = Pattern.compile("\\b([A-Z][A-Za-z0-9_]*)\\b");
+
+  private static final List<String> DEFAULT_PKGS = List.of("java.lang", "groovy.lang");
+
+  // Matches: import pkg.Class
+  private static final java.util.regex.Pattern IMPORT_NORMAL =
+      java.util.regex.Pattern.compile("(?m)^\\s*import\\s+([\\w.]+)\\s*(?:;)?\\s*$");
+  // Matches: import pkg.Class as Alias
+  private static final java.util.regex.Pattern IMPORT_ALIAS =
+      java.util.regex.Pattern.compile("(?m)^\\s*import\\s+([\\w.]+)\\s+as\\s+(\\w+)\\s*(?:;)?\\s*$");
+  // Matches: import static pkg.Class.member  OR  import static pkg.Class.*
+  private static final java.util.regex.Pattern IMPORT_STATIC =
+      java.util.regex.Pattern.compile("(?m)^\\s*import\\s+static\\s+([\\w.]+)(?:\\.(\\w+)|\\.\\*)\\s*(?:;)?\\s*$");
+
 
   ContextMenu suggestionsPopup = new ContextMenu();
   private static final String[] KEYWORDS = new String[]{
@@ -101,6 +115,33 @@ public class GroovyTextArea extends CodeTextArea {
         }
       }
     });
+
+    this.setOnContextMenuRequested(evt -> {
+      int pos = this.hit(evt.getX(), evt.getY()).getInsertionIndex();
+      String token = tokenAt(pos);
+      if (token == null) return;
+
+      // Only for capitalized simple names (type-ish)
+      if (!token.matches("[A-Z][A-Za-z0-9_]*")) return;
+
+      // If already resolvable, nothing to do
+      var idx = se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine.simpleNameIndex();
+      var candidates = idx.getOrDefault(token, java.util.List.of());
+      if (candidates.isEmpty()) return;
+
+      // Filter out ones already resolvable via imports/defaults
+      var menu = new javafx.scene.control.ContextMenu();
+      for (String fqn : candidates) {
+        if (isAlreadyImportedOrDefault(token, fqn)) continue;
+        var mi = new javafx.scene.control.MenuItem("Import " + fqn);
+        mi.setOnAction(ae -> addImportIfMissing(fqn));
+        menu.getItems().add(mi);
+      }
+      if (!menu.getItems().isEmpty()) {
+        menu.show(this, evt.getScreenX(), evt.getScreenY());
+        evt.consume();
+      }
+    });
   }
 
   List<String> getDependencies() {
@@ -160,147 +201,328 @@ public class GroovyTextArea extends CodeTextArea {
   @Override
   public void autoComplete() {
     String line = getText(getCurrentParagraph());
-    String currentText = line.substring(0, getCaretColumn());
-    String lastWord;
-    int index = currentText.indexOf(' ');
-    if (index == -1 ) {
-      lastWord = currentText;
-    } else {
-      lastWord = currentText.substring(currentText.lastIndexOf(' ') + 1);
-    }
-    index = lastWord.indexOf(',');
-    if (index > -1) {
-      lastWord = lastWord.substring(index+1);
-    }
-    index = lastWord.indexOf('(');
-    if (index > -1) {
-      lastWord = lastWord.substring(index+1);
-    }
-    index = lastWord.indexOf('[');
-    if (index > -1) {
-      lastWord = lastWord.substring(index+1);
-    }
-    index = lastWord.indexOf('{');
-    if (index > -1) {
-      lastWord = lastWord.substring(index+1);
-    }
+    String current = line.substring(0, getCaretColumn());
 
-    //Gade.instance().getConsoleComponent().getConsole().appendFx("lastWord is " + lastWord, true);
+    // token after the last separator
+    int cut = Math.max(
+        Math.max(Math.max(current.lastIndexOf(' '), current.lastIndexOf('\t')),
+            Math.max(current.lastIndexOf('('), current.lastIndexOf('{'))),
+        Math.max(current.lastIndexOf('['), Math.max(current.lastIndexOf(','), current.lastIndexOf(';'))));
 
-    if (lastWord.length() > 0) {
-      suggestCompletion(lastWord);
+    String lastToken = cut >= 0 ? current.substring(cut + 1) : current;
+
+    // if member access, only replace the part after '.'
+    int dot = lastToken.lastIndexOf('.');
+    String wordToReplace = dot >= 0 ? lastToken.substring(dot + 1) : lastToken;
+
+    // allow empty member prefix after a trailing dot (e.g. "LocalDate.")
+    if (!wordToReplace.isEmpty() || dot >= 0) {
+      suggestCompletion(wordToReplace, new java.util.TreeMap<>(), suggestionsPopup);
     }
   }
 
-  private void suggestCompletion(String lastWord) {
-    var consoleComponent = Gade.instance().getConsoleComponent();
-    var console =  consoleComponent.getConsole();
-    //console.appendFx("Getting suggestions for " + lastWord, true);
-    TreeMap<String, Boolean> suggestions = new TreeMap<>();
+  @Override
+  public void highlightSyntax() {
+    super.highlightSyntax();               // keep your existing coloring
+    Platform.runLater(this::markUnresolvedTypes); // overlay diagnostics afterwards
+    Platform.runLater(this::markUnusedImports);
+  }
 
-    var contextObjects = Gade.instance().getConsoleComponent().getContextObjects();
+  private void markUnresolvedTypes() {
+    String text = getText();
+    var unresolved = findUnresolvedSimpleTypes(text);
 
-    for (Map.Entry<String, Object> contextObject: contextObjects.entrySet()) {
-      String key = contextObject.getKey();
-      if (key.equals(lastWord)) {
-        suggestions.put(".", Boolean.FALSE);
-      } else if (key.startsWith(lastWord)) {
-        suggestions.put(key, Boolean.FALSE);
-      } else if (lastWord.startsWith(key) && lastWord.contains(".")) {
-        int firstDot = lastWord.indexOf('.');
-        String varName = lastWord.substring(0, lastWord.indexOf('.'));
-        if (key.equals(varName)){
-          suggestions.putAll(getInstanceMethods(contextObject.getValue(), lastWord.substring(firstDot+1)));
-        }
+    // Apply underline only to those ranges. These tokens don’t overlap keywords,
+    // so overriding the style for just that range is OK.
+    for (var r : unresolved) {
+      setStyle(r.start, r.end, java.util.List.of("unresolved-token"));
+    }
+  }
+
+  private String tokenAt(int caretPos) {
+    String t = getText();
+    if (caretPos < 0 || caretPos > t.length()) return null;
+    int s = caretPos, e = caretPos;
+    while (s > 0 && Character.isJavaIdentifierPart(t.charAt(s - 1))) s--;
+    while (e < t.length() && Character.isJavaIdentifierPart(t.charAt(e))) e++;
+    if (e > s) return t.substring(s, e);
+    return null;
+  }
+
+  private boolean isAlreadyImportedOrDefault(String simple, String fqn) {
+    // Check explicit imports present
+    var imps = getImports(); // you already have this method; returns e.g. "import java.time.LocalDate"
+    for (String imp : imps) {
+      String fq = imp.substring("import ".length()).replace(";", "").trim();
+      if (fq.startsWith("static ")) fq = fq.substring("static ".length()).trim();
+      if (fq.endsWith(".*")) {
+        String pkg = fq.substring(0, fq.length() - 2);
+        if (fqn.startsWith(pkg + ".")) return true;
+      } else if (fq.equals(fqn)) {
+        return true;
       }
     }
-    if (suggestions.size() > 0) {
-      suggestCompletion(lastWord, suggestions, suggestionsPopup);
-      return;
+    // default packages
+    for (String pkg : DEFAULT_PKGS) {
+      if (fqn.startsWith(pkg + ".")) return true;
+    }
+    return false;
+  }
+
+  private void addImportIfMissing(String fqn) {
+    // Don’t duplicate (also respect wildcard imports that already cover it)
+    var imports = getImports(); // your existing helper: lines starting with "import "
+    for (String imp : imports) {
+      String s = imp.trim();
+      if (s.endsWith(";")) s = s.substring(0, s.length() - 1);
+      if (s.startsWith("import ")) s = s.substring(7).trim();
+      if (s.startsWith("static ")) s = s.substring(7).trim();
+      if (s.equals(fqn)) return;
+      if (s.endsWith(".*")) {
+        String pkg = s.substring(0, s.length() - 2);
+        if (fqn.startsWith(pkg + ".")) return; // covered by wildcard
+      }
     }
 
-    // Else it is probably package or Class related
-    String searchWord = lastWord;
-    boolean endsWithDot = false;
-    if (searchWord.endsWith(".")) {
-      searchWord = searchWord.substring(0, searchWord.length() -1);
-      endsWithDot = true;
+    String all = getAllTextContent();
+    String eol = all.contains("\r\n") ? "\r\n" : "\n";
+
+    // Skip shebang if present
+    int shebangEnd = 0;
+    Matcher sh = Pattern.compile("^#!.*(?:\\r?\\n)").matcher(all);
+    if (sh.find()) shebangEnd = sh.end();
+
+    // After package (semicolon optional)
+    int afterPackage = shebangEnd;
+    Matcher pm = Pattern.compile("(?m)^\\s*package\\s+[\\w.]+\\s*;?\\s*$").matcher(all);
+    if (pm.find()) afterPackage = pm.end();
+
+    // After the last existing import (semicolon optional, static/wildcard supported)
+    int afterImports = afterPackage;
+    Matcher im = Pattern.compile("(?m)^\\s*import\\s+(?:static\\s+)?[\\w.]+(?:\\.\\*)?\\s*;?\\s*$").matcher(all);
+    while (im.find()) {
+      afterImports = im.end();
     }
-    ClassLoader cl = Gade.instance().getConsoleComponent().getClassLoader();
-    try {
-      Class<?> clazz = cl.loadClass(searchWord);
-      suggestions.putAll(getStaticMethods(clazz));
-    } catch (ClassNotFoundException e) {
-      try (ScanResult scanResult = new ClassGraph().enableClassInfo().addClassLoader(cl).scan()) {
-        String finalSearchWord = searchWord;
-        List<? extends Class<?>> exactMatches = scanResult.getAllClasses().stream()
-            .filter(ci -> ci.getSimpleName().equals(finalSearchWord)).map(ClassInfo::loadClass)
-            .toList();
-        if (exactMatches.size() == 1) {
-          String prefix = endsWithDot ? "" : ".";
-          lastWord = endsWithDot ? lastWord : lastWord + ".";
-          suggestions.putAll(getStaticMethods(exactMatches.get(0), prefix));
-        } else if (exactMatches.size() > 1){
-          console.appendWarningFx("Multiple matches for this class detected, cannot determine which one is meant");
-          return;
-        } else {
-          List<String> possiblePackages = scanResult.getPackageInfo().stream()
-              .map(PackageInfo::getName)
-              .filter(name -> name.startsWith(finalSearchWord))
-              .toList();
-          if (possiblePackages.size() > 0) {
-            Map<String, Boolean> packages = new TreeMap<>();
-            lastWord = endsWithDot ? lastWord : lastWord + ".";
-            for (String pkg : possiblePackages) {
-              String suggestion = pkg.substring(finalSearchWord.length());
-              if (endsWithDot && suggestion.startsWith(".")) {
-                suggestion = suggestion.substring(1);
-              }
-              packages.put(suggestion, Boolean.FALSE);
+
+    int insertPos = Math.max(afterImports, afterPackage);
+    String toInsert = (insertPos == 0 ? "" : eol) + "import " + fqn + eol;
+    replaceContentText(insertPos, insertPos, toInsert);
+  }
+
+  private static final class Range { final int start, end; Range(int s, int e){start=s; end=e;} }
+
+  private java.util.List<Range> findUnresolvedSimpleTypes(String code) {
+    // 1) Collect current imports and wildcard imports
+    var explicitImports = new java.util.HashSet<String>();  // simple name -> fqcn
+    var wildcardPkgs    = new java.util.HashSet<String>();  // e.g. "java.time"
+
+    String currentPkg = null;
+
+    try (var scanner = new java.util.Scanner(code)) {
+      while (scanner.hasNextLine()) {
+        String line = scanner.nextLine().trim();
+        if (line.startsWith("package ")) {
+          currentPkg = line.substring("package ".length()).replace(";", "").trim();
+        } else if (line.startsWith("import ")) {
+          String imp = line.substring("import ".length()).replace(";", "").trim();
+          if (imp.startsWith("static ")) imp = imp.substring("static ".length()).trim(); // ignore static for types
+          if (imp.endsWith(".*")) {
+            wildcardPkgs.add(imp.substring(0, imp.length() - 2));
+          } else {
+            int lastDot = imp.lastIndexOf('.');
+            if (lastDot > 0) {
+              explicitImports.add(imp);
             }
-            suggestions.putAll(packages);
           }
         }
       }
     }
-    if (suggestions.size() > 0) {
-      suggestCompletion(lastWord, suggestions, suggestionsPopup);
-    } else {
-      console.appendFx("No matches found for " + searchWord, true);
+
+    // Build quick lookups
+    var simpleToFqns = se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine.simpleNameIndex();
+    var explicitSimple = new java.util.HashSet<String>();
+    for (String fq : explicitImports) {
+      String simple = fq.substring(fq.lastIndexOf('.') + 1);
+      explicitSimple.add(simple);
     }
+
+    // 2) Scan for candidate simple type names and test resolvability
+    var out = new java.util.ArrayList<Range>();
+    var m = SIMPLE_TYPE.matcher(code);
+    while (m.find()) {
+      String simple = m.group(1);
+
+      // Skip obvious non-type contexts quickly if you like (e.g., ALL_CAPS constants)
+      if (simple.equals(simple.toUpperCase(Locale.ROOT))) continue;
+
+      // If already imported explicitly, ok
+      if (explicitSimple.contains(simple)) continue;
+
+      // If fully qualified already (token with dot) — our pattern doesn’t match that, so ignore
+
+      // If it exists in default packages, ok
+      if (resolvableFromDefaultPkgs(simple, DEFAULT_PKGS, simpleToFqns)) continue;
+
+      // If available via wildcard import, ok
+      if (resolvableFromWildcard(simple, wildcardPkgs, simpleToFqns)) continue;
+
+      // If type defined in this file (class/trait/enum name), ok
+      if (definedLocally(code, simple)) continue;
+
+      // Otherwise: mark unresolved
+      out.add(new Range(m.start(1), m.end(1)));
+    }
+    return out;
   }
 
-  private Map<String, Boolean> getStaticMethods(Class<?> clazz, String... prefixOpt) {
-    String prefix = prefixOpt.length > 0 ? prefixOpt[0] : "";
-    Map<String, Boolean> staticMethods = new TreeMap<>();
-    for(Method method : clazz.getMethods()) {
-      //Gade.instance().getConsoleComponent().getConsole().appendFx(method.getName() + " and startWith '" + start + "'");
-      if ( Modifier.isStatic(method.getModifiers())) {
-        Boolean hasParams = method.getParameterCount() > 0;
-        String suggestion = method.getName() + "()";
-        if (Boolean.TRUE.equals(staticMethods.get(suggestion))) {
-          hasParams = Boolean.TRUE;
-        }
-        staticMethods.put(prefix + suggestion, hasParams);
+  private boolean resolvableFromDefaultPkgs(String simple, List<String> pkgs, java.util.Map<String, java.util.List<String>> idx) {
+    var fqns = idx.get(simple);
+    if (fqns == null) return false;
+    for (String fqn : fqns) {
+      for (String pkg : pkgs) {
+        if (fqn.startsWith(pkg + ".")) return true;
       }
     }
-    return staticMethods;
+    return false;
   }
 
-  private Map<String, Boolean> getInstanceMethods(Object obj, String start) {
-    Map<String, Boolean> instanceMethods = new TreeMap<>();
-    for(Method method : obj.getClass().getMethods()) {
-      //Gade.instance().getConsoleComponent().getConsole().appendFx(method.getName() + " and startWith '" + start + "'");
-      if ( !Modifier.isStatic(method.getModifiers()) && ("".equals(start) || method.getName().startsWith(start))) {
-        Boolean hasParams = method.getParameterCount() > 0;
-        String suggestion = method.getName() + "()";
-        if (Boolean.TRUE.equals(instanceMethods.get(suggestion))) {
-          hasParams = Boolean.TRUE;
-        }
-        instanceMethods.put(suggestion, hasParams);
+  private boolean resolvableFromWildcard(String simple, java.util.Set<String> wildcardPkgs,
+                                         java.util.Map<String, java.util.List<String>> idx) {
+    var fqns = idx.get(simple);
+    if (fqns == null) return false;
+    for (String fqn : fqns) {
+      int lastDot = fqn.lastIndexOf('.');
+      String pkg = lastDot > 0 ? fqn.substring(0, lastDot) : "";
+      if (wildcardPkgs.contains(pkg)) return true;
+    }
+    return false;
+  }
+
+  private boolean definedLocally(String code, String name) {
+    // quick & cheap: class/enum/interface/trait NAME
+    return java.util.regex.Pattern.compile(
+            "(?m)\\b(class|enum|interface|trait)\\s+" + java.util.regex.Pattern.quote(name) + "\\b")
+        .matcher(code).find();
+  }
+
+  private void markUnusedImports() {
+    final String code = getText();
+
+    // Collect import entries with the exact range to style (just the identifier)
+    record ImportUse(int start, int end, String id, Kind kind, String fqnOrClass) {
+      enum Kind { NORMAL, ALIAS, STATIC_MEMBER, STATIC_STAR, WILDCARD_PKG }
+    }
+    java.util.List<ImportUse> imports = new java.util.ArrayList<>();
+
+    // Normal + alias imports
+    java.util.regex.Matcher mAlias = IMPORT_ALIAS.matcher(code);
+    while (mAlias.find()) {
+      String fqn   = mAlias.group(1);
+      String alias = mAlias.group(2);
+      int aliasStart = mAlias.start(2);
+      int aliasEnd   = mAlias.end(2);
+      imports.add(new ImportUse(aliasStart, aliasEnd, alias,
+          ImportUse.Kind.ALIAS, fqn));
+    }
+    java.util.regex.Matcher mNorm = IMPORT_NORMAL.matcher(code);
+    while (mNorm.find()) {
+      // If it also matches alias pattern, skip here (already added above)
+      if (IMPORT_ALIAS.matcher(mNorm.group(0)).matches()) continue;
+
+      String fqn = mNorm.group(1);
+      if (fqn.endsWith(".*")) {
+        // Package wildcard: conservative — don't flag as unused
+        imports.add(new ImportUse(-1, -1, "", ImportUse.Kind.WILDCARD_PKG, fqn));
+      } else {
+        int lastDot = fqn.lastIndexOf('.');
+        String simple = lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
+        // Style only the simple name portion
+        int lineStart = mNorm.start(1);
+        int simpleStart = lineStart + (lastDot >= 0 ? lastDot + 1 : 0);
+        int simpleEnd   = lineStart + fqn.length();
+        imports.add(new ImportUse(simpleStart, simpleEnd, simple,
+            ImportUse.Kind.NORMAL, fqn));
       }
     }
-    return instanceMethods;
+
+    // Static imports
+    Matcher mStat = IMPORT_STATIC.matcher(code);
+    while (mStat.find()) {
+      String cls = mStat.group(1);
+      String member = mStat.group(2); // null if .* form
+
+      if (member == null) {
+        // static star: conservative — don't flag as unused
+        imports.add(new ImportUse(-1, -1, "", ImportUse.Kind.STATIC_STAR, cls));
+      } else {
+        int memStart = mStat.start(2);
+        int memEnd   = mStat.end(2);
+        imports.add(new ImportUse(memStart, memEnd, member,
+            ImportUse.Kind.STATIC_MEMBER, cls));
+      }
+    }
+
+    // Build used identifier set (simple approach):
+    //  - tokens in code, excluding imports and package lines
+    //  - for class usage: we only count tokens NOT immediately preceded by '.'
+    //    so "java.time.LocalDate" won't count as using LocalDate import
+    final BitSet importLines = new BitSet(code.length());
+    Matcher anyImportLine = java.util.regex.Pattern
+        .compile("(?m)^\\s*import\\b.*$")
+        .matcher(code);
+    while (anyImportLine.find()) {
+      importLines.set(anyImportLine.start(), anyImportLine.end());
+    }
+    Matcher pkgLine = Pattern
+        .compile("(?m)^\\s*package\\b.*$")
+        .matcher(code);
+    while (pkgLine.find()) {
+      importLines.set(pkgLine.start(), pkgLine.end());
+    }
+
+    Set<String> usedTokens = new HashSet<>();
+    Matcher tok = Pattern
+        .compile("\\b([A-Za-z_][A-Za-z_0-9]*)\\b")
+        .matcher(code);
+    while (tok.find()) {
+      int s = tok.start(1);
+      int e = tok.end(1);
+      if (importLines.get(s, e).cardinality() > 0) {
+        continue; // ignore tokens on import/package lines
+      }
+      // ignore tokens that are part of a qualified name: ".Name"
+      if (s > 0 && code.charAt(s - 1) == '.') continue;
+
+      String id = tok.group(1);
+      usedTokens.add(id);
+    }
+
+    // Decide which imports are unused
+    for (ImportUse iu : imports) {
+      switch (iu.kind) {
+        case NORMAL -> {
+          // If the simple name never appears unqualified, consider unused
+          if (!usedTokens.contains(iu.id)) {
+            setStyle(iu.start, iu.end, java.util.List.of("unused-import"));
+          }
+        }
+        case ALIAS -> {
+          // Use of the alias name marks it as used
+          if (!usedTokens.contains(iu.id)) {
+            setStyle(iu.start, iu.end, java.util.List.of("unused-import"));
+          }
+        }
+        case STATIC_MEMBER -> {
+          // Only consider bare member usage (qualified Class.member means the import is redundant)
+          if (!usedTokens.contains(iu.id)) {
+            setStyle(iu.start, iu.end, java.util.List.of("unused-import"));
+          }
+        }
+        case STATIC_STAR, WILDCARD_PKG -> {
+          // Conservative: don't mark as unused (could be used in many places)
+        }
+      }
+    }
   }
 
 }

@@ -1,3 +1,7 @@
+.root {
+    -fx-danger: rgba(220, 80, 80, 0.95);
+}
+
 .styled-text-area .env-varName {
     -fx-fill: black;
 }
@@ -24,6 +28,47 @@
     -fx-fill: dodgerblue;
     -fx-stroke-width: 0;
 }
+
+/* Code completion */
+/* Strong, theme-compatible selection for the completion popup */
+.list-view.completion-list .list-cell:selected:focused {
+    -fx-background-color: -fx-selection-bar;
+    -fx-text-fill: -fx-selection-bar-text;
+}
+
+.list-view.completion-list .list-cell:selected {
+    /* when the list doesn’t have focus (your case) */
+    -fx-background-color: -fx-selection-bar-non-focused;
+    -fx-text-fill: -fx-selection-bar-text;
+}
+
+/* Optional: nicer hover when not selected */
+.list-view.completion-list .list-cell:hover {
+    -fx-background-color: -fx-cell-hover-color;
+}
+
+/* Optional: spacing/monospace for method signatures */
+.list-view.completion-list .list-cell {
+    -fx-padding: 2 8 2 8;
+    /* -fx-font-family: monospace; */
+}
+
+/* undeclared classes (forgotten imports) */
+.unresolved-token {
+    -fx-underline: true;                 /* always works */
+
+    /* RichTextFX extras (if your version supports these) */
+    -rtfx-underline-color: -fx-danger;   /* or a custom var you define per theme */
+    -rtfx-underline-width: 1;
+    -rtfx-underline-dash-array: 2 2;     /* gives a subtle “wavy/dashed” feel */
+}
+
+/* Subtle, theme-aware gray for unused imports */
+.unused-import {
+    -fx-fill: -fx-text-inner-color; /* use theme's text color */
+    -fx-opacity: 0.50;              /* fade it */
+}
+
 
 /* see https://www.rapidtables.com/web/css/css-color.html for color names */
 .assign {
