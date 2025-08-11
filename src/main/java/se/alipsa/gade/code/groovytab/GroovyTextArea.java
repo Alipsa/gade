@@ -27,7 +27,8 @@ public class GroovyTextArea extends CodeTextArea {
 
   private static final Pattern SIMPLE_TYPE = Pattern.compile("\\b([A-Z][A-Za-z0-9_]*)\\b");
 
-  private static final List<String> DEFAULT_PKGS = List.of("java.lang", "groovy.lang");
+  private static final List<String> DEFAULT_PKGS = List.of("java.lang", "groovy.lang", "java.io",
+      "java.net", "java.util", "groovy.util");
 
   // Matches: import pkg.Class
   private static final java.util.regex.Pattern IMPORT_NORMAL =
@@ -89,10 +90,6 @@ public class GroovyTextArea extends CodeTextArea {
         if (KeyCode.ENTER.equals(e.getCode())) {
           CodeComponent codeComponent = parent.getGui().getCodeComponent();
           String gCode = "";
-          /*
-          if (parent.getGui().getPrefs().getBoolean(ADD_IMPORTS, true)) {
-            gCode += getImports();
-          }*/
           String selected = selectedTextProperty().getValue();
           // if text is selected then go with that
           if (selected != null && !"".equals(selected)) {
@@ -313,7 +310,7 @@ public class GroovyTextArea extends CodeTextArea {
 
   private java.util.List<Range> findUnresolvedSimpleTypes(String code) {
     // 1) Collect current imports and wildcard imports
-    var explicitImports = new java.util.HashSet<String>();  // simple name -> fqcn
+    var explicitImports = new java.util.HashSet<String>();  // fqcn
     var wildcardPkgs    = new java.util.HashSet<String>();  // e.g. "java.time"
 
     String currentPkg = null;
@@ -346,19 +343,36 @@ public class GroovyTextArea extends CodeTextArea {
       explicitSimple.add(simple);
     }
 
+    // Precompute annotation name ranges so we can skip annotation identifiers reliably.
+    var annotationRanges = new java.util.ArrayList<Range>();
+    java.util.regex.Matcher ann = java.util.regex.Pattern.compile("@([A-Za-z_][A-Za-z0-9_]*)\\b").matcher(code);
+    while (ann.find()) {
+      annotationRanges.add(new Range(ann.start(1), ann.end(1)));
+    }
+
+    boolean hasGrab = code.contains("@Grab");
+
     // 2) Scan for candidate simple type names and test resolvability
     var out = new java.util.ArrayList<Range>();
     var m = SIMPLE_TYPE.matcher(code);
     while (m.find()) {
       String simple = m.group(1);
 
-      // Skip obvious non-type contexts quickly if you like (e.g., ALL_CAPS constants)
+      // Skip if token is an annotation name
+      boolean isAnnotation = false;
+      for (Range ar : annotationRanges) {
+        if (m.start(1) >= ar.start && m.end(1) <= ar.end) {
+          isAnnotation = true;
+          break;
+        }
+      }
+      if (isAnnotation) continue;
+
+      // Skip obvious non-type contexts
       if (simple.equals(simple.toUpperCase(Locale.ROOT))) continue;
 
       // If already imported explicitly, ok
       if (explicitSimple.contains(simple)) continue;
-
-      // If fully qualified already (token with dot) — our pattern doesn’t match that, so ignore
 
       // If it exists in default packages, ok
       if (resolvableFromDefaultPkgs(simple, DEFAULT_PKGS, simpleToFqns)) continue;
@@ -366,7 +380,10 @@ public class GroovyTextArea extends CodeTextArea {
       // If available via wildcard import, ok
       if (resolvableFromWildcard(simple, wildcardPkgs, simpleToFqns)) continue;
 
-      // If type defined in this file (class/trait/enum name), ok
+      // If we have @Grab and this type could be in a wildcard package, skip
+      if (hasGrab && isCoveredByWildcard(simple, wildcardPkgs)) continue;
+
+      // If type defined in this file, ok
       if (definedLocally(code, simple)) continue;
 
       // Otherwise: mark unresolved
@@ -374,6 +391,16 @@ public class GroovyTextArea extends CodeTextArea {
     }
     return out;
   }
+
+  // only skip if the wildcard could actually contain the type
+  private boolean isCoveredByWildcard(String simple, java.util.Set<String> wildcardPkgs) {
+    // We can't resolve it yet, but if there’s at least one wildcard import,
+    // assume the class could be inside it when @Grab is used.
+    // This avoids skipping too much in non-related packages.
+    return !wildcardPkgs.isEmpty();
+  }
+
+
 
   private boolean resolvableFromDefaultPkgs(String simple, List<String> pkgs, java.util.Map<String, java.util.List<String>> idx) {
     var fqns = idx.get(simple);
@@ -481,6 +508,13 @@ public class GroovyTextArea extends CodeTextArea {
     }
 
     Set<String> usedTokens = new HashSet<>();
+
+    // --- Treat annotation names as used explicitly (handles @MyAnnotation)
+    Matcher ann = java.util.regex.Pattern.compile("@([A-Za-z_][A-Za-z_0-9]*)\\b").matcher(code);
+    while (ann.find()) {
+      usedTokens.add(ann.group(1));
+    }
+
     Matcher tok = Pattern
         .compile("\\b([A-Za-z_][A-Za-z_0-9]*)\\b")
         .matcher(code);
