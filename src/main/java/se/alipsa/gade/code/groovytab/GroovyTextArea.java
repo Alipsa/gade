@@ -286,7 +286,7 @@ public class GroovyTextArea extends CodeTextArea {
 
     // Skip shebang if present
     int shebangEnd = 0;
-    Matcher sh = Pattern.compile("^#!.*(?:\\r?\\n)").matcher(all);
+    Matcher sh = Pattern.compile("^#!.*\\r?\\n").matcher(all);
     if (sh.find()) shebangEnd = sh.end();
 
     // After package (semicolon optional)
@@ -350,12 +350,21 @@ public class GroovyTextArea extends CodeTextArea {
       annotationRanges.add(new Range(ann.start(1), ann.end(1)));
     }
 
+    // Precompute comment ranges to skip tokens inside them
+    var commentRanges = new java.util.BitSet(code.length());
+    java.util.regex.Matcher commentMatcher = Pattern.compile(COMMENT_PATTERN).matcher(code);
+    while (commentMatcher.find()) {
+      commentRanges.set(commentMatcher.start(), commentMatcher.end());
+    }
+
     boolean hasGrab = code.contains("@Grab");
 
     // 2) Scan for candidate simple type names and test resolvability
     var out = new java.util.ArrayList<Range>();
     var m = SIMPLE_TYPE.matcher(code);
     while (m.find()) {
+      if (commentRanges.get(m.start(1), m.end(1)).cardinality() > 0) continue;
+
       String simple = m.group(1);
 
       // Skip if token is an annotation name
@@ -507,11 +516,18 @@ public class GroovyTextArea extends CodeTextArea {
       importLines.set(pkgLine.start(), pkgLine.end());
     }
 
+    final BitSet commentRanges = new BitSet(code.length());
+    Matcher commentMatcher = Pattern.compile(COMMENT_PATTERN).matcher(code);
+    while (commentMatcher.find()) {
+      commentRanges.set(commentMatcher.start(), commentMatcher.end());
+    }
+
     Set<String> usedTokens = new HashSet<>();
 
     // --- Treat annotation names as used explicitly (handles @MyAnnotation)
     Matcher ann = java.util.regex.Pattern.compile("@([A-Za-z_][A-Za-z_0-9]*)\\b").matcher(code);
     while (ann.find()) {
+      if (commentRanges.get(ann.start(1), ann.end(1)).cardinality() > 0) continue;
       usedTokens.add(ann.group(1));
     }
 
@@ -521,9 +537,8 @@ public class GroovyTextArea extends CodeTextArea {
     while (tok.find()) {
       int s = tok.start(1);
       int e = tok.end(1);
-      if (importLines.get(s, e).cardinality() > 0) {
-        continue; // ignore tokens on import/package lines
-      }
+      if (importLines.get(s, e).cardinality() > 0) continue; // ignore tokens on import/package lines
+      if (commentRanges.get(s, e).cardinality() > 0) continue; // ignore tokens in comments
       // ignore tokens that are part of a qualified name: ".Name"
       if (s > 0 && code.charAt(s - 1) == '.') continue;
 
