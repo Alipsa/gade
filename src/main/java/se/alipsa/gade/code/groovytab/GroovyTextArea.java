@@ -18,6 +18,8 @@ import se.alipsa.gade.utils.Alerts;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +32,9 @@ public class GroovyTextArea extends CodeTextArea {
   private static final List<String> DEFAULT_PKGS = List.of("java.lang", "groovy.lang", "java.io",
       "java.net", "java.util", "groovy.util");
 
+  private static final Set<String> DEFAULT_SIMPLE_TYPES =
+      Set.of("BigInteger", "BigDecimal");
+
   // Matches: import pkg.Class
   private static final java.util.regex.Pattern IMPORT_NORMAL =
       java.util.regex.Pattern.compile("(?m)^\\s*import\\s+([\\w.]+)\\s*(?:;)?\\s*$");
@@ -39,6 +44,21 @@ public class GroovyTextArea extends CodeTextArea {
   // Matches: import static pkg.Class.member  OR  import static pkg.Class.*
   private static final java.util.regex.Pattern IMPORT_STATIC =
       java.util.regex.Pattern.compile("(?m)^\\s*import\\s+static\\s+([\\w.]+)(?:\\.(\\w+)|\\.\\*)\\s*(?:;)?\\s*$");
+
+  // Add near your other patterns
+  private static final Pattern TRIPLE_DQ = Pattern.compile("\"\"\"[\\s\\S]*?\"\"\"", Pattern.DOTALL);
+  private static final Pattern TRIPLE_SQ = Pattern.compile("'''[\\s\\S]*?'''", Pattern.DOTALL);
+
+  // Handles escapes like \" inside "...", non-greedy
+  private static final Pattern DQ_STRING = Pattern.compile("\"(?:\\\\.|[^\"\\\\])*\"");
+  private static final Pattern SQ_STRING = Pattern.compile("'(?:\\\\.|[^'\\\\])*'");
+
+  // Groovy slashy & dollar-slashy strings (conservative)
+  private static final Pattern SLASHY = Pattern.compile("/(?:\\\\/|[^/])+/");
+  private static final Pattern DOLLAR_SLASHY = Pattern.compile("(?s)\\$/[\\s\\S]*?/\\$");
+
+  // add this cache field in the class
+  private static final ConcurrentMap<String, Boolean> DEFAULT_PKG_LOADABLE = new ConcurrentHashMap<>();
 
 
   ContextMenu suggestionsPopup = new ContextMenu();
@@ -62,22 +82,40 @@ public class GroovyTextArea extends CodeTextArea {
           "while"
   };
 
-  private static final String KEYWORD_PATTERN = "\\b(" + String.join("|", KEYWORDS) + ")\\b";
-  private static final String PAREN_PATTERN = "\\(|\\)";
-  private static final String BRACE_PATTERN = "\\{|\\}";
-  private static final String BRACKET_PATTERN = "\\[|\\]";
-  private static final String SEMICOLON_PATTERN = "\\;";
-  private static final String STRING_PATTERN = "\"\"|''|\"[^\"]+\"|'[^']+'";
-  private static final String COMMENT_PATTERN = "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/";
+  public static final String KEYWORD_PATTERN = "\\b(" + String.join("|", KEYWORDS) + ")\\b";
+  public static final String PAREN_PATTERN = "\\(|\\)";
+  public static final String BRACE_PATTERN = "\\{|\\}";
+  public static final String BRACKET_PATTERN = "\\[|\\]";
+  public static final String SEMICOLON_PATTERN = "\\;";
+  //private static final String STRING_PATTERN = "\"\"|''|\"[^\"]+\"|'[^']+'";
+  public static final String STRING_PATTERN =
+      // triple double
+      "\"\"\"[\\s\\S]*?\"\"\"" +
+          "|" +
+          // triple single
+          "'''[\\s\\S]*?'''" +
+          "|" +
+          // normal double w/ escapes
+          "\"(?:\\\\.|[^\"\\\\])*\"" +
+          "|" +
+          // normal single w/ escapes
+          "'(?:\\\\.|[^'\\\\])*'" +
+          "|" +
+          // slashy
+          "/(?:\\\\/|[^/])+/"  +
+          "|" +
+          // dollar-slashy
+          "(?s)\\$/[\\s\\S]*?/\\$";
+  public static final String COMMENT_PATTERN = "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/";
 
-  private static final Pattern PATTERN = Pattern.compile(
-      "(?<KEYWORD>" + KEYWORD_PATTERN + ")"
+  public static final Pattern PATTERN = Pattern.compile(
+      "(?<COMMENT>" + COMMENT_PATTERN + ")"
+          + "|(?<STRING>" + STRING_PATTERN + ")"
+          + "|(?<KEYWORD>" + KEYWORD_PATTERN + ")"
           + "|(?<PAREN>" + PAREN_PATTERN + ")"
           + "|(?<BRACE>" + BRACE_PATTERN + ")"
           + "|(?<BRACKET>" + BRACKET_PATTERN + ")"
           + "|(?<SEMICOLON>" + SEMICOLON_PATTERN + ")"
-          + "|(?<STRING>" + STRING_PATTERN + ")"
-          + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
   );
 
   public GroovyTextArea() {
@@ -308,7 +346,7 @@ public class GroovyTextArea extends CodeTextArea {
 
   private static final class Range { final int start, end; Range(int s, int e){start=s; end=e;} }
 
-  private java.util.List<Range> findUnresolvedSimpleTypes(String code) {
+  private static List<Range> findUnresolvedSimpleTypes(String code) {
     // 1) Collect current imports and wildcard imports
     var explicitImports = new java.util.HashSet<String>();  // fqcn
     var wildcardPkgs    = new java.util.HashSet<String>();  // e.g. "java.time"
@@ -357,52 +395,57 @@ public class GroovyTextArea extends CodeTextArea {
       commentRanges.set(commentMatcher.start(), commentMatcher.end());
     }
 
+    final BitSet stringRanges = stringRanges(code);
+
     boolean hasGrab = code.contains("@Grab");
 
-    // 2) Scan for candidate simple type names and test resolvability
     var out = new java.util.ArrayList<Range>();
     var m = SIMPLE_TYPE.matcher(code);
     while (m.find()) {
-      if (commentRanges.get(m.start(1), m.end(1)).cardinality() > 0) continue;
+      int s = m.start(1), e = m.end(1);
+
+      // Skip if inside comment or string
+      if (commentRanges.get(s, e).cardinality() > 0) continue;
+      if (stringRanges.get(s, e).cardinality() > 0) continue;
 
       String simple = m.group(1);
 
-      // Skip if token is an annotation name
+      // Skip if token is an annotation name (you already computed annotationRanges)
       boolean isAnnotation = false;
       for (Range ar : annotationRanges) {
-        if (m.start(1) >= ar.start && m.end(1) <= ar.end) {
-          isAnnotation = true;
-          break;
-        }
+        if (s >= ar.start && e <= ar.end) { isAnnotation = true; break; }
       }
       if (isAnnotation) continue;
 
       // Skip obvious non-type contexts
       if (simple.equals(simple.toUpperCase(Locale.ROOT))) continue;
 
+      // NEW (nice-to-have): skip if part of a qualified name, e.g. Map.Entry
+      if (s > 0 && code.charAt(s - 1) == '.') continue;
+
       // If already imported explicitly, ok
       if (explicitSimple.contains(simple)) continue;
 
-      // If it exists in default packages, ok
+      // If in default packages, ok
       if (resolvableFromDefaultPkgs(simple, DEFAULT_PKGS, simpleToFqns)) continue;
 
       // If available via wildcard import, ok
       if (resolvableFromWildcard(simple, wildcardPkgs, simpleToFqns)) continue;
 
-      // If we have @Grab and this type could be in a wildcard package, skip
+      // If we have @Grab and at least one wildcard import, be conservative
       if (hasGrab && isCoveredByWildcard(simple, wildcardPkgs)) continue;
 
-      // If type defined in this file, ok
+      // If defined locally, ok
       if (definedLocally(code, simple)) continue;
 
-      // Otherwise: mark unresolved
-      out.add(new Range(m.start(1), m.end(1)));
+      // Otherwise unresolved
+      out.add(new Range(s, e));
     }
     return out;
   }
 
   // only skip if the wildcard could actually contain the type
-  private boolean isCoveredByWildcard(String simple, java.util.Set<String> wildcardPkgs) {
+  private static boolean isCoveredByWildcard(String simple, java.util.Set<String> wildcardPkgs) {
     // We can't resolve it yet, but if there’s at least one wildcard import,
     // assume the class could be inside it when @Grab is used.
     // This avoids skipping too much in non-related packages.
@@ -411,18 +454,49 @@ public class GroovyTextArea extends CodeTextArea {
 
 
 
-  private boolean resolvableFromDefaultPkgs(String simple, List<String> pkgs, java.util.Map<String, java.util.List<String>> idx) {
+  private static boolean resolvableFromDefaultPkgs(String simple, List<String> pkgs, java.util.Map<String, java.util.List<String>> idx) {
+    if (DEFAULT_SIMPLE_TYPES.contains(simple)) return true;
     var fqns = idx.get(simple);
-    if (fqns == null) return false;
-    for (String fqn : fqns) {
-      for (String pkg : pkgs) {
-        if (fqn.startsWith(pkg + ".")) return true;
+    if (fqns != null) {
+      for (String fqn : fqns) {
+        for (String pkg : pkgs) {
+          if (fqn.startsWith(pkg + ".")) return true;
+        }
       }
     }
-    return false;
+    // Fallback if index is missing/incomplete: try to load it from default pkgs
+    return isLoadableFromDefaultPkgs(simple, pkgs);
   }
 
-  private boolean resolvableFromWildcard(String simple, java.util.Set<String> wildcardPkgs,
+  private static boolean isLoadableFromDefaultPkgs(String simple, List<String> pkgs) {
+    return DEFAULT_PKG_LOADABLE.computeIfAbsent(simple, s -> {
+      ClassLoader cl = effectiveClassLoader();
+      for (String pkg : pkgs) {
+        try {
+          Class.forName(pkg + "." + s, false, cl);
+          return true; // found in a default package (e.g., java.io.File)
+        } catch (ClassNotFoundException ignore) { /* try next */ }
+      }
+      return false;
+    });
+  }
+
+  private static ClassLoader effectiveClassLoader() {
+    try {
+      var g = Gade.instance();
+      if (g != null) {
+        ClassLoader cl = g.getConsoleComponent() == null ? null : g.getConsoleComponent().getClassLoader();
+        if (cl == null) cl = g.dynamicClassLoader;
+        if (cl != null) return cl;
+      }
+    } catch (Throwable ignore) {
+      // fall through
+    }
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    return cl != null ? cl : GroovyTextArea.class.getClassLoader();
+  }
+
+  private static boolean resolvableFromWildcard(String simple, java.util.Set<String> wildcardPkgs,
                                          java.util.Map<String, java.util.List<String>> idx) {
     var fqns = idx.get(simple);
     if (fqns == null) return false;
@@ -434,7 +508,7 @@ public class GroovyTextArea extends CodeTextArea {
     return false;
   }
 
-  private boolean definedLocally(String code, String name) {
+  private static boolean definedLocally(String code, String name) {
     // quick & cheap: class/enum/interface/trait NAME
     return java.util.regex.Pattern.compile(
             "(?m)\\b(class|enum|interface|trait)\\s+" + java.util.regex.Pattern.quote(name) + "\\b")
@@ -572,6 +646,26 @@ public class GroovyTextArea extends CodeTextArea {
         }
       }
     }
+  }
+
+  private static BitSet stringRanges(String code) {
+    BitSet bs = new BitSet(code.length());
+    // Order matters a bit; triple before single to avoid early closing
+    List<Pattern> ps = List.of(TRIPLE_DQ, TRIPLE_SQ, DQ_STRING, SQ_STRING, DOLLAR_SLASHY, SLASHY);
+    for (Pattern p : ps) {
+      Matcher m = p.matcher(code);
+      while (m.find()) {
+        bs.set(m.start(), m.end());
+      }
+    }
+    return bs;
+  }
+
+  public static java.util.Set<String> getUnresolvedSimpleTypeTokens(String code) {
+    var ranges = findUnresolvedSimpleTypes(code); // see next snippet
+    var out = new java.util.LinkedHashSet<String>();
+    for (var r : ranges) out.add(code.substring(r.start, r.end));
+    return out;
   }
 
 }
