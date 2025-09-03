@@ -28,8 +28,8 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "4.0.28"
-ext.jacksonVersion = '2.19.2'
+ext.groovyVersion = "5.0.0"
+ext.jacksonVersion = '2.20.0'
 def jgitVersion = '7.3.0.202506031305-r'
 ext.log4jVersion = "2.25.1"
 ext.tikaVersion = '3.2.2'
@@ -84,12 +84,12 @@ dependencies {
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
     implementation 'org.apache.commons:commons-lang3:3.18.0'
-    implementation 'org.jsoup:jsoup:1.21.1'
+    implementation 'org.jsoup:jsoup:1.21.2'
     implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
-    implementation 'org.fxmisc.richtext:richtextfx:0.11.5'
+    implementation 'org.fxmisc.richtext:richtextfx:0.11.6'
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
-    implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:2.20"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
     implementation "commons-io:commons-io:2.20.0"
@@ -97,7 +97,7 @@ dependencies {
     implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
     implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
-    implementation 'org.openjdk.nashorn:nashorn-core:15.6'
+    implementation 'org.openjdk.nashorn:nashorn-core:15.7'
     implementation 'org.gradle:gradle-tooling-api:8.14.3'
     implementation 'org.jetbrains:annotations:26.0.2'
     implementation 'io.github.classgraph:classgraph:4.8.181'
@@ -119,11 +119,12 @@ dependencies {
     implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
     implementation 'se.alipsa:simple-rest:1.1.0'
-    implementation(platform("se.alipsa.matrix:matrix-bom:2.2.3"))
+    implementation(platform("se.alipsa.matrix:matrix-bom:2.3.0-SNAPSHOT"))
     implementation("se.alipsa.matrix:matrix-core")
     implementation "se.alipsa.matrix:matrix-stats"
     implementation "se.alipsa.matrix:matrix-datasets"
     implementation "se.alipsa.matrix:matrix-spreadsheet"
+    implementation "se.alipsa.matrix:matrix-gsheets"
     implementation "se.alipsa.matrix:matrix-charts"
     implementation "se.alipsa.matrix:matrix-xchart"
     implementation "se.alipsa.matrix:matrix-json"
@@ -144,8 +145,8 @@ dependencies {
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-    testImplementation 'org.eclipse.jetty:jetty-server:12.0.24'
-    testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.0.24'
+    testImplementation 'org.eclipse.jetty:jetty-server:12.1.0'
+    testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.0'
 
 }
 
@@ -230,6 +231,8 @@ processResources.doLast {
                 ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
             } else if (fileName.contains('matrix-tablesaw')) {
                 ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
+            } else if (fileName.contains('matrix-gsheets')) {
+              ext.matrixGsheetsVersion = extractVersionNumber('matrix-gsheets', fileName)
             } else if (fileName.contains('gmd-core')) {
                 ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
             }
@@ -253,6 +256,7 @@ processResources.doLast {
         ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
         ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
         ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
+        ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
     }
     ant.copy(
             file: "${projectDir}/version.properties",
