@@ -34,6 +34,7 @@ import se.alipsa.gade.utils.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -41,6 +42,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -771,7 +773,15 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   private void javadocForFcqn(String pkgName, String className) throws IOException, URISyntaxException {
     // https://search.maven.org/solrsearch/select?q=fc:tech.tablesaw.columns.Columnt&rows=20&wt=json
     var url = "https://search.maven.org/solrsearch/select?q=fc:" + pkgName + "." + className + "&rows=20&wt=json";
-    var searchResult = new ObjectMapper().readValue(new URI(url).toURL(), CentralSearchResult.class);
+    ObjectMapper mapper = new ObjectMapper();
+    URL u = new URI(url).toURL();
+    URLConnection conn = u.openConnection();
+    conn.setConnectTimeout(5_000);
+    conn.setReadTimeout(8_000);
+    CentralSearchResult searchResult;
+    try (InputStream in = conn.getInputStream()) {
+      searchResult = mapper.readValue(in, CentralSearchResult.class);
+    }
     if (searchResult == null || searchResult.response == null || searchResult.response.docs == null || searchResult.response.docs.isEmpty()) {
       Alerts.warnFx("Failed to find suitable artifact", "The search result from maven central did not contain anything useful");
       return;

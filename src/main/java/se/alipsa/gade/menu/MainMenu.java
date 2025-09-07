@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -538,7 +539,13 @@ public class MainMenu extends MenuBar {
         try {
           URL url = new URI("https://api.github.com/repos/perNyfelt/gade/releases/latest").toURL();
           ObjectMapper mapper = new ObjectMapper();
-          JsonNode rootNode = mapper.readTree(url);
+          JsonNode rootNode;
+          URLConnection conn = url.openConnection();
+          conn.setConnectTimeout(5_000);
+          conn.setReadTimeout(8_000);
+          try (InputStream in = conn.getInputStream()) {
+            rootNode = mapper.readTree(in);
+          }
           JsonNode tagNode = rootNode.findValue("tag_name");
           String tag = tagNode.asText();
           String releaseTag = "unknown";
