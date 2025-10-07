@@ -19,7 +19,7 @@ import java.util.List;
 
 public class DeepCopier {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(DeepCopier.class);
 
   public static <T> T deepCopy(T obj) throws IOException {
     ObjectMapper mapper = new ObjectMapper();

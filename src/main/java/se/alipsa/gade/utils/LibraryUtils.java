@@ -19,9 +19,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @deprecated Renjin support has been removed from Gade
+ */
+@Deprecated
 public class LibraryUtils {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(LibraryUtils.class);
 
   /**
    * Scan all ClassLoaders for Extensions (libraries / packages)

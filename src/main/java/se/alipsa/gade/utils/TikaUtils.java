@@ -16,7 +16,7 @@ import java.nio.charset.Charset;
  */
 public class TikaUtils {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(TikaUtils.class);
 
   private static final TikaUtils INSTANCE = new TikaUtils();
 

@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 public class JsBridge {
 
-  private static Logger log = LogManager.getLogger();
+  private static Logger log = LogManager.getLogger(JsBridge.class);
   public void exit() {
     log.info("Exit viewer");
   }

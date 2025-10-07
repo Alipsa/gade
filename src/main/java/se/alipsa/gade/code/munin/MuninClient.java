@@ -19,7 +19,7 @@ import static se.alipsa.simplerest.CommonHeaders.basicAuthHeader;
 
 public class MuninClient {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(MuninClient.class);
   private static RestClient restClient;
 
   private static RestClient createClient() throws RestException {

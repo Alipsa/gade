@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class EnvironmentComponent extends TabPane {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(EnvironmentComponent.class);
 
   private final UnStyledCodeArea envTa;
 

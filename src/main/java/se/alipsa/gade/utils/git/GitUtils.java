@@ -34,7 +34,7 @@ import java.util.Map;
 
 public class GitUtils {
 
-   private static final Logger log = LogManager.getLogger();
+   private static final Logger log = LogManager.getLogger(GitUtils.class);
    private static final String CREDENTIALS_FILENAME = ".git-credentials";
 
    public static String asRelativePath(File currentFile, File rootDir) {

@@ -20,7 +20,7 @@ import java.util.Objects;
 
 public class UserManual {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(UserManual.class);
   private static final String NORMAL_BUTTON = "usermanual-normal-button";
   private static final String CLICKED_BUTTON = "usermanual-clicked-button";
 

@@ -25,7 +25,7 @@ import java.util.Optional;
 
 public abstract class TextAreaTab extends Tab implements TabTextArea {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(TextAreaTab.class);
   public static final Image IMG_SAVE = new Image(FileUtils
       .getResourceUrl("image/save.png").toExternalForm(), ICON_WIDTH, ICON_HEIGHT, true, true);
   public static final Image IMG_VIEW = new Image(FileUtils

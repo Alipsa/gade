@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 public class SqlTextArea extends CodeTextArea {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(SqlTextArea.class);
   private static final String[] KEYWORDS = new String[]{
       "absolute", "action", "add", "admin", "after", "aggregate", "alias", "all", "allocate", "alter",
       "and", "any", "are", "array", "as", "asc", "assertion", "assertion", "at", "atomic", "authorization",

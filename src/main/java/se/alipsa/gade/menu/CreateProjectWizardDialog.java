@@ -23,7 +23,7 @@ import java.io.File;
 
 public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult> {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(CreateProjectWizardDialog.class);
 
   private final TextField groupNameField = new TextField();
   private final TextField projectNameField = new TextField();

@@ -6,7 +6,7 @@ import java.util.List;
 
 public class TableMetaData {
 
-  //private static final Logger log = LogManager.getLogger();
+  //private static final Logger log = LogManager.getLogger(TableMetaData.class);
 
   public static final String COLUMN_META_START = " [ ";
   public static final String COLUMN_META_END = " ]";

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class GitTest {
 
-  private static Logger log = LogManager.getLogger();
+  private static Logger log = LogManager.getLogger(GitTest.class);
 
   /**
    * If you have a password for your certificate, you need to add credentials to your

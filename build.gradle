@@ -10,10 +10,10 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     id('java')
     id('application')
-    id('org.beryx.runtime').version('1.13.1')
+    id('org.beryx.runtime').version('2.0.0')
     //id "com.github.spotbugs" version "5.0.9"
     // Allows us to do gradle dependencyUpdates -Drevision=release
-    id("com.github.ben-manes.versions").version("0.52.0")
+    id("com.github.ben-manes.versions").version("0.53.0")
     id('signing')
     id('maven-publish')
     //id("org.openjfx.javafxplugin") version "0.1.0"
@@ -28,11 +28,11 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName="${rootProject.name}-${version}.jar"
 ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "5.0.0"
+ext.groovyVersion = "5.0.1"
 ext.jacksonVersion = '2.20.0'
-def jgitVersion = '7.3.0.202506031305-r'
-ext.log4jVersion = "2.25.1"
-ext.tikaVersion = '3.2.2'
+def jgitVersion = '7.4.0.202509020913-r' //'7.3.0.202506031305-r'
+ext.log4jVersion = "2.25.2"
+ext.tikaVersion = '3.2.3'
 
 def jdkVersion = "21.0.7+9"
 
@@ -83,7 +83,7 @@ dependencies {
     implementation "org.apache.tika:tika-core:${tikaVersion}"
     implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
     implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'org.apache.commons:commons-lang3:3.19.0'
     implementation 'org.jsoup:jsoup:1.21.2'
     implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
     implementation 'org.fxmisc.richtext:richtextfx:0.11.6'
@@ -101,18 +101,18 @@ dependencies {
     implementation 'org.gradle:gradle-tooling-api:8.14.3'
     implementation 'org.jetbrains:annotations:26.0.2'
     implementation 'io.github.classgraph:classgraph:4.8.181'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.4'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.6'
     implementation "se.alipsa.gi:gi-fx:0.1.0"
-    implementation "org.commonmark:commonmark:0.25.1"
-    implementation "org.commonmark:commonmark-ext-gfm-tables:0.25.1"
+    implementation "org.commonmark:commonmark:0.26.0"
+    implementation "org.commonmark:commonmark-ext-gfm-tables:0.26.0"
     implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
     implementation 'se.alipsa.groovy:data-utils:2.0.0'
-    implementation ('se.alipsa.gmd:gmd-core:3.0.0') {
+    implementation ('se.alipsa.gmd:gmd-core:3.0.1') {
         exclude group: 'se.alipsa.matrix', module: 'matrix-core'
         exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
         exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
     }
-    def openhtmltopdfVersion = "1.1.30"
+    def openhtmltopdfVersion = "1.1.31"
     implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
     implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openhtmltopdfVersion}")
@@ -140,13 +140,13 @@ dependencies {
     implementation 'org.knowm.xchart:xchart:3.8.8'
     implementation 'com.github.hervegirod:fxsvgimage:1.4'
     testImplementation platform('org.junit:junit-bom:5.13.4')
-    testImplementation 'com.h2database:h2:2.3.232'
+    testImplementation 'com.h2database:h2:2.4.240'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'net.jodah:concurrentunit:0.4.6'
     testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
     testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-    testImplementation 'org.eclipse.jetty:jetty-server:12.1.0'
-    testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.0'
+    testImplementation 'org.eclipse.jetty:jetty-server:12.1.1'
+    testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.1'
 
 }
 

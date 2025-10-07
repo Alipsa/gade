@@ -17,7 +17,7 @@ import java.net.URL;
 
 public class CssUtil {
 
-  private static Logger log = LogManager.getLogger();
+  private static Logger log = LogManager.getLogger(CssUtil.class);
 
   public static Color parseColor(String property, Color... defaultColor) {
     CssParser parser = new CssParser();

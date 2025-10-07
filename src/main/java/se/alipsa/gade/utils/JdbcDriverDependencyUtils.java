@@ -11,7 +11,7 @@ import java.io.File;
 
 public class JdbcDriverDependencyUtils {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(JdbcDriverDependencyUtils.class);
 
   // TODO, look up the latest version dynamically instead of hard coding it
   public static Dependency driverDependency(String driverClass) {

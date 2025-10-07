@@ -82,7 +82,7 @@ public class DynamicContextMenu extends ContextMenu {
 
    MenuItem gitInitMI = new MenuItem("Initialize root as git repo");
 
-   private Logger log = LogManager.getLogger();
+   private Logger log = LogManager.getLogger(DynamicContextMenu.class);
 
    public DynamicContextMenu(FileTree fileTree, Gade gui, InoutComponent inoutComponent) {
       this.fileTree = fileTree;

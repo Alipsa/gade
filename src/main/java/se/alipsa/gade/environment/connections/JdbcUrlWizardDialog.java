@@ -30,7 +30,7 @@ import static se.alipsa.gade.Constants.MavenRepositoryUrl.MAVEN_CENTRAL;
 import static se.alipsa.groovy.resolver.MavenRepoLookup.*;
 
 public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(JdbcUrlWizardDialog.class);
 
   private final Gade gui;
 

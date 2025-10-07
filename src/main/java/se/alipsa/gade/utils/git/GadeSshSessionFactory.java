@@ -32,7 +32,7 @@ import java.net.URISyntaxException;
  */
 public class GadeSshSessionFactory extends JschConfigSessionFactory {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(GadeSshSessionFactory.class);
 
   String url;
   File publicKeyFile;

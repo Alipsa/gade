@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ViewTab extends Tab {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(ViewTab.class);
   private static final List<String> NUMERIC_TYPES = List.of(
       "NUMBER", "BYTE", "SHORT", "INTEGER", "INT", "LONG", "BIGINTEGER",
       "FLOAT", "DOUBLE", "BIGDECIMAL"

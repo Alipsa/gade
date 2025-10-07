@@ -13,7 +13,7 @@ import se.alipsa.gade.model.ReportType;
 
 public class MiscTab extends Tab {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(MiscTab.class);
   private final TextField reportNameTF;
   private final TextArea descriptionTA;
   private final TextField groupTF;

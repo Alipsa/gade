@@ -25,7 +25,7 @@ import java.util.Set;
 
 public class PackagesTab extends Tab {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(PackagesTab.class);
   private final Gade gui;
   private final ObservableList<AvailablePackage> data = FXCollections.observableArrayList();
 

@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 public class GradleUtils {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(GradleUtils.class);
 
   private final GradleConnector connector;
 

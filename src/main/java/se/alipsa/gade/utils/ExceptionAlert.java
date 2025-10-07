@@ -22,7 +22,7 @@ import java.util.Optional;
 
 public class ExceptionAlert extends Alert {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(ExceptionAlert.class);
 
   public ExceptionAlert() {
     super(AlertType.ERROR);

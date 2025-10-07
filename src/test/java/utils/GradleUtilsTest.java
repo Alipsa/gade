@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GradleUtilsTest {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(GradleUtilsTest.class);
 
   @Test
   public void testDependencies() throws FileNotFoundException {

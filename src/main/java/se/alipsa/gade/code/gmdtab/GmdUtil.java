@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 public class GmdUtil {
 
   private static WebView webView; // Keep a static reference to avoid aggressive cleanup by GC
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(GmdUtil.class);
 
   private static final String HIGHLIGHT_JS_CSS_PATH = "highlightJs/default.css";
 

@@ -52,7 +52,7 @@ public class PackageBrowserDialog extends Dialog<Void> {
    private final ComboBox<Constants.MavenRepositoryUrl> repoCombo;
    private Stage browserStage = null;
    
-   private static final Logger log = LogManager.getLogger();
+   private static final Logger log = LogManager.getLogger(PackageBrowserDialog.class);
 
    public PackageBrowserDialog(Gade gui) {
       initOwner(gui.getStage());

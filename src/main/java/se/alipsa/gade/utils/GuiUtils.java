@@ -17,7 +17,7 @@ import java.net.URL;
 
 public final class GuiUtils {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(GuiUtils.class);
 
   private GuiUtils() {
     // Utility class

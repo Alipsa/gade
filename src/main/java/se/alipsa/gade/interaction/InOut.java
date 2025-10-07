@@ -61,7 +61,7 @@ import javax.swing.*;
 
 public class InOut extends se.alipsa.gi.fx.InOut {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(InOut.class);
   private final Gade gui;
   private final ReadImage readImage;
 

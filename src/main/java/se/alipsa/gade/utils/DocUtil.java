@@ -27,7 +27,7 @@ import java.nio.file.Files;
 
 public class DocUtil {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(DocUtil.class);
   private static Transformer transformer;
 
   static Gmd gmd = new Gmd();

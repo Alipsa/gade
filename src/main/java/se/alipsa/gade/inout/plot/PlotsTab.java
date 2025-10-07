@@ -24,7 +24,7 @@ import static se.alipsa.gade.Constants.*;
 
 public class PlotsTab extends Tab {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(PlotsTab.class);
   TabPane imageTabPane;
 
   public PlotsTab() {

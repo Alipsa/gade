@@ -17,7 +17,7 @@ import java.io.FileNotFoundException;
 
 public class BarChartTest {
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LogManager.getLogger(BarChartTest.class);
 
     @Test
     public void testJsTransform() {

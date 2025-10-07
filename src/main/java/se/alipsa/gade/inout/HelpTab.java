@@ -14,7 +14,7 @@ public class HelpTab extends Tab {
 
   private final TabPane helpPane;
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(HelpTab.class);
 
   public HelpTab() {
     setText("Viewer");

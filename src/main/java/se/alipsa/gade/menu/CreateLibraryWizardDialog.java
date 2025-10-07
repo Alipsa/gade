@@ -19,7 +19,7 @@ import java.io.File;
 
 public class CreateLibraryWizardDialog extends Dialog<CreateLibraryWizardResult> {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(CreateLibraryWizardDialog.class);
 
   private final TextField groupNameField;
   private final TextField packageNameField;

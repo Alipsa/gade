@@ -15,7 +15,7 @@ import java.io.File;
 
 public class CloneProjectDialog extends Dialog<CloneProjectDialogResult> {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(CloneProjectDialog.class);
 
   private final TextField urlField = new TextField();
   private final TextField dirField = new TextField();

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SemanticVersion implements Comparable<SemanticVersion> {
 
-  //private static final Logger LOG = LogManager.getLogger();
+  //private static final Logger LOG = LogManager.getLogger(SemanticVersion.class);
 
   private final String versionString;
 
