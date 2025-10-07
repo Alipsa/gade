@@ -324,12 +324,14 @@ public class ConnectionHandler {
       }
     }
     gui.setNormalCursor();
+    log.info("Connecting to {} with props {}", ci.getUrl(), props.toString());
     return driver.connect(ci.getUrl(), props);
   }
 
   public boolean urlContainsLogin(String url) {
     String safeLcUrl = url.toLowerCase();
-    return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") ) || safeLcUrl.contains("@");
+    return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") )
+        || (safeLcUrl.contains("@") && !url.contains("jdbc:oracle"));
   }
 
   private List<String> listDatabaseJdbc() throws ConnectionException {
