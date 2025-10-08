@@ -33,15 +33,15 @@ public class Constants {
   public static final String BLUE_THEME = "blueTheme.css";
 
   public enum Driver {
-    POSTGRES("org.postgresql.Driver", "org.postgresql:postgresql:42.7.4"),
-    MYSQL("com.mysql.jdbc.Driver", "com.mysql:mysql-connector-j:9.0.9"),
-    MARIADB("org.mariadb.jdbc.Driver", "org.mariadb.jdbc:mariadb-java-client:3.4.1"),
-    H2("org.h2.Driver", "com.h2database:h2:2.3.232"),
-    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", "com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11"),
-    SQLLITE("org.sqlite.JDBC", "org.xerial:sqlite-jdbc:3.46.1.0"),
-    FIREBIRD("org.firebirdsql.jdbc.FBDriver", "org.firebirdsql.jdbc:jaybird:5.0.5.java11"),
+    POSTGRES("org.postgresql.Driver", "org.postgresql:postgresql:42.7.8"),
+    MYSQL("com.mysql.jdbc.Driver", "com.mysql:mysql-connector-j:9.4.0"),
+    MARIADB("org.mariadb.jdbc.Driver", "org.mariadb.jdbc:mariadb-java-client:3.5.6"),
+    H2("org.h2.Driver", "com.h2database:h2:2.4.240"),
+    SQLSERVER("com.microsoft.sqlserver.jdbc.SQLServerDriver", "com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre11"),
+    SQLLITE("org.sqlite.JDBC", "org.xerial:sqlite-jdbc:3.50.3.0"),
+    FIREBIRD("org.firebirdsql.jdbc.FBDriver", "org.firebirdsql.jdbc:jaybird:6.0.3"),
     DERBY("org.apache.derby.jdbc.ClientDriver", "org.apache.derby:derby:10.17.1.0"),
-    ORACLE("oracle.jdbc.OracleDriver", "com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"),
+    ORACLE("oracle.jdbc.OracleDriver", "com.oracle.database.jdbc:ojdbc11:23.9.0.25.07"),
     NONE("", "");
 
     final String driverClass;
