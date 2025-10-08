@@ -43,6 +43,15 @@ public class ConnectionHandler {
   ConnectionInfo connectionInfo;
   ConnectionType connectionType;
 
+  public ConnectionHandler(ConnectionInfo ci) {
+    connectionInfo = ci;
+    if (ci.getUrl().startsWith("jdbc:")) {
+      connectionType = ConnectionType.JDBC;
+    } else {
+      connectionType = ConnectionType.BIGQUERY;
+    }
+  }
+
   public boolean verifyConnection() {
     return switch (connectionType) {
       case JDBC -> verifyJdbcConnection();
@@ -164,6 +173,49 @@ public class ConnectionHandler {
       } else {
         throw new ConnectionException("This sqlite database has no tables yet");
       }
+    } else if (connectionInfo.getDriver().equals(Constants.Driver.ORACLE.getDriverClass())) {
+      sql = """
+          SELECT
+              col.TABLE_NAME,
+              CASE
+                  -- Check if it's a VIEW first (Object Type 'VIEW')
+                  WHEN obj.OBJECT_TYPE = 'VIEW' THEN 'VIEW'
+                  -- Check if it's a Temporary Table (TEMPORARY = 'Y')
+                  WHEN tab.TEMPORARY = 'Y' THEN 'TEMP TABLE'
+                  -- Otherwise, it's a regular, persistent table (Object Type 'TABLE' and TEMPORARY = 'N')
+                  ELSE 'BASE TABLE'
+              END AS TABLE_TYPE,
+              col.COLUMN_NAME,
+              col.COLUMN_ID AS ORDINAL_POSITION,
+              DECODE(col.NULLABLE, 'Y', 'YES', 'N', 'NO') AS IS_NULLABLE,
+              col.DATA_TYPE,
+              col.DATA_LENGTH AS CHARACTER_MAXIMUM_LENGTH,
+              col.DATA_PRECISION AS NUMERIC_PRECISION,
+              col.DATA_SCALE AS NUMERIC_SCALE,
+              col.COLLATION AS COLLATION_NAME,
+              col.OWNER AS TABLE_SCHEMA
+          FROM
+              ALL_TAB_COLUMNS col
+          INNER JOIN
+              ALL_OBJECTS obj
+                  ON col.OWNER = obj.OWNER AND col.TABLE_NAME = obj.OBJECT_NAME
+          LEFT JOIN
+              ALL_TABLES tab
+                  ON col.OWNER = tab.OWNER AND col.TABLE_NAME = tab.TABLE_NAME
+          WHERE
+              -- Filter for only things that are Tables or Views
+              obj.OBJECT_TYPE IN ('TABLE', 'VIEW')
+              -- Exclude System Schemas/Owners
+              AND col.OWNER NOT IN (
+                  'SYS', 'SYSTEM', 'OUTLN', 'DIP', 'ORACLE_OCM',
+                  'DBSNMP', 'CTXSYS', 'MDSYS', 'OLAPSYS', 'EXFSYS',
+                  'WMSYS', 'XDB', 'APEX_040000', 'APEX_PUBLIC_USER', 'APEX_INSTANCE_ADMIN'
+              )
+          ORDER BY
+              col.OWNER,
+              col.TABLE_NAME,
+              col.COLUMN_ID
+          """;
     } else {
       sql = """
          select col.TABLE_NAME
@@ -223,15 +275,6 @@ public class ConnectionHandler {
       }
     } catch (BqException e) {
       throw new ConnectionException("Failed to query", e);
-    }
-  }
-
-  public ConnectionHandler(ConnectionInfo ci) {
-    connectionInfo = ci;
-    if (ci.getUrl().startsWith("jdbc:")) {
-      connectionType = ConnectionType.JDBC;
-    } else {
-      connectionType = ConnectionType.BIGQUERY;
     }
   }
 

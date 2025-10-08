@@ -200,6 +200,9 @@ public class ConnectionsTab extends Tab {
         Alerts.info("MySQL and multiple query statements", msg);
       }
       ConnectionInfo con = name.getValue();
+      if (!passwordField.getText().isEmpty()) {
+        con.setPassword(passwordField.getText());
+      }
       if (validateAndAddConnection(con)) return;
       connectionsTable.getSelectionModel().select(connectionsTable.getItems().indexOf(con));
     });

@@ -337,7 +337,7 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
   }
 
   private void addOracleSpecifics() {
-    urlTemplate = "jdbc:oracle:thin:@{server}:{port}:{database}";
+    urlTemplate = "jdbc:oracle:thin:@{server}:{port}/{database}";
     port.setValue(1521);
   }
 
