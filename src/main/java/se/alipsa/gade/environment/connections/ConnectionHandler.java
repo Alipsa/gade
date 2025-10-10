@@ -73,7 +73,8 @@ public class ConnectionHandler {
   private boolean verifyJdbcConnection() {
     try (Connection con = connect()) {
       return con != null;
-    } catch (SQLException ex) {
+    } catch (Exception ex) {
+      log.warn("Exception during connection verification", ex);
       Exception exceptionToShow = ex;
       try {
         JdbcUrlParser.validate(connectionInfo.getDriver(), connectionInfo.getUrl());
@@ -324,7 +325,7 @@ public class ConnectionHandler {
         gui.dynamicClassLoader.addURL(url);
       }
 
-    } catch (IOException | URISyntaxException e) {
+    } catch (Exception e) {
       Platform.runLater(() ->
           ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
       );
@@ -359,7 +360,7 @@ public class ConnectionHandler {
     if ( urlContainsLogin(ci.getUrlSafe()) ) {
       log.info("Skipping specified user/password since it is part of the url");
     } else {
-      if (ci.getUser() != null) {
+      if (ci.getUser() != null && !ci.getUser().isBlank()) {
         props.put("user", ci.getUser());
         if (ci.getPassword() != null) {
           props.put("password", ci.getPassword());
@@ -374,7 +375,8 @@ public class ConnectionHandler {
   public boolean urlContainsLogin(String url) {
     String safeLcUrl = url.toLowerCase();
     return ( safeLcUrl.contains("user") && safeLcUrl.contains("pass") )
-        || (safeLcUrl.contains("@") && !url.contains("jdbc:oracle"));
+        || (safeLcUrl.contains("@") && !url.contains("jdbc:oracle"))
+        || safeLcUrl.contains("integratedsecurity=true");
   }
 
   private List<String> listDatabaseJdbc() throws ConnectionException {

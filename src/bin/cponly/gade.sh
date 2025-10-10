@@ -66,6 +66,8 @@ else
   OS=win
 fi
 
+JAVA_OPTS="$JAVA_OPTS -Djava.security.auth.login.config=$DIR/conf/jaas.conf"
+
 # enables @GrabConfig(systemClassLoader=true)
 if [[ ! "$JAVA_OPTS" =~ -Djava\.system\.class\.loader= ]]; then
   JAVA_OPTS="$JAVA_OPTS -Djava.system.class.loader=org.codehaus.groovy.tools.RootLoader"
@@ -87,12 +89,12 @@ if [[ "${OS}" == "win" ]]; then
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
 	start "${BIN_DIR}\${JAVA_CMD}" \
-		--enable-native-access=javafx.graphics,javafx.media,javafx.web \
+		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
     --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
     -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
 	start "${BIN_DIR}\${JAVA_CMD}" -Djava.library.path="${LD_PATH}" \
-		--enable-native-access=javafx.graphics,javafx.media,javafx.web \
+		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
     --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
     -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
 
@@ -100,13 +102,13 @@ else
 	JAVA_CMD="java"
 	LD_PATH="${LIB_DIR}"
 	"${BIN_DIR}/${JAVA_CMD}" \
-	--enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
   --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
   -cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS \
 	se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
 	"${BIN_DIR}/${JAVA_CMD}" -Djava.library.path="${LD_PATH}" \
-		--enable-native-access=javafx.graphics,javafx.media,javafx.web \
+		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
     --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
     -cp "${LIB_DIR}/*" $JAVA_OPTS \
 	se.alipsa.gade.Gade &

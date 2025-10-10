@@ -27,14 +27,15 @@ if not defined JAVA_CMD (
 )
 
 set MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
+set JAVA_OPTS="%JAVA_OPTS% -Djava.security.auth.login.config=$DIR\conf\jaas.conf"
 
 start %BIN_DIR%\%JAVA_CMD% ^
---enable-native-access=javafx.graphics,javafx.media,javafx.web ^
+--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
 --module-path %LIB_DIR%/win --add-modules %MODULES% ^
 -cp %LIB_DIR%/%JAR_NAME% %JAVA_OPTS% se.alipsa.gade.splash.SplashScreen
 
 start %BIN_DIR%\%JAVA_CMD% ^
---enable-native-access=javafx.graphics,javafx.media,javafx.web ^
+--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
 --module-path %LIB_DIR%/win --add-modules %MODULES% ^
 -Djava.library.path="%LIB_DIR%" -cp %LIB_DIR%\* ^
 %JAVA_OPTS% ^
