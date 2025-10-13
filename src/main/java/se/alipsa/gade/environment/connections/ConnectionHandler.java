@@ -302,9 +302,6 @@ public class ConnectionHandler {
   public Connection connect() throws SQLException {
     var ci = connectionInfo;
     log.info("Connecting to {} using {}", ci.getUrl(), ci.getDependency());
-    //if (!ci.getUrl().contains("password")) {
-    //  ci.setPassword(passwordField.getText());
-    //}
     var gui = Gade.instance();
     Driver driver;
 
@@ -365,6 +362,8 @@ public class ConnectionHandler {
         if (ci.getPassword() != null) {
           props.put("password", ci.getPassword());
         }
+      } else {
+        log.info("No user specified (was {})", ci.getUser());
       }
     }
     gui.setNormalCursor();

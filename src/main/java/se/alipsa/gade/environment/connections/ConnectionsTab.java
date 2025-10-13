@@ -200,7 +200,12 @@ public class ConnectionsTab extends Tab {
         Alerts.info("MySQL and multiple query statements", msg);
       }
       ConnectionInfo con = name.getValue();
+      if (!userText.getText().isEmpty()) {
+        log.info("Adding user name {} to connection info", userText.getText());
+        con.setUser(userText.getText());
+      }
       if (!passwordField.getText().isEmpty()) {
+        log.info("Adding password to connection info");
         con.setPassword(passwordField.getText());
       }
       if (validateAndAddConnection(con)) return;
@@ -248,13 +253,14 @@ public class ConnectionsTab extends Tab {
     ConnectionHandler ch = new ConnectionHandler(con);
     boolean canConnect = ch.verifyConnection();
     if (!canConnect) {
-      boolean dontSave = Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
+      boolean dontSave = !Alerts.confirm("Failed to establish connection", "Failed to establish connection to the database",
           "Do you still want to save this connection?");
       if (dontSave) {
         return false;
       }
+    } else {
+      log.info("Connection established successfully, all good!");
     }
-    log.info("Connection established successfully, all good!");
     addConnection(con);
     saveConnection(con);
     return true;
@@ -666,11 +672,13 @@ public class ConnectionsTab extends Tab {
   }
 
   public String getDriver() {
-    return name.getValue().getDriver();
+    ConnectionInfo con = name.getValue();
+    return con == null ? null : con.getDriver();
   }
 
   public String getDependency() {
-    return name.getValue().getDependency();
+    ConnectionInfo con = name.getValue();
+    return con == null ? null : con.getDependency();
   }
 
   public String getUser() {
