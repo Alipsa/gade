@@ -1,22 +1,22 @@
 buildscript {
-    dependencies {
-        classpath 'se.alipsa:nexus-release-plugin:2.0.0'
-    }
+  dependencies {
+    classpath 'se.alipsa:nexus-release-plugin:2.0.0'
+  }
 }
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 // Run `gradle runtimeZip` to create the distributions
 plugins {
-    id('java')
-    id('application')
-    id('org.beryx.runtime').version('2.0.0')
-    //id "com.github.spotbugs" version "5.0.9"
-    // Allows us to do gradle dependencyUpdates -Drevision=release
-    id("com.github.ben-manes.versions").version("0.53.0")
-    id('signing')
-    id('maven-publish')
-    //id("org.openjfx.javafxplugin") version "0.1.0"
+  id('java')
+  id('application')
+  id('org.beryx.runtime').version('2.0.0')
+  //id "com.github.spotbugs" version "5.0.9"
+  // Allows us to do gradle dependencyUpdates -Drevision=release
+  id("com.github.ben-manes.versions").version("0.53.0")
+  id('signing')
+  id('maven-publish')
+  //id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 group = 'se.alipsa'
@@ -25,8 +25,8 @@ description = 'Gade, A Groovy Analytics Development Environment'
 ext.nexusUrl = version.contains("SNAPSHOT")
     ? "https://oss.sonatype.org/content/repositories/snapshots/"
     : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-ext.jarName="${rootProject.name}-${version}.jar"
-ext.releaseTag=version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
+ext.jarName = "${rootProject.name}-${version}.jar"
+ext.releaseTag = version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
 ext.groovyVersion = "5.0.1"
 ext.jacksonVersion = '2.20.0'
@@ -37,10 +37,10 @@ ext.tikaVersion = '3.2.3'
 def jdkVersion = "25+37"
 
 application {
-    mainClass = 'se.alipsa.gade.Gade'
-    applicationDefaultJvmArgs = [
+  mainClass = 'se.alipsa.gade.Gade'
+  applicationDefaultJvmArgs = [
       '--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED'
-    ]
+  ]
 }
 
 /*javafx {
@@ -49,227 +49,233 @@ application {
 }*/
 
 repositories {
-    if (version.contains('SNAPSHOT')) {
-        // Slows down the build (a lot), use only if local SNAPSHOTS are needed
-        mavenLocal()
-    }
-    mavenCentral()
-    maven {
-        url = uri('https://repo.gradle.org/gradle/libs-releases')
-    }
-    maven {
-        url = uri('https://jitpack.io')
-    }
+  if (version.contains('SNAPSHOT')) {
+    // Slows down the build (a lot), use only if local SNAPSHOTS are needed
+    mavenLocal()
+  }
+  mavenCentral()
+  maven {
+    url = uri('https://repo.gradle.org/gradle/libs-releases')
+  }
+  maven {
+    url = uri('https://jitpack.io')
+  }
 }
 
-
-
 dependencies {
-    /*
-    implementation(implementation 'org.openjfx:javafx-controls:23.0.2')
-    implementation 'org.openjfx:javafx-web:23.0.2'
-    implementation 'org.openjfx:javafx-media:23.0.2'
-    implementation 'org.openjfx:javafx-swing:23.0.2'
-    */
-    implementation 'org.apache.commons:commons-text:1.14.0'
-    implementation ("org.apache.groovy:groovy-all:${groovyVersion}@pom") {
-        transitive = true
-    }
-    implementation "org.apache.groovy:groovy-macro-library:${groovyVersion}"
-    implementation "org.apache.groovy:groovy-ginq:$groovyVersion"
-    //implementation 'org.apache.ivy:ivy:2.5.3' // needed for @Grab but included in groovy-console (part of groovy-all
+  /*
+  implementation(implementation 'org.openjfx:javafx-controls:23.0.2')
+  implementation 'org.openjfx:javafx-web:23.0.2'
+  implementation 'org.openjfx:javafx-media:23.0.2'
+  implementation 'org.openjfx:javafx-swing:23.0.2'
+  */
+  implementation 'org.apache.commons:commons-text:1.14.0'
+  implementation("org.apache.groovy:groovy-all:${groovyVersion}@pom") {
+    transitive = true
+  }
+  implementation "org.apache.groovy:groovy-macro-library:${groovyVersion}"
+  implementation "org.apache.groovy:groovy-ginq:$groovyVersion"
+  //implementation 'org.apache.ivy:ivy:2.5.3' // needed for @Grab but included in groovy-console (part of groovy-all
 
-    implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
-    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
-    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4jVersion}"
+  implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+  implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+  implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4jVersion}"
 
-    implementation "org.apache.tika:tika-core:${tikaVersion}"
-    implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
-    implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
-    implementation 'org.apache.commons:commons-lang3:3.19.0'
-    implementation 'org.jsoup:jsoup:1.21.2'
-    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
-    implementation 'org.fxmisc.richtext:richtextfx:0.11.6'
-    implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
-    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
-    implementation "com.fasterxml.jackson.core:jackson-annotations:2.20"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
+  implementation "org.apache.tika:tika-core:${tikaVersion}"
+  implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
+  implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
+  implementation 'org.apache.commons:commons-lang3:3.19.0'
+  implementation 'org.jsoup:jsoup:1.21.2'
+  implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+  implementation 'org.fxmisc.richtext:richtextfx:0.11.6'
+  implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+  implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+  implementation "com.fasterxml.jackson.core:jackson-annotations:2.20"
+  implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-    implementation "commons-io:commons-io:2.20.0"
-    implementation 'com.github.jsqlparser:jsqlparser:5.3'
-    implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
-    implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
+  implementation "commons-io:commons-io:2.20.0"
+  implementation 'com.github.jsqlparser:jsqlparser:5.3'
+  implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
+  implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
-    implementation 'org.openjdk.nashorn:nashorn-core:15.7'
-    implementation 'org.gradle:gradle-tooling-api:8.14.3'
-    implementation 'org.jetbrains:annotations:26.0.2'
-    implementation 'io.github.classgraph:classgraph:4.8.181'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.6'
-    implementation "se.alipsa.gi:gi-fx:0.1.0"
-    implementation "org.commonmark:commonmark:0.26.0"
-    implementation "org.commonmark:commonmark-ext-gfm-tables:0.26.0"
-    implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-    implementation 'se.alipsa.groovy:data-utils:2.0.0'
-    implementation ('se.alipsa.gmd:gmd-core:3.0.1') {
-        exclude group: 'se.alipsa.matrix', module: 'matrix-core'
-        exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
-        exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
-    }
-    def openhtmltopdfVersion = "1.1.31"
-    implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
-    implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
-    implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openhtmltopdfVersion}")
-    implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
+  implementation 'org.openjdk.nashorn:nashorn-core:15.7'
+  implementation 'org.gradle:gradle-tooling-api:8.14.3'
+  implementation 'org.jetbrains:annotations:26.0.2'
+  implementation 'io.github.classgraph:classgraph:4.8.181'
+  implementation 'com.github.spotbugs:spotbugs-annotations:4.9.6'
+  implementation "se.alipsa.gi:gi-fx:0.1.0"
+  implementation "org.commonmark:commonmark:0.26.0"
+  implementation "org.commonmark:commonmark-ext-gfm-tables:0.26.0"
+  implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
+  implementation 'se.alipsa.groovy:data-utils:2.0.0'
+  implementation('se.alipsa.gmd:gmd-core:3.0.1') {
+    exclude group: 'se.alipsa.matrix', module: 'matrix-core'
+    exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
+    exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
+  }
+  def openhtmltopdfVersion = "1.1.31"
+  implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
+  implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
+  implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openhtmltopdfVersion}")
+  implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
-    implementation 'se.alipsa:simple-rest:1.1.0'
-    implementation(platform("se.alipsa.matrix:matrix-bom:2.3.0"))
-    implementation("se.alipsa.matrix:matrix-core")
-    implementation "se.alipsa.matrix:matrix-stats"
-    implementation "se.alipsa.matrix:matrix-datasets"
-    implementation "se.alipsa.matrix:matrix-spreadsheet"
-    implementation "se.alipsa.matrix:matrix-gsheets"
-    implementation "se.alipsa.matrix:matrix-charts"
-    implementation "se.alipsa.matrix:matrix-xchart"
-    implementation "se.alipsa.matrix:matrix-json"
-    implementation "se.alipsa.matrix:matrix-csv"
-    implementation "se.alipsa.matrix:matrix-sql"
-    implementation "se.alipsa.matrix:matrix-parquet"
-    implementation "se.alipsa.matrix:matrix-bigquery"
-    implementation "se.alipsa.matrix:matrix-tablesaw"
-    // Used by se.alipsa.gade.utils.SemanticVersion
-    implementation 'org.apache.maven:maven-artifact:3.9.11'
+  implementation 'se.alipsa:simple-rest:1.1.0'
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.3.1-SNAPSHOT"))
+  implementation("se.alipsa.matrix:matrix-core")
+  implementation "se.alipsa.matrix:matrix-stats"
+  implementation "se.alipsa.matrix:matrix-datasets"
+  implementation "se.alipsa.matrix:matrix-spreadsheet"
+  implementation "se.alipsa.matrix:matrix-gsheets"
+  implementation "se.alipsa.matrix:matrix-charts"
+  implementation "se.alipsa.matrix:matrix-xchart"
+  implementation "se.alipsa.matrix:matrix-json"
+  implementation "se.alipsa.matrix:matrix-csv"
+  implementation "se.alipsa.matrix:matrix-sql"
+  implementation "se.alipsa.matrix:matrix-parquet"
+  implementation "se.alipsa.matrix:matrix-bigquery"
+  implementation "se.alipsa.matrix:matrix-tablesaw"
+  implementation "se.alipsa.matrix:matrix-avro"
+  // Used by se.alipsa.gade.utils.SemanticVersion
+  implementation 'org.apache.maven:maven-artifact:3.9.11'
 
-    implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
-    implementation 'org.knowm.xchart:xchart:3.8.8'
-    implementation 'com.github.hervegirod:fxsvgimage:1.4'
-    testImplementation platform('org.junit:junit-bom:5.13.4')
-    testImplementation 'com.h2database:h2:2.4.240'
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'net.jodah:concurrentunit:0.4.6'
-    testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
-    testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-    testImplementation 'org.eclipse.jetty:jetty-server:12.1.2'
-    testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.2'
+  implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
+  implementation 'org.knowm.xchart:xchart:3.8.8'
+  implementation 'com.github.hervegirod:fxsvgimage:1.4'
+  testImplementation platform('org.junit:junit-bom:5.13.4')
+  testImplementation 'com.h2database:h2:2.4.240'
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+  testImplementation 'net.jodah:concurrentunit:0.4.6'
+  testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
+  testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
+  testImplementation 'org.eclipse.jetty:jetty-server:12.1.2'
+  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.2'
 
 }
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-    //withSourcesJar()
-    //withJavadocJar()
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(25))
+  }
+  //withSourcesJar()
+  //withJavadocJar()
 }
 
 tasks.withType(JavaCompile) {
-    options.deprecation = true
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
+  options.deprecation = true
+  options.encoding = 'UTF-8'
+  options.compilerArgs << '-parameters'
 }
 
+/*
 tasks.withType(GroovyCompile) { task ->
-    task.options.deprecation = true
-}
+  task.options.deprecation = true
+  task.options.compilerArgs += ['--upgrade-module-path', fxUpgradePath.get()]
+}*/
 
 static def getDate() {
-    def date = new Date()
-    def formattedDate = date.format('yyyy-MMM-dd_HH.mm.ss')
-    return formattedDate
+  def date = new Date()
+  def formattedDate = date.format('yyyy-MMM-dd_HH.mm.ss')
+  return formattedDate
 }
 
 // due to late binding, the jdkVersion needs to be passed as a parameter
 def deleteIfDiff(String jdkVersion, String path) {
-    boolean platformDiff = true
-    if (jdkVersion.contains('+')) {
-        String matchString = jdkVersion.substring(0, jdkVersion.indexOf('+'))
-        logger.info("matching $matchString on platform jdks")
-        file(path).listFiles().each {
-            if (it.getName().contains(matchString)) {
-                platformDiff = false
-            }
-        }
+  boolean platformDiff = true
+  if (jdkVersion.contains('+')) {
+    String matchString = jdkVersion.substring(0, jdkVersion.indexOf('+'))
+    logger.info("matching $matchString on platform jdks")
+    file(path).listFiles().each {
+      if (it.getName().contains(matchString)) {
+        platformDiff = false
+      }
     }
-    if (platformDiff) {
-        logger.info("$jdkVersion not found in $path, deleting it")
-        delete path
-    }
+  }
+  if (platformDiff) {
+    logger.info("$jdkVersion not found in $path, deleting it")
+    delete path
+  }
 }
 
 clean {
-    // include the platform jdks as otherwise, updating the version will not "take"
-    deleteIfDiff(jdkVersion, "$projectDir/platform/linux")
-    deleteIfDiff(jdkVersion, "$projectDir/platform/win")
-    deleteIfDiff(jdkVersion, "$projectDir/platform/mac")
+  // include the platform jdks as otherwise, updating the version will not "take"
+  deleteIfDiff(jdkVersion, "$projectDir/platform/linux")
+  deleteIfDiff(jdkVersion, "$projectDir/platform/win")
+  deleteIfDiff(jdkVersion, "$projectDir/platform/mac")
 }
 
 processResources.doLast {
 
-    def extractVersionNumber = { artifactName, fileName ->
-        fileName.substring("${artifactName}-".length(), fileName.indexOf(".jar"))
-    }
+  def extractVersionNumber = { artifactName, fileName ->
+    fileName.substring("${artifactName}-".length(), fileName.indexOf(".jar"))
+  }
 
-    configurations.getByName('runtimeClasspath').files.each { file ->
-            def fileName = file.name
-            if (fileName.contains('matrix-core')) {
-                ext.matrixCoreVersion = extractVersionNumber('matrix-core', fileName)
-            } else if (fileName.contains('matrix-charts')) {
-                ext.matrixChartsVersion = extractVersionNumber('matrix-charts', fileName)
-            } else if (fileName.contains('matrix-stats')) {
-                ext.matrixStatsVersion = extractVersionNumber('matrix-stats', fileName)
-            } else if (fileName.contains('matrix-datasets')) {
-                ext.matrixDatasetsVersion = extractVersionNumber('matrix-datasets', fileName)
-            } else if (fileName.contains('matrix-spreadsheet')) {
-                ext.matrixSpreadsheetVersion = extractVersionNumber('matrix-spreadsheet', fileName)
-            } else if (fileName.contains('matrix-json')) {
-                ext.matrixJsonVersion = extractVersionNumber('matrix-json', fileName)
-            } else if (fileName.contains('matrix-csv')) {
-                ext.matrixCsvVersion = extractVersionNumber('matrix-csv', fileName)
-            } else if (fileName.contains('matrix-sql')) {
-                ext.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
-            } else if (fileName.contains('matrix-parquet')) {
-                ext.matrixParquetVersion = extractVersionNumber('matrix-parquet', fileName)
-            } else if (fileName.contains('matrix-bigquery')) {
-                ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
-            } else if (fileName.contains('matrix-xchart')) {
-                ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
-            } else if (fileName.contains('matrix-tablesaw')) {
-                ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
-            } else if (fileName.contains('matrix-gsheets')) {
-              ext.matrixGsheetsVersion = extractVersionNumber('matrix-gsheets', fileName)
-            } else if (fileName.contains('gmd-core')) {
-                ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
-            }
+  configurations.getByName('runtimeClasspath').files.each { file ->
+    def fileName = file.name
+    if (fileName.contains('matrix-core')) {
+      ext.matrixCoreVersion = extractVersionNumber('matrix-core', fileName)
+    } else if (fileName.contains('matrix-charts')) {
+      ext.matrixChartsVersion = extractVersionNumber('matrix-charts', fileName)
+    } else if (fileName.contains('matrix-stats')) {
+      ext.matrixStatsVersion = extractVersionNumber('matrix-stats', fileName)
+    } else if (fileName.contains('matrix-datasets')) {
+      ext.matrixDatasetsVersion = extractVersionNumber('matrix-datasets', fileName)
+    } else if (fileName.contains('matrix-spreadsheet')) {
+      ext.matrixSpreadsheetVersion = extractVersionNumber('matrix-spreadsheet', fileName)
+    } else if (fileName.contains('matrix-json')) {
+      ext.matrixJsonVersion = extractVersionNumber('matrix-json', fileName)
+    } else if (fileName.contains('matrix-csv')) {
+      ext.matrixCsvVersion = extractVersionNumber('matrix-csv', fileName)
+    } else if (fileName.contains('matrix-sql')) {
+      ext.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
+    } else if (fileName.contains('matrix-parquet')) {
+      ext.matrixParquetVersion = extractVersionNumber('matrix-parquet', fileName)
+    } else if (fileName.contains('matrix-bigquery')) {
+      ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
+    } else if (fileName.contains('matrix-xchart')) {
+      ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
+    } else if (fileName.contains('matrix-tablesaw')) {
+      ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
+    } else if (fileName.contains('matrix-gsheets')) {
+      ext.matrixGsheetsVersion = extractVersionNumber('matrix-gsheets', fileName)
+    } else if (fileName.contains('matrix-avro')) {
+      ext.matrixAvroVersion = extractVersionNumber('matrix-avro', fileName)
+    } else if (fileName.contains('gmd-core')) {
+      ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
     }
+  }
 
-    ant.propertyfile(file: "${projectDir}/version.properties") {
-        ant.entry(key: "version", value: "${version}")
-        ant.entry(key: "jarName", value: "${jarName}")
-        ant.entry(key: "releaseTag", value: "${releaseTag}")
-        ant.entry(key: "buildDate", value: "${getDate()}")
-        ant.entry(key: "matrixCoreVersion", value: "${matrixCoreVersion}")
-        ant.entry(key: "matrixChartsVersion", value: "${matrixChartsVersion}")
-        ant.entry(key: "matrixStatsVersion", value: "${matrixStatsVersion}")
-        ant.entry(key: "matrixDatasetsVersion", value: "${matrixDatasetsVersion}")
-        ant.entry(key: "matrixSpreadsheetVersion", value: "${matrixSpreadsheetVersion}")
-        ant.entry(key: "matrixJsonVersion", value: "${matrixJsonVersion}")
-        ant.entry(key: "matrixCsvVersion", value: "${matrixCsvVersion}")
-        ant.entry(key: "matrixSqlVersion", value: "${matrixSqlVersion}")
-        ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
-        ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
-        ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
-        ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
-        ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
-        ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
-    }
-    ant.copy(
-            file: "${projectDir}/version.properties",
-            //todir: "${buildDir}/resources/main"
-            todir: layout.buildDirectory.dir("resources/main").get().asFile
-    )
+  ant.propertyfile(file: "${projectDir}/version.properties") {
+    ant.entry(key: "version", value: "${version}")
+    ant.entry(key: "jarName", value: "${jarName}")
+    ant.entry(key: "releaseTag", value: "${releaseTag}")
+    ant.entry(key: "buildDate", value: "${getDate()}")
+    ant.entry(key: "matrixCoreVersion", value: "${matrixCoreVersion}")
+    ant.entry(key: "matrixChartsVersion", value: "${matrixChartsVersion}")
+    ant.entry(key: "matrixStatsVersion", value: "${matrixStatsVersion}")
+    ant.entry(key: "matrixDatasetsVersion", value: "${matrixDatasetsVersion}")
+    ant.entry(key: "matrixSpreadsheetVersion", value: "${matrixSpreadsheetVersion}")
+    ant.entry(key: "matrixJsonVersion", value: "${matrixJsonVersion}")
+    ant.entry(key: "matrixCsvVersion", value: "${matrixCsvVersion}")
+    ant.entry(key: "matrixSqlVersion", value: "${matrixSqlVersion}")
+    ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
+    ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
+    ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
+    ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
+    ant.entry(key: "matrixAvroVersion", value: "${matrixAvroVersion}")
+    ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
+    ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
+  }
+  ant.copy(
+      file: "${projectDir}/version.properties",
+      //todir: "${buildDir}/resources/main"
+      todir: layout.buildDirectory.dir("resources/main").get().asFile
+  )
 }
 
 test {
-  jvmArgs += ['--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED']
+  jvmArgs += [
+      '--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED',
+  ]
   useJUnitPlatform()
   testLogging {
     // set options for log level LIFECYCLE
@@ -307,105 +313,105 @@ test {
 }
 
 runtime {
-    //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-    // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
-    modules.set(['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
+  //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+  // If there are issues, consider including more modules, see https://docs.oracle.com/en/java/javase/17/docs/api/index.html
+  modules.set(['javafx.controls', 'javafx.web', 'javafx.media', 'javafx.swing', 'java.scripting',
                'java.management', 'java.se', 'java.sql', 'java.naming', 'jdk.crypto.ec', 'java.prefs',
                'java.xml', 'java.compiler', 'jdk.compiler', 'java.desktop', 'jdk.dynalink',
                'jdk.security.auth', 'java.security.jgss', 'java.instrument', 'jdk.zipfs',
                'jdk.jartool', 'jdk.javadoc'
-    ])
+  ])
 
-    launcher {
-        noConsole = true
-    }
-    // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-21-lts
-    //https://download.bell-sw.com/java/21.0.2+14/bellsoft-jdk21.0.2+14-macos-aarch64-full.tar.gz
-    def baseUrl = "https://download.bell-sw.com/java"
+  launcher {
+    noConsole = true
+  }
+  // check for latest FULL versions here: https://bell-sw.com/pages/downloads/#/java-21-lts
+  //https://download.bell-sw.com/java/21.0.2+14/bellsoft-jdk21.0.2+14-macos-aarch64-full.tar.gz
+  def baseUrl = "https://download.bell-sw.com/java"
 
-    targetPlatform("linux") {
-        jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-linux-amd64-full.tar.gz") {
-            downloadDir = "$projectDir/platform/linux"
-        }
+  targetPlatform("linux") {
+    jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-linux-amd64-full.tar.gz") {
+      downloadDir = "$projectDir/platform/linux"
     }
-    targetPlatform("win") {
-        jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-windows-amd64-full.zip") {
-            downloadDir = "$projectDir/platform/win"
-        }
+  }
+  targetPlatform("win") {
+    jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-windows-amd64-full.zip") {
+      downloadDir = "$projectDir/platform/win"
     }
-    targetPlatform("mac") {
-        jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-macos-aarch64-full.tar.gz") {
-            downloadDir = "$projectDir/platform/mac"
-        }
+  }
+  targetPlatform("mac") {
+    jdkHome = jdkDownload("${baseUrl}/${jdkVersion}/bellsoft-jdk${jdkVersion}-macos-aarch64-full.tar.gz") {
+      downloadDir = "$projectDir/platform/mac"
     }
+  }
 }
 
 tasks.runtime.doLast {
-    copy {
-        from("$projectDir/src/main/resources/script/")
-        into(project.layout.buildDirectory.dir("image/gade-linux/"))
-        include 'createLauncher.sh'
-        include '*.png'
-    }
-    copy {
-        from("$projectDir/src/bin/cponly")
-        into(project.layout.buildDirectory.dir("image/gade-linux/"))
-        include '*.sh'
-    }
-    copy {
-      from("$projectDir/src/bin/cponly")
-      into(project.layout.buildDirectory.dir("image/gade-linux/conf"))
-      include 'jaas.conf'
-    }
+  copy {
+    from("$projectDir/src/main/resources/script/")
+    into(project.layout.buildDirectory.dir("image/gade-linux/"))
+    include 'createLauncher.sh'
+    include '*.png'
+  }
+  copy {
+    from("$projectDir/src/bin/cponly")
+    into(project.layout.buildDirectory.dir("image/gade-linux/"))
+    include '*.sh'
+  }
+  copy {
+    from("$projectDir/src/bin/cponly")
+    into(project.layout.buildDirectory.dir("image/gade-linux/conf"))
+    include 'jaas.conf'
+  }
 
-    copy {
-        from("$projectDir/src/main/resources/script/")
-        into(project.layout.buildDirectory.dir("image/gade-mac/"))
-        include '*.png'
-    }
-    copy {
-        from("$projectDir/src/bin/cponly")
-        into(project.layout.buildDirectory.dir("image/gade-mac/"))
-        include '*.sh'
-    }
-    copy {
-      from("$projectDir/src/bin/cponly")
-      into(project.layout.buildDirectory.dir("image/gade-mac/conf"))
-      include 'jaas.conf'
-    }
+  copy {
+    from("$projectDir/src/main/resources/script/")
+    into(project.layout.buildDirectory.dir("image/gade-mac/"))
+    include '*.png'
+  }
+  copy {
+    from("$projectDir/src/bin/cponly")
+    into(project.layout.buildDirectory.dir("image/gade-mac/"))
+    include '*.sh'
+  }
+  copy {
+    from("$projectDir/src/bin/cponly")
+    into(project.layout.buildDirectory.dir("image/gade-mac/conf"))
+    include 'jaas.conf'
+  }
 
-    copy {
-        from("$projectDir/src/main/resources/script/")
-        into(project.layout.buildDirectory.dir("image/gade-win/"))
-        include '*.ico'
-        include '*.ps1'
-    }
-    copy {
-        from("$projectDir/src/bin/cponly")
-        into(project.layout.buildDirectory.dir("image/gade-win/"))
-        exclude 'jaas.conf'
-    }
-    copy {
-      from("$projectDir/src/bin/cponly")
-      into(project.layout.buildDirectory.dir("image/gade-win/conf"))
-      include 'jaas.conf'
-    }
+  copy {
+    from("$projectDir/src/main/resources/script/")
+    into(project.layout.buildDirectory.dir("image/gade-win/"))
+    include '*.ico'
+    include '*.ps1'
+  }
+  copy {
+    from("$projectDir/src/bin/cponly")
+    into(project.layout.buildDirectory.dir("image/gade-win/"))
+    exclude 'jaas.conf'
+  }
+  copy {
+    from("$projectDir/src/bin/cponly")
+    into(project.layout.buildDirectory.dir("image/gade-win/conf"))
+    include 'jaas.conf'
+  }
 
-    copy {
-        from("$projectDir")
-        into(project.layout.buildDirectory.dir("image/gade-linux/"))
-        include 'version.properties'
-    }
-    copy {
-        from("$projectDir")
-        into(project.layout.buildDirectory.dir("image/gade-mac/"))
-        include 'version.properties'
-    }
-    copy {
-        from("$projectDir")
-        into(project.layout.buildDirectory.dir("image/gade-win/"))
-        include 'version.properties'
-    }
+  copy {
+    from("$projectDir")
+    into(project.layout.buildDirectory.dir("image/gade-linux/"))
+    include 'version.properties'
+  }
+  copy {
+    from("$projectDir")
+    into(project.layout.buildDirectory.dir("image/gade-mac/"))
+    include 'version.properties'
+  }
+  copy {
+    from("$projectDir")
+    into(project.layout.buildDirectory.dir("image/gade-win/"))
+    include 'version.properties'
+  }
 }
 
 tasks.distTar.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -414,114 +420,114 @@ tasks.installDist.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
 tasks.runtimeZip.doLast {
 
-    //ant.move(todir:"$project.buildDir") {
-    ant.move(todir: project.layout.buildDirectory.get().asFile) {
-        //ant.fileset(dir: "$project.buildDir") {
-        ant.fileset(dir: project.layout.buildDirectory.get().asFile) {
-            include(name: "image-*.zip")
-        }
-        ant.mapper(type: "glob", from: "image-*.zip", to: "${project.name}-*-${version}.zip")
+  //ant.move(todir:"$project.buildDir") {
+  ant.move(todir: project.layout.buildDirectory.get().asFile) {
+    //ant.fileset(dir: "$project.buildDir") {
+    ant.fileset(dir: project.layout.buildDirectory.get().asFile) {
+      include(name: "image-*.zip")
     }
+    ant.mapper(type: "glob", from: "image-*.zip", to: "${project.name}-*-${version}.zip")
+  }
 }
 
 def isNonStable = { String version ->
-    def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
-    def regex = /^[0-9,.v-]+(-r)?$/
-    return !stableKeyword && !(version ==~ regex)
+  def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
+  def regex = /^[0-9,.v-]+(-r)?$/
+  return !stableKeyword && !(version ==~ regex)
 }
 // https://github.com/ben-manes/gradle-versions-plugin
 tasks.named("dependencyUpdates").configure {
-    gradleReleaseChannel = "current"
-    resolutionStrategy {
-        componentSelection {
-            all {
-                if (isNonStable(it.candidate.version) && !isNonStable(it.currentVersion)) {
-                    reject('Release candidate')
-                }
-            }
+  gradleReleaseChannel = "current"
+  resolutionStrategy {
+    componentSelection {
+      all {
+        if (isNonStable(it.candidate.version) && !isNonStable(it.currentVersion)) {
+          reject('Release candidate')
         }
+      }
     }
+  }
 }
 
 //Maven Central uploads
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    from javadoc.destinationDir
-    archiveClassifier.set('javadoc')
+  from javadoc.destinationDir
+  archiveClassifier.set('javadoc')
 }
 
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    from sourceSets.main.allSource
-    archiveClassifier.set('sources')
+  from sourceSets.main.allSource
+  archiveClassifier.set('sources')
 }
 
 publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-            artifact(javadocJar)
-            artifact(sourcesJar)
-            pom {
-                name = 'Gade'
-                description = "${project.description}"
-                url = "https://github.com/Alipsa/gade"
-                licenses {
-                    license {
-                        name = 'MIT License'
-                        url = 'https://raw.githubusercontent.com/Alipsa/gade/main/LICENSE'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'perNyfelt'
-                        name = 'Per Nyfelt'
-                    }
-                }
-                scm {
-                    url = 'https://github.com/Alipsa/gade/tree/main'
-                    connection = 'scm:git:https://github.com/Alipsa/gade.git'
-                    developerConnection = 'scm:git:https://github.com/Alipsa/gade.git'
-                }
-                /*
-                build {
-                    plugin {
-                        groupId='org.openjfx'
-                        artifactId='javafx-maven-plugin'
-                        version='0.0.8'
-                        configuration {
-                            mainClass='se.alipsa.gade.Gade'
-                        }
-                    }
-                }*/
-            }
+  publications {
+    maven(MavenPublication) {
+      from components.java
+      artifact(javadocJar)
+      artifact(sourcesJar)
+      pom {
+        name = 'Gade'
+        description = "${project.description}"
+        url = "https://github.com/Alipsa/gade"
+        licenses {
+          license {
+            name = 'MIT License'
+            url = 'https://raw.githubusercontent.com/Alipsa/gade/main/LICENSE'
+          }
         }
-    }
-    if (project.ext.properties.sonatypeUsername) {
-        repositories {
-            maven {
-                credentials {
-                    username = sonatypeUsername
-                    password = sonatypePassword
-                }
-                url = nexusUrl
-            }
+        developers {
+          developer {
+            id = 'perNyfelt'
+            name = 'Per Nyfelt'
+          }
         }
+        scm {
+          url = 'https://github.com/Alipsa/gade/tree/main'
+          connection = 'scm:git:https://github.com/Alipsa/gade.git'
+          developerConnection = 'scm:git:https://github.com/Alipsa/gade.git'
+        }
+        /*
+        build {
+            plugin {
+                groupId='org.openjfx'
+                artifactId='javafx-maven-plugin'
+                version='0.0.8'
+                configuration {
+                    mainClass='se.alipsa.gade.Gade'
+                }
+            }
+        }*/
+      }
     }
+  }
+  if (project.ext.properties.sonatypeUsername) {
+    repositories {
+      maven {
+        credentials {
+          username = sonatypeUsername
+          password = sonatypePassword
+        }
+        url = nexusUrl
+      }
+    }
+  }
 }
 
 signing {
-    if (project.properties['signing.keyId'] != null) {
-        project.logger.lifecycle("Signing artifacts...")
-        sign publishing.publications.maven
-    } else {
-        project.logger.lifecycle("signing.keyId is not defined, skipping signing of artifacts...")
-    }
+  if (project.properties['signing.keyId'] != null) {
+    project.logger.lifecycle("Signing artifacts...")
+    sign publishing.publications.maven
+  } else {
+    project.logger.lifecycle("signing.keyId is not defined, skipping signing of artifacts...")
+  }
 }
 
 if (project.ext.properties.sonatypeUsername) {
 
-    apply plugin: 'se.alipsa.nexus-release-plugin'
-    nexusReleasePlugin.nexusUrl = nexusUrl
-    nexusReleasePlugin.userName = sonatypeUsername
-    nexusReleasePlugin.password = sonatypePassword
+  apply plugin: 'se.alipsa.nexus-release-plugin'
+  nexusReleasePlugin.nexusUrl = nexusUrl
+  nexusReleasePlugin.userName = sonatypeUsername
+  nexusReleasePlugin.password = sonatypePassword
 }

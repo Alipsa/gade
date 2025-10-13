@@ -229,7 +229,13 @@ public class InoutComponent extends TabPane  {
       view2dArray((Object[][])matrix, title);
     } else if (matrix instanceof Matrix tableMatrix) {
       viewTable(tableMatrix, title);
-    } else {
+    } else if (matrix instanceof List) {
+      // Assume it's a list of rows
+      viewTable(Matrix.builder().rows((List<List>) matrix).build());
+    } else if (matrix.getClass().getName().equals("org.apache.groovy.ginq.provider.collection.runtime.QueryableCollection")) {
+      viewTable(Matrix.builder().ginqResult(matrix).build());
+    }
+    else {
       console.appendWarningFx("Unknown matrix type " + matrix.getClass().getName());
       console.appendFx(String.valueOf(matrix), true);
     }
