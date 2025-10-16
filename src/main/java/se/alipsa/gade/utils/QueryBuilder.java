@@ -24,9 +24,9 @@ public class QueryBuilder {
         """);
     str.append("@Grab('").append(con.getDependency()).append("')\n")
         .append("""
-        @Grab('se.alipsa.groovy:data-utils:1.0.5')
+        @Grab('se.alipsa.groovy:data-utils:2.0.0')
         import se.alipsa.groovy.datautil.SqlUtil
-        import tech.tablesaw.api.Table
+        import se.alipsa.matrix.core.Matrix
         
         def sql = SqlUtil.newInstance('""")
         .append(url).append("', '")
@@ -35,7 +35,7 @@ public class QueryBuilder {
         .append(con.getDriver())
         .append("')\n")
         .append("\nsql.query(\"\"\"\n  ").append(sql).append("\n\"\"\") { rs -> {")
-        .append("\n  table = Table.read().db(rs)\n")
+        .append("\n  table = Matrix.builder().data(rs).build()\n")
         .append("  }\n")
         .append("}\n")
         .append("sql.close()\n")
@@ -46,7 +46,7 @@ public class QueryBuilder {
         .append("""                                        
                 ")).withCloseable { sql -> {
                   sql.query(""\"select * from SomeTable""\") { rs -> {
-                    table = tech.tablesaw.api.Table.read().db(rs)
+                    table = Matrix.builder().data(rs).build()
                   }}
                 }}
                 

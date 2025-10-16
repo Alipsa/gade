@@ -6,8 +6,6 @@ import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 import java.util.StringJoiner;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
@@ -28,8 +26,6 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gmd.core.HtmlDecorator;
 import se.alipsa.matrix.core.Grid;
 import se.alipsa.matrix.core.Matrix;
-//import tech.tablesaw.api.ColumnType;
-//import tech.tablesaw.api.Table;
 import se.alipsa.gade.utils.*;
 
 import java.io.File;
@@ -110,14 +106,6 @@ public class ViewTab extends Tab {
       tableView.setOnKeyPressed(event -> {
         if (KEY_CODE_COPY.match(event)) {
           copySelectionToClipboard(tableView, headerList);
-          /*
-          // Include header if all rows are selected
-          boolean includeHeader = tableView.getSelectionModel().getSelectedCells().size() == rowList.size();
-          if (includeHeader) {
-            copyRowSelectionToClipboard(tableView, headerList);
-          } else {
-            copyRowSelectionToClipboard(tableView, null);
-          }*/
         }
       });
 
@@ -196,33 +184,34 @@ public class ViewTab extends Tab {
   }
 
   private void copySelectionToClipboard(final TableView<?> table, List<String> headerList) {
+    int rowCount = table.getItems().size();
+    int columnCount = table.getColumns().size();
+    int totalCells = rowCount * columnCount;
+
+    // If everything is selected, defer to the more suitable way for pasting to a spreadsheet
+    if (table.getSelectionModel().getSelectedCells().size() == totalCells) {
+      copyRowSelectionToClipboard(table, headerList);
+      return;
+    }
+
     StringBuilder strb = new StringBuilder();
     int previousRow = -1;
     StringJoiner joiner = new StringJoiner("\t");
-    boolean doColumnCount = true;
-    int ncols = 0;
 
-    for (TablePosition<List<String>, String> tablePosition : table.getSelectionModel().getSelectedCells()) {
+    for (TablePosition<?, ?> tablePosition : table.getSelectionModel().getSelectedCells()) {
       int currentRow = tablePosition.getRow();
       if (currentRow != previousRow && previousRow != -1) {
         strb.append(joiner).append('\n');
         joiner = new StringJoiner("\t");
-        doColumnCount = false;
       }
-      if (doColumnCount) {
-        ncols ++;
-      }
-      String value = tablePosition.getTableColumn().getCellData(currentRow);
+
+      String value = (String) tablePosition.getTableColumn().getCellData(currentRow);
       joiner.add(value == null ? "" : value);
       previousRow = currentRow;
     }
 
     strb.append(joiner);
 
-    // Everything is selected: add header
-    if (table.getItems().size() -1 == previousRow && ncols == headerList.size()) {
-      strb.insert(0, String.join("\t", headerList) + "\n");
-    }
     ClipboardContent clipboardContent = new ClipboardContent();
     clipboardContent.putString(strb.toString());
     Clipboard.getSystemClipboard().setContent(clipboardContent);
@@ -251,7 +240,18 @@ public class ViewTab extends Tab {
         }
         firstCol = false;
         final Object cellData = column.getCellData(row);
-        strb.append(cellData == null ? "" : cellData.toString());
+        String cellValue = cellData == null ? "" : cellData.toString();
+
+        // Check for line breaks (or tabs, just in case) and enclose in double quotes
+        if (cellValue.contains("\t") || cellValue.contains("\"") || cellValue.matches("(?s).*\\s.*")){
+          // If the cell value itself contains double quotes, they must be escaped by doubling them
+          cellValue = cellValue.trim().replace("\"", "\"\"");
+          // Enclose the modified cell value in double quotes
+          strb.append('"').append(cellValue).append('"');
+        } else {
+          // Otherwise, append the cell value directly
+          strb.append(cellValue);
+        }
       }
     }
     final ClipboardContent clipboardContent = new ClipboardContent();
