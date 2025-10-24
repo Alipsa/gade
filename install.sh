@@ -1,22 +1,37 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-
+TARGET_JAVA_VERSION=21
+JAVA_SWITCH_SCRIPT="jdk${TARGET_JAVA_VERSION}"
 javacmd=$(command -v java)
 
 function switchJava() {
   if [[ -f ~/.sdkman/bin/sdkman-init.sh ]]; then
     source ~/.sdkman/bin/sdkman-init.sh
   fi
-  if [[ $(command -v jdk21) ]]; then
-    source jdk21
+  if [[ $(command -v $JAVA_SWITCH_SCRIPT) ]]; then
+    source "$JAVA_SWITCH_SCRIPT"
+    if command -v java >/dev/null 2>&1; then
+            VERIFIED_JAVACMD=$(command -v java)
+            echo "Verification successful! Java command is now: ${VERIFIED_JAVACMD}"
+
+            CURRENT_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1)
+            if [[ ! $CURRENT_VERSION == "$TARGET_JAVA_VERSION" ]]; then
+                echo "Warning: Java command path changed, but version is not confirmed to be $TARGET_JAVA_VERSION (found ${CURRENT_VERSION})."
+            fi
+
+        else
+            echo "Error: Failed to set Java environment correctly! The 'java' command is no longer found after running '$JAVA_SWITCH_SCRIPT'." >&2
+            echo "Check the contents of '$(which $JAVA_SWITCH_SCRIPT)' for errors in setting PATH/JAVA_HOME." >&2
+            exit 1
+        fi
   fi
 }
 
 if [[ -f "$javacmd" ]]; then
   javaVersion=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1)
-  if [[ (($javaVersion -eq 21)) ]]; then
-    echo "java 21 is already the active version"
+  if [[ (($javaVersion -eq $TARGET_JAVA_VERSION)) ]]; then
+    echo "java $TARGET_JAVA_VERSION is already the active version"
   else
     switchJava
   fi
