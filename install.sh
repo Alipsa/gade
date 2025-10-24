@@ -8,15 +8,15 @@ function switchJava() {
   if [[ -f ~/.sdkman/bin/sdkman-init.sh ]]; then
     source ~/.sdkman/bin/sdkman-init.sh
   fi
-  if [[ $(command -v jdk25) ]]; then
-    source jdk25
+  if [[ $(command -v jdk21) ]]; then
+    source jdk21
   fi
 }
 
 if [[ -f "$javacmd" ]]; then
   javaVersion=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1)
-  if [[ (($javaVersion -eq 25)) ]]; then
-    echo "java 25 is already the active version"
+  if [[ (($javaVersion -eq 21)) ]]; then
+    echo "java 21 is already the active version"
   else
     switchJava
   fi

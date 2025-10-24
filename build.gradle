@@ -34,7 +34,9 @@ def jgitVersion = '7.4.0.202509020913-r' //'7.3.0.202506031305-r'
 ext.log4jVersion = "2.25.2"
 ext.tikaVersion = '3.2.3'
 
-def jdkVersion = "25+37"
+//def jdkVersion = "25+37" // Does not work with hadoop and hence not with matrix parquet
+int javaLanguageVersion = 21
+def jdkVersion = "${javaLanguageVersion}.0.9+11"
 
 application {
   mainClass = 'se.alipsa.gade.Gade'
@@ -154,7 +156,7 @@ dependencies {
 
 java {
   toolchain {
-    languageVersion.set(JavaLanguageVersion.of(25))
+    languageVersion.set(JavaLanguageVersion.of(javaLanguageVersion))
   }
   //withSourcesJar()
   //withJavadocJar()
