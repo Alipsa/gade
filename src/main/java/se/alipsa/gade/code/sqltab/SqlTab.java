@@ -1,8 +1,7 @@
 package se.alipsa.gade.code.sqltab;
 
-import javafx.application.Platform;
+import com.manticore.jsqlformatter.JSQLFormatter;
 import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -17,24 +16,20 @@ import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.console.ConsoleComponent;
-//import se.alipsa.gade.environment.connections.ConnectionInfo;
-import se.alipsa.gade.console.CountDownTask;
 import se.alipsa.gade.environment.connections.ConnectionHandler;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.SqlParser;
-import se.alipsa.gade.utils.StringUtils;
-import se.alipsa.matrix.core.Matrix;
 
 import java.io.File;
 import java.sql.*;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SqlTab extends TextAreaTab implements TaskListener {
 
   private final SqlTextArea sqlTextArea;
+  private final Button formatButton;
   private final Button executeButton;
   private final ComboBox<ConnectionInfo> connectionCombo;
 
@@ -53,6 +48,31 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     executeButton.setDisable(true);
     executeButton.setOnAction(e -> executeQuery(getTextContent()));
     buttonPane.getChildren().add(executeButton);
+
+    formatButton = new Button("Format");
+    formatButton.setTooltip(new Tooltip("Format SQL code"));
+    formatButton.setOnAction(e -> {
+      String original = getTextContent();
+      String[] options = new String[] {
+          "indentWidth=2",
+          "keywordSpelling=UPPER",
+          "functionSpelling=KEEP",
+          "objectSpelling=LOWER",
+          "separation=BEFORE"
+      };
+      try {
+        String formatted = JSQLFormatter.format(original, options);
+        if (formatted.contains("-- failed to format")) {
+          Alerts.warn("SQL Format Warning", formatted);
+          return;
+        }
+        replaceContentText(formatted, false);
+      } catch (Exception ex) {
+        ExceptionAlert.showAlert("Failed to format SQL", ex);
+      }
+
+    });
+    buttonPane.getChildren().add(formatButton);
 
     connectionCombo = new ComboBox<>();
     connectionCombo.setTooltip(new Tooltip("Create connections in the Connections tab \nand select the name here"));

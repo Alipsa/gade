@@ -96,7 +96,6 @@ dependencies {
   implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
   implementation "commons-io:commons-io:2.20.0"
-  implementation 'com.github.jsqlparser:jsqlparser:5.3'
   implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
   implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
@@ -143,7 +142,13 @@ dependencies {
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   implementation 'org.knowm.xchart:xchart:3.8.8'
   implementation 'com.github.hervegirod:fxsvgimage:1.4'
+  implementation 'com.github.jsqlparser:jsqlparser:5.3'
+  implementation('com.manticore-projects.jsqlformatter:jsqlformatter:5.3') {
+    exclude group: 'com.github.jsqlparser', module: 'jsqlparser'
+  }
+
   testImplementation platform('org.junit:junit-bom:6.0.0')
+  testImplementation platform('org.junit:junit-bom:5.13.4')
   testImplementation 'com.h2database:h2:2.4.240'
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
