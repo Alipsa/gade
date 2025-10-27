@@ -8,13 +8,16 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gade.Gade;
 
 import java.net.URL;
 import java.util.Objects;
 import java.util.Optional;
+import se.alipsa.gade.UnStyledCodeArea;
 
 public class Alerts {
 
@@ -115,5 +118,39 @@ public class Alerts {
       alert.setResizable(true);
       alert.showAndWait();
     });
+  }
+
+  public static void showInfoAlert(String title, String content, double contentWidth, double contentHeight) {
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    alert.setTitle(title);
+    alert.setHeaderText(null);
+    UnStyledCodeArea ta = new UnStyledCodeArea();
+    ta.getStyleClass().add("txtarea");
+    ta.setWrapText(true);
+    ta.replaceText(content);
+    ta.setEditable(false);
+    VirtualizedScrollPane<UnStyledCodeArea> scrollPane = new VirtualizedScrollPane<>(ta);
+    alert.getDialogPane().setContent(scrollPane);
+    alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+    alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
+    alert.setResizable(true);
+
+    alert.getDialogPane().setPrefHeight(contentHeight);
+    alert.getDialogPane().setPrefWidth(contentWidth);
+
+    String styleSheetPath = Gade.instance().getPrefs().get(THEME, BRIGHT_THEME);
+    URL styleSheetUrl = FileUtils.getResourceUrl(styleSheetPath);
+    if (styleSheetUrl != null) {
+      alert.getDialogPane().getStylesheets().add(styleSheetUrl.toExternalForm());
+    }
+
+    Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+    stage.getIcons().addAll(Gade.instance().getStage().getIcons());
+
+    alert.showAndWait();
+  }
+
+  public static void showInfoAlert(String title, StringBuilder content, double contentWidth, double contentHeight) {
+    showInfoAlert(title, content.toString(), contentWidth, contentHeight);
   }
 }

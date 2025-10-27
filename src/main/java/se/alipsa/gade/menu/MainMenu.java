@@ -478,7 +478,7 @@ public class MainMenu extends MenuBar {
     manual.setOnAction(this::displayUserManual);
     
     MenuItem about = new MenuItem("About Gade");
-    about.setOnAction(this::displayAbout);
+    about.setOnAction(a -> AboutDialog.displayAbout());
 
     MenuItem checkVersion = new MenuItem("Check for updates");
     checkVersion.setOnAction(this::checkForUpdates);
@@ -510,7 +510,7 @@ public class MainMenu extends MenuBar {
         String content = FileUtils.readContent(logFile);
         Rectangle2D screenBounds = Screen.getPrimary().getBounds();
 
-        showInfoAlert(logFile.getAbsolutePath(), content,  Math.min(screenBounds.getWidth(), 1200.0), Math.min(screenBounds.getHeight(), 830.0));
+        Alerts.showInfoAlert(logFile.getAbsolutePath(), content,  Math.min(screenBounds.getWidth(), 1200.0), Math.min(screenBounds.getHeight(), 830.0));
       } catch (IOException e) {
         ExceptionAlert.showAlert("Failed to read log file content", e);
       }
@@ -592,121 +592,6 @@ public class MainMenu extends MenuBar {
 
   private void displayUserManual(ActionEvent actionEvent) {
     new UserManual(gui).show();
-  }
-
-  private void displayAbout(ActionEvent actionEvent) {
-    Properties props = new Properties();
-    String version = "unknown";
-    String releaseTag = "unknown";
-    String buildDate = "unknown";
-    String matrixCoreVersion = "unknown";
-    String matrixStatsVersion = "unknown";
-    String matrixDatasetsVersion = "unknown";
-    String matrixSpreadsheetVersion = "unknown";
-    String matrixJsonVersion = "unknown";
-    String matrixCsvVersion = "unknown";
-    String matrixSqlVersion = "unknown";
-    String matrixChartsVersion = "unknown";
-    String matrixParquetVersion = "unknown";
-    String matrixBigQueryVersion = "unknown";
-    String matrixXchartVersion = "unknown";
-    String matrixTablesawVersion = "unknown";
-    String matrixGsheetsVersion = "unknown";
-    String matrixAvroVersion = "unknown";
-    String gmdCoreVersion = "unknown";
-    try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
-      props.load(is);
-      version = props.getProperty("version");
-      releaseTag = props.getProperty("releaseTag");
-      buildDate = props.getProperty("buildDate");
-      matrixCoreVersion = props.getProperty("matrixCoreVersion");
-      matrixStatsVersion = props.getProperty("matrixStatsVersion");
-      matrixDatasetsVersion = props.getProperty("matrixDatasetsVersion");
-      matrixSpreadsheetVersion = props.getProperty("matrixSpreadsheetVersion");
-      matrixJsonVersion = props.getProperty("matrixJsonVersion");
-      matrixCsvVersion = props.getProperty("matrixCsvVersion");
-      matrixSqlVersion = props.getProperty("matrixSqlVersion");
-      matrixChartsVersion = props.getProperty("matrixChartsVersion");
-      matrixParquetVersion = props.getProperty("matrixParquetVersion");
-      matrixBigQueryVersion = props.getProperty("matrixBigQueryVersion");
-      matrixXchartVersion = props.getProperty("matrixXchartVersion");
-      matrixTablesawVersion = props.getProperty("matrixTablesawVersion");
-      matrixGsheetsVersion = props.getProperty("matrixGsheetsVersion");
-      matrixAvroVersion = props.getProperty("matrixAvroVersion");
-      gmdCoreVersion = props.getProperty("gmdCoreVersion");
-    } catch (IOException e) {
-      ExceptionAlert.showAlert("Failed to load properties file", e);
-    }
-    NashornScriptEngineFactory nashornScriptEngineFactory = new NashornScriptEngineFactory();
-    StringBuilder content = new StringBuilder();
-    content.append("\n Gade Version: ")
-        .append(version)
-        .append("\n Gade Release tag: ")
-        .append(releaseTag)
-        .append("\n Gade Build date: ")
-        .append(buildDate)
-        .append("\n Java Runtime Version: ")
-        .append(System.getProperty("java.runtime.version"))
-        .append(" (").append(System.getProperty("os.arch")).append(")")
-        .append(")")
-        .append("\n JavaFx Version: ").append(System.getProperty("javafx.runtime.version"))
-        .append("\n Groovy version: ").append(GroovySystem.getVersion())
-        .append("\n Nashorn version: ").append(nashornScriptEngineFactory.getEngineVersion())
-        .append(" (").append(nashornScriptEngineFactory.getLanguageName())
-        .append(" ").append(nashornScriptEngineFactory.getLanguageVersion()).append(")")
-        .append("\n Matrix-core version: ").append(matrixCoreVersion)
-        .append("\n Matrix-stats version: ").append(matrixStatsVersion)
-        .append("\n Matrix-spreadsheet version: ").append(matrixSpreadsheetVersion)
-        .append("\n Matrix-sql version: ").append(matrixSqlVersion)
-        .append("\n Matrix-csv version: ").append(matrixCsvVersion)
-        .append("\n Matrix-json version: ").append(matrixJsonVersion)
-        .append("\n Matrix-xchart version: ").append(matrixXchartVersion)
-        .append("\n Matrix-datasets version: ").append(matrixDatasetsVersion)
-        .append("\n Matrix-avro version: ").append(matrixAvroVersion)
-        .append("\n Matrix-parquet version: ").append(matrixParquetVersion)
-        .append("\n Matrix-bigquery version: ").append(matrixBigQueryVersion)
-        .append("\n Matrix-charts version: ").append(matrixChartsVersion)
-        .append("\n Matrix-tablesaw version: ").append(matrixTablesawVersion)
-        .append("\n Matrix-gsheets version: ").append(matrixGsheetsVersion)
-        .append("\n Gmd Core version: ").append(gmdCoreVersion);
-
-    content.append("\n\n See https://github.com/Alipsa/gade/ for more info or to report issues.");
-    showInfoAlert("About Gade", content, 630, 440);
-
-  }
-
-  private void showInfoAlert(String title, StringBuilder content, double contentWidth, double contentHeight) {
-    showInfoAlert(title, content.toString(), contentWidth, contentHeight);
-  }
-
-  private void showInfoAlert(String title, String content, double contentWidth, double contentHeight) {
-    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-    alert.setTitle(title);
-    alert.setHeaderText(null);
-    UnStyledCodeArea ta = new UnStyledCodeArea();
-    ta.getStyleClass().add("txtarea");
-    ta.setWrapText(true);
-    ta.replaceText(content);
-    ta.setEditable(false);
-    VirtualizedScrollPane<UnStyledCodeArea> scrollPane = new VirtualizedScrollPane<>(ta);
-    alert.getDialogPane().setContent(scrollPane);
-    alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-    alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
-    alert.setResizable(true);
-
-    alert.getDialogPane().setPrefHeight(contentHeight);
-    alert.getDialogPane().setPrefWidth(contentWidth);
-
-    String styleSheetPath = gui.getPrefs().get(THEME, BRIGHT_THEME);
-    URL styleSheetUrl = FileUtils.getResourceUrl(styleSheetPath);
-    if (styleSheetUrl != null) {
-      alert.getDialogPane().getStylesheets().add(styleSheetUrl.toExternalForm());
-    }
-
-    Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
-    stage.getIcons().addAll(gui.getStage().getIcons());
-
-    alert.showAndWait();
   }
 
   private Menu createToolsMenu() {
@@ -838,7 +723,7 @@ public class MainMenu extends MenuBar {
         .append(System.getProperty("java.runtime.version"))
         .append(" (").append(System.getProperty("os.arch")).append(")")
         .append("\n Groovy version: ").append(GroovySystem.getVersion());
-    showInfoAlert("Session info", content, 600, 300);
+    Alerts.showInfoAlert("Session info", content, 600, 300);
   }
 
   private void interruptProcess(ActionEvent actionEvent) {
