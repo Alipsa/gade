@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class SqlTab extends TextAreaTab implements TaskListener {
 
-  private final SqlTextArea sqlTextArea;
+  private SqlTextArea sqlTextArea = null;
   private final Button formatButton;
   private final Button executeButton;
   private final ComboBox<ConnectionInfo> connectionCombo;
@@ -52,7 +52,8 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     formatButton = new Button("Format");
     formatButton.setTooltip(new Tooltip("Format SQL code"));
     formatButton.setOnAction(e -> {
-      String original = getTextContent();
+      String original = getTextContent().trim();
+      boolean endsWithSemicolon = original.endsWith(";");
       String[] options = new String[] {
           "indentWidth=2",
           "keywordSpelling=UPPER",
@@ -61,12 +62,23 @@ public class SqlTab extends TextAreaTab implements TaskListener {
           "separation=BEFORE"
       };
       try {
-        String formatted = JSQLFormatter.format(original, options);
+        String formatted = JSQLFormatter.format(original, options).trim();
+        if (!endsWithSemicolon && formatted.endsWith(";")) {
+          formatted = formatted.substring(0, formatted.length() - 1).trim();
+        }
         if (formatted.contains("-- failed to format")) {
           Alerts.warn("SQL Format Warning", formatted);
           return;
         }
-        replaceContentText(formatted, false);
+        if (sqlTextArea != null) {
+          String selected = sqlTextArea.selectedTextProperty().getValue();
+          boolean hasSelection = selected != null && !selected.isEmpty();
+          if (hasSelection) {
+            replaceSelectedContent(formatted);
+          } else {
+            replaceContentText(formatted, false);
+          }
+        }
       } catch (Exception ex) {
         ExceptionAlert.showAlert("Failed to format SQL", ex);
       }
@@ -224,6 +236,11 @@ public class SqlTab extends TextAreaTab implements TaskListener {
   @Override
   public void replaceContentText(int start, int end, String content) {
     sqlTextArea.replaceContentText(start, end, content);
+  }
+
+  public void replaceSelectedContent(String content) {
+    var indexArea = sqlTextArea.getSelection();
+    replaceContentText(indexArea.getStart(), indexArea.getEnd(), content);
   }
 
   @Override
