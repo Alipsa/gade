@@ -119,6 +119,11 @@ public class SqlTextArea extends CodeTextArea {
     });
   }
 
+  boolean hasSelection() {
+    String selected = selectedTextProperty().getValue();
+    return selected != null && !selected.isEmpty();
+  }
+
   private String getSelectedOrCurrentLine() {
     String sql = getSelectedText();
     if (sql == null || "".equals(sql)) {

@@ -52,6 +52,9 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     formatButton = new Button("Format");
     formatButton.setTooltip(new Tooltip("Format SQL code"));
     formatButton.setOnAction(e -> {
+      if (sqlTextArea == null) {
+        return;
+      }
       String original = getTextContent().trim();
       boolean endsWithSemicolon = original.endsWith(";");
       String[] options = new String[] {
@@ -70,15 +73,13 @@ public class SqlTab extends TextAreaTab implements TaskListener {
           Alerts.warn("SQL Format Warning", formatted);
           return;
         }
-        if (sqlTextArea != null) {
-          String selected = sqlTextArea.selectedTextProperty().getValue();
-          boolean hasSelection = selected != null && !selected.isEmpty();
-          if (hasSelection) {
-            replaceSelectedContent(formatted);
-          } else {
-            replaceContentText(formatted, false);
-          }
+
+        if (sqlTextArea.hasSelection()) {
+          replaceSelectedContent(formatted);
+        } else {
+          replaceContentText(formatted, false);
         }
+
       } catch (Exception ex) {
         ExceptionAlert.showAlert("Failed to format SQL", ex);
       }
