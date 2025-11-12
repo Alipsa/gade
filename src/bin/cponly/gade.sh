@@ -74,7 +74,7 @@ if [[ ! "$JAVA_OPTS" =~ -Djava\.system\.class\.loader= ]]; then
 fi
 
 if [[ "${OS}" == "mac" ]]; then
-  JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$DIR/Contents/Resources/gade.icns"
+  JAVA_OPTS="$JAVA_OPTS -Xdock:name=gade -Xdock:icon=$DIR/Contents/Resources/gade.icns"
 fi
 
 MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing

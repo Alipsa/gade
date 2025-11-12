@@ -2,12 +2,8 @@ package se.alipsa.gade.environment.connections;
 
 import com.google.cloud.resourcemanager.v3.Project;
 import groovy.lang.GroovyClassLoader;
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
@@ -18,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -123,6 +118,7 @@ public class ConnectionHandler {
      where TABLE_TYPE <> 'SYSTEM TABLE'
     """.replace("`${datasetName}`", datasetName);
   }
+
   private Matrix getBigQueryMetaData() throws ConnectionException {
     try {
       Bq bq = new Bq(connectionInfo.getUrl());
@@ -237,7 +233,20 @@ public class ConnectionHandler {
          and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')
          """;
     }
-    return query(sql);
+    try {
+      return query(sql);
+    } catch (Exception e) {
+      // In case INFORMATION_SCHEMA is not supported, we try to get the info from the
+      // metadata of the connection
+      try (Connection con = connect()) {
+        if (con == null) {
+          throw new ConnectionFailedException("Failed to establish a connection to the database");
+        }
+        return Matrix.builder().data(MetadataFetcher.getNonSystemColumnMetadata(con)).build();
+      } catch (SQLException sqle) {
+        throw new ConnectionException("Failed to query", sqle);
+      }
+    }
   }
 
   public List<String> getDatabases() throws ConnectionException {
@@ -307,7 +316,14 @@ public class ConnectionHandler {
 
     try {
       Dependency dep = new Dependency(ci.getDependency());
-      log.info("Resolving dependency {}", ci.getDependency());
+      log.info("Resolving dependency {}", dep);
+      if (gui.dynamicClassLoader == null) {
+        ClassLoader cl;
+        cl = gui.getConsoleComponent().getClassLoader();
+        gui.dynamicClassLoader = new GroovyClassLoader(cl);
+      }
+      GradleUtils.addDependencies(dep);
+      /*
       File jar = GradleUtils.downloadArtifact(dep);
       URL url = jar.toURI().toURL();
       URL[] urls = new URL[]{url};
@@ -321,6 +337,8 @@ public class ConnectionHandler {
       if (Arrays.stream(gui.dynamicClassLoader.getURLs()).noneMatch(p -> p.equals(url))) {
         gui.dynamicClassLoader.addURL(url);
       }
+
+       */
 
     } catch (Exception e) {
       Platform.runLater(() ->

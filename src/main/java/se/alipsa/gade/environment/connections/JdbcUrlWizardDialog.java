@@ -7,6 +7,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,7 +78,8 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
         Driver.SQLLITE.getDriverClass(),
         Driver.FIREBIRD.getDriverClass(),
         Driver.DERBY.getDriverClass(),
-        Driver.ORACLE.getDriverClass()
+        Driver.ORACLE.getDriverClass(),
+        Driver.JPARQ.getDriverClass()
     );
 
     driver.getEditor().focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
@@ -269,6 +271,31 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
     optionsBox.getChildren().add(sslMode);
   }
 
+  private void addJparqSpecifics() {
+    urlTemplate = "jdbc:jparq:{path}";
+    connectMethods.setDisable(false);
+    connectMethods.getItems().add("dir");
+    connectMethods.getSelectionModel().select(0);
+    port.setText("");
+    port.setDisable(true);
+    server.setText("");
+    server.setDisable(true);
+    Button browseButton = new Button("...");
+    connectionMethodsBox.getChildren().add(browseButton);
+    browseButton.setOnAction(action -> {
+      DirectoryChooser dc = new DirectoryChooser();
+      dc.setTitle("Choose Parquet directory");
+      dc.setInitialDirectory(new File(System.getProperty("user.home")));
+      File dbDir = dc.showDialog(gui.getStage());
+      if (dbDir != null && dbDir.exists()) {
+        String path = dbDir.getAbsolutePath();
+        database.setText(path);
+        urlTemplate = urlTemplate.replace("{path}", path);
+        updateUrl();
+      }
+    });
+  }
+
   private void addH2Specifics() {
     urlTemplate = "jdbc:h2:{connectMethod}://{server}:{port}/{database}";
     connectMethods.setDisable(false);
@@ -368,6 +395,7 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
       case H2 -> addH2Specifics();
       case SQLLITE -> addSqlLiteSpecifics();
       case ORACLE -> addOracleSpecifics();
+      case JPARQ -> addJparqSpecifics();
       default -> {
         server.setText("unknown");
         port.setValue(1025);

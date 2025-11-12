@@ -21,8 +21,10 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.console.WarningAppenderWriter;
+import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.groovy.resolver.Dependency;
+import se.alipsa.groovy.resolver.DependencyResolver;
 import se.alipsa.groovy.resolver.MavenRepoLookup;
 
 import java.io.*;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import se.alipsa.groovy.resolver.ResolvingException;
 
 public class GradleUtils {
 
@@ -344,5 +347,14 @@ public class GradleUtils {
           .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
     }
     return cachedFile;
+  }
+
+  public static void addDependencies(Dependency dependency) {
+    DependencyResolver resolver = new DependencyResolver(Gade.instance().dynamicClassLoader);
+    try {
+      resolver.addDependency(dependency);
+    } catch (ResolvingException e) {
+      ExceptionAlert.showAlert("Failed to add dependency " + dependency + " to classpath", e);
+    }
   }
 }

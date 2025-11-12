@@ -42,6 +42,7 @@ public class Constants {
     FIREBIRD("org.firebirdsql.jdbc.FBDriver", "org.firebirdsql.jdbc:jaybird:6.0.3"),
     DERBY("org.apache.derby.jdbc.ClientDriver", "org.apache.derby:derby:10.17.1.0"),
     ORACLE("oracle.jdbc.OracleDriver", "com.oracle.database.jdbc:ojdbc11:23.9.0.25.07"),
+    JPARQ("se.alipsa.jparq.JParqDriver", "se.alipsa:jparq:0.9.0"),
     NONE("", "");
 
     final String driverClass;

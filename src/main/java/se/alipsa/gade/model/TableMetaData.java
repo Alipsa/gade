@@ -56,7 +56,14 @@ public class TableMetaData {
   }
 
   private Integer toInteger(Object obj) {
-    return obj == null ? null : Integer.parseInt(String.valueOf(obj));
+    try {
+      return obj == null ? null : Integer.parseInt(String.valueOf(obj));
+    } catch (NumberFormatException nfe) {
+      NumberFormatException nex = new NumberFormatException("Failed to convert '"
+          + obj + "' of class " + obj.getClass() + " to Integer: " + nfe.getMessage());
+      nex.initCause(nfe);
+      throw nex;
+    }
   }
 
   public TableMetaData(Object tableName, Object tableType, Object columnName, Object ordinalPosition,
