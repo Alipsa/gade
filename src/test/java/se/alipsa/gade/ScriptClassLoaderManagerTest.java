@@ -135,11 +135,29 @@ class ScriptClassLoaderManagerTest {
     assertEquals(3, ((Number) result).intValue());
   }
 
+  @Test
+  void ivyRuntimeIsAvailableWhenBundled() throws Exception {
+    Path home = prepareGadeHome();
+    Path libDir = Files.createDirectories(home.resolve("lib"));
+
+    Path ivyJar =
+        createJarWithSource(
+            "ivy-mock",
+            "org.apache.ivy.core.module.descriptor.ModuleDescriptor",
+            "package org.apache.ivy.core.module.descriptor;\n"
+                + "public class ModuleDescriptor {}\n",
+            tempHome.resolve("ivy"));
+    Files.copy(ivyJar, libDir.resolve(ivyJar.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+    GroovyClassLoader loader = manager.createScriptClassLoader(new CompilerConfiguration());
+
+    Class<?> moduleDescriptor = loader.loadClass("org.apache.ivy.core.module.descriptor.ModuleDescriptor");
+    assertEquals("org.apache.ivy.core.module.descriptor.ModuleDescriptor", moduleDescriptor.getName());
+  }
+
   private Path createVersionedJar(String classifier, String versionLiteral) throws Exception {
-    Path buildDir = Files.createDirectories(tempHome.resolve("jar-" + classifier));
-    Path sourceDir = Files.createDirectories(buildDir.resolve("src"));
-    Path javaFile = sourceDir.resolve("example/override/Versioned.java");
-    Files.createDirectories(javaFile.getParent());
+    String className = "example.override.Versioned";
     String source =
         "package example.override;\n"
             + "public class Versioned {\n"
@@ -147,6 +165,16 @@ class ScriptClassLoaderManagerTest {
             + versionLiteral
             + "\";\n"
             + "}\n";
+    return createJarWithSource(
+        "versioned-" + classifier, className, source, tempHome.resolve("jar-" + classifier));
+  }
+
+  private Path createJarWithSource(String jarName, String className, String source, Path workDir)
+      throws Exception {
+    Path buildDir = Files.createDirectories(workDir);
+    Path sourceDir = Files.createDirectories(buildDir.resolve("src"));
+    Path javaFile = sourceDir.resolve(className.replace('.', '/') + ".java");
+    Files.createDirectories(javaFile.getParent());
     Files.writeString(javaFile, source);
 
     Path classesDir = Files.createDirectories(buildDir.resolve("classes"));
@@ -160,11 +188,12 @@ class ScriptClassLoaderManagerTest {
       throw new IllegalStateException("Failed to compile test jar source");
     }
 
-    Path jarFile = buildDir.resolve("versioned-" + classifier + ".jar");
+    Path jarFile = buildDir.resolve(jarName + ".jar");
     try (OutputStream outputStream = Files.newOutputStream(jarFile);
         JarOutputStream jar = new JarOutputStream(outputStream)) {
-      Path classFile = classesDir.resolve("example/override/Versioned.class");
-      JarEntry entry = new JarEntry("example/override/Versioned.class");
+      String classEntry = className.replace('.', '/') + ".class";
+      Path classFile = classesDir.resolve(classEntry);
+      JarEntry entry = new JarEntry(classEntry);
       jar.putNextEntry(entry);
       jar.write(Files.readAllBytes(classFile));
       jar.closeEntry();

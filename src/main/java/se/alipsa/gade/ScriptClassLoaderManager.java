@@ -23,8 +23,8 @@ import se.alipsa.gade.utils.ClassUtils;
  * Manages the hierarchy of {@link GroovyClassLoader} instances used for executing scripts.
  * The manager creates a curated root class loader that is isolated from the IDE/application
  * class path while exposing only the Groovy runtime (including the {@code groovy-jsr223}
- * integration) that is required to evaluate scripts and explicitly blocking access to Gade
- * implementation classes.
+ * integration and the Ivy runtime needed for {@code @Grab}) that is required to evaluate scripts
+ * and explicitly blocking access to Gade implementation classes.
  *
  * <p>The manager also exposes a single shared "dynamic" loader that acts as the only gateway
  * for intentionally approved dependencies (for example JDBC drivers selected by the user) to be
@@ -38,6 +38,7 @@ public final class ScriptClassLoaderManager {
 
   private static final List<String> BLOCKED_PACKAGES = List.of("se.alipsa.gade");
 
+  private final File gadeHome;
   private final GroovyClassLoader rootLoader;
   private GroovyClassLoader sharedDynamicLoader;
 
@@ -47,7 +48,7 @@ public final class ScriptClassLoaderManager {
    * @param gadeHome the directory containing the Gade distribution.
    */
   public ScriptClassLoaderManager(File gadeHome) {
-    Objects.requireNonNull(gadeHome, "gadeHome");
+    this.gadeHome = Objects.requireNonNull(gadeHome, "gadeHome");
     rootLoader = createRootLoader();
   }
 
@@ -56,7 +57,28 @@ public final class ScriptClassLoaderManager {
     addCodeSource(loader, GroovySystem.class);
     addCodeSource(loader, GroovyClassLoader.class);
     addCodeSource(loader, GroovyScriptEngineImpl.class);
+    addBundledIvyIfPresent(loader);
     return loader;
+  }
+
+  private void addBundledIvyIfPresent(GroovyClassLoader loader) {
+    File libDir = new File(gadeHome, "lib");
+    if (!libDir.isDirectory()) {
+      return;
+    }
+    File[] ivyJars =
+        libDir.listFiles(
+            file -> file.isFile() && file.getName().startsWith("ivy-") && file.getName().endsWith(".jar"));
+    if (ivyJars == null || ivyJars.length == 0) {
+      return;
+    }
+    for (File ivyJar : ivyJars) {
+      try {
+        addUrl(loader, ivyJar.toURI().toURL());
+      } catch (MalformedURLException e) {
+        LOG.warn("Failed to add Ivy dependency {}", ivyJar, e);
+      }
+    }
   }
 
   private void addCodeSource(GroovyClassLoader loader, Class<?> clazz) {
