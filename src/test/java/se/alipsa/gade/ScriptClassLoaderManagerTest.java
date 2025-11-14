@@ -1,6 +1,7 @@
 package se.alipsa.gade;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -115,6 +117,18 @@ class ScriptClassLoaderManagerTest {
     GroovyClassLoader refreshedLoader = manager.createScriptClassLoader(configuration);
     Class<?> clazz = refreshedLoader.loadClass("example.override.Versioned");
     assertEquals("BUNDLED_VERSION", clazz.getDeclaredField("VERSION").get(null));
+  }
+
+  @Test
+  void groovyScriptEngineIsAvailableToScripts() throws Exception {
+    Path home = prepareGadeHome();
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+    CompilerConfiguration configuration = new CompilerConfiguration();
+    GroovyClassLoader loader = manager.createScriptClassLoader(configuration);
+
+    Class<?> engineClass = loader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
+    assertNotNull(engineClass);
+    assertTrue(GroovyScriptEngineImpl.class.isAssignableFrom(engineClass));
   }
 
   private Path createVersionedJar(String classifier, String versionLiteral) throws Exception {

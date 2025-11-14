@@ -16,13 +16,15 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import se.alipsa.gade.utils.ClassUtils;
 
 /**
  * Manages the hierarchy of {@link GroovyClassLoader} instances used for executing scripts.
  * The manager creates a curated root class loader that is isolated from the IDE/application
- * class path while exposing only the Groovy runtime that is required to evaluate scripts and
- * explicitly blocking access to Gade implementation classes.
+ * class path while exposing only the Groovy runtime (including the {@code groovy-jsr223}
+ * integration) that is required to evaluate scripts and explicitly blocking access to Gade
+ * implementation classes.
  *
  * <p>The manager also exposes a single shared "dynamic" loader that acts as the only gateway
  * for intentionally approved dependencies (for example JDBC drivers selected by the user) to be
@@ -52,6 +54,8 @@ public final class ScriptClassLoaderManager {
   private GroovyClassLoader createRootLoader() {
     GroovyClassLoader loader = new IsolatedGroovyClassLoader(ClassUtils.getBootstrapClassLoader(), BLOCKED_PACKAGES);
     addCodeSource(loader, GroovySystem.class);
+    addCodeSource(loader, GroovyClassLoader.class);
+    addCodeSource(loader, GroovyScriptEngineImpl.class);
     return loader;
   }
 
