@@ -1,0 +1,156 @@
+package se.alipsa.gade;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import groovy.lang.Binding;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyShell;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+class ScriptClassLoaderManagerTest {
+
+  private Path tempHome;
+
+  @AfterEach
+  void cleanup() throws IOException {
+    if (tempHome != null) {
+      Files.walk(tempHome)
+          .sorted(Comparator.reverseOrder())
+          .forEach(path -> {
+            try {
+              Files.deleteIfExists(path);
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          });
+      tempHome = null;
+    }
+  }
+
+  @Test
+  void scriptsCannotAccessGadeImplementationClasses() throws Exception {
+    Path home = prepareGadeHome();
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+    CompilerConfiguration configuration = new CompilerConfiguration();
+    GroovyShell shell =
+        new GroovyShell(manager.createScriptClassLoader(configuration), new Binding(), configuration);
+    CompilationFailedException ex =
+        assertThrows(
+            CompilationFailedException.class,
+            () -> shell.evaluate("import se.alipsa.gade.Gade\nGade"));
+    assertTrue(ex.getMessage().contains("se.alipsa.gade.Gade"));
+  }
+
+  @Test
+  void scriptsExecuteWithProvidedBindings() throws Exception {
+    Path home = prepareGadeHome();
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+    CompilerConfiguration configuration = new CompilerConfiguration();
+    Binding binding = new Binding();
+    binding.setVariable("value", "report");
+    GroovyShell shell =
+        new GroovyShell(manager.createScriptClassLoader(configuration), binding, configuration);
+    Object result = shell.evaluate("value.toUpperCase()");
+    assertTrue(result instanceof String);
+    assertTrue(((String) result).contains("REPORT"));
+  }
+
+  @Test
+  void scriptClassLoaderPrefersChildDependencies() throws Exception {
+    Path home = prepareGadeHome();
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+
+    Path parentJar = createVersionedJar("parent", "PARENT_VERSION");
+    Path childJar = createVersionedJar("child", "CHILD_VERSION");
+
+    try (URLClassLoader parent =
+        new URLClassLoader(new java.net.URL[] {parentJar.toUri().toURL()},
+            manager.getSharedDynamicLoader())) {
+      IsolatedGroovyClassLoader child =
+          new IsolatedGroovyClassLoader(parent, java.util.List.of());
+      child.addURL(childJar.toUri().toURL());
+
+      Class<?> clazz = child.loadClass("example.override.Versioned");
+      java.lang.reflect.Field field = clazz.getDeclaredField("VERSION");
+      assertEquals("CHILD_VERSION", field.get(null));
+    }
+  }
+
+  private Path prepareGadeHome() throws IOException {
+    tempHome = Files.createTempDirectory("gade-home");
+    return tempHome;
+  }
+
+  @Test
+  void scriptsDoNotSeeBundledLibsByDefault() throws Exception {
+    Path home = prepareGadeHome();
+    Files.createDirectories(home.resolve("lib"));
+    Path bundledJar = createVersionedJar("bundled", "BUNDLED_VERSION");
+    Files.copy(bundledJar, home.resolve("lib").resolve(bundledJar.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+    CompilerConfiguration configuration = new CompilerConfiguration();
+    GroovyClassLoader loader = manager.createScriptClassLoader(configuration);
+
+    assertThrows(ClassNotFoundException.class, () -> loader.loadClass("example.override.Versioned"));
+
+    manager.addDependencyFile(bundledJar.toFile());
+    GroovyClassLoader refreshedLoader = manager.createScriptClassLoader(configuration);
+    Class<?> clazz = refreshedLoader.loadClass("example.override.Versioned");
+    assertEquals("BUNDLED_VERSION", clazz.getDeclaredField("VERSION").get(null));
+  }
+
+  private Path createVersionedJar(String classifier, String versionLiteral) throws Exception {
+    Path buildDir = Files.createDirectories(tempHome.resolve("jar-" + classifier));
+    Path sourceDir = Files.createDirectories(buildDir.resolve("src"));
+    Path javaFile = sourceDir.resolve("example/override/Versioned.java");
+    Files.createDirectories(javaFile.getParent());
+    String source =
+        "package example.override;\n"
+            + "public class Versioned {\n"
+            + "  public static final String VERSION = \""
+            + versionLiteral
+            + "\";\n"
+            + "}\n";
+    Files.writeString(javaFile, source);
+
+    Path classesDir = Files.createDirectories(buildDir.resolve("classes"));
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    if (compiler == null) {
+      throw new IllegalStateException("No system compiler available for tests");
+    }
+    int compilationResult =
+        compiler.run(null, null, null, "-d", classesDir.toString(), javaFile.toString());
+    if (compilationResult != 0) {
+      throw new IllegalStateException("Failed to compile test jar source");
+    }
+
+    Path jarFile = buildDir.resolve("versioned-" + classifier + ".jar");
+    try (OutputStream outputStream = Files.newOutputStream(jarFile);
+        JarOutputStream jar = new JarOutputStream(outputStream)) {
+      Path classFile = classesDir.resolve("example/override/Versioned.class");
+      JarEntry entry = new JarEntry("example/override/Versioned.class");
+      jar.putNextEntry(entry);
+      jar.write(Files.readAllBytes(classFile));
+      jar.closeEntry();
+    }
+    return jarFile;
+  }
+}

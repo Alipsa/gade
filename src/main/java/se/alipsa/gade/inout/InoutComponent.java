@@ -151,7 +151,7 @@ public class InoutComponent extends TabPane  {
       fileTree.refresh(dir);
       if (gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false)) {
         //gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
-        gui.getConsoleComponent().initGroovy(gui.dynamicClassLoader);
+        gui.getConsoleComponent().initGroovy(gui.getScriptClassLoaderManager());
       }
     }
   }

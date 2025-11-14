@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.ScriptClassLoaderManager;
 import se.alipsa.groovy.resolver.Dependency;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
@@ -317,29 +318,8 @@ public class ConnectionHandler {
     try {
       Dependency dep = new Dependency(ci.getDependency());
       log.info("Resolving dependency {}", dep);
-      if (gui.dynamicClassLoader == null) {
-        ClassLoader cl;
-        cl = gui.getConsoleComponent().getClassLoader();
-        gui.dynamicClassLoader = new GroovyClassLoader(cl);
-      }
-      GradleUtils.addDependencies(dep);
-      /*
-      File jar = GradleUtils.downloadArtifact(dep);
-      URL url = jar.toURI().toURL();
-      URL[] urls = new URL[]{url};
-      log.info("Dependency url is {}", urls[0]);
-      if (gui.dynamicClassLoader == null) {
-        ClassLoader cl;
-        cl = gui.getConsoleComponent().getClassLoader();
-        gui.dynamicClassLoader = new GroovyClassLoader(cl);
-      }
-
-      if (Arrays.stream(gui.dynamicClassLoader.getURLs()).noneMatch(p -> p.equals(url))) {
-        gui.dynamicClassLoader.addURL(url);
-      }
-
-       */
-
+      ScriptClassLoaderManager manager = gui.getScriptClassLoaderManager();
+      GradleUtils.addDependencies(dep, manager);
     } catch (Exception e) {
       Platform.runLater(() ->
           ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
@@ -350,7 +330,9 @@ public class ConnectionHandler {
 
     try {
       log.info("Attempting to load the class {}", ci.getDriver());
-      Class<Driver> clazz = (Class<Driver>) gui.dynamicClassLoader.loadClass(ci.getDriver());
+      ScriptClassLoaderManager manager = gui.getScriptClassLoaderManager();
+      GroovyClassLoader dynamicLoader = manager.getSharedDynamicLoader();
+      Class<Driver> clazz = (Class<Driver>) dynamicLoader.loadClass(ci.getDriver());
       log.info("Loaded driver from session classloader, instating the driver {}", ci.getDriver());
       try {
         driver = clazz.getDeclaredConstructor().newInstance();

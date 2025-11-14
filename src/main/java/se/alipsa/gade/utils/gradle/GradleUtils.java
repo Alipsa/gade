@@ -18,6 +18,7 @@ import org.gradle.tooling.model.idea.IdeaProject;
 import org.gradle.tooling.model.idea.IdeaSingleEntryLibraryDependency;
 import org.gradle.util.GradleVersion;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.ScriptClassLoaderManager;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.console.WarningAppenderWriter;
@@ -349,8 +350,14 @@ public class GradleUtils {
     return cachedFile;
   }
 
-  public static void addDependencies(Dependency dependency) {
-    DependencyResolver resolver = new DependencyResolver(Gade.instance().dynamicClassLoader);
+  /**
+   * Add the specified dependency to the curated script class loader hierarchy.
+   *
+   * @param dependency the dependency descriptor to resolve.
+   * @param manager the manager providing the shared dynamic loader.
+   */
+  public static void addDependencies(Dependency dependency, ScriptClassLoaderManager manager) {
+    DependencyResolver resolver = new DependencyResolver(manager.getSharedDynamicLoader());
     try {
       resolver.addDependency(dependency);
     } catch (ResolvingException e) {

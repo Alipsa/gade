@@ -29,10 +29,10 @@ import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.Nullable;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.ScriptClassLoaderManager;
 import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.environment.EnvironmentComponent;
 import se.alipsa.gade.utils.Alerts;
-import se.alipsa.gade.utils.ClassUtils;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.gradle.GradleUtils;
@@ -91,16 +91,16 @@ public class ConsoleComponent extends BorderPane {
   }
 
   /**
-   * Initialize the groovy engine
+   * Initialize the Groovy engine using the supplied class loader manager.
    *
-   * @param parentClassLoader the classloader to use as the parent classloader for the GroovyClassloader
+   * @param manager the manager that provides curated script class loaders.
    */
-  public void initGroovy(GroovyClassLoader parentClassLoader) {
+  public void initGroovy(ScriptClassLoaderManager manager) {
     Task<Void> initTask = new Task<>() {
 
       @Override
       protected Void call() throws Exception {
-        return resetClassloaderAndGroovy(parentClassLoader);
+        return resetClassloaderAndGroovy(manager);
       }
     };
     initTask.setOnSucceeded(e -> {
@@ -132,7 +132,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   @Nullable
-  private Void resetClassloaderAndGroovy(GroovyClassLoader parentClassLoader) throws Exception {
+  private Void resetClassloaderAndGroovy(ScriptClassLoaderManager manager) throws Exception {
     try {
 
       if (gui.getInoutComponent() == null) {
@@ -149,11 +149,7 @@ public class ConsoleComponent extends BorderPane {
       config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
 
       boolean useGradleCLassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
-      if (useGradleCLassLoader) {
-        classLoader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
-      } else {
-        classLoader = new GroovyClassLoader(parentClassLoader, config);
-      }
+      classLoader = manager.createScriptClassLoader(config);
 
       if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
         File wd = gui.getInoutComponent().projectDir();
@@ -260,7 +256,7 @@ public class ConsoleComponent extends BorderPane {
   public void restartGroovy() {
     console.append("Restarting Groovy..\n");
     //initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
-    initGroovy(gui.dynamicClassLoader);
+    initGroovy(gui.getScriptClassLoaderManager());
     gui.getEnvironmentComponent().clearEnvironment();
   }
 

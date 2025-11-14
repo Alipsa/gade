@@ -486,7 +486,9 @@ public class GroovyTextArea extends CodeTextArea {
       var g = Gade.instance();
       if (g != null) {
         ClassLoader cl = g.getConsoleComponent() == null ? null : g.getConsoleComponent().getClassLoader();
-        if (cl == null) cl = g.dynamicClassLoader;
+        if (cl == null && g.getScriptClassLoaderManager() != null) {
+          cl = g.getScriptClassLoaderManager().getSharedDynamicLoader();
+        }
         if (cl != null) return cl;
       }
     } catch (Throwable ignore) {
