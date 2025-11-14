@@ -605,8 +605,14 @@ public class ConnectionsTab extends Tab {
         .collect(Collectors.groupingBy(TableMetaData::getSchemaName));
 
     schemaMap.forEach((schemaName, schemaTables) -> {
-      TreeItem<String> schema = new TreeItem<>(schemaName);
-      root.getChildren().add(schema);
+      TreeItem<String> schema;
+      // collapse / remove the schema layer if we don't have a schema
+      if (schemaName == null || schemaName.equalsIgnoreCase("null")) {
+        schema = root;
+      } else {
+        schema = new TreeItem<>(schemaName);
+        root.getChildren().add(schema);
+      }
       var tableGroup = schemaTables.stream().collect(Collectors.groupingBy(TableMetaData::getTableName));
       tableGroup.forEach((tableName, tableMetadataList) -> {
         TreeItem<String> tableNode = new TreeItem<>(tableName);
