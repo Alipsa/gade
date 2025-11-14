@@ -1,7 +1,6 @@
 package se.alipsa.gade;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,11 +17,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import javax.script.ScriptEngine;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -127,8 +126,13 @@ class ScriptClassLoaderManagerTest {
     GroovyClassLoader loader = manager.createScriptClassLoader(configuration);
 
     Class<?> engineClass = loader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
-    assertNotNull(engineClass);
-    assertTrue(GroovyScriptEngineImpl.class.isAssignableFrom(engineClass));
+    Object engineInstance = engineClass.getDeclaredConstructor().newInstance();
+    assertTrue(ScriptEngine.class.isInstance(engineInstance));
+
+    ScriptEngine scriptEngine = (ScriptEngine) engineInstance;
+    Object result = scriptEngine.eval("1 + 2");
+    assertTrue(result instanceof Number);
+    assertEquals(3, ((Number) result).intValue());
   }
 
   private Path createVersionedJar(String classifier, String versionLiteral) throws Exception {
