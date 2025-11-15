@@ -29,7 +29,6 @@ public class AboutDialog {
     String matrixXchartVersion = "unknown";
     String matrixTablesawVersion = "unknown";
     String matrixGsheetsVersion = "unknown";
-    String matrixAvroVersion = "unknown";
     String gmdCoreVersion = "unknown";
     try (InputStream is = Objects.requireNonNull(FileUtils.getResourceUrl("version.properties")).openStream()) {
       props.load(is);
@@ -49,7 +48,6 @@ public class AboutDialog {
       matrixXchartVersion = props.getProperty("matrixXchartVersion");
       matrixTablesawVersion = props.getProperty("matrixTablesawVersion");
       matrixGsheetsVersion = props.getProperty("matrixGsheetsVersion");
-      matrixAvroVersion = props.getProperty("matrixAvroVersion");
       gmdCoreVersion = props.getProperty("gmdCoreVersion");
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to load properties file", e);
@@ -79,7 +77,6 @@ public class AboutDialog {
         .append("\n Matrix-json version: ").append(matrixJsonVersion)
         .append("\n Matrix-xchart version: ").append(matrixXchartVersion)
         .append("\n Matrix-datasets version: ").append(matrixDatasetsVersion)
-        .append("\n Matrix-avro version: ").append(matrixAvroVersion)
         .append("\n Matrix-parquet version: ").append(matrixParquetVersion)
         .append("\n Matrix-bigquery version: ").append(matrixBigQueryVersion)
         .append("\n Matrix-charts version: ").append(matrixChartsVersion)

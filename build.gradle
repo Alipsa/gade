@@ -121,7 +121,7 @@ dependencies {
   implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
 
   implementation 'se.alipsa:simple-rest:1.1.0'
-  implementation(platform("se.alipsa.matrix:matrix-bom:2.3.1-SNAPSHOT"))
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.3.0"))
   implementation("se.alipsa.matrix:matrix-core")
   implementation "se.alipsa.matrix:matrix-stats"
   implementation "se.alipsa.matrix:matrix-datasets"
@@ -135,7 +135,6 @@ dependencies {
   implementation "se.alipsa.matrix:matrix-parquet"
   implementation "se.alipsa.matrix:matrix-bigquery"
   implementation "se.alipsa.matrix:matrix-tablesaw"
-  implementation "se.alipsa.matrix:matrix-avro"
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation 'org.apache.maven:maven-artifact:3.9.11'
 
@@ -244,8 +243,6 @@ processResources.doLast {
       ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
     } else if (fileName.contains('matrix-gsheets')) {
       ext.matrixGsheetsVersion = extractVersionNumber('matrix-gsheets', fileName)
-    } else if (fileName.contains('matrix-avro')) {
-      ext.matrixAvroVersion = extractVersionNumber('matrix-avro', fileName)
     } else if (fileName.contains('gmd-core')) {
       ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
     }
@@ -268,7 +265,6 @@ processResources.doLast {
     ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
     ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
     ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
-    ant.entry(key: "matrixAvroVersion", value: "${matrixAvroVersion}")
     ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
     ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
   }

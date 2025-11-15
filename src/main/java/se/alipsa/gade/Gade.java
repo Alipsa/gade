@@ -4,7 +4,6 @@ import static se.alipsa.gade.Constants.BRIGHT_THEME;
 import static se.alipsa.gade.Constants.THEME;
 import static se.alipsa.gade.menu.GlobalOptions.*;
 
-import groovy.lang.GroovyClassLoader;
 import java.awt.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -57,9 +56,7 @@ public class Gade extends Application {
   private File gadeBaseDir;
   private FileOpener fileOpener;
   private static Gade instance;
-  // Drivers that uses dll files (e.g. for integrated security) cannot load the dll twice by different classloaders
-  // so we need to cache the classloader and reuse it.
-  public GroovyClassLoader dynamicClassLoader = new GroovyClassLoader();
+  private ScriptClassLoaderManager scriptClassLoaderManager;
 
   public Map<String, GuiInteraction> guiInteractions;
 
@@ -82,6 +79,7 @@ public class Gade extends Application {
     //System.setProperty("ivy.message.logger.level","4");
     instance = this;
     gadeBaseDir = Path.of("").toAbsolutePath().toFile();
+    scriptClassLoaderManager = new ScriptClassLoaderManager(gadeBaseDir);
 
     preferences = Preferences.userRoot().node(Gade.class.getName());
     this.primaryStage = primaryStage;
@@ -174,7 +172,7 @@ public class Gade extends Application {
     guiInteractions = Map.of(
         "io", new se.alipsa.gade.interaction.InOut()
     );
-    consoleComponent.initGroovy(Gade.instance().dynamicClassLoader);
+    consoleComponent.initGroovy(scriptClassLoaderManager);
     primaryStage.show();
   }
 
@@ -300,6 +298,15 @@ public class Gade extends Application {
 
   public File getGadeBaseDir() {
     return gadeBaseDir;
+  }
+
+  /**
+   * Get the {@link ScriptClassLoaderManager} responsible for curated script class loaders.
+   *
+   * @return the manager instance created during application start.
+   */
+  public ScriptClassLoaderManager getScriptClassLoaderManager() {
+    return scriptClassLoaderManager;
   }
 
 }
