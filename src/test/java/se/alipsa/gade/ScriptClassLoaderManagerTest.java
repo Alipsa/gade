@@ -4,22 +4,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import groovy.grape.Grape;
+import groovy.grape.GrapeEngine;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
+import java.net.URI;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import javax.script.ScriptEngine;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import se.alipsa.gade.grape.ScriptFriendlyGrapeEngine;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.junit.jupiter.api.AfterEach;
@@ -154,6 +161,95 @@ class ScriptClassLoaderManagerTest {
 
     Class<?> moduleDescriptor = loader.loadClass("org.apache.ivy.core.module.descriptor.ModuleDescriptor");
     assertEquals("org.apache.ivy.core.module.descriptor.ModuleDescriptor", moduleDescriptor.getName());
+  }
+
+  @Test
+  void grabConfigSystemClassLoaderUsesScriptLoader() throws Exception {
+    Path home = prepareGadeHome();
+    ScriptClassLoaderManager manager = new ScriptClassLoaderManager(home.toFile());
+    CompilerConfiguration configuration = new CompilerConfiguration();
+    GroovyClassLoader loader = manager.createScriptClassLoader(configuration);
+
+    ClassLoader originalContext = Thread.currentThread().getContextClassLoader();
+    RecordingGrapeEngine recordingEngine = new RecordingGrapeEngine();
+    Object originalEngine = swapGrapeEngine(recordingEngine);
+    try {
+      Thread.currentThread().setContextClassLoader(loader);
+      GroovyShell shell = new GroovyShell(loader, new Binding(), configuration);
+      shell.evaluate(
+          "@GrabConfig(systemClassLoader=true)\n"
+              + "@Grab(group='example', module='demo', version='1.0')\n"
+              + "1");
+      assertSame(loader, recordingEngine.lastClassLoader);
+    } finally {
+      Thread.currentThread().setContextClassLoader(originalContext);
+      restoreGrapeEngine(originalEngine);
+    }
+  }
+
+  private Object swapGrapeEngine(GrapeEngine replacement) throws Exception {
+    Field instance = Grape.class.getDeclaredField("instance");
+    instance.setAccessible(true);
+    Object original = instance.get(null);
+    instance.set(null, new ScriptFriendlyGrapeEngine(replacement));
+    return original;
+  }
+
+  private void restoreGrapeEngine(Object original) throws Exception {
+    Field instance = Grape.class.getDeclaredField("instance");
+    instance.setAccessible(true);
+    instance.set(null, original);
+  }
+
+  private static final class RecordingGrapeEngine implements GrapeEngine {
+
+    private ClassLoader lastClassLoader;
+
+    @Override
+    public Object grab(String endorsedModule) {
+      return null;
+    }
+
+    @Override
+    public Object grab(Map args) {
+      return null;
+    }
+
+    @Override
+    public Object grab(Map args, Map... dependencies) {
+      if (args != null) {
+        Object loader = args.get("classLoader");
+        if (loader instanceof ClassLoader) {
+          lastClassLoader = (ClassLoader) loader;
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public Map<String, Map<String, List<String>>> enumerateGrapes() {
+      return Map.of();
+    }
+
+    @Override
+    public URI[] resolve(Map args, Map... dependencies) {
+      return new URI[0];
+    }
+
+    @Override
+    public URI[] resolve(Map args, List depsInfo, Map... dependencies) {
+      return new URI[0];
+    }
+
+    @Override
+    public Map[] listDependencies(ClassLoader classLoader) {
+      return new Map[0];
+    }
+
+    @Override
+    public void addResolver(Map<String, Object> args) {
+      // no-op
+    }
   }
 
   private Path createVersionedJar(String classifier, String versionLiteral) throws Exception {

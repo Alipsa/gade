@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
+import se.alipsa.gade.grape.GrapeEngineInstaller;
 import se.alipsa.gade.utils.ClassUtils;
 
 /**
@@ -33,6 +34,10 @@ import se.alipsa.gade.utils.ClassUtils;
  * path.</p>
  */
 public final class ScriptClassLoaderManager {
+
+  static {
+    GrapeEngineInstaller.install();
+  }
 
   private static final Logger LOG = LogManager.getLogger(ScriptClassLoaderManager.class);
 
