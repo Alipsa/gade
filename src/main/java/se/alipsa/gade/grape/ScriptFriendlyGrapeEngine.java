@@ -10,8 +10,8 @@ import java.util.Objects;
 
 /**
  * {@link GrapeEngine} decorator that redirects {@code systemClassLoader} requests from {@code @Grab}
- * annotations to the current script class loader so downloaded dependencies remain in the isolated
- * script hierarchy.
+ * annotations to the current script class loader and defaults unconfigured invocations to the
+ * script loader so downloaded dependencies remain in the isolated script hierarchy.
  */
 public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
 
@@ -81,7 +81,11 @@ public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
     Map<Object, Object> adjusted = null;
 
     Object candidate = args.get("classLoader");
-    if (candidate instanceof ClassLoader && candidate == ClassLoader.getSystemClassLoader()) {
+    if (!(candidate instanceof ClassLoader)) {
+      adjusted = cloneArgs(args);
+      adjusted.put("classLoader", contextLoader);
+      requiresRedirect = true;
+    } else if (candidate == ClassLoader.getSystemClassLoader()) {
       requiresRedirect = true;
       adjusted = cloneArgs(args);
       adjusted.put("classLoader", contextLoader);

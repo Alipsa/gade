@@ -66,6 +66,23 @@ class ScriptFriendlyGrapeEngineTest {
     }
   }
 
+  @Test
+  void addsContextLoaderWhenMissing() {
+    RecordingGrapeEngine delegate = new RecordingGrapeEngine();
+    ScriptFriendlyGrapeEngine engine = new ScriptFriendlyGrapeEngine(delegate);
+    GroovyClassLoader context = new GroovyClassLoader();
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader(context);
+      engine.grab(Collections.singletonMap("group", "example"), Map.of());
+      assertTrue(delegate.invoked);
+      assertSame(context, delegate.lastArgs.get("classLoader"));
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+      context.clearCache();
+    }
+  }
+
   private static final class RecordingGrapeEngine implements GrapeEngine {
 
     private Map<?, ?> lastArgs;
