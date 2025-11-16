@@ -87,7 +87,7 @@ public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
       adjusted.put("classLoader", contextLoader);
     }
 
-    if (Boolean.TRUE.equals(args.get("systemClassLoader"))) {
+    if (isTrue(args.get("systemClassLoader"))) {
       if (adjusted == null) {
         adjusted = cloneArgs(args);
       }
@@ -101,5 +101,15 @@ public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
 
   private Map<Object, Object> cloneArgs(Map args) {
     return new LinkedHashMap<>(args);
+  }
+
+  private boolean isTrue(Object value) {
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    if (value instanceof CharSequence) {
+      return Boolean.parseBoolean(value.toString());
+    }
+    return false;
   }
 }
