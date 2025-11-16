@@ -214,18 +214,24 @@ class ScriptClassLoaderManagerTest {
 
     @Override
     public Object grab(Map args) {
+      recordLoader(args);
       return null;
     }
 
     @Override
     public Object grab(Map args, Map... dependencies) {
-      if (args != null) {
-        Object loader = args.get("classLoader");
-        if (loader instanceof ClassLoader) {
-          lastClassLoader = (ClassLoader) loader;
-        }
-      }
+      recordLoader(args);
       return null;
+    }
+
+    private void recordLoader(Map args) {
+      if (args == null) {
+        return;
+      }
+      Object loader = args.get("classLoader");
+      if (loader instanceof ClassLoader) {
+        lastClassLoader = (ClassLoader) loader;
+      }
     }
 
     @Override
