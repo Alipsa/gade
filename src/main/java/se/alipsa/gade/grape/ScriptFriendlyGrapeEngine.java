@@ -67,12 +67,9 @@ public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
   }
 
   private Map adjustArgs(Map args) {
-    if (args == null || args.isEmpty()) {
-      return args;
-    }
     ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-    if (!(contextLoader instanceof GroovyClassLoader)
-        || contextLoader == null
+    if (contextLoader == null
+        || !(contextLoader instanceof GroovyClassLoader)
         || contextLoader == ClassLoader.getSystemClassLoader()) {
       return args;
     }
@@ -80,24 +77,26 @@ public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
     boolean requiresRedirect = false;
     Map<Object, Object> adjusted = null;
 
-    Object candidate = args.get("classLoader");
-    if (!(candidate instanceof ClassLoader)) {
-      adjusted = cloneArgs(args);
+    if (args == null || args.isEmpty()) {
+      adjusted = new LinkedHashMap<>();
       adjusted.put("classLoader", contextLoader);
       requiresRedirect = true;
-    } else if (candidate == ClassLoader.getSystemClassLoader()) {
-      requiresRedirect = true;
-      adjusted = cloneArgs(args);
-      adjusted.put("classLoader", contextLoader);
-    }
-
-    if (isTrue(args.get("systemClassLoader"))) {
-      if (adjusted == null) {
+    } else {
+      Object candidate = args.get("classLoader");
+      if (!(candidate instanceof ClassLoader) || candidate == ClassLoader.getSystemClassLoader()) {
         adjusted = cloneArgs(args);
+        adjusted.put("classLoader", contextLoader);
+        requiresRedirect = true;
       }
-      adjusted.put("systemClassLoader", Boolean.FALSE);
-      adjusted.put("classLoader", contextLoader);
-      requiresRedirect = true;
+
+      if (isTrue(args.get("systemClassLoader"))) {
+        if (adjusted == null) {
+          adjusted = cloneArgs(args);
+        }
+        adjusted.put("systemClassLoader", Boolean.FALSE);
+        adjusted.put("classLoader", contextLoader);
+        requiresRedirect = true;
+      }
     }
 
     return requiresRedirect ? adjusted : args;
