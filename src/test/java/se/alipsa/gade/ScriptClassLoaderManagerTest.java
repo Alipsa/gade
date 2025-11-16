@@ -180,6 +180,7 @@ class ScriptClassLoaderManagerTest {
       shell.evaluate(
           "@GrabConfig(systemClassLoader=true)\n"
               + "@Grab(group='example', module='demo', version='1.0')\n"
+              + "class GrabMarker {}\n"
               + "1");
       assertSame(loader, recordingEngine.lastClassLoader);
     } finally {
