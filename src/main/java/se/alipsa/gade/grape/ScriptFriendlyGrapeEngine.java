@@ -70,20 +70,36 @@ public final class ScriptFriendlyGrapeEngine implements GrapeEngine {
     if (args == null || args.isEmpty()) {
       return args;
     }
-    Object candidate = args.get("classLoader");
-    if (!(candidate instanceof ClassLoader)) {
-      return args;
-    }
-    ClassLoader originalLoader = (ClassLoader) candidate;
-    if (originalLoader != ClassLoader.getSystemClassLoader()) {
-      return args;
-    }
     ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-    if (!(contextLoader instanceof GroovyClassLoader) || contextLoader == originalLoader) {
+    if (!(contextLoader instanceof GroovyClassLoader)
+        || contextLoader == null
+        || contextLoader == ClassLoader.getSystemClassLoader()) {
       return args;
     }
-    Map<Object, Object> adjusted = new LinkedHashMap<>(args);
-    adjusted.put("classLoader", contextLoader);
-    return adjusted;
+
+    boolean requiresRedirect = false;
+    Map<Object, Object> adjusted = null;
+
+    Object candidate = args.get("classLoader");
+    if (candidate instanceof ClassLoader && candidate == ClassLoader.getSystemClassLoader()) {
+      requiresRedirect = true;
+      adjusted = cloneArgs(args);
+      adjusted.put("classLoader", contextLoader);
+    }
+
+    if (Boolean.TRUE.equals(args.get("systemClassLoader"))) {
+      if (adjusted == null) {
+        adjusted = cloneArgs(args);
+      }
+      adjusted.put("systemClassLoader", Boolean.FALSE);
+      adjusted.put("classLoader", contextLoader);
+      requiresRedirect = true;
+    }
+
+    return requiresRedirect ? adjusted : args;
+  }
+
+  private Map<Object, Object> cloneArgs(Map args) {
+    return new LinkedHashMap<>(args);
   }
 }
