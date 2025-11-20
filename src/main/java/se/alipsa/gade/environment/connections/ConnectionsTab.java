@@ -602,7 +602,7 @@ public class ConnectionsTab extends Tab {
     tree.setRoot(root);
 
     Map<String, List<TableMetaData>> schemaMap = tableMetaDataList.stream()
-        .collect(Collectors.groupingBy(TableMetaData::getSchemaName));
+        .collect(Collectors.groupingBy(tm -> String.valueOf(tm.getSchemaName())));
 
     schemaMap.forEach((schemaName, schemaTables) -> {
       TreeItem<String> schema;
