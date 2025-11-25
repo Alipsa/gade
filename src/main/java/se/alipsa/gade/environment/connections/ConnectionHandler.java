@@ -228,12 +228,14 @@ public class ConnectionHandler {
          , tab.TABLE_SCHEMA
          from INFORMATION_SCHEMA.COLUMNS col
          inner join INFORMATION_SCHEMA.TABLES tab
-               on col.TABLE_NAME = tab.TABLE_NAME and col.TABLE_SCHEMA = tab.TABLE_SCHEMA
+               on col.TABLE_NAME = tab.TABLE_NAME
+               and COALESCE(col.TABLE_SCHEMA, '') = COALESCE(tab.TABLE_SCHEMA, '')
          where TABLE_TYPE <> 'SYSTEM TABLE'
-         and tab.TABLE_SCHEMA not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')
+         and COALESCE(tab.TABLE_SCHEMA, '') not in ('SYSTEM TABLE', 'PG_CATALOG', 'INFORMATION_SCHEMA', 'pg_catalog', 'information_schema')
          """;
     }
     try {
+      //log.info("Executing SQL: " + sql);
       return query(sql);
     } catch (Exception e) {
       // In case INFORMATION_SCHEMA is not supported, we try to get the info from the
@@ -323,23 +325,6 @@ public class ConnectionHandler {
         gui.dynamicClassLoader = new GroovyClassLoader(cl);
       }
       GradleUtils.addDependencies(dep);
-      /*
-      File jar = GradleUtils.downloadArtifact(dep);
-      URL url = jar.toURI().toURL();
-      URL[] urls = new URL[]{url};
-      log.info("Dependency url is {}", urls[0]);
-      if (gui.dynamicClassLoader == null) {
-        ClassLoader cl;
-        cl = gui.getConsoleComponent().getClassLoader();
-        gui.dynamicClassLoader = new GroovyClassLoader(cl);
-      }
-
-      if (Arrays.stream(gui.dynamicClassLoader.getURLs()).noneMatch(p -> p.equals(url))) {
-        gui.dynamicClassLoader.addURL(url);
-      }
-
-       */
-
     } catch (Exception e) {
       Platform.runLater(() ->
           ExceptionAlert.showAlert(ci.getDriver() + " could not be loaded from dependency " + ci.getDependency(), e)
