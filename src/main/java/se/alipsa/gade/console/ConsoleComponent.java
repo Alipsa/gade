@@ -430,6 +430,7 @@ public class ConsoleComponent extends BorderPane {
         try {
           // TODO get library dependencies from Grab and maven?
           gui.getEnvironmentComponent().setEnvironment(getContextObjects());
+          refreshPackages();
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -455,6 +456,16 @@ public class ConsoleComponent extends BorderPane {
   public Map<String, Object> getContextObjects() {
     log.info("getContextObjects");
     return engine.getContextObjects();
+  }
+
+  private void refreshPackages() {
+    try {
+      var libs = se.alipsa.gade.utils.LibraryUtils.getAvailableLibraries(gui);
+      List<String> loadedNames = libs.stream().map(se.alipsa.gade.model.Library::getPackageName).toList();
+      gui.getInoutComponent().setPackages(loadedNames);
+    } catch (Exception e) {
+      log.debug("Failed to refresh packages", e);
+    }
   }
 
   /*

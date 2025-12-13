@@ -2,13 +2,9 @@ package utils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.model.Library;
 import se.alipsa.gade.utils.LibraryUtils;
-
-import java.io.IOException;
-import java.util.Set;
 
 public class LibraryUtilsTest {
 
@@ -24,21 +20,38 @@ public class LibraryUtilsTest {
     assertEquals("magrittr", LibraryUtils.getPackage("magrittr"));
   }
 
-  @Disabled
   @Test
-  public void testAvailableLibraries() throws IOException {
-    Set<Library> packages = LibraryUtils.getAvailableLibraries(getClass().getClassLoader());
-    assertNotNull(packages, "Available libraries was unexpectedly null");
-    assertTrue(packages.size() > 0, "Expected available libraries to contain at least one library");
+  public void libraryFromCoordinateParses() {
+    Library lib = LibraryUtils.libraryFromCoordinate("org.example:demo:1.2.3");
+    assertEquals("org.example", lib.getGroup());
+    assertEquals("demo", lib.getPackageName());
+    assertEquals("1.2.3", lib.getVersion());
+  }
 
-    packages.forEach(p -> {
-      //System.out.println(p);
-      if (p.getFullName().contains(":")) {
-        assertEquals(p.getFullName(), LibraryUtils.getGroup(p.getFullName()) + ":" + LibraryUtils.getPackage(p.getFullName()));
-      } else {
-        // getGroup if no group should return empty string; so we test that
-        assertEquals(p.getFullName(), LibraryUtils.getGroup(p.getFullName()) + LibraryUtils.getPackage(p.getFullName()));
-      }
-    });
+  @Test
+  public void parseGradleCachePath() {
+    String path = "/home/user/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar";
+    Library lib = LibraryUtils.parseLibraryFromPath(path);
+    assertEquals("org.apache.commons", lib.getGroup());
+    assertEquals("commons-lang3", lib.getPackageName());
+    assertEquals("3.12.0", lib.getVersion());
+  }
+
+  @Test
+  public void parseMavenRepoPath() {
+    String path = "/home/user/.m2/repository/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar";
+    Library lib = LibraryUtils.parseLibraryFromPath(path);
+    assertEquals("org.apache.commons", lib.getGroup());
+    assertEquals("commons-lang3", lib.getPackageName());
+    assertEquals("3.12.0", lib.getVersion());
+  }
+
+  @Test
+  public void parseGrabPath() {
+    String path = "/home/user/.groovy/grapes/org.apache.commons/commons-lang3/jars/commons-lang3-3.12.0.jar";
+    Library lib = LibraryUtils.parseLibraryFromPath(path);
+    assertEquals("org.apache.commons", lib.getGroup());
+    assertEquals("commons-lang3", lib.getPackageName());
+    assertEquals("3.12.0", lib.getVersion());
   }
 }

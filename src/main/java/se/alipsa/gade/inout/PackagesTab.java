@@ -17,8 +17,6 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.model.Library;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.LibraryUtils;
-
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -81,19 +79,15 @@ public class PackagesTab extends Tab {
   public void setLoadedPackages(List<String> loadedPackages) {
     // LibraryUtils.getAvailableLibraries() is very fast, but maybe it would make more sense to run this in a separate thread
     Platform.runLater(() -> {
-      // AetherPackageLoader might have picked up new packages, so we need to do this each time
-      Set<Library> availablePackages;
-      try {
-        availablePackages = LibraryUtils.getAvailableLibraries(Gade.instance().getConsoleComponent().getClassLoader());
-      } catch (IOException | RuntimeException e) {
-        ExceptionAlert.showAlert("Failed to scan for available libraries", e);
-        return;
-      }
+      Set<Library> availablePackages = LibraryUtils.getAvailableLibraries(gui);
       //view.getItems().clear();
       data.clear();
       availablePackages.forEach(p -> {
         //view.getItems().add(new AvailablePackage(p,loadedPackages.indexOf(p.getPackageName()) > -1));
-        data.add(new AvailablePackage(p,loadedPackages.indexOf(p.getPackageName()) > -1));
+        boolean loaded = loadedPackages == null
+            || loadedPackages.contains(p.getPackageName())
+            || loadedPackages.contains(p.getFullName());
+        data.add(new AvailablePackage(p, loaded));
       });
     });
   }
