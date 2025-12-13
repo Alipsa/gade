@@ -27,6 +27,9 @@ import org.apache.logging.log4j.Logger;
 //import se.alipsa.gade.interaction.*;
 import se.alipsa.gi.*;
 //import se.alipsa.gi.fx.*;
+import se.alipsa.gade.runtime.RuntimeConfig;
+import se.alipsa.gade.runtime.RuntimeManager;
+import se.alipsa.gade.runtime.RuntimePreferences;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.console.ConsoleComponent;
@@ -53,6 +56,8 @@ public class Gade extends Application {
   private Scene scene;
   private MainMenu mainMenu;
   private Preferences preferences;
+  private RuntimeManager runtimeManager;
+  private RuntimePreferences runtimePreferences;
   private final Map<String, Object> sessionMap = new HashMap<>();
   private File gadeBaseDir;
   private FileOpener fileOpener;
@@ -84,6 +89,8 @@ public class Gade extends Application {
     gadeBaseDir = Path.of("").toAbsolutePath().toFile();
 
     preferences = Preferences.userRoot().node(Gade.class.getName());
+    runtimePreferences = new RuntimePreferences(preferences);
+    runtimeManager = new RuntimeManager(runtimePreferences);
     this.primaryStage = primaryStage;
 
     Locale.setDefault(Locale.forLanguageTag(getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag())));
@@ -174,7 +181,7 @@ public class Gade extends Application {
     guiInteractions = Map.of(
         "io", new se.alipsa.gade.interaction.InOut()
     );
-    consoleComponent.initGroovy(Gade.instance().dynamicClassLoader);
+    consoleComponent.initGroovy(getActiveRuntime());
     primaryStage.show();
   }
 
@@ -284,6 +291,34 @@ public class Gade extends Application {
 
   public Preferences getPrefs() {
     return preferences;
+  }
+
+  public RuntimeConfig getActiveRuntime() {
+    File projectDir = inoutComponent == null ? null : inoutComponent.projectDir();
+    return runtimeManager.getSelectedRuntime(projectDir);
+  }
+
+  public void selectRuntime(RuntimeConfig runtime) {
+    File projectDir = inoutComponent == null ? null : inoutComponent.projectDir();
+    runtimeManager.setSelectedRuntime(projectDir, runtime);
+    if (consoleComponent != null) {
+      consoleComponent.initGroovy(runtime);
+    }
+    if (mainMenu != null) {
+      mainMenu.refreshRuntimesMenu();
+    }
+  }
+
+  public File getProjectDir() {
+    return inoutComponent == null ? null : inoutComponent.projectDir();
+  }
+
+  public RuntimeManager getRuntimeManager() {
+    return runtimeManager;
+  }
+
+  public RuntimePreferences getRuntimePreferences() {
+    return runtimePreferences;
   }
 
   public Scene getScene() {

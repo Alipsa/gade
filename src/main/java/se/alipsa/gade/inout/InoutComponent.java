@@ -149,10 +149,8 @@ public class InoutComponent extends TabPane  {
   public void changeRootDir(File dir) {
     if (!dir.equals(projectDir())) {
       fileTree.refresh(dir);
-      if (gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false)) {
-        //gui.getConsoleComponent().initGroovy(gui.getClass().getClassLoader());
-        gui.getConsoleComponent().initGroovy(gui.dynamicClassLoader);
-      }
+      gui.getConsoleComponent().initGroovy(gui.getActiveRuntime());
+      gui.getMainMenu().refreshRuntimesMenu();
     }
   }
 

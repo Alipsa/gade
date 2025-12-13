@@ -138,6 +138,7 @@ dependencies {
   implementation "se.alipsa.matrix:matrix-avro"
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation 'org.apache.maven:maven-artifact:3.9.11'
+  implementation 'org.apache.maven:maven-model:3.9.11'
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   implementation 'org.knowm.xchart:xchart:3.8.8'
@@ -147,7 +148,7 @@ dependencies {
     exclude group: 'com.github.jsqlparser', module: 'jsqlparser'
   }
 
-  testImplementation platform('org.junit:junit-bom:6.0.0')
+  testImplementation platform('org.junit:junit-bom:6.0.1')
   testImplementation platform('org.junit:junit-bom:5.13.4')
   testImplementation 'com.h2database:h2:2.4.240'
   testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -156,7 +157,8 @@ dependencies {
   testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
   testImplementation 'org.eclipse.jetty:jetty-server:12.1.3'
   testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.3'
-
+  testImplementation 'org.testfx:testfx-core:4.0.18'
+  testImplementation 'org.testfx:testfx-junit5:4.0.18'
 }
 
 java {
