@@ -31,6 +31,10 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.NotNull;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import se.alipsa.gade.runtime.RuntimeEditorDialog;
+import se.alipsa.gade.runtime.RuntimeEditorResult;
+import se.alipsa.gade.runtime.RuntimeConfig;
+import se.alipsa.gade.runtime.RuntimeManager;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.UnStyledCodeArea;
@@ -65,6 +69,8 @@ public class MainMenu extends MenuBar {
   private static final Logger log = LogManager.getLogger(MainMenu.class);
   private final List<String> searchStrings = new UniqueList<>();
   private Stage searchWindow;
+  private Menu runtimesMenu;
+  private final ToggleGroup runtimeToggleGroup = new ToggleGroup();
 
   public MainMenu(Gade gui) {
     this.gui = gui;
@@ -74,6 +80,7 @@ public class MainMenu extends MenuBar {
     //Menu menuView = new Menu("View");
     //Menu menuPlots = new Menu("Plots");
     Menu menuSession = createSessionMenu();
+    Menu menuRuntimes = createRuntimesMenu();
     //Menu menuBuild = new Menu("Build");
     //Menu menuDebug = new Menu("Debug");
     //Menu menuProfile = new Menu("Profile");
@@ -81,7 +88,80 @@ public class MainMenu extends MenuBar {
     Menu menuMunin = createMuninMenu();
     Menu menuHelp = createHelpMenu();
     getMenus().addAll(menuFile, menuEdit, menuCode, /*menuView, menuPlots,*/ menuSession,
-        /*menuBuild, menuDebug, menuProfile, */ menuTools, menuMunin, menuHelp);
+       menuRuntimes, /*menuBuild, menuDebug, menuProfile, */ menuTools, menuMunin, menuHelp);
+  }
+
+  // TODO:
+  //  - add actions to all items
+  //  - add custom items if defined before
+  //  - mark the currently selected runtime if any
+  private Menu createRuntimesMenu() {
+    runtimesMenu = new Menu("Runtimes");
+    refreshRuntimesMenu();
+    return runtimesMenu;
+  }
+
+  public void refreshRuntimesMenu() {
+    if (runtimesMenu == null) {
+      return;
+    }
+    runtimesMenu.getItems().clear();
+    runtimeToggleGroup.getToggles().clear();
+    RuntimeManager manager = gui.getRuntimeManager();
+    File projectDir = gui.getProjectDir();
+    RuntimeConfig active = gui.getActiveRuntime();
+
+    manager.getBuiltInRuntimes().forEach(runtime -> {
+      boolean available = manager.isAvailable(runtime, projectDir);
+      runtimesMenu.getItems().add(createRuntimeMenuItem(runtime, active, available));
+    });
+
+    for (RuntimeConfig runtime : manager.getCustomRuntimes()) {
+      boolean available = manager.isAvailable(runtime, projectDir);
+      runtimesMenu.getItems().add(createRuntimeMenuItem(runtime, active, available));
+    }
+
+    runtimesMenu.getItems().add(new SeparatorMenuItem());
+    MenuItem addCustomItem = new MenuItem("Add custom runtime");
+    addCustomItem.setOnAction(e -> openRuntimeEditor(null, true));
+    MenuItem editCustomItems = new MenuItem("Edit custom runtimes");
+    editCustomItems.setOnAction(e -> openRuntimeEditor(null, false));
+    runtimesMenu.getItems().addAll(addCustomItem, editCustomItems);
+  }
+
+  private RadioMenuItem createRuntimeMenuItem(RuntimeConfig runtime, RuntimeConfig active, boolean available) {
+    RadioMenuItem item = new RadioMenuItem(runtime.getName());
+    item.setToggleGroup(runtimeToggleGroup);
+    item.setDisable(!available);
+    if (active != null && active.getName().equalsIgnoreCase(runtime.getName())) {
+      item.setSelected(true);
+    }
+    item.setOnAction(e -> selectRuntime(runtime));
+    return item;
+  }
+
+  private void selectRuntime(RuntimeConfig runtime) {
+    gui.selectRuntime(runtime);
+  }
+
+  private void openRuntimeEditor(RuntimeConfig runtime, boolean newRuntime) {
+    RuntimeEditorDialog dialog = new RuntimeEditorDialog(gui, runtime, newRuntime);
+    Optional<RuntimeEditorResult> result = dialog.showAndWait();
+    if (result.isEmpty()) {
+      return;
+    }
+    RuntimeEditorResult res = result.get();
+    RuntimeManager manager = gui.getRuntimeManager();
+    List<RuntimeConfig> previous = new ArrayList<>(manager.getCustomRuntimes());
+    res.getCustomRuntimes().forEach(manager::addOrUpdateCustomRuntime);
+    previous.stream()
+        .filter(prev -> res.getCustomRuntimes().stream().noneMatch(updated -> updated.getName().equalsIgnoreCase(prev.getName())))
+        .forEach(prev -> manager.deleteCustomRuntime(prev.getName()));
+    RuntimeConfig selected = res.getSelectedRuntime();
+    if (selected != null) {
+      gui.selectRuntime(selected);
+    }
+    refreshRuntimesMenu();
   }
 
   private Menu createCodeMenu() {

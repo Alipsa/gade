@@ -5,8 +5,6 @@ import static se.alipsa.gade.menu.GlobalOptions.*;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
-import groovy.transform.ThreadInterrupt;
-import java.lang.reflect.InvocationTargetException;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -23,19 +21,22 @@ import javafx.stage.Stage;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.jetbrains.annotations.Nullable;
+import java.lang.reflect.InvocationTargetException;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.TaskListener;
+import se.alipsa.gade.runtime.RuntimeClassLoaderFactory;
+import se.alipsa.gade.runtime.RuntimeConfig;
+import se.alipsa.gade.runtime.RuntimeIsolation;
+import se.alipsa.gade.runtime.RuntimeManager;
+import se.alipsa.gade.runtime.RuntimeSelectionDialog;
+import se.alipsa.gade.runtime.RuntimeType;
 import se.alipsa.gade.environment.EnvironmentComponent;
 import se.alipsa.gade.utils.Alerts;
-import se.alipsa.gade.utils.ClassUtils;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
-import se.alipsa.gade.utils.gradle.GradleUtils;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -56,6 +57,8 @@ public class ConsoleComponent extends BorderPane {
   private final ConsoleTextArea console;
   private final Gade gui;
   private GroovyClassLoader classLoader;
+  private RuntimeConfig activeRuntime;
+  private final RuntimeClassLoaderFactory runtimeClassLoaderFactory;
 
   private ScriptThread runningThread;
   private final Map<Thread, String> threadMap = new HashMap<>();
@@ -63,6 +66,7 @@ public class ConsoleComponent extends BorderPane {
 
   public ConsoleComponent(Gade gui) {
     this.gui = gui;
+    runtimeClassLoaderFactory = new RuntimeClassLoaderFactory(gui);
     console = new ConsoleTextArea(gui);
     console.setEditable(false);
 
@@ -93,14 +97,18 @@ public class ConsoleComponent extends BorderPane {
   /**
    * Initialize the groovy engine
    *
-   * @param parentClassLoader the classloader to use as the parent classloader for the GroovyClassloader
+   * @param runtime the runtime configuration to use
    */
-  public void initGroovy(GroovyClassLoader parentClassLoader) {
+  public void initGroovy(RuntimeConfig runtime) {
+    RuntimeConfig runtimeToUse = ensureRuntime(runtime);
+    if (runtimeToUse == null) {
+      return;
+    }
     Task<Void> initTask = new Task<>() {
 
       @Override
       protected Void call() throws Exception {
-        return resetClassloaderAndGroovy(parentClassLoader);
+        return resetClassloaderAndGroovy(runtimeToUse);
       }
     };
     initTask.setOnSucceeded(e -> {
@@ -123,6 +131,24 @@ public class ConsoleComponent extends BorderPane {
     thread.start();
   }
 
+  private RuntimeConfig ensureRuntime(RuntimeConfig requestedRuntime) {
+    RuntimeManager manager = gui.getRuntimeManager();
+    File projectDir = gui.getProjectDir();
+    RuntimeConfig candidate = requestedRuntime == null ? manager.getSelectedRuntime(projectDir) : requestedRuntime;
+    if (manager.isAvailable(candidate, projectDir)) {
+      manager.setSelectedRuntime(projectDir, candidate);
+      return candidate;
+    }
+    List<RuntimeConfig> alternatives = manager.getAllRuntimes().stream()
+        .filter(r -> manager.isAvailable(r, projectDir))
+        .toList();
+    RuntimeSelectionDialog dialog = new RuntimeSelectionDialog();
+    Optional<RuntimeConfig> selected = dialog.select(candidate, alternatives);
+    RuntimeConfig resolved = selected.orElse(manager.defaultRuntime(projectDir));
+    manager.setSelectedRuntime(projectDir, resolved);
+    return resolved;
+  }
+
   private void printVersionInfoToConsole() {
     String greeting = "* Groovy " + GroovySystem.getVersion() + " *";
     String surround = getStars(greeting.length());
@@ -132,7 +158,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   @Nullable
-  private Void resetClassloaderAndGroovy(GroovyClassLoader parentClassLoader) throws Exception {
+  private Void resetClassloaderAndGroovy(RuntimeConfig runtime) throws Exception {
     try {
 
       if (gui.getInoutComponent() == null) {
@@ -140,73 +166,12 @@ public class ConsoleComponent extends BorderPane {
         throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
       }
 
-      //log.info("USE_GRADLE_CLASSLOADER pref is set to {}", gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
-
-      // TODO: consider making this a configurable option if performance is heavily affected
-      CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
-      //automatically apply the @ThreadInterrupt AST transformations on all scripts
-      // see https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting for details
-      config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
-
-      boolean useGradleCLassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
-      if (useGradleCLassLoader) {
-        classLoader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
-      } else {
-        classLoader = new GroovyClassLoader(parentClassLoader, config);
-      }
-
-      if (gui.getInoutComponent() != null && gui.getInoutComponent().getRoot() != null) {
-        File wd = gui.getInoutComponent().projectDir();
-        if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true) && wd != null && wd.exists()) {
-          // TODO: we should set this from the resolved build
-          File classesDir = new File(wd, "build/classes/groovy/main/");
-          List<URL> urlList = new ArrayList<>();
-          try {
-            if (classesDir.exists()) {
-              urlList.add(classesDir.toURI().toURL());
-            }
-            File testClasses = new File(wd, "build/classes/groovy/test/");
-            if (testClasses.exists()) {
-              urlList.add(testClasses.toURI().toURL());
-            }
-            File javaClassesDir = new File(wd, "build/classes/java/main");
-            if (javaClassesDir.exists()) {
-              urlList.add(javaClassesDir.toURI().toURL());
-            }
-            File javaTestClassesDir = new File(wd, "build/classes/java/test");
-            if (javaTestClassesDir.exists()) {
-              urlList.add(javaTestClassesDir.toURI().toURL());
-            }
-          } catch (MalformedURLException e) {
-            log.warn("Failed to find classes dir", e);
-          }
-          if (!urlList.isEmpty()) {
-            log.trace("Adding compile dirs to classloader: {}", urlList);
-            urlList.forEach(url -> classLoader.addURL(url));
-            //classLoader = new URLClassLoader(urlList.toArray(new URL[0]), classLoader);
-          }
-        }
-
-        if (useGradleCLassLoader) {
-          File projectDir = gui.getInoutComponent().projectDir();
-          File gradleHome = new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome()));
-          File gradleFile = new File(projectDir, "build.gradle");
-          if (gradleFile.exists() && gradleHome.exists()) {
-            log.debug("Parsing build.gradle to use gradle classloader");
-            console.appendFx("* Parsing build.gradle to create Gradle classloader...", true);
-            var gradleUtils = new GradleUtils(gui);
-            gradleUtils.addGradleDependencies(classLoader, console);
-            //classLoader = new GroovyClassLoader(gradleUtils.createGradleCLassLoader(classLoader, console));
-          } else {
-            log.info("Use gradle class loader is set but gradle build file {} does not exist", gradleFile);
-          }
-        }
-      }
+      classLoader = runtimeClassLoaderFactory.create(runtime, console);
+      activeRuntime = runtime;
       engine = new GroovyEngineReflection(classLoader);
-      //engine = new GroovyEngineInvocation(classLoader);
-
-      //gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
-      addObjectsToBindings(gui.guiInteractions);
+      if (RuntimeType.GADE.equals(runtime.getType())) {
+        addObjectsToBindings(gui.guiInteractions);
+      }
       return null;
     } catch (RuntimeException e) {
       // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
@@ -259,8 +224,7 @@ public class ConsoleComponent extends BorderPane {
    */
   public void restartGroovy() {
     console.append("Restarting Groovy..\n");
-    //initGroovy(getStoredRemoteRepositories(), gui.getClass().getClassLoader());
-    initGroovy(gui.dynamicClassLoader);
+    initGroovy(gui.getActiveRuntime());
     gui.getEnvironmentComponent().clearEnvironment();
   }
 
@@ -313,14 +277,20 @@ public class ConsoleComponent extends BorderPane {
       Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
       return null;
     }
+    if (activeRuntime == null) {
+      Alerts.infoFx("Runtime not ready", "No runtime is active yet, please wait a few seconds");
+      return null;
+    }
     //log.info("engine is {}, gui is {}", engine, gui);
-    gui.guiInteractions.forEach(this::addVariableToSession);
+    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      gui.guiInteractions.forEach(this::addVariableToSession);
+    }
     if (additionalParams != null) {
       for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
         addVariableToSession(entry.getKey(), entry.getValue());
       }
     }
-    return engine.eval(script);
+    return RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
   }
 
 
@@ -336,12 +306,16 @@ public class ConsoleComponent extends BorderPane {
    */
 
   public Object runScriptSilent(String script) throws Exception {
+    if (activeRuntime == null) {
+      Alerts.infoFx("Runtime not ready", "No runtime is active yet, please wait a few seconds");
+      return null;
+    }
     try (PrintWriter out = new PrintWriter(System.out);
          PrintWriter err = new PrintWriter(System.err)) {
       running();
       engine.setOutputWriters(out, err);
       log.debug("Running script: {}", script);
-      var result = engine.eval(script);
+      var result = RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
       waiting();
       return result;
     } catch (Exception e) {
@@ -656,6 +630,10 @@ public class ConsoleComponent extends BorderPane {
     PrintStream sysOut = System.out;
     PrintStream sysErr = System.err;
     EnvironmentComponent env = gui.getEnvironmentComponent();
+    if (activeRuntime == null) {
+      Alerts.warnFx("Runtime not ready", "No runtime is active yet, cannot execute scripts");
+      return;
+    }
     try (
         AppenderWriter out = new AppenderWriter(console, true);
         WarningAppenderWriter err = new WarningAppenderWriter(console);
@@ -668,7 +646,9 @@ public class ConsoleComponent extends BorderPane {
         Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
         return;
       }
-      addObjectsToBindings(gui.guiInteractions);
+      if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+        addObjectsToBindings(gui.guiInteractions);
+      }
       //gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
 
       Platform.runLater(() -> {
@@ -678,7 +658,7 @@ public class ConsoleComponent extends BorderPane {
       engine.setOutputWriters(outputWriter, errWriter);
       System.setOut(outStream);
       System.setErr(errStream);
-      var result = engine.eval(script);
+      var result = RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
       // TODO: add config to opt out of printing the result to the console
       if (result != null) {
         gui.getConsoleComponent().getConsole().appendFx(result.toString(), true);
