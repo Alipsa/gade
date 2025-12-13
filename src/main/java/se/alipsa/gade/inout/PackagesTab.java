@@ -84,9 +84,8 @@ public class PackagesTab extends Tab {
       data.clear();
       availablePackages.forEach(p -> {
         //view.getItems().add(new AvailablePackage(p,loadedPackages.indexOf(p.getPackageName()) > -1));
-        boolean loaded = loadedPackages == null
-            || loadedPackages.contains(p.getPackageName())
-            || loadedPackages.contains(p.getFullName());
+        boolean loaded = loadedPackages != null
+            && (loadedPackages.contains(p.getPackageName()) || loadedPackages.contains(p.getFullName()));
         data.add(new AvailablePackage(p, loaded));
       });
     });

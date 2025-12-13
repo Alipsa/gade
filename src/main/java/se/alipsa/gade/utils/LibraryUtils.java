@@ -21,6 +21,20 @@ public class LibraryUtils {
 
   private static final Logger LOG = LogManager.getLogger(LibraryUtils.class);
 
+  /**
+   * Collect libraries that are available to the current runtime.
+   * <p>
+   * Sources:
+   * <ul>
+   *   <li>Gradle runtime: dependencies resolved from the Gradle project.</li>
+   *   <li>Maven runtime: dependencies listed in pom.xml (non-test scope).</li>
+   *   <li>Custom runtime: configured coordinates and additional jars.</li>
+   *   <li>All runtimes: jars on the runtime classloader (includes @Grab / grapes downloads).</li>
+   * </ul>
+   *
+   * @param gui the running Gade instance providing runtime and project context
+   * @return a set of detected libraries
+   */
   public static Set<Library> getAvailableLibraries(Gade gui) {
     RuntimeConfig runtime = gui.getActiveRuntime();
     if (runtime == null) {
@@ -29,7 +43,6 @@ public class LibraryUtils {
     File projectDir = gui.getProjectDir();
     Map<String, Library> libraries = new HashMap<>();
 
-    // Runtime-specific sources
     switch (runtime.getType()) {
       case GRADLE -> addGradleDependencies(gui, libraries);
       case MAVEN -> addMavenDependencies(projectDir, libraries);
@@ -37,8 +50,7 @@ public class LibraryUtils {
       case GADE -> { /* fall through to classloader scan */ }
     }
 
-    // Classloader scan to capture @Grab and runtime-added jars
-    addClassLoaderJars(gui.getConsoleComponent().getClassLoader(), libraries);
+    addClassLoaderJars(gui.getConsoleComponent().getClassLoader(), libraries, new HashSet<>());
 
     return new HashSet<>(libraries.values());
   }
@@ -75,7 +87,7 @@ public class LibraryUtils {
     }
   }
 
-  private static void addGradleDependencies(Gade gui, Map<String, Library> libraries) {
+  static void addGradleDependencies(Gade gui, Map<String, Library> libraries) {
     try {
       GradleUtils gradleUtils = new GradleUtils(gui);
       gradleUtils.getProjectDependencies().forEach(file -> addLibraryFromFile(file, libraries));
@@ -84,7 +96,7 @@ public class LibraryUtils {
     }
   }
 
-  private static void addMavenDependencies(File projectDir, Map<String, Library> libraries) {
+  static void addMavenDependencies(File projectDir, Map<String, Library> libraries) {
     if (projectDir == null) {
       return;
     }
@@ -99,13 +111,16 @@ public class LibraryUtils {
     }
   }
 
-  private static void addCustomDependencies(RuntimeConfig runtime, Map<String, Library> libraries) {
+  static void addCustomDependencies(RuntimeConfig runtime, Map<String, Library> libraries) {
     runtime.getDependencies().forEach(dep -> addLibraryFromCoordinate(dep, libraries));
     runtime.getAdditionalJars().forEach(path -> addLibraryFromFile(new File(path), libraries));
   }
 
-  private static void addClassLoaderJars(ClassLoader classLoader, Map<String, Library> libraries) {
+  static void addClassLoaderJars(ClassLoader classLoader, Map<String, Library> libraries, Set<ClassLoader> visited) {
     if (classLoader == null) {
+      return;
+    }
+    if (!visited.add(classLoader)) {
       return;
     }
     if (classLoader instanceof java.net.URLClassLoader ucl) {
@@ -118,7 +133,7 @@ public class LibraryUtils {
         }
       });
     }
-    addClassLoaderJars(classLoader.getParent(), libraries);
+    addClassLoaderJars(classLoader.getParent(), libraries, visited);
   }
 
   private static void addLibraryFromCoordinate(String coordinate, Map<String, Library> libraries) {
@@ -141,6 +156,12 @@ public class LibraryUtils {
     }
   }
 
+  /**
+   * Parse a Maven/Gradle style coordinate {@code group:artifact[:version]} into a Library.
+   *
+   * @param coordinate the coordinate string
+   * @return a Library or null if the coordinate is malformed
+   */
   public static Library libraryFromCoordinate(String coordinate) {
     if (coordinate == null || coordinate.isBlank()) {
       return null;
@@ -156,6 +177,19 @@ public class LibraryUtils {
     return new Library(artifact, group, artifact, version);
   }
 
+  /**
+   * Parse a library from a Gradle/Maven/grapes style file path.
+   * Supported formats:
+   * <ul>
+   *   <li>Gradle cache paths (modules-2/files-2.1/group/artifact/version/...)</li>
+   *   <li>Maven repository paths (~/.m2/repository/group/path/artifact/version/...)</li>
+   *   <li>Grapes cache paths (~/.groovy/grapes/group/artifact/jars/artifact-version.jar)</li>
+   *   <li>Fallback: artifact-version.jar</li>
+   * </ul>
+   *
+   * @param path the file path to parse
+   * @return a Library or null if it cannot be parsed
+   */
   public static Library parseLibraryFromPath(String path) {
     String normalized = path.replace("\\", "/");
     String group = "";
@@ -201,13 +235,13 @@ public class LibraryUtils {
     if (fileName.endsWith(".jar")) {
       fileName = fileName.substring(0, fileName.length() - 4);
     }
-      int versionIdx = fileName.lastIndexOf("-");
-      if (versionIdx > 0) {
-        artifact = fileName.substring(0, versionIdx);
-        version = fileName.substring(versionIdx + 1);
-      } else {
-        artifact = fileName;
-      }
+    int versionIdx = fileName.lastIndexOf("-");
+    if (versionIdx > 0) {
+      artifact = fileName.substring(0, versionIdx);
+      version = fileName.substring(versionIdx + 1);
+    } else {
+      artifact = fileName;
+    }
     return new Library(artifact, group, artifact, version);
   }
 }

@@ -460,9 +460,7 @@ public class ConsoleComponent extends BorderPane {
 
   private void refreshPackages() {
     try {
-      var libs = se.alipsa.gade.utils.LibraryUtils.getAvailableLibraries(gui);
-      List<String> loadedNames = libs.stream().map(se.alipsa.gade.model.Library::getPackageName).toList();
-      gui.getInoutComponent().setPackages(loadedNames);
+      gui.getInoutComponent().setPackages(Collections.emptyList());
     } catch (Exception e) {
       log.debug("Failed to refresh packages", e);
     }
