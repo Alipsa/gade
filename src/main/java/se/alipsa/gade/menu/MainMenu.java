@@ -799,10 +799,23 @@ public class MainMenu extends MenuBar {
     content.append("\n Maximum allowed memory: ");
     content.append(formatNumber(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024))).append(" MB");
 
-    content.append("\n\n Java Runtime Version: ")
-        .append(System.getProperty("java.runtime.version"))
-        .append(" (").append(System.getProperty("os.arch")).append(")")
-        .append("\n Groovy version: ").append(GroovySystem.getVersion());
+    String inUseJava = System.getProperty("java.runtime.version");
+    content.append("\n\n Java Runtime Version (in use): ")
+        .append(inUseJava)
+        .append(" (").append(System.getProperty("os.arch")).append(")");
+
+    if (gui.getConsoleComponent() != null) {
+      gui.getConsoleComponent().getConfiguredJavaVersion().ifPresent(configured -> {
+        content.append("\n Configured runtime Java: ").append(configured);
+        if (gui.getConsoleComponent().isConfiguredJavaDifferent(configured)) {
+          content.append(" (differs from in-use JVM)");
+        }
+      });
+    }
+
+    content.append("\n Groovy version: ").append(gui.getConsoleComponent() == null
+        ? GroovySystem.getVersion()
+        : gui.getConsoleComponent().getActiveGroovyVersion());
     Alerts.showInfoAlert("Session info", content, 600, 300);
   }
 

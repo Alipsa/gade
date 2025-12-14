@@ -182,6 +182,8 @@ public class Gade extends Application {
         "io", new se.alipsa.gade.interaction.InOut()
     );
     consoleComponent.initGroovy(getActiveRuntime());
+    // Ensure the runtime menu reflects the actually loaded runtime on startup
+    mainMenu.refreshRuntimesMenu();
     primaryStage.show();
   }
 

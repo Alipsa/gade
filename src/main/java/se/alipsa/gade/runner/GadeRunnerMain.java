@@ -1,0 +1,253 @@
+package se.alipsa.gade.runner;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
+
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptException;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+
+/**
+ * Small out-of-process runner that keeps a Groovy engine alive and communicates via JSON over stdin/stdout.
+ * Stdout/stderr from scripts are forwarded as JSON events to the parent process.
+ */
+public class GadeRunnerMain {
+
+  private static final OutputStream ROOT_OUT = new FileOutputStream(FileDescriptor.out);
+  private static final OutputStream ROOT_ERR = new FileOutputStream(FileDescriptor.err);
+  private static final boolean VERBOSE = Boolean.getBoolean("gade.runner.verbose");
+  private static final ObjectMapper mapper = new ObjectMapper()
+      .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
+      .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+
+  private static final AtomicReference<Thread> currentEvalThread = new AtomicReference<>();
+
+  private GadeRunnerMain() {}
+
+  public static void main(String[] args) throws Exception {
+    int port = args.length > 0 ? Integer.parseInt(args[0]) : 0;
+    try (ServerSocket server = new ServerSocket(port, 1, loopbackV4())) {
+      int actualPort = server.getLocalPort();
+      emit(Map.of("type", "ready", "port", actualPort), null);
+
+      try (Socket socket = server.accept();
+           BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+           BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
+
+        emitRaw("runner accepted connection on port " + actualPort);
+        emitRaw("runner entering read loop");
+        emitRaw("runner local=" + socket.getLocalSocketAddress() + " remote=" + socket.getRemoteSocketAddress());
+        emit(Map.of("type", "hello", "port", actualPort), writer);
+        System.setOut(new PrintStream(new EventOutputStream("out", writer), true, StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(new EventOutputStream("err", writer), true, StandardCharsets.UTF_8));
+
+        GroovyScriptEngineImpl engine;
+        try {
+          engine = new GroovyScriptEngineImpl();
+        } catch (Throwable t) {
+          emitRaw("engine init failed: " + t);
+          emitRaw(getStackTrace(t));
+          emitError("init", "Engine init failed: " + t.getMessage(), getStackTrace(t), writer);
+          return;
+        }
+        engine.getContext().setWriter(new PrintWriter(System.out, true));
+        engine.getContext().setErrorWriter(new PrintWriter(System.err, true));
+
+        try {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            if (line.isBlank()) {
+              continue;
+            }
+            emitRaw("runner received: " + line);
+            try {
+              Map<String, Object> cmd = mapper.readValue(line, Map.class);
+              String action = (String) cmd.get("cmd");
+              String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
+              try {
+                switch (action) {
+                  case "eval" -> handleEval(engine, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer);
+                  case "bindings" -> handleBindings(engine, id, writer);
+                  case "interrupt" -> handleInterrupt(id, writer);
+                  case "shutdown" -> {
+                    emit(Map.of("type", "shutdown", "id", id), writer);
+                    return;
+                  }
+                  default -> emitError(id, "Unknown command: " + action, null, writer);
+                }
+              } catch (Exception e) {
+                emitRaw("command failed: " + e);
+                emitRaw(getStackTrace(e));
+                emitError(id, e.getMessage(), getStackTrace(e), writer);
+              }
+            } catch (Exception parse) {
+              emitRaw("protocol parse failed: " + parse);
+              emitRaw(getStackTrace(parse));
+              emitError("protocol", "Failed to parse command: " + parse.getMessage(), getStackTrace(parse), writer);
+            }
+          }
+          emitRaw("runner received EOF, shutting down");
+        } catch (IOException loopEx) {
+          emitRaw("runner read loop exception: " + loopEx);
+          emitRaw(getStackTrace(loopEx));
+        }
+      }
+    } catch (Throwable t) {
+      emitRaw("fatal runner failure: " + t);
+      emitRaw(getStackTrace(t));
+      emitError("init", "Runner failed: " + t.getMessage(), getStackTrace(t), null);
+    }
+  }
+
+  private static InetAddress loopbackV4() throws IOException {
+    try {
+      return InetAddress.getByName("127.0.0.1");
+    } catch (IOException e) {
+      emitRaw("Failed to resolve IPv4 loopback, falling back to default: " + e.getMessage());
+      return InetAddress.getLoopbackAddress();
+    }
+  }
+
+  private static void emitRaw(String msg) {
+    if (!VERBOSE) {
+      return;
+    }
+    try {
+      ROOT_ERR.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
+      ROOT_ERR.flush();
+    } catch (IOException ignore) {
+    }
+  }
+
+  private static void handleEval(GroovyScriptEngineImpl engine, String id, String script, Map<String, Object> bindings, BufferedWriter writer) {
+    if (script == null) {
+      emitError(id, "No script provided", null, writer);
+      return;
+    }
+    if (currentEvalThread.get() != null) {
+      emitError(id, "Runner is busy executing another script", null, writer);
+      return;
+    }
+    Thread t = new Thread(() -> {
+      currentEvalThread.set(Thread.currentThread());
+      try {
+        if (bindings != null) {
+          bindings.forEach(engine::put);
+        }
+        Object result = engine.eval(script);
+        emit(Map.of("type", "result", "id", id, "result", result == null ? "null" : String.valueOf(result)), writer);
+      } catch (ScriptException e) {
+        emitError(id, e.getMessage(), getStackTrace(e), writer);
+      } catch (Exception e) {
+        emitError(id, e.getMessage(), getStackTrace(e), writer);
+      } finally {
+        currentEvalThread.set(null);
+      }
+    }, "gade-runner-eval");
+    t.start();
+  }
+
+  private static void handleBindings(GroovyScriptEngineImpl engine, String id, BufferedWriter writer) {
+    Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+    Map<String, String> serialized = new HashMap<>();
+    bindings.forEach((k, v) -> serialized.put(String.valueOf(k), v == null ? "null" : v.toString()));
+    emit(Map.of("type", "bindings", "id", id, "bindings", serialized), writer);
+  }
+
+  private static void handleInterrupt(String id, BufferedWriter writer) {
+    Thread running = currentEvalThread.get();
+    if (running != null) {
+      running.interrupt();
+      emit(Map.of("type", "interrupted", "id", id), writer);
+    } else {
+      emit(Map.of("type", "interrupted", "id", id, "message", "No script running"), writer);
+    }
+  }
+
+  private static void emitError(String id, String msg, String stackTrace, BufferedWriter writer) {
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("type", "error");
+    payload.put("id", id);
+    payload.put("error", msg);
+    if (stackTrace != null) {
+      payload.put("stacktrace", stackTrace);
+    }
+    emit(payload, writer);
+  }
+
+  private static void emit(Map<String, ?> payload, BufferedWriter writer) {
+    if (writer == null) {
+      try {
+        mapper.writeValue(ROOT_OUT, payload);
+        ROOT_OUT.write('\n');
+        ROOT_OUT.flush();
+      } catch (IOException ignored) {}
+      return;
+    }
+    // Multiple threads (eval thread + stdout/stderr EventOutputStream) share the same writer.
+    // Synchronize on the writer to avoid interleaved JSON messages corrupting the stream.
+    synchronized (writer) {
+      try {
+        mapper.writeValue(writer, payload);
+        writer.write("\n");
+        writer.flush();
+      } catch (IOException e) {
+        emitRaw("emit failed: " + e);
+      }
+    }
+  }
+
+  private static String getStackTrace(Throwable t) {
+    StringWriter sw = new StringWriter();
+    t.printStackTrace(new PrintWriter(sw));
+    return sw.toString();
+  }
+
+  /**
+   * OutputStream that turns writes into JSON events on the root stdout/stderr to avoid recursion.
+   */
+  static class EventOutputStream extends OutputStream {
+    private final String type;
+    private final StringBuilder buffer = new StringBuilder();
+    private final BufferedWriter writer;
+
+    EventOutputStream(String type, BufferedWriter writer) {
+      this.type = type;
+      this.writer = writer;
+    }
+
+    @Override
+    public void write(int b) {
+      buffer.append((char) b);
+      if (b == '\n') {
+        flushBuffer();
+      }
+    }
+
+    @Override
+    public void flush() {
+      flushBuffer();
+    }
+
+    private void flushBuffer() {
+      if (buffer.length() == 0) {
+        return;
+      }
+      String text = buffer.toString();
+      buffer.setLength(0);
+      Map<String, Object> payload = Map.of("type", type, "text", text);
+      emit(payload, writer);
+    }
+  }
+}

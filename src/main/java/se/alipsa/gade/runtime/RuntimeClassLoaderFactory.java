@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
@@ -46,12 +47,14 @@ public class RuntimeClassLoaderFactory {
     CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
     config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
 
-    return switch (runtime.getType()) {
+    GroovyClassLoader loader = switch (runtime.getType()) {
       case GADE -> createGadeClassLoader(config, console);
       case GRADLE -> createGradleClassLoader(config, console);
       case MAVEN -> createMavenClassLoader(config, console);
       case CUSTOM -> createCustomClassLoader(runtime, config, console);
     };
+    ensureGroovyScriptEngine(loader, runtime, console);
+    return loader;
   }
 
   private GroovyClassLoader createGadeClassLoader(CompilerConfiguration config, ConsoleTextArea console) throws Exception {
@@ -134,13 +137,15 @@ public class RuntimeClassLoaderFactory {
       addDefaultGroovyRuntime(loader);
     }
     runtime.getAdditionalJars().forEach(path -> addJarOrDir(loader, new File(path), console));
-    DependencyResolver resolver = new DependencyResolver(loader);
-    for (String dep : runtime.getDependencies()) {
-      try {
-        resolver.addDependency(dep);
-      } catch (ResolvingException e) {
-        log.warn("Failed adding dependency {} to runtime {}", dep, runtime.getName(), e);
-        console.appendWarningFx("Failed to add dependency " + dep + ": " + e.getMessage());
+    if (!runtime.getDependencies().isEmpty()) {
+      DependencyResolver resolver = new DependencyResolver(loader);
+      for (String dep : runtime.getDependencies()) {
+        try {
+          resolver.addDependency(dep);
+        } catch (ResolvingException e) {
+          log.warn("Failed adding dependency {} to runtime {}", dep, runtime.getName(), e);
+          console.appendWarningFx("Failed to add dependency " + dep + ": " + e.getMessage());
+        }
       }
     }
     return loader;
@@ -215,5 +220,29 @@ public class RuntimeClassLoaderFactory {
         log.warn("Failed adding output dir {}", f, e);
       }
     });
+  }
+
+  private void ensureGroovyScriptEngine(GroovyClassLoader loader, RuntimeConfig runtime, ConsoleTextArea console) {
+    try {
+      loader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
+    } catch (ClassNotFoundException e) {
+      String runtimeName = runtime == null ? "runtime" : runtime.getName();
+      console.appendWarningFx("Runtime '" + runtimeName
+          + "' is missing groovy-jsr223; using bundled engine. Add groovy-jsr223 to Groovy home or Dependencies to avoid fallback.");
+      log.warn("groovy-jsr223 not found for runtime {}", runtimeName);
+      try {
+        URL engineLocation = GroovyScriptEngineImpl.class.getProtectionDomain().getCodeSource().getLocation();
+        if (engineLocation == null) {
+          throw new IllegalStateException("No location found for bundled groovy-jsr223");
+        }
+        loader.addURL(engineLocation);
+        loader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
+      } catch (Exception ex) {
+        String message = "groovy-jsr223 is missing for runtime " + runtimeName
+            + "; add org.apache.groovy:groovy-jsr223 to the runtime configuration";
+        log.error(message, ex);
+        throw new RuntimeException(message, ex);
+      }
+    }
   }
 }

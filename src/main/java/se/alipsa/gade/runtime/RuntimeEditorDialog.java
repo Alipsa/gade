@@ -55,6 +55,13 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     ButtonType close = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
     getDialogPane().getButtonTypes().addAll(useSelected, close);
 
+    Button useSelectedButton = (Button) getDialogPane().lookupButton(useSelected);
+    useSelectedButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+      if (!applyPendingEditsForSelected()) {
+        event.consume();
+      }
+    });
+
     Button addButton = new Button("Add");
     addButton.setOnAction(e -> addRuntime());
 
@@ -239,23 +246,10 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     if (selected == null || !RuntimeType.CUSTOM.equals(selected.getType())) {
       return;
     }
-    String name = nameField.getText().trim();
-    if (name.isBlank()) {
-      ExceptionAlert.showAlert("Name is required for a runtime", new IllegalArgumentException("Name missing"));
+    RuntimeConfig updated = buildRuntimeFromFields(selected);
+    if (updated == null) {
       return;
     }
-    if (!selected.getName().equalsIgnoreCase(name) && nameExists(name)) {
-      ExceptionAlert.showAlert("Runtime name must be unique", new IllegalArgumentException("Duplicate name"));
-      return;
-    }
-    RuntimeConfig updated = new RuntimeConfig(
-        name,
-        RuntimeType.CUSTOM,
-        javaHomeField.getText().trim(),
-        groovyHomeField.getText().trim(),
-        new ArrayList<>(jarList.getItems()),
-        new ArrayList<>(dependencyList.getItems())
-    );
     replaceCustom(selected, updated);
     replaceInList(selected, updated);
     runtimeListView.getSelectionModel().select(updated);
@@ -279,5 +273,43 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     if (idx >= 0) {
       runtimeListView.getItems().set(idx, updated);
     }
+  }
+
+  private RuntimeConfig buildRuntimeFromFields(RuntimeConfig selected) {
+    if (!RuntimeType.CUSTOM.equals(selected.getType())) {
+      return selected;
+    }
+    String name = nameField.getText().trim();
+    if (name.isBlank()) {
+      ExceptionAlert.showAlert("Name is required for a runtime", new IllegalArgumentException("Name missing"));
+      return null;
+    }
+    if (!selected.getName().equalsIgnoreCase(name) && nameExists(name)) {
+      ExceptionAlert.showAlert("Runtime name must be unique", new IllegalArgumentException("Duplicate name"));
+      return null;
+    }
+    return new RuntimeConfig(
+        name,
+        RuntimeType.CUSTOM,
+        javaHomeField.getText().trim(),
+        groovyHomeField.getText().trim(),
+        new ArrayList<>(jarList.getItems()),
+        new ArrayList<>(dependencyList.getItems())
+    );
+  }
+
+  private boolean applyPendingEditsForSelected() {
+    RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
+    if (selected == null || !RuntimeType.CUSTOM.equals(selected.getType())) {
+      return true;
+    }
+    RuntimeConfig updated = buildRuntimeFromFields(selected);
+    if (updated == null) {
+      return false;
+    }
+    replaceCustom(selected, updated);
+    replaceInList(selected, updated);
+    runtimeListView.getSelectionModel().select(updated);
+    return true;
   }
 }
