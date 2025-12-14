@@ -32,7 +32,7 @@ class LibraryUtilsInternalTest {
   void addCustomDependenciesAddsCoordinatesAndJars() throws Exception {
     File jar = new File(System.getProperty("java.io.tmpdir"), "custom-2.0.jar");
     jar.delete();
-    jar.createNewFile();
+    assertTrue(jar.createNewFile(), "Failed to create new file: " + jar.getAbsolutePath());
     jar.deleteOnExit();
     RuntimeConfig runtime = new RuntimeConfig("Custom", RuntimeType.CUSTOM, null, null,
         java.util.List.of(jar.getAbsolutePath()),
