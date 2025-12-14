@@ -47,7 +47,7 @@ public class LibraryUtilsTest {
   }
 
   @Test
-  public void parseGrabPath() {
+  public void testParseGrabPath() {
     String path = "/home/user/.groovy/grapes/org.apache.commons/commons-lang3/jars/commons-lang3-3.12.0.jar";
     Library lib = LibraryUtils.parseLibraryFromPath(path);
     assertEquals("org.apache.commons", lib.getGroup());
