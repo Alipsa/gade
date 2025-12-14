@@ -49,6 +49,7 @@ class LibraryUtilsInternalTest {
     dir.mkdirs();
     dir.deleteOnExit();
     File pom = new File(dir, "pom.xml");
+    pom.deleteOnExit();
     try (FileWriter fw = new FileWriter(pom)) {
       fw.write("""
           <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
