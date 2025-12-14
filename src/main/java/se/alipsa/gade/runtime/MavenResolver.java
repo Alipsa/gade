@@ -44,6 +44,26 @@ public final class MavenResolver {
     }
   }
 
+  /**
+   * Extract non-test scoped dependencies from a pom.xml as Maven coordinates.
+   *
+   * @param pomFile the pom.xml to read
+   * @return list of coordinates in group:artifact:version form
+   * @throws Exception if the pom cannot be read or parsed
+   */
+  public static List<String> dependenciesFromPom(File pomFile) throws Exception {
+    MavenXpp3Reader reader = new MavenXpp3Reader();
+    Model model;
+    try (FileReader fileReader = new FileReader(pomFile)) {
+      model = reader.read(fileReader);
+    }
+    Properties props = model.getProperties();
+    return model.getDependencies().stream()
+        .filter(dep -> !"test".equalsIgnoreCase(dep.getScope()))
+        .map(dep -> toCoord(dep, props))
+        .collect(Collectors.toList());
+  }
+
   private static String toCoord(Dependency dep, Properties props) {
     String version = dep.getVersion();
     if (version != null && version.startsWith("${") && version.endsWith("}")) {

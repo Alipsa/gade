@@ -430,6 +430,7 @@ public class ConsoleComponent extends BorderPane {
         try {
           // TODO get library dependencies from Grab and maven?
           gui.getEnvironmentComponent().setEnvironment(getContextObjects());
+          refreshPackages();
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
           // this way we can get to the original one by extracting the cause from the thrown exception
@@ -455,6 +456,14 @@ public class ConsoleComponent extends BorderPane {
   public Map<String, Object> getContextObjects() {
     log.info("getContextObjects");
     return engine.getContextObjects();
+  }
+
+  private void refreshPackages() {
+    try {
+      gui.getInoutComponent().setPackages(Collections.emptyList());
+    } catch (Exception e) {
+      log.debug("Failed to refresh packages", e);
+    }
   }
 
   /*

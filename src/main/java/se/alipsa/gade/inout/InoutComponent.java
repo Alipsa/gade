@@ -284,7 +284,7 @@ public class InoutComponent extends TabPane  {
   }
 
   public void setPackages(List<String> pkgs) {
-   packages.setLoadedPackages(pkgs);
+    packages.setLoadedPackages(pkgs);
   }
 
   public TreeItem<FileItem> getRoot() {

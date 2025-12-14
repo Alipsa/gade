@@ -1,123 +1,58 @@
 package se.alipsa.gade.utils;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.Resource;
-import io.github.classgraph.ScanResult;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.inout.PackagesTab;
 import se.alipsa.gade.model.Library;
+import se.alipsa.gade.runtime.RuntimeConfig;
+import se.alipsa.gade.runtime.RuntimeType;
+import se.alipsa.gade.utils.gradle.GradleUtils;
+import se.alipsa.gade.runtime.MavenResolver;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.URISyntaxException;
+import java.net.URLClassLoader;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @deprecated Renjin support has been removed from Gade
- */
-@Deprecated
 public class LibraryUtils {
 
   private static final Logger LOG = LogManager.getLogger(LibraryUtils.class);
 
   /**
-   * Scan all ClassLoaders for Extensions (libraries / packages)
-   * @param classLoader this is needed if we use AetherPackageLoader to pick upp dynamically fetched libraries
-   * @return a set of Libraries (which is an Object equivalent of the dependencies)
+   * Collect libraries that are available to the current runtime.
+   * <p>
+   * Sources:
+   * <ul>
+   *   <li>Gradle runtime: dependencies resolved from the Gradle project.</li>
+   *   <li>Maven runtime: dependencies listed in pom.xml (non-test scope).</li>
+   *   <li>Custom runtime: configured coordinates and additional jars.</li>
+   *   <li>All runtimes: jars on the runtime classloader (includes @Grab / grapes downloads).</li>
+   * </ul>
+   *
+   * @param gui the running Gade instance providing runtime and project context
+   * @return a set of detected libraries
    */
-  public static Set<Library> getAvailableLibraries(ClassLoader classLoader) throws IOException {
-    Map<String, Library> packageNames = new HashMap<>();
-    AtomicInteger count = new AtomicInteger();
-    try (ScanResult scanResult = new ClassGraph().addClassLoader(classLoader).scan()) {
-      scanResult.getResourcesWithLeafName("DESCRIPTION")
-          .forEachByteArrayThrowingIOException((Resource res, byte[] fileContent) -> {
-            count.incrementAndGet();
-            Library library = parseDescription(res.getPath(), new String(fileContent, StandardCharsets.UTF_8));
-            if (library != null) {
-              Library existing = packageNames.get(library.getFullName());
-              if (existing == null || SemanticVersion.compare(existing.getVersion(), library.getVersion()) < 0) {
-                packageNames.put(library.getFullName(), library);
-              }
-            }
-      });
-      if (count.intValue() != packageNames.size()) {
-        LOG.info("Parsed {} DESCRIPTION files, returning {} unique packages " +
-            "(you likely have different versions of the same package in your classpath)",
-            count.intValue(), packageNames.size());
-      }
-    } catch (IOException e) {
-      throw new IOException("Failed to read DESCRIPTION file", e);
+  public static Set<Library> getAvailableLibraries(Gade gui) {
+    RuntimeConfig runtime = gui.getActiveRuntime();
+    if (runtime == null) {
+      return Collections.emptySet();
     }
-    return new HashSet<>(packageNames.values());
-  }
+    File projectDir = gui.getProjectDir();
+    Map<String, Library> libraries = new HashMap<>();
 
-  public static Library parseDescription(String path, String content) throws IOException {
-    String packageName = null;
-    String groupName = "";
-    String title = "";
-    String version = "";
+    switch (runtime.getType()) {
+      case GRADLE -> addGradleDependencies(gui, libraries);
+      case MAVEN -> addMavenDependencies(projectDir, libraries);
+      case CUSTOM -> addCustomDependencies(runtime, libraries);
+      case GADE -> { /* fall through to classloader scan */ }
+    }
 
-    try (BufferedReader reader = new BufferedReader(new StringReader(content))){
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (line.startsWith("Package: ")) {
-          packageName = line.substring("Package: ".length());
-        } else if (line.startsWith("GroupId: ")) {
-          groupName = line.substring("GroupId: ".length());
-        } else if (line.startsWith("Title: ")) {
-          title = line.substring("Title: ".length());
-        } else if (line.startsWith("Version: ")) {
-          version = line.substring("Version: ".length());
-        }
-      }
-    } catch (IOException e) {
-      throw new IOException("Failed to parse DESCRIPTION in " + path, e);
-    }
-    return packageName == null ? null : new Library(title, groupName, packageName, version);
-  }
+    addClassLoaderJars(gui.getConsoleComponent().getClassLoader(), libraries, new HashSet<>());
 
-  public static String extractPackageName(String content) throws IOException {
-    String packageName = null;
-    String groupName = "";
-    try (BufferedReader reader = new BufferedReader(new StringReader(content))){
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (line.startsWith("Package: ")) {
-          packageName = line.substring("Package: ".length());
-        } else if (line.startsWith("GroupId: ")) {
-          groupName = line.substring("GroupId: ".length()) + ":";
-        }
-      }
-    } catch (IOException e) {
-      throw new IOException("Failed to extract package name and groupId from DESCRIPTION file", e);
-    }
-    return packageName == null ? null : groupName + packageName;
-  }
-
-  public static String extractPackageNameFromResource(String path) throws IOException {
-    URL url = FileUtils.getResourceUrl(path);
-    if (url == null) {
-      System.err.println("Failed to find " + path);
-      return null;
-    }
-    try (InputStream is = url.openStream()){
-      List<String> lines = IOUtils.readLines(is, StandardCharsets.UTF_8);
-      for ( String line : lines) {
-        if (line.startsWith("Package: ")) {
-          return line.substring("Package: ".length());
-        }
-      }
-    } catch (IOException e) {
-      throw new IOException("Failed to extract package name and groupId from DESCRIPTION file in " + path, e);
-    }
-    return null;
+    return new HashSet<>(libraries.values());
   }
 
   public static String getPackage(String fullPackageName) {
@@ -150,5 +85,163 @@ public class LibraryUtils {
       String action = isLoaded ? "load" : "unload";
       throw new Exception("Failed to " + action + " library", e);
     }
+  }
+
+  static void addGradleDependencies(Gade gui, Map<String, Library> libraries) {
+    try {
+      GradleUtils gradleUtils = new GradleUtils(gui);
+      gradleUtils.getProjectDependencies().forEach(file -> addLibraryFromFile(file, libraries));
+    } catch (FileNotFoundException e) {
+      LOG.debug("Gradle project not available: {}", e.getMessage());
+    }
+  }
+
+  static void addMavenDependencies(File projectDir, Map<String, Library> libraries) {
+    if (projectDir == null) {
+      return;
+    }
+    File pom = new File(projectDir, "pom.xml");
+    if (!pom.exists()) {
+      return;
+    }
+    try {
+      MavenResolver.dependenciesFromPom(pom).forEach(dep -> addLibraryFromCoordinate(dep, libraries));
+    } catch (Exception e) {
+      LOG.warn("Failed to parse pom dependencies from {}", pom, e);
+    }
+  }
+
+  static void addCustomDependencies(RuntimeConfig runtime, Map<String, Library> libraries) {
+    runtime.getDependencies().forEach(dep -> addLibraryFromCoordinate(dep, libraries));
+    runtime.getAdditionalJars().forEach(path -> addLibraryFromFile(new File(path), libraries));
+  }
+
+  static void addClassLoaderJars(ClassLoader classLoader, Map<String, Library> libraries, Set<ClassLoader> visited) {
+    if (classLoader == null) {
+      return;
+    }
+    if (!visited.add(classLoader)) {
+      return;
+    }
+    if (classLoader instanceof java.net.URLClassLoader ucl) {
+      Arrays.stream(ucl.getURLs()).forEach(url -> {
+        try {
+          File f = new File(url.toURI());
+          addLibraryFromFile(f, libraries);
+        } catch (URISyntaxException e) {
+          LOG.debug("Failed to convert url {} to file", url, e);
+        }
+      });
+    }
+    addClassLoaderJars(classLoader.getParent(), libraries, visited);
+  }
+
+  private static void addLibraryFromCoordinate(String coordinate, Map<String, Library> libraries) {
+    Library lib = libraryFromCoordinate(coordinate);
+    if (lib == null) {
+      return;
+    }
+    String key = lib.getFullName() + ":" + lib.getVersion();
+    libraries.putIfAbsent(key, lib);
+  }
+
+  private static void addLibraryFromFile(File file, Map<String, Library> libraries) {
+    if (file == null || !file.exists()) {
+      return;
+    }
+    Library lib = parseLibraryFromPath(file.getAbsolutePath());
+    if (lib != null) {
+      String key = lib.getFullName() + ":" + lib.getVersion();
+      libraries.putIfAbsent(key, lib);
+    }
+  }
+
+  /**
+   * Parse a Maven/Gradle style coordinate {@code group:artifact[:version]} into a Library.
+   *
+   * @param coordinate the coordinate string
+   * @return a Library or null if the coordinate is malformed
+   */
+  public static Library libraryFromCoordinate(String coordinate) {
+    if (coordinate == null || coordinate.isBlank()) {
+      return null;
+    }
+    String[] parts = coordinate.split(":");
+    if (parts.length < 2) {
+      LOG.debug("Ignoring malformed coordinate {}", coordinate);
+      return null;
+    }
+    String group = parts[0];
+    String artifact = parts[1];
+    String version = parts.length > 2 ? parts[2] : "";
+    return new Library(artifact, group, artifact, version);
+  }
+
+  /**
+   * Parse a library from a Gradle/Maven/grapes style file path.
+   * Supported formats:
+   * <ul>
+   *   <li>Gradle cache paths (modules-2/files-2.1/group/artifact/version/...)</li>
+   *   <li>Maven repository paths (~/.m2/repository/group/path/artifact/version/...)</li>
+   *   <li>Grapes cache paths (~/.groovy/grapes/group/artifact/jars/artifact-version.jar)</li>
+   *   <li>Fallback: artifact-version.jar</li>
+   * </ul>
+   *
+   * @param path the file path to parse
+   * @return a Library or null if it cannot be parsed
+   */
+  public static Library parseLibraryFromPath(String path) {
+    String normalized = path.replace("\\", "/");
+    String group = "";
+    String artifact;
+    String version = "";
+    if (normalized.contains("/caches/modules-2/files-2.1/")) {
+      int idx = normalized.indexOf("/caches/modules-2/files-2.1/") + "/caches/modules-2/files-2.1/".length();
+      String sub = normalized.substring(idx);
+      String[] parts = sub.split("/");
+      if (parts.length >= 3) {
+        group = parts[0];
+        artifact = parts[1];
+        version = parts[2];
+        return new Library(artifact, group, artifact, version);
+      }
+    }
+    if (normalized.contains("/repository/")) {
+      int idx = normalized.indexOf("/repository/") + "/repository/".length();
+      String sub = normalized.substring(idx);
+      String[] parts = sub.split("/");
+      if (parts.length >= 3) {
+        group = String.join(".", Arrays.asList(parts).subList(0, parts.length - 3));
+        artifact = parts[parts.length - 3];
+        version = parts[parts.length - 2];
+        return new Library(artifact, group, artifact, version);
+      }
+    }
+    if (normalized.contains("/grapes/")) {
+      String sub = normalized.substring(normalized.indexOf("/grapes/") + 8);
+      String[] parts = sub.split("/");
+      if (parts.length >= 4) {
+        group = parts[0];
+        artifact = parts[1];
+        version = parts[3].replace(".jar", "");
+        if (version.startsWith(artifact + "-")) {
+          version = version.substring(artifact.length() + 1);
+        }
+        return new Library(artifact, group, artifact, version);
+      }
+    }
+    // fallback to filename parsing: artifact-version.jar
+    String fileName = new File(path).getName();
+    if (fileName.endsWith(".jar")) {
+      fileName = fileName.substring(0, fileName.length() - 4);
+    }
+    int versionIdx = fileName.lastIndexOf("-");
+    if (versionIdx > 0) {
+      artifact = fileName.substring(0, versionIdx);
+      version = fileName.substring(versionIdx + 1);
+    } else {
+      artifact = fileName;
+    }
+    return new Library(artifact, group, artifact, version);
   }
 }
