@@ -21,7 +21,7 @@ public class LibraryUtilsTest {
   }
 
   @Test
-  public void libraryFromCoordinateParses() {
+  public void testLibraryFromCoordinateParses() {
     Library lib = LibraryUtils.libraryFromCoordinate("org.example:demo:1.2.3");
     assertEquals("org.example", lib.getGroup());
     assertEquals("demo", lib.getPackageName());
