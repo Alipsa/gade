@@ -29,7 +29,7 @@ public class LibraryUtilsTest {
   }
 
   @Test
-  public void parseGradleCachePath() {
+  public void testParseGradleCachePath() {
     String path = "/home/user/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar";
     Library lib = LibraryUtils.parseLibraryFromPath(path);
     assertEquals("org.apache.commons", lib.getGroup());
