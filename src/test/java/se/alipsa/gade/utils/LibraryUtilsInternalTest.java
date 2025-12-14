@@ -20,7 +20,7 @@ class LibraryUtilsInternalTest {
   void addClassLoaderJarsParsesJar() throws Exception {
     File jar = new File(System.getProperty("java.io.tmpdir"), "demo-1.0.jar");
     jar.delete();
-    jar.createNewFile();
+    assertTrue(jar.createNewFile(), "Failed to create new file: " + jar.getAbsolutePath());
     jar.deleteOnExit();
     URLClassLoader cl = new URLClassLoader(new java.net.URL[]{jar.toURI().toURL()});
     Map<String, Library> libs = new HashMap<>();
