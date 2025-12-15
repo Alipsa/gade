@@ -37,8 +37,13 @@ public class RuntimeManager {
   }
 
   public List<RuntimeConfig> getAllRuntimes() {
-    List<RuntimeConfig> runtimes = new ArrayList<>(getBuiltInRuntimes());
-    runtimes.addAll(customRuntimes);
+    List<RuntimeConfig> runtimes = new ArrayList<>(customRuntimes);
+    for (RuntimeConfig builtIn : getBuiltInRuntimes()) {
+      boolean exists = runtimes.stream().anyMatch(r -> r.getName().equalsIgnoreCase(builtIn.getName()));
+      if (!exists) {
+        runtimes.add(builtIn);
+      }
+    }
     return runtimes;
   }
 

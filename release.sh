@@ -2,7 +2,7 @@
 source ~/.sdkman/bin/sdkman-init.sh
 source jdk21
 
-gradle clean build runtimeZip
+./gradlew clean build runtimeZip -g ./.gradle-user
 
 echo "Release files are:"
 echo "******************"

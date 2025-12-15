@@ -1,14 +1,12 @@
 package se.alipsa.gade.runtime;
 
 import static se.alipsa.gade.menu.GlobalOptions.ADD_BUILDDIR_TO_CLASSPATH;
-import static se.alipsa.gade.menu.GlobalOptions.GRADLE_HOME;
 import static se.alipsa.gade.menu.GlobalOptions.USE_GRADLE_CLASSLOADER;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
 import groovy.transform.ThreadInterrupt;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -71,12 +69,13 @@ public class RuntimeClassLoaderFactory {
       addBuildDirs(loader, wd);
     }
     if (useGradleClassLoader && wd != null) {
-      File gradleHome = new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome()));
       File gradleFile = new File(wd, "build.gradle");
-      if (gradleFile.exists() && gradleHome.exists()) {
+      if (gradleFile.exists()) {
         log.debug("Parsing build.gradle to use gradle classloader");
         console.appendFx("* Parsing build.gradle to create Gradle classloader...", true);
-        var gradleUtils = new GradleUtils(gui);
+        var selectedRuntime = gui.getRuntimeManager().getSelectedRuntime(wd);
+        String javaHome = selectedRuntime == null ? null : selectedRuntime.getJavaHome();
+        var gradleUtils = new GradleUtils(null, wd, javaHome);
         gradleUtils.addGradleDependencies(loader, console);
       } else {
         log.info("Use gradle class loader is set but gradle build file {} does not exist", gradleFile);
@@ -85,8 +84,7 @@ public class RuntimeClassLoaderFactory {
     return loader;
   }
 
-  private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, ConsoleTextArea console)
-      throws FileNotFoundException {
+  private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, ConsoleTextArea console) {
     File projectDir = gui.getProjectDir();
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
     addDefaultGroovyRuntime(loader);
@@ -94,8 +92,9 @@ public class RuntimeClassLoaderFactory {
       return loader;
     }
     var gradleUtils = new GradleUtils(
-        new File(gui.getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome())),
-        projectDir
+        null,
+        projectDir,
+        gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome()
     );
     gradleUtils.addGradleDependencies(loader, console);
     return loader;

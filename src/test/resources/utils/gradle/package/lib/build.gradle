@@ -25,6 +25,7 @@ dependencies {
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
 
     // Use the awesome Spock testing and specification framework even with Java
     testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'

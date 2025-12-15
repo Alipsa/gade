@@ -6,7 +6,6 @@ import java.util.HashMap;
 public class GlobalOptions extends HashMap<String, Object> {
 
   public static final String CONSOLE_MAX_LENGTH_PREF = "ConsoleTextArea.MaxLength";
-  public static final String GRADLE_HOME = "GlobalOptions.GradleHome";
   public static final String USE_GRADLE_CLASSLOADER = "GlobalOptions.UseGradleClassloader";
   public static final String ADD_BUILDDIR_TO_CLASSPATH = "GlobalOptions.AddBuildDirToClasspath";
 

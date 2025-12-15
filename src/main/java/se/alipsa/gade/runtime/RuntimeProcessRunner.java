@@ -356,11 +356,17 @@ public class RuntimeProcessRunner implements Closeable {
   }
 
   private String resolveJavaExecutable() {
-    if (runtime.getJavaHome() != null && !runtime.getJavaHome().isBlank()) {
-      File java = new File(runtime.getJavaHome(), "bin/java");
+    String javaHome = runtime.getJavaHome();
+    if (javaHome == null || javaHome.isBlank()) {
+      javaHome = System.getProperty("java.home");
+    }
+    if (javaHome != null && !javaHome.isBlank()) {
+      File java = new File(javaHome, "bin/java");
       if (java.exists()) {
         return java.getAbsolutePath();
       }
+      console.appendWarningFx("JAVA_HOME '" + javaHome + "' is not usable, falling back to current JVM");
+      log.warn("JAVA_HOME '{}' does not contain bin/java, falling back to default", javaHome);
     }
     return "java";
   }

@@ -166,34 +166,46 @@ public class ConsoleComponent extends BorderPane {
 
   @Nullable
   private Void resetClassloaderAndGroovy(RuntimeConfig runtime) throws Exception {
-    try {
+    RuntimeConfig targetRuntime = runtime;
+    boolean retriedWithGade = false;
+    while (true) {
+      try {
 
-      if (gui.getInoutComponent() == null) {
-        log.warn("InoutComponent is null, timing is off");
-        throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
-      }
+        if (gui.getInoutComponent() == null) {
+          log.warn("InoutComponent is null, timing is off");
+          throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
+        }
 
-      if (processRunner != null) {
-        processRunner.stop();
-        processRunner = null;
-      }
-      classLoader = runtimeClassLoaderFactory.create(runtime, console);
-      activeRuntime = runtime;
-      if (RuntimeType.GADE.equals(runtime.getType())) {
-        engine = new GroovyEngineReflection(classLoader);
-        addObjectsToBindings(gui.guiInteractions);
-        processRunner = null;
-      } else {
+        if (processRunner != null) {
+          processRunner.stop();
+        }
         engine = null;
-        processRunner = new RuntimeProcessRunner(runtime, buildClassPathEntries(), console);
+        processRunner = null;
+        classLoader = runtimeClassLoaderFactory.create(targetRuntime, console);
+        if (RuntimeType.GADE.equals(targetRuntime.getType())) {
+          engine = new GroovyEngineReflection(classLoader);
+          addObjectsToBindings(gui.guiInteractions);
+        } else {
+          processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console);
+        }
+        activeRuntime = targetRuntime;
+        cachedGroovyVersion = null; // clear cached value since the runtime just changed
+        return null;
+      } catch (Exception ex) {
+        if (!RuntimeType.GADE.equals(targetRuntime.getType()) && !retriedWithGade) {
+          retriedWithGade = true;
+          log.warn("Failed to initialize runtime {}, falling back to Gade runtime: {}", targetRuntime.getName(), ex.toString());
+          console.appendWarningFx("Runtime '" + targetRuntime.getName()
+              + "' is not ready, using Gade runtime instead (" + ex.getMessage() + ")");
+          targetRuntime = new RuntimeConfig(RuntimeManager.RUNTIME_GADE, RuntimeType.GADE);
+          gui.getRuntimeManager().setSelectedRuntime(gui.getProjectDir(), targetRuntime);
+          continue;
+        }
+        if (ex instanceof RuntimeException re) {
+          throw new Exception(re);
+        }
+        throw ex;
       }
-      cachedGroovyVersion = null; // clear cached value since the runtime just changed
-      return null;
-    } catch (RuntimeException e) {
-      // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
-      // this way we can get to the original one by extracting the cause from the thrown exception
-      System.out.println("Exception caught, rethrowing as wrapped Exception");
-      throw new Exception(e);
     }
   }
 
@@ -613,8 +625,20 @@ public class ConsoleComponent extends BorderPane {
 
   public Map<String, Object> getContextObjects() {
     log.info("getContextObjects");
+    if (activeRuntime == null) {
+      log.warn("No active runtime when fetching context objects");
+      return Collections.emptyMap();
+    }
     if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      if (engine == null) {
+        log.warn("Groovy engine not initialized when fetching context objects for {}", activeRuntime.getName());
+        return Collections.emptyMap();
+      }
       return engine.getContextObjects();
+    }
+    if (processRunner == null) {
+      log.warn("Process runner is not available when fetching bindings for {}", activeRuntime.getName());
+      return Collections.emptyMap();
     }
     try {
       Map<String, String> bindings = processRunner.fetchBindings().get();
@@ -986,6 +1010,10 @@ public class ConsoleComponent extends BorderPane {
 
   public ConsoleTextArea getConsole() {
     return console;
+  }
+
+  public RuntimeConfig getActiveRuntimeConfig() {
+    return activeRuntime;
   }
 
   public void startTaskWhenOthersAreFinished(CountDownTask<?> task, String context) {

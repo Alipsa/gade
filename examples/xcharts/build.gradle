@@ -42,6 +42,7 @@ dependencies {
   implementation 'org.slf4j:slf4j-api:2.0.17'
   implementation 'org.slf4j:slf4j-simple:2.0.17'
   implementation 'org.openjfx:javafx-controls:21.0.1'
+  implementation "se.alipsa.gi:gi-swing:0.1.0"
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }

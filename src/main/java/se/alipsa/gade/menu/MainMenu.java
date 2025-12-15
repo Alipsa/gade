@@ -695,12 +695,6 @@ public class MainMenu extends MenuBar {
     gui.setWaitCursor();
     GlobalOptions result = res.get();
 
-    String gradleHome = result.getString(GRADLE_HOME);
-    if (gradleHome != null && !gradleHome.isBlank()) {
-      System.setProperty("GRADLE_HOME", gradleHome);
-      gui.getPrefs().put(GRADLE_HOME, gradleHome);
-    }
-
     int consoleMaxLength = result.getInt(CONSOLE_MAX_LENGTH_PREF);
     if (gui.getConsoleComponent().getConsoleMaxSize() != consoleMaxLength) {
       gui.getPrefs().putInt(CONSOLE_MAX_LENGTH_PREF, consoleMaxLength);

@@ -30,7 +30,6 @@ import se.alipsa.gi.*;
 import se.alipsa.gade.runtime.RuntimeConfig;
 import se.alipsa.gade.runtime.RuntimeManager;
 import se.alipsa.gade.runtime.RuntimePreferences;
-import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.environment.EnvironmentComponent;
@@ -96,11 +95,6 @@ public class Gade extends Application {
     Locale.setDefault(Locale.forLanguageTag(getPrefs().get(DEFAULT_LOCALE, Locale.getDefault().toLanguageTag())));
     TimeZone.setDefault(TimeZone.getTimeZone(getPrefs().get(TIMEZONE, TimeZone.getDefault().getID())));
 
-    // Allow global option for GRADLE_HOME to override system settings.
-    String gradleHome = getPrefs().get(GRADLE_HOME, GradleUtils.locateGradleHome());
-    if (gradleHome != null && !gradleHome.isBlank()) {
-      System.setProperty("GRADLE_HOME", gradleHome);
-    }
     BorderPane root = new BorderPane();
     VBox main = new VBox();
     main.setAlignment(Pos.CENTER);
