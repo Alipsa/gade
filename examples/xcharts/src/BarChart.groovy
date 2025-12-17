@@ -38,7 +38,7 @@ int i = 0
 for (String serie in chart.valueSeriesNames) {
   categoryChart.addSeries(serie, xVals, toBigDecimals(chart.getValueSeries()[i++]))
 }
-io.display(categoryChart, "Direct display of XChart")
+//io.display(categoryChart, "Direct display of XChart")
 
 swingChart = SwingPlot.swing(chart)
 io.display(swingChart, "Matrix chart to XChart")

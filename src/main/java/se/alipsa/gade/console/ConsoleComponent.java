@@ -181,6 +181,9 @@ public class ConsoleComponent extends BorderPane {
         }
         engine = null;
         processRunner = null;
+        if (RuntimeType.GRADLE.equals(targetRuntime.getType())) {
+          console.appendFx("* Initializing Gradle runtime (first time can take a while)...", true);
+        }
         classLoader = runtimeClassLoaderFactory.create(targetRuntime, console);
         if (RuntimeType.GADE.equals(targetRuntime.getType())) {
           engine = new GroovyEngineReflection(classLoader);

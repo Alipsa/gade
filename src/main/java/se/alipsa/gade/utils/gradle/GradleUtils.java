@@ -27,13 +27,18 @@ import se.alipsa.groovy.resolver.MavenRepoLookup;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -41,21 +46,33 @@ import java.util.Map;
 import se.alipsa.groovy.resolver.ResolvingException;
 import java.util.Objects;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 public class GradleUtils {
 
   private static final Logger log = LogManager.getLogger(GradleUtils.class);
+  private static final String GADE_GRADLE_USER_HOME_ENV = "GADE_GRADLE_USER_HOME";
+  private static final String GADE_GRADLE_USER_HOME_PROP = "gade.gradle.userHome";
+  private static final String CACHE_SCHEMA = "schema";
+  private static final String CACHE_SCHEMA_VERSION = "1";
+  private static final String CACHE_FINGERPRINT = "fingerprint";
+  private static final String CACHE_DEP_PREFIX = "dep.";
+  private static final String CACHE_OUT_PREFIX = "out.";
+  private static final String CACHE_CREATED_AT = "createdAtEpochMs";
 
   private GradleConnector connector;
   private final File projectDir;
   private final File gradleInstallationDir;
-  private final File gradleUserHome;
-  private final boolean useCustomGradleUserHome;
+  private final File projectLocalGradleUserHome;
+  private File gradleUserHomeDir;
+  private boolean useCustomGradleUserHome;
   private final String javaHomeOverride;
   private final boolean wrapperAvailable;
   private final List<DistributionMode> distributionOrder = new ArrayList<>();
   private int currentDistributionIndex = 0;
+  private volatile ClasspathModel cachedClasspath;
+  private volatile String cachedClasspathFingerprint;
 
   public GradleUtils(Gade gui) {
     this(null, gui.getInoutComponent().projectDir(), null);
@@ -65,29 +82,59 @@ public class GradleUtils {
     this.gradleInstallationDir = gradleInstallationDir;
     this.projectDir = Objects.requireNonNull(projectDir, "Project dir must be provided");
     this.javaHomeOverride = javaHomeOverride;
-    gradleUserHome = new File(projectDir, ".gradle-gade-tooling");
-    useCustomGradleUserHome = gradleUserHome.exists() || gradleUserHome.mkdirs();
-    if (!useCustomGradleUserHome) {
-      log.warn("Failed to create Gradle user home {}, falling back to default ~/.gradle", gradleUserHome);
-    }
-    log.debug("Gradle user home set to {} (custom={})", gradleUserHome.getAbsolutePath(), useCustomGradleUserHome);
+    projectLocalGradleUserHome = new File(projectDir, ".gradle-gade-tooling");
+    gradleUserHomeDir = resolveGradleUserHomeDir(projectDir, projectLocalGradleUserHome);
+    useCustomGradleUserHome = gradleUserHomeDir != null;
+    log.debug("Gradle user home set to {} (custom={})", useCustomGradleUserHome ? gradleUserHomeDir.getAbsolutePath() : "~/.gradle", useCustomGradleUserHome);
     connector = GradleConnector.newConnector();
     connector.forProjectDirectory(projectDir);
-    connector.useGradleUserHomeDir(useCustomGradleUserHome ? gradleUserHome : null);
+    if (useCustomGradleUserHome) {
+      connector.useGradleUserHomeDir(gradleUserHomeDir);
+    }
     wrapperAvailable = new File(projectDir, "gradle/wrapper/gradle-wrapper.properties").exists();
     configureDistribution();
   }
 
+  private static File resolveGradleUserHomeDir(File projectDir, File projectLocalGradleUserHome) {
+    String configured = System.getProperty(GADE_GRADLE_USER_HOME_PROP);
+    if (configured == null || configured.isBlank()) {
+      configured = System.getenv(GADE_GRADLE_USER_HOME_ENV);
+    }
+    if (configured == null || configured.isBlank() || "default".equalsIgnoreCase(configured)) {
+      return null;
+    }
+    final File userHomeDir;
+    if ("project".equalsIgnoreCase(configured) || "project-local".equalsIgnoreCase(configured)) {
+      userHomeDir = projectLocalGradleUserHome;
+    } else {
+      File configuredDir = new File(configured);
+      userHomeDir = configuredDir.isAbsolute() ? configuredDir : new File(projectDir, configured);
+    }
+    if (userHomeDir.exists()) {
+      return userHomeDir;
+    }
+    if (userHomeDir.mkdirs()) {
+      return userHomeDir;
+    }
+    log.warn("Failed to create Gradle user home {} ({}={}, {}={}), falling back to default ~/.gradle",
+        userHomeDir,
+        GADE_GRADLE_USER_HOME_PROP, System.getProperty(GADE_GRADLE_USER_HOME_PROP),
+        GADE_GRADLE_USER_HOME_ENV, System.getenv(GADE_GRADLE_USER_HOME_ENV));
+    return null;
+  }
+
+  private record ClasspathModel(List<File> dependencies, List<File> outputDirs, boolean fromCache) {}
+
   private void configureDistribution() {
     distributionOrder.clear();
-    // Prefer provided installation if explicitly given, then embedded/tooling API, then wrapper.
+    // Prefer provided installation if explicitly given, then wrapper, then embedded/tooling API.
     if (gradleInstallationDir != null && gradleInstallationDir.exists()) {
       distributionOrder.add(DistributionMode.INSTALLATION);
     }
-    distributionOrder.add(DistributionMode.EMBEDDED);
     if (wrapperAvailable) {
       distributionOrder.add(DistributionMode.WRAPPER);
     }
+    distributionOrder.add(DistributionMode.EMBEDDED);
     currentDistributionIndex = 0;
     applyCurrentDistribution();
   }
@@ -97,14 +144,18 @@ public class GradleUtils {
   }
 
   private <T> T withConnection(Function<ProjectConnection, T> action) {
-    boolean retried = false;
     GradleConnectionException last = null;
     boolean cachePurged = false;
+    boolean triedDefaultUserHome = false;
     while (true) {
       try (ProjectConnection connection = connect()) {
         return action.apply(connection);
       } catch (GradleConnectionException e) {
         last = e;
+        if (!triedDefaultUserHome && trySwitchToDefaultUserHome(e)) {
+          triedDefaultUserHome = true;
+          continue;
+        }
         if (!cachePurged && shouldPurgeDistributionCache(e)) {
           purgeGradleUserHomeCache();
           cachePurged = true;
@@ -115,7 +166,6 @@ public class GradleUtils {
           currentDistributionIndex++;
           log.warn("Gradle connection failed, retrying with fallback distribution {}", distributionOrder.get(currentDistributionIndex), e);
           applyCurrentDistribution();
-          retried = true;
           continue;
         }
         throw last;
@@ -123,15 +173,57 @@ public class GradleUtils {
     }
   }
 
+  private boolean trySwitchToDefaultUserHome(Throwable throwable) {
+    if (!useCustomGradleUserHome || gradleUserHomeDir == null) {
+      return false;
+    }
+    // Never fall back away from an explicit user-provided Gradle user home path.
+    if (!isProjectLocalGradleUserHome()) {
+      return false;
+    }
+    // When the project-local Gradle user home lacks a complete distribution, retrying with the default
+    // ~/.gradle is often enough (it may already contain the needed distributions, even in offline setups).
+    if (!(shouldPurgeDistributionCache(throwable) || isDistributionInstallFailure(throwable))) {
+      return false;
+    }
+    log.warn("Gradle connection failed using project-local Gradle user home {}, retrying with default ~/.gradle", gradleUserHomeDir, throwable);
+    useCustomGradleUserHome = false;
+    gradleUserHomeDir = null;
+    applyCurrentDistribution();
+    return true;
+  }
+
+  private boolean isProjectLocalGradleUserHome() {
+    return projectLocalGradleUserHome.getAbsolutePath().equals(gradleUserHomeDir.getAbsolutePath());
+  }
+
+  private boolean isDistributionInstallFailure(Throwable throwable) {
+    Throwable t = throwable;
+    while (t != null) {
+      String msg = t.getMessage();
+      if (msg != null && msg.contains("Could not install Gradle distribution")) {
+        return true;
+      }
+      t = t.getCause();
+    }
+    return false;
+  }
+
   private void applyCurrentDistribution() {
-    if (useCustomGradleUserHome && !gradleUserHome.exists() && !gradleUserHome.mkdirs()) {
-      log.warn("Failed to recreate Gradle user home {}", gradleUserHome);
+    if (useCustomGradleUserHome && gradleUserHomeDir != null && !gradleUserHomeDir.exists() && !gradleUserHomeDir.mkdirs()) {
+      log.warn("Failed to recreate Gradle user home {}", gradleUserHomeDir);
     }
     connector = GradleConnector.newConnector();
     connector.forProjectDirectory(projectDir);
-    connector.useGradleUserHomeDir(useCustomGradleUserHome ? gradleUserHome : null);
+    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
+      connector.useGradleUserHomeDir(gradleUserHomeDir);
+    }
     DistributionMode mode = distributionOrder.get(currentDistributionIndex);
-    log.info("Using Gradle user home {}", useCustomGradleUserHome ? gradleUserHome.getAbsolutePath() : "~/.gradle");
+    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
+      log.info("Using Gradle user home {}", gradleUserHomeDir.getAbsolutePath());
+    } else {
+      log.info("Using Gradle user home ~/.gradle");
+    }
     switch (mode) {
       case INSTALLATION -> {
         connector.useInstallation(gradleInstallationDir);
@@ -149,7 +241,7 @@ public class GradleUtils {
     }
   }
 
-  private enum DistributionMode {
+  enum DistributionMode {
     INSTALLATION, WRAPPER, EMBEDDED
   }
 
@@ -269,39 +361,15 @@ public class GradleUtils {
   }
 
   public List<File> getProjectDependencies() {
-    return withConnection(connection -> {
-      List<File> dependencyFiles = new ArrayList<>();
-      IdeaProject project = connection.model(IdeaProject.class)
-          .setJvmArguments(gradleJvmArgs())
-          .setEnvironmentVariables(gradleEnv())
-          .get();
-      for (IdeaModule module : project.getModules()) {
-        for (IdeaDependency dependency : module.getDependencies()) {
-          IdeaSingleEntryLibraryDependency ideaDependency = (IdeaSingleEntryLibraryDependency) dependency;
-          File file = ideaDependency.getFile();
-          dependencyFiles.add(file);
-        }
-      }
-      return dependencyFiles;
-    });
+    return resolveClasspathModel().dependencies();
   }
 
   public List<URL> getOutputDirs() throws MalformedURLException {
-    return withConnection(connection -> {
-      List<URL> urls = new ArrayList<>();
-      IdeaProject project = connection.model(IdeaProject.class)
-          .setJvmArguments(gradleJvmArgs())
-          .setEnvironmentVariables(gradleEnv())
-          .get();
-      for (IdeaModule module : project.getModules()) {
-        try {
-          urls.add(getOutputDir(module).toURI().toURL());
-        } catch (MalformedURLException e) {
-          throw new RuntimeException(e);
-        }
-      }
-      return urls;
-    });
+    List<URL> urls = new ArrayList<>();
+    for (File out : resolveClasspathModel().outputDirs()) {
+      urls.add(out.toURI().toURL());
+    }
+    return urls;
   }
 
   public File getOutputDir(IdeaModule module) {
@@ -315,7 +383,12 @@ public class GradleUtils {
   }
 
   public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console) {
-    for (File f : getProjectDependencies()) {
+    long start = System.currentTimeMillis();
+    ClasspathModel model = resolveClasspathModel();
+    if (model.fromCache()) {
+      console.appendFx("  Using cached Gradle classpath", true);
+    }
+    for (File f : model.dependencies()) {
       try {
         if (f.exists()) {
           classLoader.addURL(f.toURI().toURL());
@@ -328,27 +401,27 @@ public class GradleUtils {
         console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
       }
     }
-    withConnection(connection -> {
-      IdeaProject project = connection.model(IdeaProject.class)
-          .setJvmArguments(gradleJvmArgs())
-          .setEnvironmentVariables(gradleEnv())
-          .get();
-      for (IdeaModule module : project.getModules()) {
-        var outputDir = getOutputDir(module);
-        try {
-          classLoader.addURL(outputDir.toURI().toURL());
-        } catch (MalformedURLException e) {
-          log.warn("Error adding gradle output dir {} to classpath", outputDir);
-          console.appendWarningFx("Error adding gradle output dir {} " + outputDir + " to classpath");
-        }
+    for (File outputDir : model.outputDirs()) {
+      try {
+        classLoader.addURL(outputDir.toURI().toURL());
+      } catch (MalformedURLException e) {
+        log.warn("Error adding gradle output dir {} to classpath", outputDir);
+        console.appendWarningFx("Error adding gradle output dir {} " + outputDir + " to classpath");
       }
-      return null;
-    });
+    }
+    long ms = System.currentTimeMillis() - start;
+    if (!model.fromCache() && ms > 2_000) {
+      console.appendFx("  Gradle classpath resolved in " + (ms / 1000) + "s", true);
+    }
   }
 
   public ClassLoader createGradleCLassLoader(ClassLoader parent, ConsoleTextArea console) {
     List<URL> urls = new ArrayList<>();
-    for (File f : getProjectDependencies()) {
+    ClasspathModel model = resolveClasspathModel();
+    if (model.fromCache()) {
+      console.appendFx("  Using cached Gradle classpath", true);
+    }
+    for (File f : model.dependencies()) {
       try {
         if (f.exists()) {
           urls.add(f.toURI().toURL());
@@ -361,22 +434,223 @@ public class GradleUtils {
         console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
       }
     }
-    withConnection(connection -> {
+    for (File out : model.outputDirs()) {
+      try {
+        urls.add(out.toURI().toURL());
+      } catch (MalformedURLException e) {
+        log.warn("Error adding gradle output dir {} to classpath", out);
+        console.appendWarningFx("Error adding gradle output dir {} " + out + " to classpath");
+      }
+    }
+    return new URLClassLoader(urls.toArray(new URL[0]), parent);
+  }
+
+  private ClasspathModel resolveClasspathModel() {
+    String fingerprint = fingerprintProject();
+    ClasspathModel cached = cachedClasspath;
+    if (cached != null && Objects.equals(fingerprint, cachedClasspathFingerprint)) {
+      return cached;
+    }
+    ClasspathModel fromDisk = loadClasspathCache(fingerprint);
+    if (fromDisk != null) {
+      cachedClasspath = fromDisk;
+      cachedClasspathFingerprint = fingerprint;
+      return fromDisk;
+    }
+    ClasspathModel resolved = resolveClasspathViaToolingApi();
+    cachedClasspath = resolved;
+    cachedClasspathFingerprint = fingerprint;
+    storeClasspathCache(fingerprint, resolved.dependencies(), resolved.outputDirs());
+    return resolved;
+  }
+
+  private ClasspathModel resolveClasspathViaToolingApi() {
+    return withConnection(connection -> {
+      LinkedHashSet<File> dependencyFiles = new LinkedHashSet<>();
+      LinkedHashSet<File> outputDirs = new LinkedHashSet<>();
       IdeaProject project = connection.model(IdeaProject.class)
           .setJvmArguments(gradleJvmArgs())
+          .setEnvironmentVariables(gradleEnv())
           .get();
       for (IdeaModule module : project.getModules()) {
-        var outputDir = getOutputDir(module);
-        try {
-          urls.add(outputDir.toURI().toURL());
-        } catch (MalformedURLException e) {
-          log.warn("Error adding gradle output dir {} to classpath", outputDir);
-          console.appendWarningFx("Error adding gradle output dir {} " + outputDir + " to classpath");
+        for (IdeaDependency dependency : module.getDependencies()) {
+          if (dependency instanceof IdeaSingleEntryLibraryDependency ideaDependency) {
+            dependencyFiles.add(ideaDependency.getFile());
+          }
         }
+        outputDirs.add(getOutputDir(module));
       }
-      return null;
+      return new ClasspathModel(List.copyOf(dependencyFiles), List.copyOf(outputDirs), false);
     });
-    return new URLClassLoader(urls.toArray(new URL[0]), parent);
+  }
+
+  private String fingerprintProject() {
+    String fingerprint;
+    List<Path> tracked = new ArrayList<>();
+    tracked.add(projectDir.toPath().resolve("build.gradle"));
+    tracked.add(projectDir.toPath().resolve("build.gradle.kts"));
+    tracked.add(projectDir.toPath().resolve("settings.gradle"));
+    tracked.add(projectDir.toPath().resolve("settings.gradle.kts"));
+    tracked.add(projectDir.toPath().resolve("gradle.properties"));
+    tracked.add(projectDir.toPath().resolve("gradle").resolve("libs.versions.toml"));
+    tracked.add(projectDir.toPath().resolve("gradle").resolve("wrapper").resolve("gradle-wrapper.properties"));
+
+    long buildSrcLatest = latestModified(projectDir.toPath().resolve("buildSrc"));
+    StringBuilder sb = new StringBuilder();
+    sb.append("project=").append(projectDir.getAbsolutePath()).append('\n');
+    for (Path p : tracked) {
+      sb.append(p).append('|');
+      try {
+        if (Files.exists(p)) {
+          sb.append(Files.size(p)).append('|').append(Files.getLastModifiedTime(p).toMillis());
+        } else {
+          sb.append("missing");
+        }
+      } catch (IOException e) {
+        sb.append("error:").append(e.getClass().getSimpleName());
+      }
+      sb.append('\n');
+    }
+    sb.append("buildSrcLatest=").append(buildSrcLatest).append('\n');
+    fingerprint = sha256Hex(sb.toString());
+    return fingerprint;
+  }
+
+  private static long latestModified(Path dir) {
+    if (dir == null || !Files.exists(dir)) {
+      return 0L;
+    }
+    try (Stream<Path> stream = Files.walk(dir)) {
+      return stream
+          .filter(Files::isRegularFile)
+          .limit(2000)
+          .mapToLong(path -> {
+            try {
+              return Files.getLastModifiedTime(path).toMillis();
+            } catch (IOException e) {
+              return 0L;
+            }
+          })
+          .max()
+          .orElse(0L);
+    } catch (IOException e) {
+      return 0L;
+    }
+  }
+
+  private static String sha256Hex(String str) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] bytes = digest.digest(str.getBytes(StandardCharsets.UTF_8));
+      StringBuilder sb = new StringBuilder(bytes.length * 2);
+      for (byte b : bytes) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 not available", e);
+    }
+  }
+
+  private static File gradleClasspathCacheDir() {
+    File dir = new File(getCacheDir(), "gradle-classpath");
+    if (!dir.exists() && !dir.mkdirs()) {
+      log.warn("Failed to create Gradle classpath cache dir {}", dir);
+    }
+    return dir;
+  }
+
+  File getClasspathCacheFile() {
+    String key = sha256Hex(projectDir.getAbsolutePath());
+    return new File(gradleClasspathCacheDir(), key + ".properties");
+  }
+
+  private ClasspathModel loadClasspathCache(String expectedFingerprint) {
+    File cacheFile = getClasspathCacheFile();
+    if (!cacheFile.exists()) {
+      return null;
+    }
+    Properties props = new Properties();
+    try (InputStream in = new FileInputStream(cacheFile)) {
+      props.load(in);
+    } catch (IOException e) {
+      log.debug("Failed to read Gradle classpath cache {}", cacheFile, e);
+      return null;
+    }
+    if (!CACHE_SCHEMA_VERSION.equals(props.getProperty(CACHE_SCHEMA))) {
+      return null;
+    }
+    if (!Objects.equals(expectedFingerprint, props.getProperty(CACHE_FINGERPRINT))) {
+      return null;
+    }
+    LinkedHashSet<File> deps = new LinkedHashSet<>();
+    LinkedHashSet<File> outs = new LinkedHashSet<>();
+    props.stringPropertyNames().stream()
+        .filter(key -> key.startsWith(CACHE_DEP_PREFIX))
+        .sorted(Comparator.comparingInt(GradleUtils::cacheIndex))
+        .forEach(key -> deps.add(new File(props.getProperty(key))));
+    props.stringPropertyNames().stream()
+        .filter(key -> key.startsWith(CACHE_OUT_PREFIX))
+        .sorted(Comparator.comparingInt(GradleUtils::cacheIndex))
+        .forEach(key -> outs.add(new File(props.getProperty(key))));
+    if (deps.isEmpty() && outs.isEmpty()) {
+      return null;
+    }
+    if (!allExist(deps)) {
+      return null;
+    }
+    return new ClasspathModel(List.copyOf(deps), List.copyOf(outs), true);
+  }
+
+  private static int cacheIndex(String key) {
+    int dot = key.lastIndexOf('.');
+    if (dot < 0 || dot >= key.length() - 1) {
+      return Integer.MAX_VALUE;
+    }
+    try {
+      return Integer.parseInt(key.substring(dot + 1));
+    } catch (NumberFormatException e) {
+      return Integer.MAX_VALUE;
+    }
+  }
+
+  private static boolean allExist(LinkedHashSet<File> files) {
+    for (File f : files) {
+      if (f == null || !f.exists()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void storeClasspathCache(String fingerprint, List<File> dependencies, List<File> outputDirs) {
+    File cacheFile = getClasspathCacheFile();
+    Properties props = new Properties();
+    props.setProperty(CACHE_SCHEMA, CACHE_SCHEMA_VERSION);
+    props.setProperty(CACHE_FINGERPRINT, fingerprint);
+    props.setProperty(CACHE_CREATED_AT, String.valueOf(System.currentTimeMillis()));
+    int index = 0;
+    for (File dep : dependencies) {
+      if (dep != null) {
+        props.setProperty(CACHE_DEP_PREFIX + index++, dep.getAbsolutePath());
+      }
+    }
+    index = 0;
+    for (File out : outputDirs) {
+      if (out != null) {
+        props.setProperty(CACHE_OUT_PREFIX + index++, out.getAbsolutePath());
+      }
+    }
+    File tmp = new File(cacheFile.getParentFile(), cacheFile.getName() + ".tmp");
+    try (OutputStream out = new FileOutputStream(tmp)) {
+      props.store(out, "Gade Gradle classpath cache");
+      Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+    } catch (Exception e) {
+      log.debug("Failed to write Gradle classpath cache {}", cacheFile, e);
+      if (tmp.exists() && !tmp.delete()) {
+        tmp.deleteOnExit();
+      }
+    }
   }
 
   private String[] gradleJvmArgs() {
@@ -384,8 +658,8 @@ public class GradleUtils {
     String javaHome = pickJavaHome();
     args.add("-Dorg.gradle.java.home=" + javaHome);
     args.add("-Dorg.gradle.ignoreInitScripts=true");
-    if (useCustomGradleUserHome) {
-      args.add("-Dgradle.user.home=" + gradleUserHome.getAbsolutePath());
+    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
+      args.add("-Dgradle.user.home=" + gradleUserHomeDir.getAbsolutePath());
     }
     return args.toArray(new String[0]);
   }
@@ -394,8 +668,8 @@ public class GradleUtils {
     Map<String, String> env = new HashMap<>(System.getenv());
     String javaHome = pickJavaHome();
     env.put("JAVA_HOME", javaHome);
-    if (useCustomGradleUserHome) {
-      env.put("GRADLE_USER_HOME", gradleUserHome.getAbsolutePath());
+    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
+      env.put("GRADLE_USER_HOME", gradleUserHomeDir.getAbsolutePath());
     }
     return env;
   }
@@ -493,14 +767,23 @@ public class GradleUtils {
   }
 
   private void purgeGradleUserHomeCache() {
-    if (!useCustomGradleUserHome) {
+    if (!useCustomGradleUserHome || gradleUserHomeDir == null) {
       log.warn("Skipping purge of Gradle user home because a shared/default location is in use");
       return;
     }
-    if (!gradleUserHome.exists()) {
+    if (!isProjectLocalGradleUserHome()) {
+      log.warn("Skipping purge of Gradle user home {} because it is not project-local", gradleUserHomeDir);
       return;
     }
-    Path backup = gradleUserHome.toPath().resolveSibling(gradleUserHome.getName() + "-backup");
+    if (!projectLocalGradleUserHome.exists()) {
+      return;
+    }
+    // Switch to default user home before purging so we have a better chance of succeeding without downloads.
+    useCustomGradleUserHome = false;
+    gradleUserHomeDir = null;
+    applyCurrentDistribution();
+
+    Path backup = projectLocalGradleUserHome.toPath().resolveSibling(projectLocalGradleUserHome.getName() + "-backup");
     try {
       if (Files.exists(backup)) {
         try (Stream<Path> backupWalker = Files.walk(backup)) {
@@ -513,12 +796,12 @@ public class GradleUtils {
           });
         }
       }
-      Files.move(gradleUserHome.toPath(), backup, StandardCopyOption.REPLACE_EXISTING);
-      log.warn("Purged corrupted Gradle user home {}, backup kept at {}", gradleUserHome, backup);
-      Files.createDirectories(gradleUserHome.toPath());
+      Files.move(projectLocalGradleUserHome.toPath(), backup, StandardCopyOption.REPLACE_EXISTING);
+      log.warn("Purged corrupted Gradle user home {}, backup kept at {}", projectLocalGradleUserHome, backup);
+      Files.createDirectories(projectLocalGradleUserHome.toPath());
     } catch (IOException ex) {
-      log.warn("Failed to purge Gradle user home {}, proceeding with deletion attempt", gradleUserHome, ex);
-      try (Stream<Path> walker = Files.walk(gradleUserHome.toPath())) {
+      log.warn("Failed to purge Gradle user home {}, proceeding with deletion attempt", projectLocalGradleUserHome, ex);
+      try (Stream<Path> walker = Files.walk(projectLocalGradleUserHome.toPath())) {
         walker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
           try {
             Files.deleteIfExists(path);
@@ -526,10 +809,25 @@ public class GradleUtils {
             log.warn("Failed to delete {}", path, e);
           }
         });
-        Files.createDirectories(gradleUserHome.toPath());
+        Files.createDirectories(projectLocalGradleUserHome.toPath());
       } catch (IOException walkEx) {
-        log.warn("Failed to delete Gradle user home {}", gradleUserHome, walkEx);
+        log.warn("Failed to delete Gradle user home {}", projectLocalGradleUserHome, walkEx);
       }
     }
+  }
+
+  // package-private for tests
+  File getGradleUserHomeDir() {
+    return gradleUserHomeDir;
+  }
+
+  // package-private for tests
+  List<DistributionMode> getDistributionOrder() {
+    return List.copyOf(distributionOrder);
+  }
+
+  // package-private for tests
+  String getProjectFingerprint() {
+    return fingerprintProject();
   }
 }
