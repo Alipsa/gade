@@ -289,23 +289,25 @@ public class GradleUtils {
     var task = new javafx.concurrent.Task<Void>() {
       @Override
       protected Void call() {
-        try (ProjectConnection connection = connector.connect();
-             OutputStream outputStream = consoleComponent.getOutputStream();
-             WarningAppenderWriter err = new WarningAppenderWriter(console);
-             PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(err).get())) {
-          BuildLauncher build = connection.newBuild()
-              .setJvmArguments(gradleJvmArgs())
-              .setEnvironmentVariables(gradleEnv());
-          //build.addProgressListener(listener);
-          if (tasks.length > 0) {
-            build.forTasks(tasks);
+        withConnection(connection -> {
+          try (OutputStream outputStream = consoleComponent.getOutputStream();
+               WarningAppenderWriter err = new WarningAppenderWriter(console);
+               PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(err).get())) {
+            BuildLauncher build = connection.newBuild()
+                .setJvmArguments(gradleJvmArgs())
+                .setEnvironmentVariables(gradleEnv());
+            //build.addProgressListener(listener);
+            if (tasks.length > 0) {
+              build.forTasks(tasks);
+            }
+            build.setStandardOutput(outputStream);
+            build.setStandardError(errStream);
+            build.run();
+            return null;
+          } catch (IOException e) {
+            throw new UncheckedIOException(e);
           }
-          build.setStandardOutput(outputStream);
-          build.setStandardError(errStream);
-          build.run();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
+        });
         return null;
       }
     };
@@ -322,12 +324,15 @@ public class GradleUtils {
       String message = exc.getMessage() == null ? "" : "\n" + exc.getMessage();
       log.warn("Build failed: {}, {}", clazz, message, exc);
 
-      Throwable t = exc.getCause();
+      Throwable t = exc;
       String previousMsg = null;
-      String msg = "";
-      while ( t != null) {
-        msg = t.getMessage();
+      while (t != null) {
+        String msg = t.getMessage();
         if (previousMsg != null && previousMsg.equals(msg)) {
+          t = t.getCause();
+          continue;
+        }
+        if (msg == null || msg.isBlank()) {
           t = t.getCause();
           continue;
         }
@@ -343,6 +348,10 @@ public class GradleUtils {
         t = t.getCause();
         previousMsg = msg;
       }
+      String hint = gradleFailureHint(exc);
+      if (hint != null) {
+        console.appendWarningFx(hint);
+      }
       console.appendWarningFx("Build failed!");
       Platform.runLater(consoleComponent::promptAndScrollToEnd);
       // ExceptionAlert.showAlert("Build failed: " + clazz + ": " + message, exc);
@@ -351,6 +360,37 @@ public class GradleUtils {
     Thread scriptThread = new Thread(task);
     scriptThread.setDaemon(false);
     scriptThread.start();
+  }
+
+  private String gradleFailureHint(Throwable throwable) {
+    boolean javaMismatch = false;
+    boolean toolingApiFailed = false;
+    Throwable t = throwable;
+    while (t != null) {
+      if (t instanceof UnsupportedClassVersionError) {
+        javaMismatch = true;
+      }
+      String msg = t.getMessage();
+      if (msg != null) {
+        if (msg.contains("requires Java") || msg.contains("Unsupported class file major version")) {
+          javaMismatch = true;
+        }
+        if (msg.contains("Could not create an instance of Tooling API implementation")) {
+          toolingApiFailed = true;
+        }
+      }
+      t = t.getCause();
+    }
+    if (!javaMismatch && !toolingApiFailed) {
+      return null;
+    }
+    String javaHome = pickJavaHome();
+    if (javaMismatch) {
+      return "Hint: The selected Java runtime (" + javaHome + ") is likely too old for this Gradle version. "
+          + "Select a JDK 17+ under Runtimes (or set JAVA_HOME) and retry.";
+    }
+    return "Hint: This can be caused by a corrupted Gradle distribution cache. "
+        + "Try deleting the matching folder under ~/.gradle/wrapper/dists and retry.";
   }
 
   public List<String> getProjectDependencyNames() {

@@ -83,6 +83,22 @@ class RuntimeManagerTest {
   }
 
   @Test
+  void gradleRuntimeCanPersistJavaHomeOverride() throws IOException {
+    Files.createFile(new File(tempDir, "build.gradle").toPath());
+    RuntimeConfig gradle = new RuntimeConfig(RuntimeManager.RUNTIME_GRADLE, RuntimeType.GRADLE, "/jdk", null, List.of(), List.of());
+    runtimeManager.addOrUpdateCustomRuntime(gradle);
+
+    RuntimeConfig defaultRuntime = runtimeManager.defaultRuntime(tempDir);
+    assertEquals(RuntimeType.GRADLE, defaultRuntime.getType());
+    assertEquals("/jdk", defaultRuntime.getJavaHome());
+
+    RuntimeManager reloaded = new RuntimeManager(runtimePreferences);
+    RuntimeConfig reloadedDefault = reloaded.defaultRuntime(tempDir);
+    assertEquals(RuntimeType.GRADLE, reloadedDefault.getType());
+    assertEquals("/jdk", reloadedDefault.getJavaHome());
+  }
+
+  @Test
   void addUpdateAndDeleteCustomRuntimes() {
     RuntimeConfig customA = new RuntimeConfig("CustomA", RuntimeType.CUSTOM, null, null, List.of("/tmp/a.jar"), List.of());
     runtimeManager.addOrUpdateCustomRuntime(customA);

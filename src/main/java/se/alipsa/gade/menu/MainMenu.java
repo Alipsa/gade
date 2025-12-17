@@ -111,12 +111,7 @@ public class MainMenu extends MenuBar {
     File projectDir = gui.getProjectDir();
     RuntimeConfig active = gui.getActiveRuntime();
 
-    manager.getBuiltInRuntimes().forEach(runtime -> {
-      boolean available = manager.isAvailable(runtime, projectDir);
-      runtimesMenu.getItems().add(createRuntimeMenuItem(runtime, active, available));
-    });
-
-    for (RuntimeConfig runtime : manager.getCustomRuntimes()) {
+    for (RuntimeConfig runtime : manager.getAllRuntimes()) {
       boolean available = manager.isAvailable(runtime, projectDir);
       runtimesMenu.getItems().add(createRuntimeMenuItem(runtime, active, available));
     }

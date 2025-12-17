@@ -72,17 +72,20 @@ public class RuntimeManager {
     // Prefer Gradle if a build.gradle exists, then Maven, otherwise fallback to Gade.
     if (projectDir != null) {
       if (new File(projectDir, "build.gradle").exists()) {
-        return new RuntimeConfig(RUNTIME_GRADLE, RuntimeType.GRADLE);
+        return findRuntime(RUNTIME_GRADLE).orElseGet(() -> new RuntimeConfig(RUNTIME_GRADLE, RuntimeType.GRADLE));
       }
       if (new File(projectDir, "pom.xml").exists()) {
-        return new RuntimeConfig(RUNTIME_MAVEN, RuntimeType.MAVEN);
+        return findRuntime(RUNTIME_MAVEN).orElseGet(() -> new RuntimeConfig(RUNTIME_MAVEN, RuntimeType.MAVEN));
       }
     }
-    return new RuntimeConfig(RUNTIME_GADE, RuntimeType.GADE);
+    return findRuntime(RUNTIME_GADE).orElseGet(() -> new RuntimeConfig(RUNTIME_GADE, RuntimeType.GADE));
   }
 
   public void addOrUpdateCustomRuntime(RuntimeConfig runtime) {
-    if (runtime.getType() != RuntimeType.CUSTOM) {
+    if (runtime == null || runtime.getType() == null) {
+      return;
+    }
+    if (runtime.getType() == RuntimeType.GADE) {
       return;
     }
     customRuntimes = customRuntimes.stream()
