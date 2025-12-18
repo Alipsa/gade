@@ -17,5 +17,5 @@
 #  echo "${latestVersion}"
 #fi
 
-./gradlew dependencyUpdates -Drevision=release
+./gradlew dependencyUpdates -Drevision=release -g ./.gradle-user
 

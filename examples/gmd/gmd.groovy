@@ -1,15 +1,15 @@
-import se.alipsa.groovy.gmd.Gmd
+import se.alipsa.gmd.core.Gmd
 
 text = """\
 # Hello
 
-3 + 7 = **<%= 3+7 %>**
+3 + 7 = **`= 3+7 `**
 
 ```groovy 
 def X = Math.sqrt(2* Math.PI) + Math.cbrt(3)
 ```
 
-X = &sum;(&radic;2&pi; + &#8731;3) = <%=Math.sqrt(2* Math.PI) + Math.cbrt(3)%>
+X = &sum;(&radic;2&pi; + &#8731;3) = `=Math.sqrt(2* Math.PI) + Math.cbrt(3)`>
 
 how about _that_?
 """

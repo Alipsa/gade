@@ -8,11 +8,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.stage.DirectoryChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.code.gradle.GradleTab;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.GuiUtils;
 import se.alipsa.gade.utils.IntField;
@@ -26,8 +24,6 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
   private IntField intField;
   private ComboBox<String> themes;
   private ComboBox<String> locals;
-  private TextField gradleHome;
-  private CheckBox useGradleFileClasspath;
   private CheckBox restartSessionAfterGradleRun;
   private CheckBox addBuildDirToClasspath;
   private CheckBox enableGit;
@@ -91,52 +87,11 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       grid.add(timezone, 3, 2);
       //localePane.getChildren().add(timezone);
 
-      Label gradleHomeLabel = new Label("GRADLE_HOME");
-      gradleHomeLabel.setTooltip(new Tooltip("The location of your gradle installation directory"));
-      //mavenHomeLabel.setPadding(new Insets(0, 27, 0, 0));
-      grid.add(gradleHomeLabel, 0,3);
-
-      HBox gradleHomePane = new HBox();
-      gradleHomePane.setAlignment(Pos.CENTER_LEFT);
-      gradleHome = new TextField();
-      HBox.setHgrow(gradleHome, Priority.ALWAYS);
-      var defaultGradleHome = gui.getPrefs().get(GRADLE_HOME, System.getProperty("GRADLE_HOME", System.getenv("GRADLE_HOME")));
-      gradleHome.setText(defaultGradleHome);
-      gradleHomePane.getChildren().add(gradleHome);
-      Button browseGradleHomeButton = new Button("...");
-      browseGradleHomeButton.setOnAction(a -> {
-        log.info("Browsing for a directory for GRADLE_HOME");
-        DirectoryChooser chooser = new DirectoryChooser();
-        String initial = "null".equals(String.valueOf(defaultGradleHome)) || defaultGradleHome.isBlank() ? "." : defaultGradleHome;
-        File initialDir = new File(initial);
-        if (!initialDir.exists()) {
-          log.info("Initial value for GRADLE_HOME, {}, does not exists", initialDir);
-          initialDir = new File(".");
-        }
-        chooser.setInitialDirectory(initialDir);
-        chooser.setTitle("Select Gradle home dir");
-        File dir = chooser.showDialog(gui.getStage());
-        //File dir = chooser.showDialog(null);
-        if (dir != null) {
-          gradleHome.setText(dir.getAbsolutePath());
-        }
-      });
-      gradleHomePane.getChildren().add(browseGradleHomeButton);
-      grid.add(gradleHomePane, 1,3,3, 1);
-
       FlowPane useCpPane = new FlowPane();
-      grid.add(useCpPane, 0,4, 4, 1);
-
-      Label useGradleFileClasspathLabel = new Label("Use build.gradle classpath");
-      useGradleFileClasspathLabel.setTooltip(new Tooltip("Use classpath from build.gradle (if available) when running Groovy code"));
-      useGradleFileClasspathLabel.setPadding(new Insets(0, 26, 0, 0));
-      useCpPane.getChildren().add(useGradleFileClasspathLabel);
-      useGradleFileClasspath = new CheckBox();
-      useGradleFileClasspath.setSelected(gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
-      useCpPane.getChildren().add(useGradleFileClasspath);
+      grid.add(useCpPane, 0,3, 4, 1);
 
       Label addBuildDirToClasspathLabel = new Label("Add build dir to classpath");
-      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 20));
+      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 0));
       addBuildDirToClasspathLabel.setTooltip(new Tooltip("Add target/classes and target/test-classes to classpath"));
       useCpPane.getChildren().add(addBuildDirToClasspathLabel);
       addBuildDirToClasspath = new CheckBox();
@@ -217,8 +172,6 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     result.put(THEME, themes.getValue());
     result.put(DEFAULT_LOCALE, locals.getValue());
     result.put(TIMEZONE, timezone.getValue());
-    result.put(USE_GRADLE_CLASSLOADER, useGradleFileClasspath.isSelected());
-    result.put(GRADLE_HOME, gradleHome.getText());
     result.put(ADD_BUILDDIR_TO_CLASSPATH, addBuildDirToClasspath.isSelected());
     result.put(RESTART_SESSION_AFTER_GRADLE_RUN, restartSessionAfterGradleRun.isSelected());
     result.put(ENABLE_GIT, enableGit.isSelected());

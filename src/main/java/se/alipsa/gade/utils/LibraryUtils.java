@@ -88,12 +88,10 @@ public class LibraryUtils {
   }
 
   static void addGradleDependencies(Gade gui, Map<String, Library> libraries) {
-    try {
-      GradleUtils gradleUtils = new GradleUtils(gui);
-      gradleUtils.getProjectDependencies().forEach(file -> addLibraryFromFile(file, libraries));
-    } catch (FileNotFoundException e) {
-      LOG.debug("Gradle project not available: {}", e.getMessage());
-    }
+    File projectDir = gui.getInoutComponent().projectDir();
+    String javaHome = gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome();
+    GradleUtils gradleUtils = new GradleUtils(null, projectDir, javaHome);
+    gradleUtils.getProjectDependencies().forEach(file -> addLibraryFromFile(file, libraries));
   }
 
   static void addMavenDependencies(File projectDir, Map<String, Library> libraries) {

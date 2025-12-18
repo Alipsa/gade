@@ -100,8 +100,6 @@ Will also add the target/classes and target/test-classes dirs to the classpath
 ### Restart session after build
 Whether to restart the session after each gradle build (so new classes etc. can be picked up)
 
-### GRADLE_HOME
-The location of your gradle installation used to run gradle. Will override any system property for GRADLE_HOME.
 
 ### Enable git integration
 Whether to use git integration (git commands, syntax highlighting in the file view etc.) or not.

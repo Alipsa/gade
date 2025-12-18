@@ -31,17 +31,22 @@ import se.alipsa.gade.runtime.RuntimeClassLoaderFactory;
 import se.alipsa.gade.runtime.RuntimeConfig;
 import se.alipsa.gade.runtime.RuntimeIsolation;
 import se.alipsa.gade.runtime.RuntimeManager;
+import se.alipsa.gade.runtime.RuntimeProcessRunner;
 import se.alipsa.gade.runtime.RuntimeSelectionDialog;
 import se.alipsa.gade.runtime.RuntimeType;
 import se.alipsa.gade.environment.EnvironmentComponent;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
+import se.alipsa.gade.runner.GadeRunnerMain;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.Optional;
+import java.util.Properties;
 import se.alipsa.gi.GuiInteraction;
 
 public class ConsoleComponent extends BorderPane {
@@ -51,6 +56,7 @@ public class ConsoleComponent extends BorderPane {
   private static final Image IMG_WAITING = new Image(Objects.requireNonNull(FileUtils
       .getResourceUrl("image/waiting.png")).toExternalForm(), ICON_WIDTH, ICON_HEIGHT, true, true);
   private static final String DOUBLE_INDENT = INDENT + INDENT;
+  private static final String GUI_INTERACTION_KEYS = GadeRunnerMain.GUI_INTERACTION_KEYS;
   private static final Logger log = LogManager.getLogger(ConsoleComponent.class);
   private final ImageView runningView;
   private final Button statusButton;
@@ -59,6 +65,8 @@ public class ConsoleComponent extends BorderPane {
   private GroovyClassLoader classLoader;
   private RuntimeConfig activeRuntime;
   private final RuntimeClassLoaderFactory runtimeClassLoaderFactory;
+  private String cachedGroovyVersion;
+  private RuntimeProcessRunner processRunner;
 
   private ScriptThread runningThread;
   private final Map<Thread, String> threadMap = new HashMap<>();
@@ -104,6 +112,7 @@ public class ConsoleComponent extends BorderPane {
     if (runtimeToUse == null) {
       return;
     }
+    running();
     Task<Void> initTask = new Task<>() {
 
       @Override
@@ -115,6 +124,7 @@ public class ConsoleComponent extends BorderPane {
       printVersionInfoToConsole();
       autoRunScripts();
       updateEnvironment();
+      waiting();
     });
     initTask.setOnFailed(e -> {
       Throwable throwable = initTask.getException();
@@ -125,6 +135,7 @@ public class ConsoleComponent extends BorderPane {
       String msg = createMessageFromEvalException(ex);
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
       promptAndScrollToEnd();
+      waiting();
     });
     Thread thread = new Thread(initTask);
     thread.setDaemon(false);
@@ -150,7 +161,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   private void printVersionInfoToConsole() {
-    String greeting = "* Groovy " + GroovySystem.getVersion() + " *";
+    String greeting = "* Groovy " + getActiveGroovyVersion() + " *";
     String surround = getStars(greeting.length());
     console.appendFx(surround, true);
     console.appendFx(greeting, true);
@@ -159,25 +170,49 @@ public class ConsoleComponent extends BorderPane {
 
   @Nullable
   private Void resetClassloaderAndGroovy(RuntimeConfig runtime) throws Exception {
-    try {
+    RuntimeConfig targetRuntime = runtime;
+    boolean retriedWithGade = false;
+    while (true) {
+      try {
 
-      if (gui.getInoutComponent() == null) {
-        log.warn("InoutComponent is null, timing is off");
-        throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
-      }
+        if (gui.getInoutComponent() == null) {
+          log.warn("InoutComponent is null, timing is off");
+          throw new RuntimeException("resetClassloaderAndGroovy called too soon, InoutComponent is null, timing is off");
+        }
 
-      classLoader = runtimeClassLoaderFactory.create(runtime, console);
-      activeRuntime = runtime;
-      engine = new GroovyEngineReflection(classLoader);
-      if (RuntimeType.GADE.equals(runtime.getType())) {
-        addObjectsToBindings(gui.guiInteractions);
+        if (processRunner != null) {
+          processRunner.stop();
+        }
+        engine = null;
+        processRunner = null;
+        if (RuntimeType.GRADLE.equals(targetRuntime.getType())) {
+          console.appendFx("* Initializing Gradle runtime (first time can take a while)...", true);
+        }
+        classLoader = runtimeClassLoaderFactory.create(targetRuntime, console);
+        if (RuntimeType.GADE.equals(targetRuntime.getType())) {
+          engine = new GroovyEngineReflection(classLoader);
+          addObjectsToBindings(gui.guiInteractions);
+        } else {
+          processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console);
+        }
+        activeRuntime = targetRuntime;
+        cachedGroovyVersion = null; // clear cached value since the runtime just changed
+        return null;
+      } catch (Exception ex) {
+        if (!RuntimeType.GADE.equals(targetRuntime.getType()) && !retriedWithGade) {
+          retriedWithGade = true;
+          log.warn("Failed to initialize runtime {}, falling back to Gade runtime: {}", targetRuntime.getName(), ex.toString());
+          console.appendWarningFx("Runtime '" + targetRuntime.getName()
+              + "' is not ready, using Gade runtime instead (" + ex.getMessage() + ")");
+          targetRuntime = new RuntimeConfig(RuntimeManager.RUNTIME_GADE, RuntimeType.GADE);
+          gui.getRuntimeManager().setSelectedRuntime(gui.getProjectDir(), targetRuntime);
+          continue;
+        }
+        if (ex instanceof RuntimeException re) {
+          throw new Exception(re);
+        }
+        throw ex;
       }
-      return null;
-    } catch (RuntimeException e) {
-      // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
-      // this way we can get to the original one by extracting the cause from the thrown exception
-      System.out.println("Exception caught, rethrowing as wrapped Exception");
-      throw new Exception(e);
     }
   }
 
@@ -228,12 +263,112 @@ public class ConsoleComponent extends BorderPane {
     gui.getEnvironmentComponent().clearEnvironment();
   }
 
+  public String getActiveGroovyVersion() {
+    if (cachedGroovyVersion != null) {
+      return cachedGroovyVersion;
+    }
+    if (classLoader == null) {
+      cachedGroovyVersion = GroovySystem.getVersion();
+      return cachedGroovyVersion;
+    }
+    // Try to resolve GroovySystem from the active runtime classloader to reflect the selected runtime version.
+    try {
+      Class<?> gs = classLoader.loadClass("groovy.lang.GroovySystem");
+      Object version = gs.getMethod("getVersion").invoke(null);
+      cachedGroovyVersion = String.valueOf(version);
+      return cachedGroovyVersion;
+    } catch (Exception e) {
+      log.warn("Failed to resolve Groovy version from runtime classloader, falling back to host GroovySystem", e);
+      cachedGroovyVersion = GroovySystem.getVersion();
+      return cachedGroovyVersion;
+    }
+  }
+
+  private List<String> buildClassPathEntries() {
+    Set<String> entries = new LinkedHashSet<>();
+    // Primary source: runtime classloader URLs
+    if (classLoader != null) {
+      for (URL url : classLoader.getURLs()) {
+        try {
+          entries.add(Paths.get(url.toURI()).toFile().getAbsolutePath());
+        } catch (Exception e) {
+          log.debug("Failed to add classpath url {}", url, e);
+        }
+      }
+    }
+    // Ensure runner classes are available
+    addCodeSource(entries, GadeRunnerMain.class);
+    // Jackson is needed for the IPC protocol
+    addCodeSource(entries, com.fasterxml.jackson.databind.ObjectMapper.class);
+    addCodeSource(entries, com.fasterxml.jackson.core.JsonFactory.class);
+    addCodeSource(entries, com.fasterxml.jackson.annotation.JsonCreator.class);
+    // Also add jackson-databind transitive deps if not already in URLs
+    addCodeSource(entries, com.fasterxml.jackson.core.json.PackageVersion.class);
+    if (entries.isEmpty()) {
+      log.warn("No classpath entries collected for runtime runner");
+    } else {
+      log.debug("Classpath entries for runtime runner ({}):\n{}", entries.size(), String.join("\n", entries));
+    }
+    return new ArrayList<>(entries);
+  }
+
+  private void addCodeSource(Set<String> entries, Class<?> cls) {
+    try {
+      URL location = cls.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+      }
+    } catch (Exception e) {
+      log.debug("Failed adding code source for {}", cls.getName(), e);
+    }
+  }
+
+  public Optional<String> getConfiguredJavaVersion() {
+    if (activeRuntime == null || activeRuntime.getJavaHome() == null || activeRuntime.getJavaHome().isBlank()) {
+      return Optional.empty();
+    }
+    File releaseFile = new File(activeRuntime.getJavaHome(), "release");
+    if (!releaseFile.exists()) {
+      log.warn("Java home {} does not contain a release file", activeRuntime.getJavaHome());
+      return Optional.empty();
+    }
+    Properties props = new Properties();
+    try (var in = new FileInputStream(releaseFile)) {
+      props.load(in);
+      String version = props.getProperty("JAVA_VERSION");
+      if (version == null || version.isBlank()) {
+        return Optional.empty();
+      }
+      return Optional.of(version.replace("\"", "").trim());
+    } catch (IOException e) {
+      log.warn("Failed to read Java version from {}", releaseFile, e);
+      return Optional.empty();
+    }
+  }
+
+  public boolean isConfiguredJavaDifferent(String configuredVersion) {
+    try {
+      int configuredFeature = Runtime.Version.parse(configuredVersion).feature();
+      return configuredFeature != Runtime.version().feature();
+    } catch (IllegalArgumentException e) {
+      log.debug("Could not parse configured Java version '{}'", configuredVersion, e);
+      return !System.getProperty("java.runtime.version").startsWith(configuredVersion);
+    }
+  }
+
   /**
    * TODO: while we can stop the timeline with this we cannot interrupt the scriptengines eval.
    *  see https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting for some possible options
    */
   public void interruptProcess() {
     log.info("Interrupting running process");
+    if (processRunner != null && activeRuntime != null && RuntimeType.GADE != activeRuntime.getType()) {
+      try {
+        processRunner.interrupt();
+      } catch (IOException e) {
+        log.warn("Failed to interrupt process runner", e);
+      }
+    }
     if (runningThread != null && runningThread.isAlive()) {
       console.appendFx("\nInterrupting process...", true);
       Task<Void> task = new Task<>() {
@@ -273,24 +408,41 @@ public class ConsoleComponent extends BorderPane {
    * @throws Exception if something goes wrong.
    */
   public Object runScript(String script, Map<String, Object> additionalParams) throws Exception {
-    if (engine == null) {
-      Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
-      return null;
-    }
     if (activeRuntime == null) {
       Alerts.infoFx("Runtime not ready", "No runtime is active yet, please wait a few seconds");
       return null;
     }
-    //log.info("engine is {}, gui is {}", engine, gui);
     if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      if (engine == null) {
+        Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
+        return null;
+      }
       gui.guiInteractions.forEach(this::addVariableToSession);
     }
     if (additionalParams != null) {
-      for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
-        addVariableToSession(entry.getKey(), entry.getValue());
+      if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+        for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
+          addVariableToSession(entry.getKey(), entry.getValue());
+        }
       }
     }
-    return RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
+    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      return RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
+    }
+    if (processRunner == null) {
+      Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
+      return null;
+    }
+    running();
+    try {
+      Map<String, Object> bindings = runnerBindings(additionalParams);
+      String result = processRunner.eval(script, bindings).get();
+      waiting();
+      return result;
+    } catch (Exception e) {
+      waiting();
+      throw e;
+    }
   }
 
 
@@ -310,12 +462,28 @@ public class ConsoleComponent extends BorderPane {
       Alerts.infoFx("Runtime not ready", "No runtime is active yet, please wait a few seconds");
       return null;
     }
-    try (PrintWriter out = new PrintWriter(System.out);
-         PrintWriter err = new PrintWriter(System.err)) {
-      running();
-      engine.setOutputWriters(out, err);
-      log.debug("Running script: {}", script);
-      var result = RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
+    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      try (PrintWriter out = new PrintWriter(System.out);
+           PrintWriter err = new PrintWriter(System.err)) {
+        running();
+        engine.setOutputWriters(out, err);
+        log.debug("Running script: {}", script);
+        var result = RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
+        waiting();
+        return result;
+      } catch (Exception e) {
+        log.warn("Failed to run script: {}", script, e);
+        waiting();
+        throw e;
+      }
+    }
+    if (processRunner == null) {
+      Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
+      return null;
+    }
+    running();
+    try {
+      String result = processRunner.eval(script, runnerBindings(null)).get();
       waiting();
       return result;
     } catch (Exception e) {
@@ -326,7 +494,16 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public Object fetchVar(String varName) {
-    return engine.fetchVar(varName);
+    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      return engine.fetchVar(varName);
+    }
+    try {
+      Map<String, String> bindings = processRunner.fetchBindings().get();
+      return bindings.get(varName);
+    } catch (Exception e) {
+      log.debug("Failed to fetch var {}", varName, e);
+      return null;
+    }
   }
 
   public void runScriptAsync(String script, String title, TaskListener taskListener) {
@@ -382,7 +559,7 @@ public class ConsoleComponent extends BorderPane {
     if (ex instanceof RuntimeException) {
       msg = "An unknown error occurred running Groovy script: ";
     } else if (ex instanceof IOException) {
-      msg = "Failed to close writer capturing groovy results ";
+      msg = "Failed to communicate with runtime process: ";
     } else if (ex instanceof RuntimeScriptException) {
       msg = "An unknown error occurred running Groovy script: ";
     } else if (ex instanceof Exception) {
@@ -455,7 +632,28 @@ public class ConsoleComponent extends BorderPane {
 
   public Map<String, Object> getContextObjects() {
     log.info("getContextObjects");
-    return engine.getContextObjects();
+    if (activeRuntime == null) {
+      log.warn("No active runtime when fetching context objects");
+      return Collections.emptyMap();
+    }
+    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
+      if (engine == null) {
+        log.warn("Groovy engine not initialized when fetching context objects for {}", activeRuntime.getName());
+        return Collections.emptyMap();
+      }
+      return engine.getContextObjects();
+    }
+    if (processRunner == null) {
+      log.warn("Process runner is not available when fetching bindings for {}", activeRuntime.getName());
+      return Collections.emptyMap();
+    }
+    try {
+      Map<String, String> bindings = processRunner.fetchBindings().get();
+      return new HashMap<>(bindings);
+    } catch (Exception e) {
+      log.debug("Failed to get bindings from process runner", e);
+      return Collections.emptyMap();
+    }
   }
 
   private void refreshPackages() {
@@ -643,6 +841,23 @@ public class ConsoleComponent extends BorderPane {
       Alerts.warnFx("Runtime not ready", "No runtime is active yet, cannot execute scripts");
       return;
     }
+    if (!RuntimeType.GADE.equals(activeRuntime.getType())) {
+      if (processRunner == null) {
+        Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
+        return;
+      }
+      Platform.runLater(() -> {
+        console.append(title, true);
+        env.addInputHistory(script);
+      });
+      try {
+        processRunner.eval(script, runnerBindings(null)).get();
+        Platform.runLater(() -> env.addOutputHistory(""));
+      } catch (Exception e) {
+        throw new Exception(e.getMessage(), e);
+      }
+      return;
+    }
     try (
         AppenderWriter out = new AppenderWriter(console, true);
         WarningAppenderWriter err = new WarningAppenderWriter(console);
@@ -786,7 +1001,10 @@ public class ConsoleComponent extends BorderPane {
    * @return a reference to the current scripting classloader
    */
   public ClassLoader getSessionClassloader() {
-    return engine.getClass().getClassLoader();
+    if (engine != null) {
+      return engine.getClass().getClassLoader();
+    }
+    return classLoader == null ? getClass().getClassLoader() : classLoader;
   }
 
   public void setConsoleMaxSize(int size) {
@@ -799,6 +1017,10 @@ public class ConsoleComponent extends BorderPane {
 
   public ConsoleTextArea getConsole() {
     return console;
+  }
+
+  public RuntimeConfig getActiveRuntimeConfig() {
+    return activeRuntime;
   }
 
   public void startTaskWhenOthersAreFinished(CountDownTask<?> task, String context) {
@@ -863,7 +1085,9 @@ public class ConsoleComponent extends BorderPane {
 
   public void addVariableToSession(String key, Object value) {
     log.info("adding {} to session", key);
-    engine.addVariableToSession(key, value);
+    if (engine != null) {
+      engine.addVariableToSession(key, value);
+    }
   }
 
   /**
@@ -872,6 +1096,25 @@ public class ConsoleComponent extends BorderPane {
    * @param varName the bound variable to remove.
    */
   public void removeVariableFromSession(String varName) {
-    engine.removeVariableFromSession(varName);
+    if (engine != null) {
+      engine.removeVariableFromSession(varName);
+    }
+  }
+
+  private Map<String, Object> runnerBindings(Map<String, Object> additionalParams) {
+    Map<String, Object> bindings = new HashMap<>(serializeBindings(additionalParams));
+    if (gui.guiInteractions != null && !gui.guiInteractions.isEmpty()) {
+      bindings.put(GUI_INTERACTION_KEYS, new ArrayList<>(gui.guiInteractions.keySet()));
+    }
+    return bindings;
+  }
+
+  private Map<String, Object> serializeBindings(Map<String, Object> bindings) {
+    if (bindings == null || bindings.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    Map<String, Object> sanitized = new HashMap<>();
+    bindings.forEach((k, v) -> sanitized.put(k, v == null ? "null" : String.valueOf(v)));
+    return sanitized;
   }
 }

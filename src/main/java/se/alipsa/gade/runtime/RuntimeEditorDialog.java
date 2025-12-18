@@ -2,9 +2,14 @@ package se.alipsa.gade.runtime;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -16,6 +21,7 @@ import javafx.stage.StageStyle;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.runtime.RuntimeType;
 import se.alipsa.gade.utils.ExceptionAlert;
+import se.alipsa.gade.utils.GuiUtils;
 
 /**
  * Dialog to create, edit and select runtimes.
@@ -23,22 +29,33 @@ import se.alipsa.gade.utils.ExceptionAlert;
 public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
 
   private final ListView<RuntimeConfig> runtimeListView = new ListView<>();
+  private final javafx.collections.ObservableList<RuntimeConfig> runtimeItems = FXCollections.observableArrayList();
   private final TextField nameField = new TextField();
+  private final ComboBox<RuntimeType> typeBox = new ComboBox<>();
   private final TextField javaHomeField = new TextField();
   private final TextField groovyHomeField = new TextField();
   private final ListView<String> jarList = new ListView<>();
   private final ListView<String> dependencyList = new ListView<>();
 
-  private final List<RuntimeConfig> customRuntimes;
+  private final Label groovyHomeLabel = new Label("Groovy home");
+  private final Label additionalJarsLabel = new Label("Additional JARs");
+  private final Label dependenciesLabel = new Label("Dependencies");
+  private final Node groovyHomeNode = createBrowseField(groovyHomeField, true);
+  private final Node additionalJarsNode = createListEditor(jarList, true);
+  private final Node dependenciesNode = createListEditor(dependencyList, false);
+
+  private List<RuntimeConfig> customRuntimes;
   private final List<RuntimeConfig> builtIns;
 
   public RuntimeEditorDialog(Gade gui, RuntimeConfig initialSelection, boolean newRuntime) {
     setTitle("Edit runtimes");
     initStyle(StageStyle.DECORATED);
+    GuiUtils.addStyle(gui, this);
     builtIns = gui.getRuntimeManager().getBuiltInRuntimes();
     customRuntimes = new ArrayList<>(gui.getRuntimeManager().getCustomRuntimes());
 
-    runtimeListView.setItems(FXCollections.observableArrayList(allRuntimes()));
+    runtimeListView.setItems(runtimeItems);
+    runtimeItems.setAll(mergedRuntimes());
     runtimeListView.setCellFactory(listView -> new ListCell<>() {
       @Override
       protected void updateItem(RuntimeConfig item, boolean empty) {
@@ -54,6 +71,13 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     ButtonType useSelected = new ButtonType("Use selected", ButtonBar.ButtonData.OK_DONE);
     ButtonType close = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
     getDialogPane().getButtonTypes().addAll(useSelected, close);
+
+    Button useSelectedButton = (Button) getDialogPane().lookupButton(useSelected);
+    useSelectedButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+      if (!applyPendingEditsForSelected()) {
+        event.consume();
+      }
+    });
 
     Button addButton = new Button("Add");
     addButton.setOnAction(e -> addRuntime());
@@ -74,14 +98,17 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
 
     form.add(new Label("Name"), 0, 0);
     form.add(nameField, 1, 0);
-    form.add(new Label("JVM home"), 0, 1);
-    form.add(createBrowseField(javaHomeField, true), 1, 1);
-    form.add(new Label("Groovy home"), 0, 2);
-    form.add(createBrowseField(groovyHomeField, true), 1, 2);
-    form.add(new Label("Additional JARs"), 0, 3);
-    form.add(createListEditor(jarList, true), 1, 3);
-    form.add(new Label("Dependencies"), 0, 4);
-    form.add(createListEditor(dependencyList, false), 1, 4);
+    form.add(new Label("Type"), 0, 1);
+    typeBox.getItems().addAll(RuntimeType.MAVEN, RuntimeType.GRADLE, RuntimeType.CUSTOM);
+    form.add(typeBox, 1, 1);
+    form.add(new Label("JVM home"), 0, 2);
+    form.add(createBrowseField(javaHomeField, true), 1, 2);
+    form.add(groovyHomeLabel, 0, 3);
+    form.add(groovyHomeNode, 1, 3);
+    form.add(additionalJarsLabel, 0, 4);
+    form.add(additionalJarsNode, 1, 4);
+    form.add(dependenciesLabel, 0, 5);
+    form.add(dependenciesNode, 1, 5);
 
     BorderPane pane = new BorderPane();
     pane.setLeft(runtimeListView);
@@ -95,6 +122,7 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     getDialogPane().setPrefSize(800, 500);
 
     runtimeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> populateFields(newVal));
+    typeBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> applyTypeVisibility(newVal));
 
     if (newRuntime) {
       addRuntime();
@@ -119,11 +147,28 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     return runtimes;
   }
 
-  private void selectRuntime(RuntimeConfig runtime) {
-    int index = runtimeListView.getItems().indexOf(runtime);
-    if (index >= 0) {
-      runtimeListView.getSelectionModel().select(index);
+  private List<RuntimeConfig> mergedRuntimes() {
+    Map<String, RuntimeConfig> merged = new LinkedHashMap<>();
+    for (RuntimeConfig r : builtIns) {
+      merged.putIfAbsent(r.getName().toLowerCase(Locale.ROOT), r);
     }
+    for (RuntimeConfig r : customRuntimes) {
+      merged.put(r.getName().toLowerCase(Locale.ROOT), r);
+    }
+    return new ArrayList<>(merged.values());
+  }
+
+  private void selectRuntime(RuntimeConfig runtime) {
+    if (runtime == null) {
+      return;
+    }
+    for (RuntimeConfig item : runtimeItems) {
+      if (item.getName().equalsIgnoreCase(runtime.getName())) {
+        runtimeListView.getSelectionModel().select(item);
+        return;
+      }
+    }
+    runtimeListView.getSelectionModel().selectFirst();
   }
 
   private HBox createBrowseField(TextField field, boolean directory) {
@@ -185,25 +230,49 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
   }
 
   private void populateFields(RuntimeConfig runtime) {
-    boolean editable = runtime != null && RuntimeType.CUSTOM.equals(runtime.getType());
+    boolean editable = runtime != null && !RuntimeType.GADE.equals(runtime.getType());
     nameField.setDisable(!editable);
+    typeBox.setDisable(!editable);
     javaHomeField.setDisable(!editable);
     groovyHomeField.setDisable(!editable);
     jarList.setDisable(!editable);
     dependencyList.setDisable(!editable);
     if (runtime == null) {
       nameField.clear();
+      typeBox.getSelectionModel().clearSelection();
       javaHomeField.clear();
       groovyHomeField.clear();
       jarList.getItems().clear();
       dependencyList.getItems().clear();
+      applyTypeVisibility(null);
       return;
     }
     nameField.setText(runtime.getName());
+    typeBox.getSelectionModel().select(runtime.getType());
     javaHomeField.setText(runtime.getJavaHome() == null ? "" : runtime.getJavaHome());
     groovyHomeField.setText(runtime.getGroovyHome() == null ? "" : runtime.getGroovyHome());
     jarList.setItems(FXCollections.observableArrayList(runtime.getAdditionalJars()));
     dependencyList.setItems(FXCollections.observableArrayList(runtime.getDependencies()));
+    applyTypeVisibility(runtime.getType());
+  }
+
+  private void applyTypeVisibility(RuntimeType type) {
+    RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
+    boolean editable = selected != null && !RuntimeType.GADE.equals(selected.getType());
+    boolean showCustomFields = editable && RuntimeType.CUSTOM.equals(type);
+
+    setVisibleAndManaged(showCustomFields, groovyHomeLabel, groovyHomeNode, additionalJarsLabel, additionalJarsNode,
+        dependenciesLabel, dependenciesNode);
+    groovyHomeField.setDisable(!showCustomFields);
+    jarList.setDisable(!showCustomFields);
+    dependencyList.setDisable(!showCustomFields);
+  }
+
+  private void setVisibleAndManaged(boolean visible, Node... nodes) {
+    for (Node node : nodes) {
+      node.setVisible(visible);
+      node.setManaged(visible);
+    }
   }
 
   private void addRuntime() {
@@ -216,8 +285,7 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     RuntimeConfig config = new RuntimeConfig(name, RuntimeType.CUSTOM, "", "",
         new ArrayList<>(), new ArrayList<>());
     customRuntimes.add(config);
-    runtimeListView.getItems().add(config);
-    runtimeListView.getSelectionModel().select(config);
+    refreshRuntimeList(config);
   }
 
   private boolean nameExists(String name) {
@@ -226,58 +294,102 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
 
   private void deleteRuntime() {
     RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
-    if (selected == null || !RuntimeType.CUSTOM.equals(selected.getType())) {
+    if (selected == null || RuntimeType.GADE.equals(selected.getType())) {
       return;
     }
-    customRuntimes.removeIf(r -> r.getName().equalsIgnoreCase(selected.getName()));
-    runtimeListView.getItems().remove(selected);
-    runtimeListView.getSelectionModel().selectFirst();
+    boolean removed = customRuntimes.removeIf(r -> r.getName().equalsIgnoreCase(selected.getName()));
+    if (removed) {
+      refreshRuntimeList(selected);
+    }
   }
 
   private void saveRuntime() {
     RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
-    if (selected == null || !RuntimeType.CUSTOM.equals(selected.getType())) {
+    if (selected == null || RuntimeType.GADE.equals(selected.getType())) {
       return;
+    }
+    RuntimeConfig updated = buildRuntimeFromFields(selected);
+    if (updated == null) {
+      return;
+    }
+    replaceCustom(selected, updated);
+    refreshRuntimeList(updated);
+  }
+
+  private void replaceCustom(RuntimeConfig previous, RuntimeConfig updated) {
+    customRuntimes = customRuntimes.stream()
+        .filter(r -> !r.getName().equalsIgnoreCase(previous.getName()))
+        .collect(Collectors.toCollection(ArrayList::new));
+    if (!RuntimeType.GADE.equals(updated.getType())) {
+      customRuntimes.add(updated);
+    }
+  }
+
+  private void refreshRuntimeList(RuntimeConfig preferredSelection) {
+    String selectionName = null;
+    if (preferredSelection != null) {
+      selectionName = preferredSelection.getName();
+    } else {
+      RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
+      if (selected != null) {
+        selectionName = selected.getName();
+      }
+    }
+    runtimeItems.setAll(mergedRuntimes());
+    if (selectionName != null) {
+      for (RuntimeConfig runtime : runtimeItems) {
+        if (runtime.getName().equalsIgnoreCase(selectionName)) {
+          runtimeListView.getSelectionModel().select(runtime);
+          return;
+        }
+      }
+    }
+    runtimeListView.getSelectionModel().selectFirst();
+  }
+
+  private RuntimeConfig buildRuntimeFromFields(RuntimeConfig selected) {
+    if (RuntimeType.GADE.equals(selected.getType())) {
+      return selected;
     }
     String name = nameField.getText().trim();
     if (name.isBlank()) {
       ExceptionAlert.showAlert("Name is required for a runtime", new IllegalArgumentException("Name missing"));
-      return;
+      return null;
     }
     if (!selected.getName().equalsIgnoreCase(name) && nameExists(name)) {
       ExceptionAlert.showAlert("Runtime name must be unique", new IllegalArgumentException("Duplicate name"));
-      return;
+      return null;
     }
-    RuntimeConfig updated = new RuntimeConfig(
+    RuntimeType type = typeBox.getSelectionModel().getSelectedItem();
+    if (type == null) {
+      ExceptionAlert.showAlert("Runtime type must be selected", new IllegalArgumentException("Type missing"));
+      return null;
+    }
+    String javaHome = javaHomeField.getText().trim();
+    if (!RuntimeType.CUSTOM.equals(type)) {
+      return new RuntimeConfig(name, type, javaHome, "", List.of(), List.of());
+    }
+    return new RuntimeConfig(
         name,
-        RuntimeType.CUSTOM,
-        javaHomeField.getText().trim(),
+        type,
+        javaHome,
         groovyHomeField.getText().trim(),
         new ArrayList<>(jarList.getItems()),
         new ArrayList<>(dependencyList.getItems())
     );
+  }
+
+  private boolean applyPendingEditsForSelected() {
+    RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
+    if (selected == null || RuntimeType.GADE.equals(selected.getType())) {
+      return true;
+    }
+    RuntimeConfig updated = buildRuntimeFromFields(selected);
+    if (updated == null) {
+      return false;
+    }
     replaceCustom(selected, updated);
-    replaceInList(selected, updated);
-    runtimeListView.getSelectionModel().select(updated);
-  }
-
-  private void replaceCustom(RuntimeConfig previous, RuntimeConfig updated) {
-    int idx = -1;
-    for (int i = 0; i < customRuntimes.size(); i++) {
-      if (customRuntimes.get(i).getName().equalsIgnoreCase(previous.getName())) {
-        idx = i;
-        break;
-      }
-    }
-    if (idx >= 0) {
-      customRuntimes.set(idx, updated);
-    }
-  }
-
-  private void replaceInList(RuntimeConfig previous, RuntimeConfig updated) {
-    int idx = runtimeListView.getItems().indexOf(previous);
-    if (idx >= 0) {
-      runtimeListView.getItems().set(idx, updated);
-    }
+    refreshRuntimeList(updated);
+    return true;
   }
 }

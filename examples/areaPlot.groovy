@@ -1,25 +1,24 @@
+@Grab('tech.tablesaw:tablesaw-core:0.44.4')
+@Grab('tech.tablesaw:tablesaw-jsplot:0.44.4')
 import tech.tablesaw.api.Table
-import tech.tablesaw.chart.AreaChart
+import tech.tablesaw.plotly.api.AreaPlot
+import tech.tablesaw.plotly.components.Page
 
 robberies = Table.read().csv(new File(io.scriptDir(), "/data/boston-robberies.csv"));
 robberies.setName("Boston Robberies by month: Jan 1966-Oct 1975")
 
-robChart = AreaChart.create(
-  robberies.name(),
-  robberies.column("Record").asStringColumn(), 
-  robberies.column("Robberies")
-)
-io.display(robChart, "Boston Robberies")
-
-io.display(tech.tablesaw.plotly.api.AreaPlot.create(
+def plot = AreaPlot.create(
   "Boston Robberies by month: Jan 1966-Oct 1975", 
   robberies, 
   "Record", 
-  "Robberies"),
-  "Boston Robberies"
+  "Robberies"
 )
-/*
+//println plot.asJavaScript()
+Page page = Page.pageBuilder(plot, "target").build();
+String output = page.asJavascript();
+    
+io.view(output, "Boston Robberies")
+
 tech.tablesaw.plotly.Plot.show(
     AreaPlot.create(
         "Boston Robberies by month: Jan 1966-Oct 1975", robberies, "Record", "Robberies"));
-*/

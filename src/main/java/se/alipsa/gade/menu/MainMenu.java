@@ -7,6 +7,7 @@ import static se.alipsa.gade.utils.StringUtils.formatNumber;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import groovy.lang.GroovySystem;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -21,6 +22,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.apache.commons.text.CaseUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +37,7 @@ import se.alipsa.gade.runtime.RuntimeEditorDialog;
 import se.alipsa.gade.runtime.RuntimeEditorResult;
 import se.alipsa.gade.runtime.RuntimeConfig;
 import se.alipsa.gade.runtime.RuntimeManager;
+import se.alipsa.gade.runtime.RuntimeType;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.UnStyledCodeArea;
@@ -71,6 +74,8 @@ public class MainMenu extends MenuBar {
   private Stage searchWindow;
   private Menu runtimesMenu;
   private final ToggleGroup runtimeToggleGroup = new ToggleGroup();
+  private final PauseTransition runtimeReloadDebounce = new PauseTransition(Duration.millis(300));
+  private String runtimeReloadReason;
 
   public MainMenu(Gade gui) {
     this.gui = gui;
@@ -89,6 +94,16 @@ public class MainMenu extends MenuBar {
     Menu menuHelp = createHelpMenu();
     getMenus().addAll(menuFile, menuEdit, menuCode, /*menuView, menuPlots,*/ menuSession,
        menuRuntimes, /*menuBuild, menuDebug, menuProfile, */ menuTools, menuMunin, menuHelp);
+
+    runtimeReloadDebounce.setOnFinished(e -> {
+      if (runtimeReloadReason == null) {
+        return;
+      }
+      String reason = runtimeReloadReason;
+      runtimeReloadReason = null;
+      log.debug("Restarting runtime due to {}", reason);
+      restartEngine();
+    });
   }
 
   // TODO:
@@ -111,12 +126,7 @@ public class MainMenu extends MenuBar {
     File projectDir = gui.getProjectDir();
     RuntimeConfig active = gui.getActiveRuntime();
 
-    manager.getBuiltInRuntimes().forEach(runtime -> {
-      boolean available = manager.isAvailable(runtime, projectDir);
-      runtimesMenu.getItems().add(createRuntimeMenuItem(runtime, active, available));
-    });
-
-    for (RuntimeConfig runtime : manager.getCustomRuntimes()) {
+    for (RuntimeConfig runtime : manager.getAllRuntimes()) {
       boolean available = manager.isAvailable(runtime, projectDir);
       runtimesMenu.getItems().add(createRuntimeMenuItem(runtime, active, available));
     }
@@ -695,12 +705,6 @@ public class MainMenu extends MenuBar {
     gui.setWaitCursor();
     GlobalOptions result = res.get();
 
-    String gradleHome = result.getString(GRADLE_HOME);
-    if (gradleHome != null && !gradleHome.isBlank()) {
-      System.setProperty("GRADLE_HOME", gradleHome);
-      gui.getPrefs().put(GRADLE_HOME, gradleHome);
-    }
-
     int consoleMaxLength = result.getInt(CONSOLE_MAX_LENGTH_PREF);
     if (gui.getConsoleComponent().getConsoleMaxSize() != consoleMaxLength) {
       gui.getPrefs().putInt(CONSOLE_MAX_LENGTH_PREF, consoleMaxLength);
@@ -718,13 +722,6 @@ public class MainMenu extends MenuBar {
 
     TimeZone.setDefault(TimeZone.getTimeZone(result.getString(TIMEZONE)));
     gui.getPrefs().put(TIMEZONE, result.getString(TIMEZONE));
-
-    boolean useGradleClassLoader = result.getBoolean(USE_GRADLE_CLASSLOADER);
-    if (useGradleClassLoader != gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, !useGradleClassLoader)) {
-      log.info("useGradleClassLoader changed, restarting Groovy session");
-      gui.getPrefs().putBoolean(USE_GRADLE_CLASSLOADER, useGradleClassLoader);
-      shouldRestart = true;
-    }
 
     boolean restartSessionAfterGradle = result.getBoolean(RESTART_SESSION_AFTER_GRADLE_RUN);
     gui.getPrefs().putBoolean(RESTART_SESSION_AFTER_GRADLE_RUN, restartSessionAfterGradle);
@@ -799,10 +796,23 @@ public class MainMenu extends MenuBar {
     content.append("\n Maximum allowed memory: ");
     content.append(formatNumber(Math.round((double)Runtime.getRuntime().maxMemory() / 1024 / 1024))).append(" MB");
 
-    content.append("\n\n Java Runtime Version: ")
-        .append(System.getProperty("java.runtime.version"))
-        .append(" (").append(System.getProperty("os.arch")).append(")")
-        .append("\n Groovy version: ").append(GroovySystem.getVersion());
+    String inUseJava = System.getProperty("java.runtime.version");
+    content.append("\n\n Java Runtime Version (in use): ")
+        .append(inUseJava)
+        .append(" (").append(System.getProperty("os.arch")).append(")");
+
+    if (gui.getConsoleComponent() != null) {
+      gui.getConsoleComponent().getConfiguredJavaVersion().ifPresent(configured -> {
+        content.append("\n Configured runtime Java: ").append(configured);
+        if (gui.getConsoleComponent().isConfiguredJavaDifferent(configured)) {
+          content.append(" (differs from in-use JVM)");
+        }
+      });
+    }
+
+    content.append("\n Groovy version: ").append(gui.getConsoleComponent() == null
+        ? GroovySystem.getVersion()
+        : gui.getConsoleComponent().getActiveGroovyVersion());
     Alerts.showInfoAlert("Session info", content, 600, 300);
   }
 
@@ -931,6 +941,60 @@ public class MainMenu extends MenuBar {
     }
     gui.getCodeComponent().fileSaved(file);
     codeArea.contentSaved();
+    maybeReloadRuntimeAfterSave(file);
+  }
+
+  private void maybeReloadRuntimeAfterSave(File file) {
+    if (file == null || gui.getConsoleComponent() == null) {
+      return;
+    }
+    File projectDir = gui.getProjectDir();
+    if (projectDir == null) {
+      return;
+    }
+    Path projectPath = projectDir.toPath().toAbsolutePath().normalize();
+    Path filePath = file.toPath().toAbsolutePath().normalize();
+    if (!filePath.startsWith(projectPath)) {
+      return;
+    }
+
+    RuntimeConfig activeRuntime = gui.getActiveRuntime();
+    if (activeRuntime == null || activeRuntime.getType() == null) {
+      return;
+    }
+    if (!shouldReloadForGradleFileSave(activeRuntime)) {
+      return;
+    }
+    if (!isGradleClasspathFile(projectPath, filePath)) {
+      return;
+    }
+
+    runtimeReloadReason = "saved " + projectPath.relativize(filePath);
+    runtimeReloadDebounce.stop();
+    runtimeReloadDebounce.playFromStart();
+  }
+
+  private boolean shouldReloadForGradleFileSave(RuntimeConfig activeRuntime) {
+    return RuntimeType.GRADLE.equals(activeRuntime.getType());
+  }
+
+  private static boolean isGradleClasspathFile(Path projectDir, Path filePath) {
+    String name = filePath.getFileName() == null ? "" : filePath.getFileName().toString();
+    if ("build.gradle".equals(name)
+        || "build.gradle.kts".equals(name)
+        || "settings.gradle".equals(name)
+        || "settings.gradle.kts".equals(name)
+        || "gradle.properties".equals(name)) {
+      return true;
+    }
+    Path rel;
+    try {
+      rel = projectDir.relativize(filePath);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    return rel.equals(Path.of("gradle", "libs.versions.toml"))
+        || rel.equals(Path.of("gradle", "wrapper", "gradle-wrapper.properties"));
   }
 
   public File promptForFile() {

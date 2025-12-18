@@ -78,7 +78,7 @@ cd "${SCRIPT_DIR}" || exit
 #./downloadJfxJars.sh "$PLATFORM"
 
 echo "- Building Gade"
-./gradlew clean build runtime || exit 1
+./gradlew clean build runtime -g ./.gradle-user || exit 1
 
 PROPERTY_FILE=version.properties
 

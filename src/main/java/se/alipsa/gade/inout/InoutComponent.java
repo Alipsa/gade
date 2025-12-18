@@ -28,6 +28,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
+import se.alipsa.gade.runtime.RuntimeConfig;
 import se.alipsa.gade.utils.*;
 import se.alipsa.matrix.core.Matrix;
 
@@ -148,6 +149,13 @@ public class InoutComponent extends TabPane  {
 
   public void changeRootDir(File dir) {
     if (!dir.equals(projectDir())) {
+      RuntimeConfig currentRuntime = gui.getConsoleComponent().getActiveRuntimeConfig();
+      var runtimeManager = gui.getRuntimeManager();
+      var runtimePrefs = gui.getRuntimePreferences();
+      boolean hasSelection = runtimePrefs.getSelectedRuntimeName(dir).isPresent();
+      if (!hasSelection && currentRuntime != null && runtimeManager.isAvailable(currentRuntime, dir)) {
+        runtimeManager.setSelectedRuntime(dir, currentRuntime);
+      }
       fileTree.refresh(dir);
       gui.getConsoleComponent().initGroovy(gui.getActiveRuntime());
       gui.getMainMenu().refreshRuntimesMenu();

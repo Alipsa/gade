@@ -2,15 +2,18 @@ package utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.groovy.tools.LoaderConfiguration;
+import org.codehaus.groovy.tools.RootLoader;
 import org.junit.jupiter.api.Test;
+import groovy.lang.GroovyClassLoader;
 import se.alipsa.groovy.resolver.Dependency;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URLClassLoader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,14 +22,10 @@ public class GradleUtilsTest {
   private static final Logger log = LogManager.getLogger(GradleUtilsTest.class);
 
   @Test
-  public void testDependencies() throws FileNotFoundException {
-    if (System.getenv("GRADLE_HOME") == null) {
-      fail("GRADLE_HOME is not set cannot continue test");
-    }
-    var gradleInstallationDir = new File(System.getenv("GRADLE_HOME"));
+  public void testDependencies() throws Exception {
     var gradleProjectDir = FileUtils.getResource("utils/gradle/package");
 
-    var gradleUtil = new GradleUtils(gradleInstallationDir, gradleProjectDir);
+    var gradleUtil = new GradleUtils(null, gradleProjectDir, System.getProperty("java.home"));
 
     //System.out.println("Task names:" + gradleUtil.getGradleTaskNames());
 
@@ -53,5 +52,29 @@ public class GradleUtilsTest {
     File file = GradleUtils.downloadArtifact(dependency);
     assertTrue(file.exists(), "File does not exist");
     assertEquals("slf4j-api-1.7.36.jar", file.getName(), "File name is wrong");
+  }
+
+  @Test
+  public void testGradleRuntimeLoadsAddedDependency() throws Exception {
+    File gradleProjectDir = FileUtils.getResource("utils/gradle/package");
+    GradleUtils gradleUtil = new GradleUtils(null, gradleProjectDir, System.getProperty("java.home"));
+
+    var dependencies = gradleUtil.getProjectDependencies();
+    assertTrue(
+        dependencies.stream().anyMatch(f -> f.getName().startsWith("commons-lang3-")),
+        "Gradle dependencies should contain commons-lang3"
+    );
+
+    // The default constructor for GroovyClassLoader uses context classloader as the parent.
+    // We want to sure that the classpath is not tainted by the test runner so we create an empty parent classloader.
+    ClassLoader emptyParent = new RootLoader(new LoaderConfiguration());
+    try (GroovyClassLoader loader = new GroovyClassLoader(emptyParent)) {
+      for (File dep : dependencies) {
+        loader.addURL(dep.toURI().toURL());
+      }
+      Class<?> stringUtils = loader.loadClass("org.apache.commons.lang3.StringUtils");
+      boolean blank = (boolean) stringUtils.getMethod("isBlank", CharSequence.class).invoke(null, "   ");
+      assertTrue(blank, "Expected StringUtils from commons-lang3 to be available via Gradle runtime dependencies");
+    }
   }
 }

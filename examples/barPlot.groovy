@@ -1,7 +1,12 @@
+@Grab('tech.tablesaw:tablesaw-core:0.44.4')
+@Grab('tech.tablesaw:tablesaw-jsplot:0.44.4')
 import static tech.tablesaw.aggregate.AggregateFunctions.*
 import tech.tablesaw.api.*
 import tech.tablesaw.columns.numbers.*
-import tech.tablesaw.chart.*
+import tech.tablesaw.plotly.api.VerticalBarPlot
+import tech.tablesaw.plotly.components.Figure
+import tech.tablesaw.plotly.components.Layout
+import tech.tablesaw.plotly.components.Page
 
 Table table = Table.read().csv(new File(io.scriptDir(), "/data/tornadoes_1950-2014.csv"))
 NumericColumn<Number> logNInjuries = table.numberColumn("injuries").add(1).logN()
@@ -17,27 +22,19 @@ summaryTable = table
 
 
 scaleColumn = summaryTable.column("Scale").asStringColumn()
-chart = BarChart.create("Tornado Impact", ChartType.STACKED, ChartDirection.HORIZONTAL,
-  scaleColumn,
-  summaryTable.column("sum [log injuries]"),
-  summaryTable.column("Sum [Fatalities]")
+chart = VerticalBarPlot.create("Tornado Impact", 
+  summaryTable,
+  "scale",
+  Layout.BarMode.STACK,
+  "Sum [Fatalities]",
+  "Sum [log injuries]"
 );
-io.display(chart)
+display(chart)
 
-//io.help(Plot.class)
-figure = Plot.jsPlot(chart)
-io.display(figure, "plotly")
+void display(Figure chart) {
+  Page page = Page.pageBuilder(chart, "target").build();
+  String output = page.asJavascript();
+  io.view(output, chart?.layout?.title ?: "plot")
+}
 
-/*
-io.display(
-  tech.tablesaw.plotly.api.HorizontalBarPlot.create(
-    "Tornado Impact",
-    summaryTable,
-    "scale",
-    tech.tablesaw.plotly.components.Layout.BarMode.STACK,
-    "Sum [log injuries]",
-    "Sum [Fatalities]",
-  ), "manual"
-)
-*/
 // io.view("https://docs.oracle.com/javafx/2/charts/bar-chart.htm#CIHJFHDE")
