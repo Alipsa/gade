@@ -66,7 +66,7 @@ public class GradleUtilsTest {
     );
 
     // The default constructor for GroovyClassLoader uses context classloader as the parent.
-    // We want to sure that the classpath is not tainted byt the test runner so we create an empty parent classloader.
+    // We want to sure that the classpath is not tainted by the test runner so we create an empty parent classloader.
     ClassLoader emptyParent = new RootLoader(new LoaderConfiguration());
     try (GroovyClassLoader loader = new GroovyClassLoader(emptyParent)) {
       for (File dep : dependencies) {
