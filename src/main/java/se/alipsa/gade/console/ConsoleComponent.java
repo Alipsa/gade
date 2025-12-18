@@ -111,6 +111,7 @@ public class ConsoleComponent extends BorderPane {
     if (runtimeToUse == null) {
       return;
     }
+    running();
     Task<Void> initTask = new Task<>() {
 
       @Override
@@ -122,6 +123,7 @@ public class ConsoleComponent extends BorderPane {
       printVersionInfoToConsole();
       autoRunScripts();
       updateEnvironment();
+      waiting();
     });
     initTask.setOnFailed(e -> {
       Throwable throwable = initTask.getException();
@@ -132,6 +134,7 @@ public class ConsoleComponent extends BorderPane {
       String msg = createMessageFromEvalException(ex);
       ExceptionAlert.showAlert(msg + ex.getMessage(), ex);
       promptAndScrollToEnd();
+      waiting();
     });
     Thread thread = new Thread(initTask);
     thread.setDaemon(false);

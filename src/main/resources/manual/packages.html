@@ -12,7 +12,7 @@ running Groovy.
     When using Gade, you have three options to make a Groovy package available to the ScriptEngine so that you can load packages:</span>
     <ol>
         <li>Publish the package to a Nexus server and use <span class="code"><span class="keyword">@Grab(</span> <span class="string">"yourpackage"</span>)</span></li>
-        <li>Add the dependency to the build.gradle used in your project (you need to enable the "use build.gradle classloader" setting for this to work), no need for @Grab in this case.</li>
+        <li>Select the Gradle runtime and add the dependency to the build.gradle used in your project, no need for @Grab in this case.</li>
         <li>Copy the jar file to the Gradle lib dir (making the package part of the system classpath)</li>
     </ol>
 
@@ -32,12 +32,9 @@ You will see that the dependency information for gradle is
 You just need to go the dependencies' section in the projects' build.gradle and add the dependency there.<br/>
 <br/>
 There is a project wizard that help you create a gradle project,
-but you can easily create your ow gradle project from scratch if you are familiar with Gradle. If you have enabled the Global Option
-"Use build.gradle classpath", Gade will parse the build.gradle and use that classpath when running your Groovy code.
-You need to be aware that the way this is done is by creating a new classloader with the Gade classloader as the parent.
-This means that if a dependency is already defined in Gade this is the version that will be used regardless of what you specify in your build.gradle.
-E.g. it is not possible to define another version of Groovy in your build.gradle and expect Gade to honor that version when you run your Groovy code.
-However, Gade also support running gradle directly and when you do that only the dependencies of your build.gradle are honored,
+but you can easily create your ow gradle project from scratch if you are familiar with Gradle. When using the Gradle runtime,
+Gade will use the dependencies of your build.gradle when running your Groovy code.
+Gade also support running gradle directly and when you do that only the dependencies of your build.gradle are honored,
 so it is still possible to execute tests etc to verify that your project works without surprises
 before integrating it with your application server of choice to run your code.
 Take a look at the <a href="https://github.com/perNyfelt/gade/wiki">

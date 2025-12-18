@@ -11,7 +11,6 @@ import javafx.scene.layout.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.code.gradle.GradleTab;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.GuiUtils;
 import se.alipsa.gade.utils.IntField;
@@ -25,7 +24,6 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
   private IntField intField;
   private ComboBox<String> themes;
   private ComboBox<String> locals;
-  private CheckBox useGradleFileClasspath;
   private CheckBox restartSessionAfterGradleRun;
   private CheckBox addBuildDirToClasspath;
   private CheckBox enableGit;
@@ -92,16 +90,8 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
       FlowPane useCpPane = new FlowPane();
       grid.add(useCpPane, 0,3, 4, 1);
 
-      Label useGradleFileClasspathLabel = new Label("Use build.gradle classpath");
-      useGradleFileClasspathLabel.setTooltip(new Tooltip("Use classpath from build.gradle (if available) when running Groovy code"));
-      useGradleFileClasspathLabel.setPadding(new Insets(0, 26, 0, 0));
-      useCpPane.getChildren().add(useGradleFileClasspathLabel);
-      useGradleFileClasspath = new CheckBox();
-      useGradleFileClasspath.setSelected(gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false));
-      useCpPane.getChildren().add(useGradleFileClasspath);
-
       Label addBuildDirToClasspathLabel = new Label("Add build dir to classpath");
-      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 20));
+      addBuildDirToClasspathLabel.setPadding(new Insets(0, 27, 0, 0));
       addBuildDirToClasspathLabel.setTooltip(new Tooltip("Add target/classes and target/test-classes to classpath"));
       useCpPane.getChildren().add(addBuildDirToClasspathLabel);
       addBuildDirToClasspath = new CheckBox();
@@ -182,7 +172,6 @@ class GlobalOptionsDialog extends Dialog<GlobalOptions> {
     result.put(THEME, themes.getValue());
     result.put(DEFAULT_LOCALE, locals.getValue());
     result.put(TIMEZONE, timezone.getValue());
-    result.put(USE_GRADLE_CLASSLOADER, useGradleFileClasspath.isSelected());
     result.put(ADD_BUILDDIR_TO_CLASSPATH, addBuildDirToClasspath.isSelected());
     result.put(RESTART_SESSION_AFTER_GRADLE_RUN, restartSessionAfterGradleRun.isSelected());
     result.put(ENABLE_GIT, enableGit.isSelected());

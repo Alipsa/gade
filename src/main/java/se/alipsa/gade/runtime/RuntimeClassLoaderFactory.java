@@ -1,7 +1,6 @@
 package se.alipsa.gade.runtime;
 
 import static se.alipsa.gade.menu.GlobalOptions.ADD_BUILDDIR_TO_CLASSPATH;
-import static se.alipsa.gade.menu.GlobalOptions.USE_GRADLE_CLASSLOADER;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
@@ -56,30 +55,11 @@ public class RuntimeClassLoaderFactory {
   }
 
   private GroovyClassLoader createGadeClassLoader(CompilerConfiguration config, ConsoleTextArea console) throws Exception {
-    boolean useGradleClassLoader = gui.getPrefs().getBoolean(USE_GRADLE_CLASSLOADER, false);
-    GroovyClassLoader loader;
-    if (useGradleClassLoader) {
-      loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
-    } else {
-      loader = new GroovyClassLoader(gui.dynamicClassLoader, config);
-    }
+    GroovyClassLoader loader = new GroovyClassLoader(gui.dynamicClassLoader, config);
 
     File wd = gui.getInoutComponent() == null ? null : gui.getInoutComponent().projectDir();
     if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true) && wd != null && wd.exists()) {
       addBuildDirs(loader, wd);
-    }
-    if (useGradleClassLoader && wd != null) {
-      File gradleFile = new File(wd, "build.gradle");
-      if (gradleFile.exists()) {
-        log.debug("Parsing build.gradle to use gradle classloader");
-        console.appendFx("* Parsing build.gradle to create Gradle classloader...", true);
-        var selectedRuntime = gui.getRuntimeManager().getSelectedRuntime(wd);
-        String javaHome = selectedRuntime == null ? null : selectedRuntime.getJavaHome();
-        var gradleUtils = new GradleUtils(null, wd, javaHome);
-        gradleUtils.addGradleDependencies(loader, console);
-      } else {
-        log.info("Use gradle class loader is set but gradle build file {} does not exist", gradleFile);
-      }
     }
     return loader;
   }

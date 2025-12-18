@@ -1,4 +1,4 @@
-import se.alipsa.groovy.gmd.Gmd
+import se.alipsa.gmd.core.Gmd
 
 String text = """\
 # Some equations

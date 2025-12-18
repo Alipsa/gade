@@ -1,3 +1,4 @@
+@Grab("tech.tablesaw:tablesaw-core:0.44.4")
 import static tech.tablesaw.api.ColumnType.*
 import tech.tablesaw.api.*
 
