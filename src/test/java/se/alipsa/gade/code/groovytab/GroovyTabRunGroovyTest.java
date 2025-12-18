@@ -58,26 +58,10 @@ class GroovyTabRunGroovyTest {
     Path groovyLib = Path.of(groovyHome, "lib");
     assumeTrue(Files.isDirectory(groovyLib), "GROOVY_HOME/lib must exist");
 
-    // Build classloader from GROOVY_HOME/lib so GroovySystem.version reflects the custom runtime.
-    List<URL> groovyUrls = Files.list(groovyLib)
-        .filter(p -> p.toString().endsWith(".jar"))
-        .map(p -> {
-          try {
-            return p.toUri().toURL();
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        })
-        .toList();
+    List<URL> groovyUrls = listGroovyJarUrls(groovyLib);
     assumeTrue(!groovyUrls.isEmpty(), "No jars found in GROOVY_HOME/lib");
-
-    // Use a simple parent so GroovyClassLoader has a non-null config ancestor.
-    // Use an isolated parent to avoid picking up the IDE Groovy version from the test classpath.
-    groovy.lang.GroovyClassLoader groovyLoader = new groovy.lang.GroovyClassLoader((ClassLoader) null);
-    groovyUrls.forEach(groovyLoader::addURL);
-    Class<?> gsClass = groovyLoader.loadClass("groovy.lang.GroovySystem");
-    Method getVersion = gsClass.getMethod("getVersion");
-    String expectedGroovyVersion = String.valueOf(getVersion.invoke(null));
+    groovy.lang.GroovyClassLoader groovyLoader = createIsolatedGroovyClassLoader(groovyUrls);
+    String expectedGroovyVersion = groovySystemVersion(groovyLoader);
 
     Preferences prefs = Preferences.userRoot().node("gade-groovy-tab-test-" + System.nanoTime());
     // Avoid auto imports/deps to keep the script minimal
@@ -148,23 +132,10 @@ class GroovyTabRunGroovyTest {
     Path groovyLib = Path.of(groovyHome, "lib");
     assumeTrue(Files.isDirectory(groovyLib), "GROOVY_HOME/lib must exist");
 
-    List<URL> groovyUrls = Files.list(groovyLib)
-        .filter(p -> p.toString().endsWith(".jar"))
-        .map(p -> {
-          try {
-            return p.toUri().toURL();
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        })
-        .toList();
+    List<URL> groovyUrls = listGroovyJarUrls(groovyLib);
     assumeTrue(!groovyUrls.isEmpty(), "No jars found in GROOVY_HOME/lib");
-    // Use an isolated parent to avoid inheriting the IDE Groovy version from the test classpath.
-    groovy.lang.GroovyClassLoader groovyLoader = new groovy.lang.GroovyClassLoader((ClassLoader) null);
-    groovyUrls.forEach(groovyLoader::addURL);
-    Class<?> gsClass = groovyLoader.loadClass("groovy.lang.GroovySystem");
-    Method getVersion = gsClass.getMethod("getVersion");
-    String expectedGroovyVersion = String.valueOf(getVersion.invoke(null));
+    groovy.lang.GroovyClassLoader groovyLoader = createIsolatedGroovyClassLoader(groovyUrls);
+    String expectedGroovyVersion = groovySystemVersion(groovyLoader);
 
     Preferences prefs = Preferences.userRoot().node("gade-groovy-tab-test-" + System.nanoTime());
     // Mimic defaults where imports/deps are considered
@@ -248,10 +219,8 @@ class GroovyTabRunGroovyTest {
     Path groovyLib = Path.of(groovyHome, "lib");
     assumeTrue(Files.isDirectory(groovyLib), "GROOVY_HOME/lib must exist");
 
-    List<String> cp = new java.util.ArrayList<>(Files.list(groovyLib)
-        .filter(p -> p.toString().endsWith(".jar"))
-        .map(Path::toString)
-        .toList());
+    List<Path> groovyJars = listGroovyJarPaths(groovyLib);
+    List<String> cp = new java.util.ArrayList<>(groovyJars.stream().map(Path::toString).toList());
     assumeTrue(!cp.isEmpty(), "No jars found in GROOVY_HOME/lib");
     Path classesDir = Path.of("build", "classes", "java", "main");
     assumeTrue(Files.isDirectory(classesDir), "build/classes/java/main must exist (run gradle build)");
@@ -262,19 +231,8 @@ class GroovyTabRunGroovyTest {
     }
 
     // Isolate from the IDE/test Groovy to ensure we read the version from GROOVY_HOME.
-    groovy.lang.GroovyClassLoader groovyLoader = new groovy.lang.GroovyClassLoader((ClassLoader) null);
-    Files.list(groovyLib)
-        .filter(p -> p.toString().endsWith(".jar"))
-        .forEach(p -> {
-          try {
-            groovyLoader.addURL(p.toUri().toURL());
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
-    Class<?> gsClass = groovyLoader.loadClass("groovy.lang.GroovySystem");
-    Method getVersion = gsClass.getMethod("getVersion");
-    String expectedGroovyVersion = String.valueOf(getVersion.invoke(null));
+    groovy.lang.GroovyClassLoader groovyLoader = createIsolatedGroovyClassLoader(listGroovyJarUrls(groovyLib));
+    String expectedGroovyVersion = groovySystemVersion(groovyLoader);
     String expectedGroovyBase = normalizeVersion(expectedGroovyVersion);
 
     RuntimeConfig runtime = new RuntimeConfig("EnvRuntime", RuntimeType.CUSTOM, javaHome, groovyHome, List.of(), List.of());
@@ -358,5 +316,37 @@ class GroovyTabRunGroovyTest {
       v = v.substring(0, idx);
     }
     return v;
+  }
+
+  private List<Path> listGroovyJarPaths(Path groovyLib) throws Exception {
+    try (var stream = Files.list(groovyLib)) {
+      return stream
+          .filter(p -> p.toString().endsWith(".jar"))
+          .toList();
+    }
+  }
+
+  private List<URL> listGroovyJarUrls(Path groovyLib) throws Exception {
+    return listGroovyJarPaths(groovyLib).stream()
+        .map(p -> {
+          try {
+            return p.toUri().toURL();
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        })
+        .toList();
+  }
+
+  private groovy.lang.GroovyClassLoader createIsolatedGroovyClassLoader(List<URL> groovyUrls) {
+    groovy.lang.GroovyClassLoader groovyLoader = new groovy.lang.GroovyClassLoader((ClassLoader) null);
+    groovyUrls.forEach(groovyLoader::addURL);
+    return groovyLoader;
+  }
+
+  private String groovySystemVersion(groovy.lang.GroovyClassLoader groovyLoader) throws Exception {
+    Class<?> gsClass = groovyLoader.loadClass("groovy.lang.GroovySystem");
+    Method getVersion = gsClass.getMethod("getVersion");
+    return String.valueOf(getVersion.invoke(null));
   }
 }

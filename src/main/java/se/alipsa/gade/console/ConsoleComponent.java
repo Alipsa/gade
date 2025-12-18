@@ -56,6 +56,7 @@ public class ConsoleComponent extends BorderPane {
   private static final Image IMG_WAITING = new Image(Objects.requireNonNull(FileUtils
       .getResourceUrl("image/waiting.png")).toExternalForm(), ICON_WIDTH, ICON_HEIGHT, true, true);
   private static final String DOUBLE_INDENT = INDENT + INDENT;
+  private static final String GUI_INTERACTION_KEYS = GadeRunnerMain.GUI_INTERACTION_KEYS;
   private static final Logger log = LogManager.getLogger(ConsoleComponent.class);
   private final ImageView runningView;
   private final Button statusButton;
@@ -434,7 +435,7 @@ public class ConsoleComponent extends BorderPane {
     }
     running();
     try {
-      Map<String, Object> bindings = serializeBindings(additionalParams);
+      Map<String, Object> bindings = runnerBindings(additionalParams);
       String result = processRunner.eval(script, bindings).get();
       waiting();
       return result;
@@ -482,7 +483,7 @@ public class ConsoleComponent extends BorderPane {
     }
     running();
     try {
-      String result = processRunner.eval(script, Collections.emptyMap()).get();
+      String result = processRunner.eval(script, runnerBindings(null)).get();
       waiting();
       return result;
     } catch (Exception e) {
@@ -850,7 +851,7 @@ public class ConsoleComponent extends BorderPane {
         env.addInputHistory(script);
       });
       try {
-        processRunner.eval(script, Collections.emptyMap()).get();
+        processRunner.eval(script, runnerBindings(null)).get();
         Platform.runLater(() -> env.addOutputHistory(""));
       } catch (Exception e) {
         throw new Exception(e.getMessage(), e);
@@ -1098,6 +1099,14 @@ public class ConsoleComponent extends BorderPane {
     if (engine != null) {
       engine.removeVariableFromSession(varName);
     }
+  }
+
+  private Map<String, Object> runnerBindings(Map<String, Object> additionalParams) {
+    Map<String, Object> bindings = new HashMap<>(serializeBindings(additionalParams));
+    if (gui.guiInteractions != null && !gui.guiInteractions.isEmpty()) {
+      bindings.put(GUI_INTERACTION_KEYS, new ArrayList<>(gui.guiInteractions.keySet()));
+    }
+    return bindings;
   }
 
   private Map<String, Object> serializeBindings(Map<String, Object> bindings) {

@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages a long-lived external Groovy runner process for non-GADE runtimes.
@@ -26,9 +27,17 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class RuntimeProcessRunner implements Closeable {
 
   private static final Logger log = LogManager.getLogger(RuntimeProcessRunner.class);
+  private static final int STDERR_BUFFER_SIZE = 50;
+  private static final int MAX_CONNECT_RETRIES = 50;
+  private static final long CONNECT_RETRY_SLEEP_MS = 50;
+  private static final int CONNECT_HANDSHAKE_TIMEOUT_MS = 2000;
+  private static final long STARTUP_EXIT_CHECK_TIMEOUT_MS = 200;
+
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
   private final ConsoleTextArea console;
+  // Keep the socket open across multiple JSON messages (one per line). The runner shares the socket streams
+  // between threads; auto-closing would accidentally terminate the connection during mapper reads/writes.
   private final ObjectMapper mapper = new ObjectMapper()
       .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
       .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
@@ -40,7 +49,7 @@ public class RuntimeProcessRunner implements Closeable {
   private int runnerPort;
   private ExecutorService readerService;
   private final Map<String, CompletableFuture<Map<String, Object>>> pending = new ConcurrentHashMap<>();
-  private final LinkedBlockingDeque<String> stderrBuffer = new LinkedBlockingDeque<>(50);
+  private final LinkedBlockingDeque<String> stderrBuffer = new LinkedBlockingDeque<>(STDERR_BUFFER_SIZE);
   private final Object procLock = new Object();
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console) {
@@ -99,11 +108,9 @@ public class RuntimeProcessRunner implements Closeable {
         });
         readerService.submit(this::stderrLoop);
         connectWithRetries();
-        // Give the runner a moment to settle before first send
-        sleepQuietly(50);
-        // If the process dies immediately, capture stderr/stdout for diagnostics
-        Thread.sleep(200);
-        if (!process.isAlive()) {
+
+        // If the process dies immediately, capture stderr/stdout for diagnostics.
+        if (process.waitFor(STARTUP_EXIT_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
           logProcessExit("immediate start check");
           throw new IOException("Runtime runner exited immediately");
         }
@@ -262,15 +269,18 @@ public class RuntimeProcessRunner implements Closeable {
       while ((line = reader.readLine()) != null) {
         console.appendWarningFx(line);
         log.warn("Runner stderr: {}", line);
-        if (stderrBuffer.remainingCapacity() == 0) {
-          stderrBuffer.poll();
-        }
-        stderrBuffer.offer(line);
+        bufferStderrLine(line);
       }
     } catch (IOException e) {
       log.debug("Runner stderrLoop ended: {}", e.getMessage());
     } finally {
       logProcessExit("stderrLoop end");
+    }
+  }
+
+  private void bufferStderrLine(String line) {
+    while (!stderrBuffer.offer(line)) {
+      stderrBuffer.poll();
     }
   }
 
@@ -403,19 +413,51 @@ public class RuntimeProcessRunner implements Closeable {
 
   private void connectWithRetries() throws IOException {
     IOException last = null;
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < MAX_CONNECT_RETRIES; i++) {
       try {
         socket = new Socket(loopbackV4(), runnerPort);
         socketWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
         socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         // Synchronous handshake: expect a hello from the runner so we know the socket is usable
         try {
-          socket.setSoTimeout(2000);
-          String hello = socketReader.readLine();
-          if (hello == null) {
+          socket.setSoTimeout(CONNECT_HANDSHAKE_TIMEOUT_MS);
+          String helloLine = null;
+          while (true) {
+            String line = socketReader.readLine();
+            if (line == null) {
+              break;
+            }
+            if (line.isBlank()) {
+              continue;
+            }
+            Map<String, Object> msg;
+            try {
+              msg = mapper.readValue(line, Map.class);
+            } catch (Exception parse) {
+              log.debug("Ignoring unparsable handshake line from runner: {}", line, parse);
+              continue;
+            }
+            String type = (String) msg.get("type");
+            if ("out".equals(type)) {
+              console.appendFx(String.valueOf(msg.getOrDefault("text", "")), false);
+              continue;
+            }
+            if ("err".equals(type)) {
+              console.appendWarningFx(String.valueOf(msg.getOrDefault("text", "")));
+              continue;
+            }
+            if ("error".equals(type)) {
+              throw new IOException("Runner failed during startup: " + msg.getOrDefault("error", "unknown error"));
+            }
+            if ("hello".equals(type)) {
+              helloLine = line;
+              break;
+            }
+          }
+          if (helloLine == null) {
             throw new IOException("Runner socket closed before handshake");
           }
-          log.info("Received handshake from runner {}: {}", runtime.getName(), hello);
+          log.info("Received handshake from runner {}: {}", runtime.getName(), helloLine);
         } finally {
           try {
             socket.setSoTimeout(0);
@@ -426,12 +468,12 @@ public class RuntimeProcessRunner implements Closeable {
         return;
       } catch (IOException e) {
         last = e;
-        if (i == 49) {
+        if (i == MAX_CONNECT_RETRIES - 1) {
           log.warn("Failed to connect/handshake with runner on port {} after {} attempts: {}", runnerPort, i + 1, e.toString());
         } else {
           log.debug("Retrying connect/handshake with runner on port {}, attempt {}: {}", runnerPort, i + 1, e.toString());
         }
-        sleepQuietly(50);
+        sleepQuietly(CONNECT_RETRY_SLEEP_MS);
       }
     }
     throw new IOException("Failed to connect to runner on port " + runnerPort, last);

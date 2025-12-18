@@ -27,6 +27,9 @@ public class GadeRunnerMain {
   private static final OutputStream ROOT_OUT = new FileOutputStream(FileDescriptor.out);
   private static final OutputStream ROOT_ERR = new FileOutputStream(FileDescriptor.err);
   private static final boolean VERBOSE = Boolean.getBoolean("gade.runner.verbose");
+  public static final String GUI_INTERACTION_KEYS = "__gadeGuiInteractionKeys";
+  // Keep stdout/stderr sockets open across multiple JSON messages (one per line). AUTO_CLOSE would close the shared
+  // writer/reader, breaking the protocol, since multiple threads (eval + out/err forwarding) use the same streams.
   private static final ObjectMapper mapper = new ObjectMapper()
       .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
       .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
@@ -48,59 +51,77 @@ public class GadeRunnerMain {
         emitRaw("runner accepted connection on port " + actualPort);
         emitRaw("runner entering read loop");
         emitRaw("runner local=" + socket.getLocalSocketAddress() + " remote=" + socket.getRemoteSocketAddress());
-        emit(Map.of("type", "hello", "port", actualPort), writer);
-        System.setOut(new PrintStream(new EventOutputStream("out", writer), true, StandardCharsets.UTF_8));
-        System.setErr(new PrintStream(new EventOutputStream("err", writer), true, StandardCharsets.UTF_8));
-
-        GroovyScriptEngineImpl engine;
+        PrintStream previousOut = System.out;
+        PrintStream previousErr = System.err;
+        PrintStream outStream = null;
+        PrintStream errStream = null;
         try {
-          engine = new GroovyScriptEngineImpl();
-        } catch (Throwable t) {
-          emitRaw("engine init failed: " + t);
-          emitRaw(getStackTrace(t));
-          emitError("init", "Engine init failed: " + t.getMessage(), getStackTrace(t), writer);
-          return;
-        }
-        engine.getContext().setWriter(new PrintWriter(System.out, true));
-        engine.getContext().setErrorWriter(new PrintWriter(System.err, true));
+          outStream = new PrintStream(new EventOutputStream("out", writer), true, StandardCharsets.UTF_8);
+          errStream = new PrintStream(new EventOutputStream("err", writer), true, StandardCharsets.UTF_8);
+          System.setOut(outStream);
+          System.setErr(errStream);
 
-        try {
-          String line;
-          while ((line = reader.readLine()) != null) {
-            if (line.isBlank()) {
-              continue;
-            }
-            emitRaw("runner received: " + line);
-            try {
-              Map<String, Object> cmd = mapper.readValue(line, Map.class);
-              String action = (String) cmd.get("cmd");
-              String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
-              try {
-                switch (action) {
-                  case "eval" -> handleEval(engine, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer);
-                  case "bindings" -> handleBindings(engine, id, writer);
-                  case "interrupt" -> handleInterrupt(id, writer);
-                  case "shutdown" -> {
-                    emit(Map.of("type", "shutdown", "id", id), writer);
-                    return;
-                  }
-                  default -> emitError(id, "Unknown command: " + action, null, writer);
-                }
-              } catch (Exception e) {
-                emitRaw("command failed: " + e);
-                emitRaw(getStackTrace(e));
-                emitError(id, e.getMessage(), getStackTrace(e), writer);
-              }
-            } catch (Exception parse) {
-              emitRaw("protocol parse failed: " + parse);
-              emitRaw(getStackTrace(parse));
-              emitError("protocol", "Failed to parse command: " + parse.getMessage(), getStackTrace(parse), writer);
-            }
+          GroovyScriptEngineImpl engine;
+          try {
+            engine = new GroovyScriptEngineImpl();
+          } catch (Throwable t) {
+            emitRaw("engine init failed: " + t);
+            emitRaw(getStackTrace(t));
+            emitError("init", "Engine init failed: " + t.getMessage(), getStackTrace(t), writer);
+            return;
           }
-          emitRaw("runner received EOF, shutting down");
-        } catch (IOException loopEx) {
-          emitRaw("runner read loop exception: " + loopEx);
-          emitRaw(getStackTrace(loopEx));
+          engine.getContext().setWriter(new PrintWriter(System.out, true));
+          engine.getContext().setErrorWriter(new PrintWriter(System.err, true));
+
+          emit(Map.of("type", "hello", "port", actualPort), writer);
+
+          try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+              if (line.isBlank()) {
+                continue;
+              }
+              emitRaw("runner received: " + line);
+              try {
+                Map<String, Object> cmd = mapper.readValue(line, Map.class);
+                String action = (String) cmd.get("cmd");
+                String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
+                try {
+                  switch (action) {
+                    case "eval" -> handleEval(engine, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer);
+                    case "bindings" -> handleBindings(engine, id, writer);
+                    case "interrupt" -> handleInterrupt(id, writer);
+                    case "shutdown" -> {
+                      emit(Map.of("type", "shutdown", "id", id), writer);
+                      return;
+                    }
+                    default -> emitError(id, "Unknown command: " + action, null, writer);
+                  }
+                } catch (Exception e) {
+                  emitRaw("command failed: " + e);
+                  emitRaw(getStackTrace(e));
+                  emitError(id, e.getMessage(), getStackTrace(e), writer);
+                }
+              } catch (Exception parse) {
+                emitRaw("protocol parse failed: " + parse);
+                emitRaw(getStackTrace(parse));
+                emitError("protocol", "Failed to parse command: " + parse.getMessage(), getStackTrace(parse), writer);
+              }
+            }
+            emitRaw("runner received EOF, shutting down");
+          } catch (IOException loopEx) {
+            emitRaw("runner read loop exception: " + loopEx);
+            emitRaw(getStackTrace(loopEx));
+          }
+        } finally {
+          System.setOut(previousOut);
+          System.setErr(previousErr);
+          if (outStream != null) {
+            outStream.close();
+          }
+          if (errStream != null) {
+            errStream.close();
+          }
         }
       }
     } catch (Throwable t) {
@@ -143,7 +164,12 @@ public class GadeRunnerMain {
       currentEvalThread.set(Thread.currentThread());
       try {
         if (bindings != null) {
-          bindings.forEach(engine::put);
+          ensureUnsupportedGuiInteractions(engine, bindings.get(GUI_INTERACTION_KEYS));
+          bindings.forEach((k, v) -> {
+            if (!GUI_INTERACTION_KEYS.equals(k)) {
+              engine.put(k, v);
+            }
+          });
         }
         Object result = engine.eval(script);
         emit(Map.of("type", "result", "id", id, "result", result == null ? "null" : String.valueOf(result)), writer);
@@ -156,6 +182,26 @@ public class GadeRunnerMain {
       }
     }, "gade-runner-eval");
     t.start();
+  }
+
+  private static void ensureUnsupportedGuiInteractions(GroovyScriptEngineImpl engine, Object keys) {
+    if (keys == null) {
+      return;
+    }
+    if (!(keys instanceof Iterable<?> iterable)) {
+      return;
+    }
+    Bindings engineBindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+    for (Object key : iterable) {
+      String name = key == null ? "" : String.valueOf(key).trim();
+      if (name.isEmpty()) {
+        continue;
+      }
+      if (engineBindings.containsKey(name)) {
+        continue;
+      }
+      engine.put(name, new UnsupportedGuiInteraction(name));
+    }
   }
 
   private static void handleBindings(GroovyScriptEngineImpl engine, String id, BufferedWriter writer) {
