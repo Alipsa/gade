@@ -99,8 +99,8 @@ public class MavenBuildUtils {
           if (result.getExecutionException() != null) {
             throw result.getExecutionException();
           }
-          Integer exitCode = result.getExitCode();
-          if (exitCode != null && exitCode != 0) {
+          int exitCode = result.getExitCode();
+          if (exitCode != 0) {
             throw new MavenInvocationException("Maven build failed with exit code " + exitCode);
           }
           return null;
