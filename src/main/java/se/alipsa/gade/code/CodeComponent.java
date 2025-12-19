@@ -13,6 +13,7 @@ import se.alipsa.gade.code.gradle.GradleTab;
 import se.alipsa.gade.code.groovytab.GroovyTab;
 import se.alipsa.gade.code.javatab.JavaTab;
 import se.alipsa.gade.code.jstab.JsTab;
+import se.alipsa.gade.code.maven.MavenTab;
 import se.alipsa.gade.code.mdtab.MdTab;
 import se.alipsa.gade.code.munin.MuninTab;
 import se.alipsa.gade.code.rtab.RTab;
@@ -127,6 +128,7 @@ public class CodeComponent extends BorderPane {
         case JAVA -> new JavaTab(title, gui);
         case SQL -> new SqlTab(title, gui);
         case GRADLE -> new GradleTab(title, gui);
+        case MAVEN -> new MavenTab(title, gui);
         case GROOVY -> new GroovyTab(title, gui);
         case JAVA_SCRIPT -> new JsTab(title, gui);
         case R -> new RTab(title, gui);

@@ -24,6 +24,9 @@ public enum CodeType {
   /** Gradle build script content */
   GRADLE("Gradle build script"),
 
+  /** Maven pom.xml build file */
+  MAVEN("Maven pom.xml"),
+
   /** Javascript content */
   JAVA_SCRIPT("Javascript code"),
 

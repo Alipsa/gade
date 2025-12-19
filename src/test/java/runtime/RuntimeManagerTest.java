@@ -41,15 +41,17 @@ class RuntimeManagerTest {
   }
 
   @Test
-  void defaultRuntimePrefersGradleThenMaven() throws IOException {
+  void defaultRuntimePrefersMavenThenGradle() throws IOException {
     assertEquals(RuntimeType.GADE, runtimeManager.defaultRuntime(tempDir).getType());
 
-    Files.createFile(new File(tempDir, "build.gradle").toPath());
-    assertEquals(RuntimeType.GRADLE, runtimeManager.defaultRuntime(tempDir).getType());
-
-    Files.deleteIfExists(new File(tempDir, "build.gradle").toPath());
     Files.createFile(new File(tempDir, "pom.xml").toPath());
     assertEquals(RuntimeType.MAVEN, runtimeManager.defaultRuntime(tempDir).getType());
+
+    Files.createFile(new File(tempDir, "build.gradle").toPath());
+    assertEquals(RuntimeType.MAVEN, runtimeManager.defaultRuntime(tempDir).getType());
+
+    Files.deleteIfExists(new File(tempDir, "pom.xml").toPath());
+    assertEquals(RuntimeType.GRADLE, runtimeManager.defaultRuntime(tempDir).getType());
   }
 
   @Test

@@ -20,7 +20,7 @@ import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.utils.ClassUtils;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.gradle.GradleUtils;
-import se.alipsa.gade.runtime.MavenResolver;
+import se.alipsa.gade.utils.maven.MavenClasspathUtils;
 import se.alipsa.groovy.resolver.DependencyResolver;
 import se.alipsa.groovy.resolver.ResolvingException;
 
@@ -38,6 +38,10 @@ public class RuntimeClassLoaderFactory {
   }
 
   public GroovyClassLoader create(RuntimeConfig runtime, ConsoleTextArea console) throws Exception {
+    return create(runtime, false, console);
+  }
+
+  public GroovyClassLoader create(RuntimeConfig runtime, boolean testContext, ConsoleTextArea console) throws Exception {
     if (runtime == null) {
       throw new IllegalArgumentException("Runtime must be provided");
     }
@@ -46,8 +50,8 @@ public class RuntimeClassLoaderFactory {
 
     GroovyClassLoader loader = switch (runtime.getType()) {
       case GADE -> createGadeClassLoader(config, console);
-      case GRADLE -> createGradleClassLoader(config, console);
-      case MAVEN -> createMavenClassLoader(config, console);
+      case GRADLE -> createGradleClassLoader(config, testContext, console);
+      case MAVEN -> createMavenClassLoader(config, testContext, console);
       case CUSTOM -> createCustomClassLoader(runtime, config, console);
     };
     ensureGroovyScriptEngine(loader, runtime, console);
@@ -64,7 +68,7 @@ public class RuntimeClassLoaderFactory {
     return loader;
   }
 
-  private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, ConsoleTextArea console) {
+  private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
     File projectDir = gui.getProjectDir();
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
     addDefaultGroovyRuntime(loader);
@@ -76,27 +80,20 @@ public class RuntimeClassLoaderFactory {
         projectDir,
         gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome()
     );
-    gradleUtils.addGradleDependencies(loader, console);
+    gradleUtils.addGradleDependencies(loader, console, testContext);
     return loader;
   }
 
-  private GroovyClassLoader createMavenClassLoader(CompilerConfiguration config, ConsoleTextArea console) {
+  private GroovyClassLoader createMavenClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
     addDefaultGroovyRuntime(loader);
     File projectDir = gui.getProjectDir();
     if (projectDir == null) {
       return loader;
     }
-    File pom = new File(projectDir, "pom.xml");
-    if (!pom.exists()) {
-      return loader;
-    }
-    try {
-      MavenResolver.addPomDependenciesTo(loader, pom);
-      addMavenOutputs(loader, projectDir);
-    } catch (Exception e) {
-      log.warn("Failed to resolve Maven dependencies for {}", pom, e);
-      console.appendWarningFx("Failed to resolve Maven dependencies: " + e.getMessage());
+    MavenClasspathUtils.addPomDependenciesTo(loader, projectDir, testContext, console);
+    if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true)) {
+      addMavenOutputs(loader, projectDir, testContext);
     }
     return loader;
   }
@@ -187,12 +184,15 @@ public class RuntimeClassLoaderFactory {
     }
   }
 
-  private void addMavenOutputs(GroovyClassLoader loader, File projectDir) {
+  private void addMavenOutputs(GroovyClassLoader loader, File projectDir, boolean testContext) {
     List<File> outputs = List.of(
         new File(projectDir, "target/classes"),
         new File(projectDir, "target/test-classes")
     );
-    outputs.stream().filter(File::exists).forEach(f -> {
+    outputs.stream()
+        .filter(f -> !f.getName().contains("test-classes") || testContext)
+        .filter(File::exists)
+        .forEach(f -> {
       try {
         loader.addURL(f.toURI().toURL());
       } catch (MalformedURLException e) {

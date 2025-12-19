@@ -139,6 +139,7 @@ dependencies {
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation 'org.apache.maven:maven-artifact:3.9.11'
   implementation 'org.apache.maven:maven-model:3.9.11'
+  implementation 'se.alipsa:maven-3.9.11-utils:1.0.0'
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   implementation 'org.knowm.xchart:xchart:3.8.8'

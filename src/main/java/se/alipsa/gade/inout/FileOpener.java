@@ -37,6 +37,9 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".java")) {
         return codeComponent.addTab(file, CodeType.JAVA);
       }
+      if ("pom.xml".equals(fileNameLower)) {
+        return codeComponent.addTab(file, CodeType.MAVEN);
+      }
       if (strEndsWith(fileNameLower, ".gradle")) {
         return codeComponent.addTab(file, CodeType.GRADLE);
       }

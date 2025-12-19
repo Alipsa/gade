@@ -8,9 +8,11 @@ public class CreateProjectWizardResult {
   String projectName;
   File dir;
   boolean changeToDir;
+  BuildSystem buildSystem = BuildSystem.GRADLE;
 
   @Override
   public String toString() {
-    return "groupName = " + groupName + ", packageName = " + projectName + ", dir = " + dir + ", changeToDir = " + changeToDir;
+    return "groupName = " + groupName + ", packageName = " + projectName + ", dir = " + dir
+        + ", changeToDir = " + changeToDir + ", buildSystem = " + buildSystem;
   }
 }
