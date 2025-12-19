@@ -30,7 +30,7 @@ public class GradleUtilsClasspathCacheTest {
 
     GradleUtils seed = new GradleUtils(null, projectDir.toFile(), System.getProperty("java.home"));
     String fingerprint = seed.getProjectFingerprint();
-    File cacheFile = seed.getClasspathCacheFile();
+    File cacheFile = seed.getClasspathCacheFile(false);
 
     Properties props = new Properties();
     props.setProperty("schema", "1");
@@ -55,4 +55,3 @@ public class GradleUtilsClasspathCacheTest {
     }
   }
 }
-

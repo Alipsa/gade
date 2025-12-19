@@ -20,6 +20,7 @@ import java.io.File;
 public class CreateLibraryWizardDialog extends Dialog<CreateLibraryWizardResult> {
 
   private static final Logger log = LogManager.getLogger(CreateLibraryWizardDialog.class);
+  private static final String PREF_BUILD_SYSTEM = "CreateLibraryWizardDialog.buildSystem";
 
   private final TextField groupNameField;
   private final TextField packageNameField;
@@ -30,6 +31,7 @@ public class CreateLibraryWizardDialog extends Dialog<CreateLibraryWizardResult>
 
   private final TextField packageDirField;
   private final Node okButton;
+  private final ToggleGroup buildSystemGroup = new ToggleGroup();
 
   CreateLibraryWizardDialog(Gade gui) {
     this.gui = gui;
@@ -118,6 +120,36 @@ public class CreateLibraryWizardDialog extends Dialog<CreateLibraryWizardResult>
     packageDirField.setMaxWidth(Double.MAX_VALUE);
     packageDirBox.getChildren().addAll(packageDirlabel, packageDirWrapper);
 
+    HBox buildSystemBox = new HBox();
+    buildSystemBox.setPadding(insets);
+    buildSystemBox.setSpacing(10);
+    vBox.getChildren().add(buildSystemBox);
+    Label buildSystemLabel = new Label("Build system");
+    RadioButton mavenBtn = new RadioButton("Maven");
+    mavenBtn.setUserData(BuildSystem.MAVEN);
+    mavenBtn.setToggleGroup(buildSystemGroup);
+    RadioButton gradleBtn = new RadioButton("Gradle");
+    gradleBtn.setUserData(BuildSystem.GRADLE);
+    gradleBtn.setToggleGroup(buildSystemGroup);
+    RadioButton noneBtn = new RadioButton("None");
+    noneBtn.setUserData(BuildSystem.NONE);
+    noneBtn.setToggleGroup(buildSystemGroup);
+    String saved = gui.getPrefs().get(PREF_BUILD_SYSTEM, BuildSystem.MAVEN.name());
+    BuildSystem initial;
+    try {
+      initial = BuildSystem.valueOf(saved);
+    } catch (IllegalArgumentException e) {
+      initial = BuildSystem.MAVEN;
+    }
+    if (BuildSystem.GRADLE.equals(initial)) {
+      gradleBtn.setSelected(true);
+    } else if (BuildSystem.NONE.equals(initial)) {
+      noneBtn.setSelected(true);
+    } else {
+      mavenBtn.setSelected(true);
+    }
+    buildSystemBox.getChildren().addAll(buildSystemLabel, mavenBtn, gradleBtn, noneBtn);
+
     HBox changeToDirBox = new HBox();
     changeToDirBox.setPadding(insets);
     changeToDirBox.setSpacing(10);
@@ -177,6 +209,11 @@ public class CreateLibraryWizardDialog extends Dialog<CreateLibraryWizardResult>
     res.libName = packageNameField.getText();
     res.dir = new File(packageDirField.getText().trim());
     res.changeToDir = changeToDir.isSelected();
+    Toggle selectedBuildSystem = buildSystemGroup.getSelectedToggle();
+    if (selectedBuildSystem != null && selectedBuildSystem.getUserData() instanceof BuildSystem buildSystem) {
+      res.buildSystem = buildSystem;
+      gui.getPrefs().put(PREF_BUILD_SYSTEM, buildSystem.name());
+    }
     return res;
   }
 }

@@ -93,7 +93,12 @@ public class GroovyTab extends TextAreaTab implements TaskListener {
     final String title = getTitle();
     consoleComponent.running();
     try {
-      consoleComponent.runScriptAsync(content, title, this);
+      File sourceFile = getFile();
+      if (sourceFile == null) {
+        consoleComponent.runScriptAsync(content, title, this);
+      } else {
+        consoleComponent.runScriptAsync(content, title, this, sourceFile);
+      }
     } catch (Exception e) {
       ExceptionAlert.showAlert("Failed to run script", e);
     }

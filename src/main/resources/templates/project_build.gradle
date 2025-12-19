@@ -11,12 +11,12 @@ description = 'TODO: write a short description here'
 sourceSets {
   main {
     groovy {
-      srcDirs = ['src']
+      srcDirs = ['src/main/groovy']
     }
   }
   test {
     groovy {
-      srcDirs = ['test']
+      srcDirs = ['src/test/groovy']
     }
   }
 }
@@ -63,4 +63,3 @@ jar {
     configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
   }
 }
-

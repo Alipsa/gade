@@ -69,13 +69,13 @@ public class RuntimeManager {
   }
 
   public RuntimeConfig defaultRuntime(File projectDir) {
-    // Prefer Gradle if a build.gradle exists, then Maven, otherwise fallback to Gade.
+    // Prefer Maven if a pom.xml exists, then Gradle, otherwise fallback to Gade.
     if (projectDir != null) {
-      if (new File(projectDir, "build.gradle").exists()) {
-        return findRuntime(RUNTIME_GRADLE).orElseGet(() -> new RuntimeConfig(RUNTIME_GRADLE, RuntimeType.GRADLE));
-      }
       if (new File(projectDir, "pom.xml").exists()) {
         return findRuntime(RUNTIME_MAVEN).orElseGet(() -> new RuntimeConfig(RUNTIME_MAVEN, RuntimeType.MAVEN));
+      }
+      if (new File(projectDir, "build.gradle").exists()) {
+        return findRuntime(RUNTIME_GRADLE).orElseGet(() -> new RuntimeConfig(RUNTIME_GRADLE, RuntimeType.GRADLE));
       }
     }
     return findRuntime(RUNTIME_GADE).orElseGet(() -> new RuntimeConfig(RUNTIME_GADE, RuntimeType.GADE));

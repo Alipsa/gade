@@ -190,9 +190,9 @@ public class MainMenu extends MenuBar {
     packageWizard.setOnAction(this::showLibraryWizard);
     menu.getItems().add(packageWizard);
 
-    MenuItem createBasicPomMI = new MenuItem("Create build.gradle");
-    createBasicPomMI.setOnAction(this::createGradleBuild);
-    menu.getItems().add(createBasicPomMI);
+    MenuItem createBuildFileMI = new MenuItem("Create build file");
+    createBuildFileMI.setOnAction(this::createBuildFile);
+    menu.getItems().add(createBuildFileMI);
 
     MenuItem cloneProjectMI = new MenuItem("Clone a git project");
     cloneProjectMI.setOnAction(this::cloneProject);
@@ -263,20 +263,29 @@ public class MainMenu extends MenuBar {
     }
   }
 
-  private void createGradleBuild(ActionEvent actionEvent) {
-    CreateProjectWizardDialog dialog = new CreateProjectWizardDialog(gui, "Create build.gradle", false);
+  private void createBuildFile(ActionEvent actionEvent) {
+    CreateProjectWizardDialog dialog = new CreateProjectWizardDialog(gui, "Create build file", false);
     Optional<CreateProjectWizardResult> result = dialog.showAndWait();
     if (result.isEmpty()) {
       return;
     }
     CreateProjectWizardResult res = result.get();
     try {
-      String mainProjectScript = camelCasedPackageName(res) + ".groovy";
-      String scriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
-      FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
+      if (BuildSystem.NONE.equals(res.buildSystem)) {
+        Alerts.infoFx("No build file selected", "Build system was set to None; no build file was generated.");
+        return;
+      }
+      if (BuildSystem.GRADLE.equals(res.buildSystem)) {
+        String mainProjectScript = camelCasedPackageName(res) + ".groovy";
+        String scriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
+        FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
+      } else if (BuildSystem.MAVEN.equals(res.buildSystem)) {
+        String pomContent = createBuildScript("templates/project-pom.xml", res.groupName, res.projectName);
+        FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
+      }
       gui.getInoutComponent().refreshFileTree();
     } catch (IOException e) {
-      ExceptionAlert.showAlert("Failed to create build.gradle", e);
+      ExceptionAlert.showAlert("Failed to create build file", e);
     }
   }
 
@@ -298,28 +307,34 @@ public class MainMenu extends MenuBar {
 
       String camelCasedProjectName = camelCasedPackageName(res);
       String mainProjectScript = camelCasedProjectName + ".groovy";
-      String buildScriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
-      FileUtils.writeToFile(new File(res.dir, "build.gradle"), buildScriptContent);
-      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("[artifactId]", res.projectName));
+      if (BuildSystem.GRADLE.equals(res.buildSystem)) {
+        String buildScriptContent = createBuildScript("templates/project_build.gradle", res.groupName, res.projectName, mainProjectScript);
+        FileUtils.writeToFile(new File(res.dir, "build.gradle"), buildScriptContent);
+        FileUtils.copy("templates/settings.gradle", res.dir, Map.of("[artifactId]", res.projectName));
+      } else if (BuildSystem.MAVEN.equals(res.buildSystem)) {
+        String pomContent = createBuildScript("templates/project-pom.xml", res.groupName, res.projectName);
+        FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
+      }
 
-      Path mainPath = new File(res.dir, "src").toPath();
+      Path mainPath = new File(res.dir, "src/main/groovy").toPath();
       Files.createDirectories(mainPath);
-      Path rFile = mainPath.resolve(mainProjectScript);
-      Files.createFile(rFile);
-      Path testPath = new File(res.dir, "test").toPath();
+      Path mainFile = mainPath.resolve(mainProjectScript);
+      Files.createFile(mainFile);
+      Path testPath = new File(res.dir, "src/test/groovy").toPath();
       Files.createDirectories(testPath);
       Path testFile = Files.createFile(testPath.resolve(camelCasedProjectName + "Test.groovy"));
       FileUtils.writeToFile(testFile.toFile(), createTest(camelCasedProjectName)
       );
 
-
-      Path testResourcePath = new File(res.dir, "test/resources/").toPath();
+      Path testResourcePath = new File(res.dir, "src/test/resources/").toPath();
       Files.createDirectories(testResourcePath);
       FileUtils.copy("templates/log4j.properties", testResourcePath.toFile());
 
       if (res.changeToDir) {
         gui.getInoutComponent().changeRootDir(res.dir);
+        selectDefaultRuntimeForBuildSystem(res.dir, res.buildSystem, true);
       } else {
+        selectDefaultRuntimeForBuildSystem(res.dir, res.buildSystem, false);
         gui.getInoutComponent().refreshFileTree();
       }
     } catch (IOException e) {
@@ -376,26 +391,54 @@ public class MainMenu extends MenuBar {
       String camelCasedLibName = CaseUtils.toCamelCase(res.libName, true,
          ' ', '_', '-', ',', '.', '/', '\\');
 
-      String scriptContent = createBuildScript("templates/library_build.gradle", res.groupName, res.libName);
-      FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
-      FileUtils.copy("templates/settings.gradle", res.dir, Map.of("[artifactId]", res.libName));
+      if (BuildSystem.GRADLE.equals(res.buildSystem)) {
+        String scriptContent = createBuildScript("templates/library_build.gradle", res.groupName, res.libName);
+        FileUtils.writeToFile(new File(res.dir, "build.gradle"), scriptContent);
+        FileUtils.copy("templates/settings.gradle", res.dir, Map.of("[artifactId]", res.libName));
+      } else if (BuildSystem.MAVEN.equals(res.buildSystem)) {
+        String pomContent = createBuildScript("templates/package-pom.xml", res.groupName, res.libName);
+        FileUtils.writeToFile(new File(res.dir, "pom.xml"), pomContent);
+      }
 
-      Path mainPath = new File(res.dir, "src").toPath();
+      Path mainPath = new File(res.dir, "src/main/groovy").toPath();
       Files.createDirectories(mainPath);
       Path scriptFile = mainPath.resolve(camelCasedLibName + ".groovy");
       Files.createFile(scriptFile);
       //FileUtils.writeToFile(rFile.toFile(), "# remember to add export(function name) to NAMESPACE to make them available");
-      Path testPath = new File(res.dir, "test").toPath();
+      Path testPath = new File(res.dir, "src/test/groovy").toPath();
       Files.createDirectories(testPath);
       Path testFile = Files.createFile(testPath.resolve(camelCasedLibName + "Test.groovy"));
       FileUtils.writeToFile(testFile.toFile(), createTest(camelCasedLibName));
+      Path testResourcePath = new File(res.dir, "src/test/resources/").toPath();
+      Files.createDirectories(testResourcePath);
+      FileUtils.copy("templates/log4j.properties", testResourcePath.toFile());
       if (res.changeToDir) {
         gui.getInoutComponent().changeRootDir(res.dir);
+        selectDefaultRuntimeForBuildSystem(res.dir, res.buildSystem, true);
       } else {
+        selectDefaultRuntimeForBuildSystem(res.dir, res.buildSystem, false);
         gui.getInoutComponent().refreshFileTree();
       }
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to create package project", e);
+    }
+  }
+
+  private void selectDefaultRuntimeForBuildSystem(File projectDir, BuildSystem buildSystem, boolean activateNow) {
+    if (projectDir == null || buildSystem == null) {
+      return;
+    }
+    RuntimeManager manager = gui.getRuntimeManager();
+    RuntimeConfig runtime = switch (buildSystem) {
+      case MAVEN -> manager.findRuntime(RuntimeManager.RUNTIME_MAVEN).orElse(new RuntimeConfig(RuntimeManager.RUNTIME_MAVEN, RuntimeType.MAVEN));
+      case GRADLE -> manager.findRuntime(RuntimeManager.RUNTIME_GRADLE).orElse(new RuntimeConfig(RuntimeManager.RUNTIME_GRADLE, RuntimeType.GRADLE));
+      case NONE -> manager.findRuntime(RuntimeManager.RUNTIME_GADE).orElse(new RuntimeConfig(RuntimeManager.RUNTIME_GADE, RuntimeType.GADE));
+    };
+    manager.setSelectedRuntime(projectDir, runtime);
+    if (activateNow) {
+      gui.selectRuntime(runtime);
+    } else {
+      refreshRuntimesMenu();
     }
   }
 
@@ -962,20 +1005,21 @@ public class MainMenu extends MenuBar {
     if (activeRuntime == null || activeRuntime.getType() == null) {
       return;
     }
-    if (!shouldReloadForGradleFileSave(activeRuntime)) {
-      return;
-    }
-    if (!isGradleClasspathFile(projectPath, filePath)) {
+    if (RuntimeType.GRADLE.equals(activeRuntime.getType())) {
+      if (!isGradleClasspathFile(projectPath, filePath)) {
+        return;
+      }
+    } else if (RuntimeType.MAVEN.equals(activeRuntime.getType())) {
+      if (!isMavenClasspathFile(projectPath, filePath)) {
+        return;
+      }
+    } else {
       return;
     }
 
     runtimeReloadReason = "saved " + projectPath.relativize(filePath);
     runtimeReloadDebounce.stop();
     runtimeReloadDebounce.playFromStart();
-  }
-
-  private boolean shouldReloadForGradleFileSave(RuntimeConfig activeRuntime) {
-    return RuntimeType.GRADLE.equals(activeRuntime.getType());
   }
 
   private static boolean isGradleClasspathFile(Path projectDir, Path filePath) {
@@ -995,6 +1039,25 @@ public class MainMenu extends MenuBar {
     }
     return rel.equals(Path.of("gradle", "libs.versions.toml"))
         || rel.equals(Path.of("gradle", "wrapper", "gradle-wrapper.properties"));
+  }
+
+  private static boolean isMavenClasspathFile(Path projectDir, Path filePath) {
+    String name = filePath.getFileName() == null ? "" : filePath.getFileName().toString();
+    if ("pom.xml".equals(name)) {
+      return true;
+    }
+    Path rel;
+    try {
+      rel = projectDir.relativize(filePath);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    if (!rel.startsWith(Path.of(".mvn"))) {
+      return false;
+    }
+    return rel.equals(Path.of(".mvn", "maven.config"))
+        || rel.equals(Path.of(".mvn", "extensions.xml"))
+        || rel.equals(Path.of(".mvn", "wrapper", "maven-wrapper.properties"));
   }
 
   public File promptForFile() {

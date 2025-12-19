@@ -8,9 +8,11 @@ public class CreateLibraryWizardResult {
   String libName;
   File dir;
   boolean changeToDir;
+  BuildSystem buildSystem = BuildSystem.GRADLE;
 
   @Override
   public String toString() {
-    return "groupName = " + groupName + ", packageName = " + libName + ", dir = " + dir + ", changeToDir = " + changeToDir;
+    return "groupName = " + groupName + ", packageName = " + libName + ", dir = " + dir
+        + ", changeToDir = " + changeToDir + ", buildSystem = " + buildSystem;
   }
 }

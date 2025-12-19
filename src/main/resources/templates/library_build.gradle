@@ -18,12 +18,12 @@ plugins {
 sourceSets {
     main {
         groovy {
-            srcDirs = ['src']
+            srcDirs = ['src/main/groovy']
         }
     }
     test {
         groovy {
-            srcDirs = ['test']
+            srcDirs = ['src/test/groovy']
         }
     }
 }

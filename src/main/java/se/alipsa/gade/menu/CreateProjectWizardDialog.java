@@ -7,9 +7,13 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -24,6 +28,7 @@ import java.io.File;
 public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult> {
 
   private static final Logger log = LogManager.getLogger(CreateProjectWizardDialog.class);
+  private static final String PREF_BUILD_SYSTEM = "CreateProjectWizardDialog.buildSystem";
 
   private final TextField groupNameField = new TextField();
   private final TextField projectNameField = new TextField();
@@ -33,10 +38,11 @@ public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult>
   private CheckBox changeToDir;
   private final TextField projectDirField = new TextField();
   private final boolean createProject;
+  private final ToggleGroup buildSystemGroup = new ToggleGroup();
 
   // Used to create a new project
   CreateProjectWizardDialog(Gade gui) {
-    this(gui, "Create Maven Project Wizard", true);
+    this(gui, "Create Project Wizard", true);
   }
 
   // Also used to create a pom.xml only
@@ -94,17 +100,54 @@ public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult>
     });
     grid.add(projectNameField, 1,1, 2, 1);
 
+    Label buildSystemLabel = new Label("Build system");
+    buildSystemLabel.setWrapText(false);
+    grid.add(buildSystemLabel, 0, 2);
+    RadioButton mavenBtn = new RadioButton("Maven");
+    mavenBtn.setUserData(BuildSystem.MAVEN);
+    mavenBtn.setToggleGroup(buildSystemGroup);
+    RadioButton gradleBtn = new RadioButton("Gradle");
+    gradleBtn.setUserData(BuildSystem.GRADLE);
+    gradleBtn.setToggleGroup(buildSystemGroup);
+    RadioButton noneBtn = new RadioButton("None");
+    noneBtn.setUserData(BuildSystem.NONE);
+    noneBtn.setToggleGroup(buildSystemGroup);
+    noneBtn.setDisable(!createProject);
+
+    String saved = gui.getPrefs().get(PREF_BUILD_SYSTEM, BuildSystem.MAVEN.name());
+    BuildSystem initial;
+    try {
+      initial = BuildSystem.valueOf(saved);
+    } catch (IllegalArgumentException e) {
+      initial = BuildSystem.MAVEN;
+    }
+    if (!createProject && BuildSystem.NONE.equals(initial)) {
+      initial = BuildSystem.MAVEN;
+    }
+    if (BuildSystem.GRADLE.equals(initial)) {
+      gradleBtn.setSelected(true);
+    } else if (BuildSystem.NONE.equals(initial)) {
+      noneBtn.setSelected(true);
+    } else {
+      mavenBtn.setSelected(true);
+    }
+
+    FlowPane buildSystemPane = new FlowPane();
+    buildSystemPane.setHgap(10);
+    buildSystemPane.getChildren().addAll(mavenBtn, gradleBtn, noneBtn);
+    grid.add(buildSystemPane, 1, 2, 2, 1);
+
     Label chooseDirLabel = new Label("Base dir");
     chooseDirLabel.setWrapText(false);
-    grid.add(chooseDirLabel, 0,2);
+    grid.add(chooseDirLabel, 0,3);
     Button chooseDirButton = new Button("Browse...");
-    grid.add(chooseDirButton, 1, 2);
+    grid.add(chooseDirButton, 1, 3);
     chooseDirButton.setOnAction(this::chooseProjectDir);
     dirField = new TextField();
     dirField.setPrefColumnCount(25);
 
     dirField.setDisable(true);
-    grid.add(dirField, 2,2);
+    grid.add(dirField, 2,3);
 
     selectedDirectory = gui.getInoutComponent().projectDir();
     dirField.setText(selectedDirectory.getAbsolutePath());
@@ -112,15 +155,15 @@ public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult>
 
     if (createProject) {
       Label packageDirlabel = new Label("Project dir");
-      grid.add(packageDirlabel, 0, 3);
+      grid.add(packageDirlabel, 0, 4);
       projectDirField.setText(selectedDirectory.getAbsolutePath());
       projectDirField.setTooltip(new Tooltip(selectedDirectory.getAbsolutePath()));
       projectDirField.setDisable(true);
-      grid.add(projectDirField, 1, 3, 2, 1);
+      grid.add(projectDirField, 1, 4, 2, 1);
 
       changeToDir = new CheckBox("Change to new project dir");
       changeToDir.setSelected(true);
-      grid.add(changeToDir, 0, 4, 2, 1);
+      grid.add(changeToDir, 0, 5, 2, 1);
     }
 
     getDialogPane().setPrefSize(700, 300);
@@ -167,6 +210,11 @@ public class CreateProjectWizardDialog extends Dialog<CreateProjectWizardResult>
       res.dir = new File(projectDirField.getText());
     } else {
       res.dir = new File(dirField.getText());
+    }
+    Toggle selectedBuildSystem = buildSystemGroup.getSelectedToggle();
+    if (selectedBuildSystem != null && selectedBuildSystem.getUserData() instanceof BuildSystem buildSystem) {
+      res.buildSystem = buildSystem;
+      gui.getPrefs().put(PREF_BUILD_SYSTEM, buildSystem.name());
     }
     if (changeToDir == null) {
       res.changeToDir = false;

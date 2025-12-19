@@ -71,8 +71,10 @@ public class GradleUtils {
   private final boolean wrapperAvailable;
   private final List<DistributionMode> distributionOrder = new ArrayList<>();
   private int currentDistributionIndex = 0;
-  private volatile ClasspathModel cachedClasspath;
-  private volatile String cachedClasspathFingerprint;
+  private volatile ClasspathModel cachedClasspathMain;
+  private volatile String cachedClasspathFingerprintMain;
+  private volatile ClasspathModel cachedClasspathTest;
+  private volatile String cachedClasspathFingerprintTest;
 
   public GradleUtils(Gade gui) {
     this(null, gui.getInoutComponent().projectDir(), null);
@@ -401,12 +403,12 @@ public class GradleUtils {
   }
 
   public List<File> getProjectDependencies() {
-    return resolveClasspathModel().dependencies();
+    return resolveClasspathModel(false).dependencies();
   }
 
   public List<URL> getOutputDirs() throws MalformedURLException {
     List<URL> urls = new ArrayList<>();
-    for (File out : resolveClasspathModel().outputDirs()) {
+    for (File out : resolveClasspathModel(false).outputDirs()) {
       urls.add(out.toURI().toURL());
     }
     return urls;
@@ -423,8 +425,12 @@ public class GradleUtils {
   }
 
   public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console) {
+    addGradleDependencies(classLoader, console, false);
+  }
+
+  public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console, boolean testContext) {
     long start = System.currentTimeMillis();
-    ClasspathModel model = resolveClasspathModel();
+    ClasspathModel model = resolveClasspathModel(testContext);
     if (model.fromCache()) {
       console.appendFx("  Using cached Gradle classpath", true);
     }
@@ -457,7 +463,7 @@ public class GradleUtils {
 
   public ClassLoader createGradleCLassLoader(ClassLoader parent, ConsoleTextArea console) {
     List<URL> urls = new ArrayList<>();
-    ClasspathModel model = resolveClasspathModel();
+    ClasspathModel model = resolveClasspathModel(false);
     if (model.fromCache()) {
       console.appendFx("  Using cached Gradle classpath", true);
     }
@@ -485,26 +491,43 @@ public class GradleUtils {
     return new URLClassLoader(urls.toArray(new URL[0]), parent);
   }
 
-  private ClasspathModel resolveClasspathModel() {
-    String fingerprint = fingerprintProject();
-    ClasspathModel cached = cachedClasspath;
-    if (cached != null && Objects.equals(fingerprint, cachedClasspathFingerprint)) {
+  private ClasspathModel resolveClasspathModel(boolean testContext) {
+    String fingerprint = fingerprintProject(testContext);
+    if (testContext) {
+      ClasspathModel cached = cachedClasspathTest;
+      if (cached != null && Objects.equals(fingerprint, cachedClasspathFingerprintTest)) {
+        return cached;
+      }
+      ClasspathModel fromDisk = loadClasspathCache(fingerprint, true);
+      if (fromDisk != null) {
+        cachedClasspathTest = fromDisk;
+        cachedClasspathFingerprintTest = fingerprint;
+        return fromDisk;
+      }
+      ClasspathModel resolved = resolveClasspathViaToolingApi(true);
+      cachedClasspathTest = resolved;
+      cachedClasspathFingerprintTest = fingerprint;
+      storeClasspathCache(fingerprint, resolved.dependencies(), resolved.outputDirs(), true);
+      return resolved;
+    }
+    ClasspathModel cached = cachedClasspathMain;
+    if (cached != null && Objects.equals(fingerprint, cachedClasspathFingerprintMain)) {
       return cached;
     }
-    ClasspathModel fromDisk = loadClasspathCache(fingerprint);
+    ClasspathModel fromDisk = loadClasspathCache(fingerprint, false);
     if (fromDisk != null) {
-      cachedClasspath = fromDisk;
-      cachedClasspathFingerprint = fingerprint;
+      cachedClasspathMain = fromDisk;
+      cachedClasspathFingerprintMain = fingerprint;
       return fromDisk;
     }
-    ClasspathModel resolved = resolveClasspathViaToolingApi();
-    cachedClasspath = resolved;
-    cachedClasspathFingerprint = fingerprint;
-    storeClasspathCache(fingerprint, resolved.dependencies(), resolved.outputDirs());
+    ClasspathModel resolved = resolveClasspathViaToolingApi(false);
+    cachedClasspathMain = resolved;
+    cachedClasspathFingerprintMain = fingerprint;
+    storeClasspathCache(fingerprint, resolved.dependencies(), resolved.outputDirs(), false);
     return resolved;
   }
 
-  private ClasspathModel resolveClasspathViaToolingApi() {
+  private ClasspathModel resolveClasspathViaToolingApi(boolean testContext) {
     return withConnection(connection -> {
       LinkedHashSet<File> dependencyFiles = new LinkedHashSet<>();
       LinkedHashSet<File> outputDirs = new LinkedHashSet<>();
@@ -515,16 +538,53 @@ public class GradleUtils {
       for (IdeaModule module : project.getModules()) {
         for (IdeaDependency dependency : module.getDependencies()) {
           if (dependency instanceof IdeaSingleEntryLibraryDependency ideaDependency) {
-            dependencyFiles.add(ideaDependency.getFile());
+            if (shouldIncludeDependency(dependency, testContext)) {
+              dependencyFiles.add(ideaDependency.getFile());
+            }
           }
         }
         outputDirs.add(getOutputDir(module));
+        if (testContext) {
+          File testOut = getTestOutputDir(module);
+          if (testOut != null) {
+            outputDirs.add(testOut);
+          }
+        }
       }
       return new ClasspathModel(List.copyOf(dependencyFiles), List.copyOf(outputDirs), false);
     });
   }
 
-  private String fingerprintProject() {
+  private static boolean shouldIncludeDependency(IdeaDependency dependency, boolean testContext) {
+    if (dependency == null || dependency.getScope() == null) {
+      return true;
+    }
+    String scope = dependency.getScope().getScope();
+    if (scope == null || scope.isBlank()) {
+      return true;
+    }
+    scope = scope.toUpperCase();
+    if ("COMPILE".equals(scope) || "RUNTIME".equals(scope) || "PROVIDED".equals(scope)) {
+      return true;
+    }
+    return testContext && "TEST".equals(scope);
+  }
+
+  private File getTestOutputDir(IdeaModule module) {
+    if (module == null || module.getCompilerOutput() == null) {
+      return null;
+    }
+    File out = module.getCompilerOutput().getTestOutputDir();
+    if (out != null && out.exists()) {
+      return out;
+    }
+    File moduleDir = module.getGradleProject().getProjectDirectory();
+    moduleDir = moduleDir != null && moduleDir.exists() ? moduleDir : projectDir;
+    File fallback = new File(moduleDir, "build/classes/groovy/test/");
+    return fallback.exists() ? fallback : null;
+  }
+
+  private String fingerprintProject(boolean testContext) {
     String fingerprint;
     List<Path> tracked = new ArrayList<>();
     tracked.add(projectDir.toPath().resolve("build.gradle"));
@@ -538,6 +598,7 @@ public class GradleUtils {
     long buildSrcLatest = latestModified(projectDir.toPath().resolve("buildSrc"));
     StringBuilder sb = new StringBuilder();
     sb.append("project=").append(projectDir.getAbsolutePath()).append('\n');
+    sb.append("testContext=").append(testContext).append('\n');
     for (Path p : tracked) {
       sb.append(p).append('|');
       try {
@@ -600,13 +661,14 @@ public class GradleUtils {
     return dir;
   }
 
-  File getClasspathCacheFile() {
+  File getClasspathCacheFile(boolean testContext) {
     String key = sha256Hex(projectDir.getAbsolutePath());
-    return new File(gradleClasspathCacheDir(), key + ".properties");
+    String suffix = testContext ? "-test" : "-main";
+    return new File(gradleClasspathCacheDir(), key + suffix + ".properties");
   }
 
-  private ClasspathModel loadClasspathCache(String expectedFingerprint) {
-    File cacheFile = getClasspathCacheFile();
+  private ClasspathModel loadClasspathCache(String expectedFingerprint, boolean testContext) {
+    File cacheFile = getClasspathCacheFile(testContext);
     if (!cacheFile.exists()) {
       return null;
     }
@@ -663,8 +725,8 @@ public class GradleUtils {
     return true;
   }
 
-  private void storeClasspathCache(String fingerprint, List<File> dependencies, List<File> outputDirs) {
-    File cacheFile = getClasspathCacheFile();
+  private void storeClasspathCache(String fingerprint, List<File> dependencies, List<File> outputDirs, boolean testContext) {
+    File cacheFile = getClasspathCacheFile(testContext);
     Properties props = new Properties();
     props.setProperty(CACHE_SCHEMA, CACHE_SCHEMA_VERSION);
     props.setProperty(CACHE_FINGERPRINT, fingerprint);
@@ -868,6 +930,6 @@ public class GradleUtils {
 
   // package-private for tests
   String getProjectFingerprint() {
-    return fingerprintProject();
+    return fingerprintProject(false);
   }
 }

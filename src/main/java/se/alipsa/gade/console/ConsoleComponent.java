@@ -43,6 +43,7 @@ import se.alipsa.gade.runner.GadeRunnerMain;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Optional;
@@ -64,6 +65,7 @@ public class ConsoleComponent extends BorderPane {
   private final Gade gui;
   private GroovyClassLoader classLoader;
   private RuntimeConfig activeRuntime;
+  private boolean runtimeTestContext;
   private final RuntimeClassLoaderFactory runtimeClassLoaderFactory;
   private String cachedGroovyVersion;
   private RuntimeProcessRunner processRunner;
@@ -112,12 +114,13 @@ public class ConsoleComponent extends BorderPane {
     if (runtimeToUse == null) {
       return;
     }
+    runtimeTestContext = false;
     running();
     Task<Void> initTask = new Task<>() {
 
       @Override
       protected Void call() throws Exception {
-        return resetClassloaderAndGroovy(runtimeToUse);
+        return resetClassloaderAndGroovy(runtimeToUse, false);
       }
     };
     initTask.setOnSucceeded(e -> {
@@ -169,7 +172,7 @@ public class ConsoleComponent extends BorderPane {
   }
 
   @Nullable
-  private Void resetClassloaderAndGroovy(RuntimeConfig runtime) throws Exception {
+  private Void resetClassloaderAndGroovy(RuntimeConfig runtime, boolean testContext) throws Exception {
     RuntimeConfig targetRuntime = runtime;
     boolean retriedWithGade = false;
     while (true) {
@@ -188,7 +191,7 @@ public class ConsoleComponent extends BorderPane {
         if (RuntimeType.GRADLE.equals(targetRuntime.getType())) {
           console.appendFx("* Initializing Gradle runtime (first time can take a while)...", true);
         }
-        classLoader = runtimeClassLoaderFactory.create(targetRuntime, console);
+        classLoader = runtimeClassLoaderFactory.create(targetRuntime, testContext, console);
         if (RuntimeType.GADE.equals(targetRuntime.getType())) {
           engine = new GroovyEngineReflection(classLoader);
           addObjectsToBindings(gui.guiInteractions);
@@ -196,6 +199,8 @@ public class ConsoleComponent extends BorderPane {
           processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console);
         }
         activeRuntime = targetRuntime;
+        runtimeTestContext = (RuntimeType.GRADLE.equals(targetRuntime.getType()) || RuntimeType.MAVEN.equals(targetRuntime.getType()))
+            && testContext;
         cachedGroovyVersion = null; // clear cached value since the runtime just changed
         return null;
       } catch (Exception ex) {
@@ -205,6 +210,7 @@ public class ConsoleComponent extends BorderPane {
           console.appendWarningFx("Runtime '" + targetRuntime.getName()
               + "' is not ready, using Gade runtime instead (" + ex.getMessage() + ")");
           targetRuntime = new RuntimeConfig(RuntimeManager.RUNTIME_GADE, RuntimeType.GADE);
+          testContext = false;
           gui.getRuntimeManager().setSelectedRuntime(gui.getProjectDir(), targetRuntime);
           continue;
         }
@@ -507,6 +513,10 @@ public class ConsoleComponent extends BorderPane {
   }
 
   public void runScriptAsync(String script, String title, TaskListener taskListener) {
+    runScriptAsync(script, title, taskListener, null);
+  }
+
+  public void runScriptAsync(String script, String title, TaskListener taskListener, File sourceFile) {
 
     running();
 
@@ -514,6 +524,7 @@ public class ConsoleComponent extends BorderPane {
       @Override
       public Void execute() throws Exception {
         try {
+          ensureRuntimeContextForSource(sourceFile);
           executeScriptAndReport(script, title);
         } catch (RuntimeException e) {
           // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
@@ -551,6 +562,40 @@ public class ConsoleComponent extends BorderPane {
       }
     });
     startTaskWhenOthersAreFinished(task, "runScriptAsync: " + title);
+  }
+
+  private void ensureRuntimeContextForSource(File sourceFile) throws Exception {
+    if (activeRuntime == null || activeRuntime.getType() == null) {
+      return;
+    }
+    if (!(RuntimeType.GRADLE.equals(activeRuntime.getType()) || RuntimeType.MAVEN.equals(activeRuntime.getType()))) {
+      return;
+    }
+    File projectDir = gui.getProjectDir();
+    boolean wantsTestContext = isTestSource(projectDir, sourceFile);
+    if (runtimeTestContext == wantsTestContext) {
+      return;
+    }
+    log.debug("Switching runtime context (testContext={}) for {}", wantsTestContext, sourceFile);
+    resetClassloaderAndGroovy(activeRuntime, wantsTestContext);
+  }
+
+  private static boolean isTestSource(File projectDir, File sourceFile) {
+    if (projectDir == null || sourceFile == null) {
+      return false;
+    }
+    Path projectPath = projectDir.toPath().toAbsolutePath().normalize();
+    Path sourcePath = sourceFile.toPath().toAbsolutePath().normalize();
+    if (!sourcePath.startsWith(projectPath)) {
+      return false;
+    }
+    Path rel;
+    try {
+      rel = projectPath.relativize(sourcePath);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    return rel.startsWith(Path.of("src", "test")) || rel.startsWith(Path.of("test"));
   }
 
   public String createMessageFromEvalException(Throwable ex) {
