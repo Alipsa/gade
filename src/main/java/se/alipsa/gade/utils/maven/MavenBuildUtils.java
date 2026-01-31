@@ -73,7 +73,7 @@ public class MavenBuildUtils {
             .setBatchMode(true)
             .setPomFile(pom)
             .setBaseDirectory(projectDir)
-            .setGoals(parsed.goals);
+            .addArgs(parsed.goals);
         if (!parsed.profiles.isEmpty()) {
           request.setProfiles(parsed.profiles);
         }
@@ -91,10 +91,10 @@ public class MavenBuildUtils {
         try (OutputStream outputStream = consoleComponent.getOutputStream();
              WarningAppenderWriter err = new WarningAppenderWriter(console);
              PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(err).get())) {
+          request.setOutputHandler(streamingHandler(outputStream));
+          request.setErrorHandler(line -> errStream.println(line));
           Invoker invoker = new DefaultInvoker();
           configureMavenHome(invoker, console);
-          invoker.setOutputHandler(streamingHandler(outputStream));
-          invoker.setErrorHandler(line -> errStream.println(line));
           InvocationResult result = invoker.execute(request);
           if (result.getExecutionException() != null) {
             throw result.getExecutionException();

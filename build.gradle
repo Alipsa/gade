@@ -1,6 +1,6 @@
 buildscript {
   dependencies {
-    classpath 'se.alipsa:nexus-release-plugin:2.0.0'
+    classpath 'se.alipsa:nexus-release-plugin:2.0.1'
   }
 }
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -28,11 +28,12 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName = "${rootProject.name}-${version}.jar"
 ext.releaseTag = version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "5.0.3"
-ext.jacksonVersion = '2.20.1'
+ext.groovyVersion = "5.0.4"
+ext.jacksonVersion = '2.21.0'
 def jgitVersion = '7.5.0.202512021534-r' //'7.4.0.202509020913-r'
-ext.log4jVersion = "2.25.2"
+ext.log4jVersion = "2.25.3"
 ext.tikaVersion = '3.2.3'
+ext.openHtmlToPdfVersion = '1.1.37'
 
 //def jdkVersion = "25+37" // Does not work with hadoop and hence not with matrix parquet
 int javaLanguageVersion = 21
@@ -87,12 +88,12 @@ dependencies {
   implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
   implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
   implementation 'org.apache.commons:commons-lang3:3.20.0'
-  implementation 'org.jsoup:jsoup:1.21.2'
+  implementation 'org.jsoup:jsoup:1.22.1'
   implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
   implementation 'org.fxmisc.richtext:richtextfx:0.11.7'
   implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
-  implementation "com.fasterxml.jackson.core:jackson-annotations:2.20"
+  implementation "com.fasterxml.jackson.core:jackson-annotations:2.21"
   implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
   implementation "commons-io:commons-io:2.21.0"
@@ -100,64 +101,47 @@ dependencies {
   implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
   implementation 'org.openjdk.nashorn:nashorn-core:15.7'
-  implementation 'org.gradle:gradle-tooling-api:9.2.1'
+  implementation 'org.gradle:gradle-tooling-api:9.3.1'
   implementation 'org.jetbrains:annotations:26.0.2'
   implementation 'io.github.classgraph:classgraph:4.8.184'
   implementation 'com.github.spotbugs:spotbugs-annotations:4.9.8'
   implementation "se.alipsa.gi:gi-fx:0.2.0"
-  implementation "org.commonmark:commonmark:0.27.0"
-  implementation "org.commonmark:commonmark-ext-gfm-tables:0.27.0"
+  implementation "org.commonmark:commonmark:0.27.1"
+  implementation "org.commonmark:commonmark-ext-gfm-tables:0.27.1"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-  implementation 'se.alipsa.groovy:data-utils:2.0.3'
+  implementation 'se.alipsa.groovy:data-utils:2.0.4'
   implementation('se.alipsa.gmd:gmd-core:3.0.1') {
     exclude group: 'se.alipsa.matrix', module: 'matrix-core'
     exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
     exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
   }
-  def openhtmltopdfVersion = "1.1.35"
-  implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openhtmltopdfVersion}")
-  implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openhtmltopdfVersion}")
-  implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openhtmltopdfVersion}")
-  implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openhtmltopdfVersion}"
+  implementation("io.github.openhtmltopdf:openhtmltopdf-core:${openHtmlToPdfVersion}")
+  implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:${openHtmlToPdfVersion}")
+  implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openHtmlToPdfVersion}")
+  implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openHtmlToPdfVersion}"
 
   implementation 'se.alipsa:simple-rest:1.1.0'
-  implementation(platform("se.alipsa.matrix:matrix-bom:2.3.1-SNAPSHOT"))
-  implementation("se.alipsa.matrix:matrix-core")
-  implementation "se.alipsa.matrix:matrix-stats"
-  implementation "se.alipsa.matrix:matrix-datasets"
-  implementation "se.alipsa.matrix:matrix-spreadsheet"
-  implementation "se.alipsa.matrix:matrix-gsheets"
-  implementation "se.alipsa.matrix:matrix-charts"
-  implementation "se.alipsa.matrix:matrix-xchart"
-  implementation "se.alipsa.matrix:matrix-json"
-  implementation "se.alipsa.matrix:matrix-csv"
-  implementation "se.alipsa.matrix:matrix-sql"
-  implementation "se.alipsa.matrix:matrix-parquet"
-  implementation "se.alipsa.matrix:matrix-bigquery"
-  implementation "se.alipsa.matrix:matrix-tablesaw"
-  implementation "se.alipsa.matrix:matrix-avro"
+  implementation("se.alipsa.matrix:matrix-all:2.4.0")
   // Used by se.alipsa.gade.utils.SemanticVersion
-  implementation 'org.apache.maven:maven-artifact:3.9.11'
-  implementation 'org.apache.maven:maven-model:3.9.11'
-  implementation 'se.alipsa:maven-3.9.11-utils:1.0.0'
+  implementation 'org.apache.maven:maven-artifact:3.9.12'
+  implementation 'org.apache.maven:maven-model:3.9.12'
+  implementation 'se.alipsa:maven-3.9.11-utils:1.1.0'
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
-  implementation 'org.knowm.xchart:xchart:3.8.8'
-  implementation 'com.github.hervegirod:fxsvgimage:1.4'
+  //implementation 'com.github.hervegirod:fxsvgimage:1.4'
   implementation 'com.github.jsqlparser:jsqlparser:5.3'
   implementation('com.manticore-projects.jsqlformatter:jsqlformatter:5.3.7') {
     exclude group: 'com.github.jsqlparser', module: 'jsqlparser'
   }
 
-  testImplementation platform('org.junit:junit-bom:6.0.1')
-  testImplementation platform('org.junit:junit-bom:5.13.4')
+  testImplementation platform('org.junit:junit-bom:6.0.2')
   testImplementation 'com.h2database:h2:2.4.240'
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
   testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
   testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-  testImplementation 'org.eclipse.jetty:jetty-server:12.1.5'
-  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.5'
+  testImplementation 'org.eclipse.jetty:jetty-server:12.1.6'
+  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.6'
   testImplementation 'org.testfx:testfx-core:4.0.18'
   testImplementation 'org.testfx:testfx-junit5:4.0.18'
   testImplementation 'org.mockito:mockito-core:5.21.0'
