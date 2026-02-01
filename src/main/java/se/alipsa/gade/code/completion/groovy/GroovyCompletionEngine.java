@@ -1,162 +1,415 @@
 package se.alipsa.gade.code.completion.groovy;
 
+import groovy.lang.Script;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import  java.util.regex.Matcher;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import se.alipsa.gade.code.completion.ClasspathScanner;
+import se.alipsa.gade.code.completion.CompletionContext;
+import se.alipsa.gade.code.completion.CompletionEngine;
 import se.alipsa.gade.code.completion.CompletionItem;
 
-public final class GroovyCompletionEngine {
+/**
+ * Groovy code completion engine providing:
+ * - Keyword completion
+ * - Class completion (from classpath including @Grab dependencies)
+ * - Member access completion (methods, fields)
+ * - Groovy extension method completion (DefaultGroovyMethods, etc.)
+ * - Type inference for literals and method chains
+ */
+public final class GroovyCompletionEngine implements CompletionEngine {
 
-  private static volatile java.util.Map<String, java.util.List<String>> SIMPLE_TO_FQCN;
-
-  private GroovyCompletionEngine() {}
+  private static final Set<String> SUPPORTED_LANGUAGES = Set.of("groovy");
 
   private static final Set<String> GROOVY_KEYWORDS = new HashSet<>(Arrays.asList(
-      "abstract","as","assert","boolean","break","byte","case","catch","char","class","const","continue",
-      "def","default","do","double","else","enum","extends","false","final","finally","float","for",
-      "goto","if","implements","import","in","instanceof","int","interface","long","native","new",
-      "null","package","private","protected","public","return","short","static","strictfp","super",
-      "switch","synchronized","this","throw","throws","trait","true","try","void","volatile","while","var"
+      "abstract", "as", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue",
+      "def", "default", "do", "double", "else", "enum", "extends", "false", "final", "finally", "float", "for",
+      "goto", "if", "implements", "import", "in", "instanceof", "int", "interface", "long", "native", "new",
+      "null", "package", "private", "protected", "public", "return", "short", "static", "strictfp", "super",
+      "switch", "synchronized", "this", "throw", "throws", "trait", "true", "try", "void", "volatile", "while", "var"
   ));
 
-  private static final String[] SCAN_PACKAGES = {
-      "java.lang", "java.time", "java.util",
-      "groovy.lang", "groovy.util", "groovy.json",
-      "groovy.xml", "groovy.transform", "groovy.sql",
-      "se.alipsa", "org.apache.groovy"
-  };
+  private static final Map<String, Boolean> IMPLICIT_METHODS = Map.ofEntries(
+      Map.entry("println", true),
+      Map.entry("print", true),
+      Map.entry("printf", true),
+      Map.entry("sprintf", true)
+  );
+
+  // Methods to exclude from completion
+  private static final Set<String> EXCLUDED_METHODS = Set.of(
+      "wait", "notify", "notifyAll", "getClass"
+  );
 
   private static final Pattern MEMBER_ACCESS =
-      Pattern.compile("([\\p{L}_][\\p{L}\\p{N}_]*(?:\\.[\\p{L}_][\\p{L}\\p{N}_]*)*)\\.(\\w*)\\s*$");
+      Pattern.compile("([\\p{L}_][\\p{L}\\p{N}_]*(?:\\([^)]*\\))?(?:\\.[\\p{L}_][\\p{L}\\p{N}_]*(?:\\([^)]*\\))?)*)\\.(\\w*)\\s*$");
 
+  // Pattern to detect import statement: import [static] package.path
+  private static final Pattern IMPORT_STATEMENT =
+      Pattern.compile("^\\s*import\\s+(?:static\\s+)?([\\w.]*?)$", Pattern.MULTILINE);
 
+  // Singleton instance for registry
+  private static volatile GroovyCompletionEngine instance;
 
-  public static List<CompletionItem> complete(String lastWord, String fullText, int caret) {
-    final List<CompletionItem> out = new ArrayList<>();
-    final String beforeCaret = fullText == null ? "" : fullText.substring(0, Math.max(0, caret));
+  public GroovyCompletionEngine() {}
 
-    // --- Member access (handles empty prefix, e.g. "LocalDateTime." and chained calls) ---
-    boolean inMemberContext = false;
-    Matcher m = MEMBER_ACCESS.matcher(beforeCaret);
-    if (m.find()) {
-      inMemberContext = true;
-      String target = m.group(1);       // e.g. "LocalDateTime" or "foo()" or "LocalDateTime.now()"
-      String memberPrefix = m.group(2); // may be "" right after the '.'
-
-      // Try to infer type from chained calls, otherwise resolve simple class
-      Class<?> cls = inferType(target);
-      if (cls == null) cls = resolveClass(target);
-
-      if (cls != null) {
-        final String memberLow = memberPrefix.toLowerCase(Locale.ROOT);
-        var methods = cls.getMethods();
-        Arrays.sort(methods, Comparator.comparing(Method::getName));
-
-        boolean classLike = Character.isUpperCase(target.charAt(0)) || target.contains(".");
-        var seen = new java.util.LinkedHashSet<String>();
-
-        // Static fields first if class-like
-        if (classLike) {
-          for (var f : cls.getFields()) {
-            if (!Modifier.isStatic(f.getModifiers())) continue;
-            String name = f.getName();
-            if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
-            if (seen.add("F:" + name)) {
-              out.add(new CompletionItem(
-                  name,                                // completion
-                  name + " : " + simple(f.getType()),  // label
-                  CompletionItem.Kind.FIELD));
-            }
-          }
+  /**
+   * Returns the singleton instance for registration.
+   */
+  public static GroovyCompletionEngine getInstance() {
+    if (instance == null) {
+      synchronized (GroovyCompletionEngine.class) {
+        if (instance == null) {
+          instance = new GroovyCompletionEngine();
         }
+      }
+    }
+    return instance;
+  }
 
-        // Static methods (class-like)
-        if (classLike) {
-          for (var method : methods) {
-            if (!Modifier.isStatic(method.getModifiers())) continue;
-            String name = method.getName();
-            if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
-            if (name.equals("wait") || name.equals("notify") || name.equals("notifyAll") || name.equals("getClass")) continue;
-            if (seen.add("M:" + name)) {
-              String params = buildParamList(method); // NOTE: returns a string that already ENDS with ')'
-              String insert = name + "(" + params;    // so do NOT add another ')'
-              String label  = name + "(" + paramSig(method) + ") : " + simple(method.getReturnType());
+  @Override
+  public Set<String> supportedLanguages() {
+    return SUPPORTED_LANGUAGES;
+  }
 
-              out.add(new CompletionItem(insert, label, CompletionItem.Kind.METHOD));
-            }
-          }
-        }
+  @Override
+  public String name() {
+    return "GroovyCompletionEngine";
+  }
 
-        // Instance fields
-        for (var f : cls.getFields()) {
-          if (classLike && Modifier.isStatic(f.getModifiers())) continue;
-          String name = f.getName();
-          if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
-          if (seen.add("F:" + name)) {
-            out.add(new CompletionItem(
-                name + " : " + simple(f.getType()), // label (shows type)
-                name,                                // what to insert
-                CompletionItem.Kind.FIELD));
-          }
-        }
+  @Override
+  public void invalidateCache() {
+    ClasspathScanner.getInstance().invalidateAll();
+    GroovyExtensionMethods.invalidateCache();
+  }
 
-        // Instance methods (or all if not class-like)
-        for (var method : methods) {
-          if (classLike && Modifier.isStatic(method.getModifiers())) continue;
-          String name = method.getName();
-          if (!name.toLowerCase(Locale.ROOT).startsWith(memberLow)) continue;
-          if (name.equals("wait") || name.equals("notify") || name.equals("notifyAll") || name.equals("getClass")) continue;
-          if (seen.add("M:" + name)) {
-            String insert = name + "(" + buildParamList(method);           // e.g. now()
-            String label  = name + "(" + paramSig(method) + ") : "          // e.g. now() : LocalDateTime
-                + simple(method.getReturnType());
+  @Override
+  public List<CompletionItem> complete(CompletionContext context) {
+    List<CompletionItem> out = new ArrayList<>();
 
-            out.add(new CompletionItem(insert, label, CompletionItem.Kind.METHOD));
-          }
-        }
-        return out; // IMPORTANT: in member context, return immediately
-      } else {
-        // Couldn’t resolve target; still in member context -> do not fall back to keywords
+    // Don't complete inside strings or comments
+    if (context.isInsideString() || context.isInsideComment()) {
+      return out;
+    }
+
+    String textBefore = context.textBeforeCaret();
+
+    // Check for import statement context first
+    String currentLine = context.lineText();
+    if (currentLine != null && currentLine.trim().startsWith("import")) {
+      completeImport(context, out);
+      if (!out.isEmpty()) {
         return out;
       }
     }
 
-    // --- Not in member context: keywords + classes as before ---
-    final String prefix = (lastWord == null ? "" : lastWord);
-    final String low = prefix.toLowerCase(Locale.ROOT);
+    // Check for member access context
+    Matcher m = MEMBER_ACCESS.matcher(textBefore);
+    if (m.find()) {
+      String target = m.group(1);       // e.g., "LocalDateTime" or "LocalDateTime.now()"
+      String memberPrefix = m.group(2); // may be "" right after the '.'
 
-    for (String kw : GROOVY_KEYWORDS) {
-      if (kw.startsWith(low)) {
-        out.add(new CompletionItem(kw, CompletionItem.Kind.KEYWORD));
+      // Resolve the type of the target expression
+      Class<?> cls = GroovyTypeResolver.resolveType(target, context);
+
+      if (cls != null) {
+        completeMemberAccess(cls, target, memberPrefix, out);
+
+        // Also add Groovy extension methods
+        List<GroovyExtensionMethods.ExtensionMethod> extensions =
+            GroovyExtensionMethods.getExtensionMethods(cls, memberPrefix);
+        out.addAll(GroovyExtensionMethods.toCompletionItems(extensions));
+
+        return out;
+      } else {
+        // Couldn't resolve target; don't fall back to keywords
+        return out;
       }
     }
 
-    int cap = 200, count = 0;
-    for (var e : simpleIndex().entrySet()) {
-      String simple = e.getKey();
-      if (simple != null && simple.toLowerCase(Locale.ROOT).startsWith(low)) {
-        for (String fqn : e.getValue()) {
-          out.add(new CompletionItem(simple, fqn, CompletionItem.Kind.CLASS));
+    // Not in member context: keywords + classes + implicit receiver methods
+    String prefix = context.tokenPrefix();
+    String low = (prefix == null ? "" : prefix).toLowerCase(Locale.ROOT);
+
+    if (!low.isEmpty()) {
+      completeMemberAccess(Script.class, "this", prefix, out);
+      addImplicitMethodCompletions(low, out);
+    }
+
+    // Add keywords
+    for (String kw : GROOVY_KEYWORDS) {
+      if (kw.startsWith(low)) {
+        out.add(CompletionItem.builder()
+            .completion(kw)
+            .kind(CompletionItem.Kind.KEYWORD)
+            .sortPriority(50)
+            .build());
+      }
+    }
+
+    // Add classes from classpath scanner (includes @Grab, Maven/Gradle dependencies)
+    Map<String, List<String>> classIndex = ClasspathScanner.getInstance().scan(context.classLoader());
+    int count = 0;
+    int cap = 200;
+
+    for (Map.Entry<String, List<String>> e : classIndex.entrySet()) {
+      String simpleName = e.getKey();
+      if (simpleName != null && simpleName.toLowerCase(Locale.ROOT).startsWith(low)) {
+        for (String fqcn : e.getValue()) {
+          out.add(CompletionItem.builder()
+              .completion(simpleName)
+              .display(simpleName)
+              .kind(CompletionItem.Kind.CLASS)
+              .detail(fqcn)
+              .sortPriority(100)
+              .build());
           if (++count >= cap) break;
         }
       }
       if (count >= cap) break;
     }
+
     return out;
   }
 
+  /**
+   * Backward-compatible static method for existing code.
+   * Prefer using complete(CompletionContext) for new code.
+   */
+  public static List<CompletionItem> complete(String lastWord, String fullText, int caret) {
+    CompletionContext context = CompletionContext.builder()
+        .fullText(fullText)
+        .caretPosition(caret)
+        .tokenPrefix(lastWord)
+        .build();
+    return getInstance().complete(context);
+  }
+
+  /**
+   * Returns the simple name to FQCN index for external use (e.g., import suggestions).
+   */
   public static Map<String, List<String>> simpleNameIndex() {
-    return simpleIndex(); // returns the cached simpleName -> [fqcn, ...]
+    return ClasspathScanner.getInstance().scan(
+        Thread.currentThread().getContextClassLoader());
+  }
+
+  private void completeMemberAccess(Class<?> cls, String target, String memberPrefix,
+                                    List<CompletionItem> out) {
+    String memberLow = memberPrefix.toLowerCase(Locale.ROOT);
+    Method[] methods = cls.getMethods();
+    Arrays.sort(methods, Comparator.comparing(Method::getName));
+
+    boolean isStaticContext = Character.isUpperCase(target.charAt(0)) || target.contains(".");
+    Set<String> seen = new LinkedHashSet<>();
+    Map<String, Boolean> hasParamsByName = new HashMap<>();
+
+    for (Method method : methods) {
+      boolean hasParams = method.getParameterCount() > 0;
+      hasParamsByName.merge(method.getName(), hasParams, (a, b) -> a || b);
+    }
+
+    // Static fields (if static context)
+    if (isStaticContext) {
+      for (Field f : cls.getFields()) {
+        if (!Modifier.isStatic(f.getModifiers())) continue;
+        addFieldCompletion(f, memberLow, seen, out, 60);
+      }
+    }
+
+    // Static methods (if static context)
+    if (isStaticContext) {
+      for (Method method : methods) {
+        if (!Modifier.isStatic(method.getModifiers())) continue;
+        addMethodCompletion(method, memberLow, seen, out, 70, hasParamsByName);
+      }
+    }
+
+    // Instance fields
+    for (Field f : cls.getFields()) {
+      if (isStaticContext && Modifier.isStatic(f.getModifiers())) continue;
+      addFieldCompletion(f, memberLow, seen, out, 80);
+    }
+
+    // Instance methods (or all if not static context)
+    for (Method method : methods) {
+      if (isStaticContext && Modifier.isStatic(method.getModifiers())) continue;
+      addMethodCompletion(method, memberLow, seen, out, 90, hasParamsByName);
+    }
+  }
+
+  private void addImplicitMethodCompletions(String lowPrefix, List<CompletionItem> out) {
+    if (lowPrefix == null || lowPrefix.isEmpty()) return;
+    Set<String> existing = new HashSet<>();
+    for (CompletionItem item : out) {
+      if (item.completion() != null) {
+        existing.add(item.completion());
+      }
+    }
+
+    for (Map.Entry<String, Boolean> entry : IMPLICIT_METHODS.entrySet()) {
+      String name = entry.getKey();
+      if (!name.startsWith(lowPrefix)) continue;
+      if (!existing.add(name)) continue;
+      boolean hasParams = entry.getValue();
+      int cursorOffset = hasParams ? -1 : 0;
+      out.add(CompletionItem.builder()
+          .completion(name)
+          .display(name + "()")
+          .kind(CompletionItem.Kind.METHOD)
+          .detail("implicit")
+          .insertText(name + "()")
+          .sortPriority(80)
+          .cursorOffset(cursorOffset)
+          .build());
+    }
+  }
+
+  /**
+   * Completes import statements by suggesting packages and classes.
+   * For "import groovy.tr" suggests "groovy.transform", etc.
+   */
+  private void completeImport(CompletionContext context, List<CompletionItem> out) {
+    String line = context.lineText().trim();
+
+    // Extract the partial import path
+    String importPath = "";
+    if (line.startsWith("import static ")) {
+      importPath = line.substring("import static ".length()).trim();
+    } else if (line.startsWith("import ")) {
+      importPath = line.substring("import ".length()).trim();
+    }
+
+    if (importPath.isEmpty()) {
+      return; // Need at least some input
+    }
+
+    // Split into complete package parts and partial last segment
+    // e.g., "groovy.tr" -> basePath="groovy", partialSegment="tr"
+    // e.g., "groovy.transform." -> basePath="groovy.transform", partialSegment=""
+    int lastDot = importPath.lastIndexOf('.');
+    String basePath;
+    String partialSegment;
+
+    if (lastDot >= 0) {
+      basePath = importPath.substring(0, lastDot);
+      partialSegment = importPath.substring(lastDot + 1);
+    } else {
+      basePath = "";
+      partialSegment = importPath;
+    }
+
+    String basePathLower = basePath.toLowerCase(Locale.ROOT);
+    String partialLower = partialSegment.toLowerCase(Locale.ROOT);
+
+    Map<String, List<String>> classIndex = ClasspathScanner.getInstance().scan(context.classLoader());
+
+    Set<String> addedPackages = new HashSet<>();
+    Set<String> addedClasses = new HashSet<>();
+    int count = 0;
+    int cap = 100;
+
+    for (List<String> fqcns : classIndex.values()) {
+      for (String fqcn : fqcns) {
+        String fqcnLower = fqcn.toLowerCase(Locale.ROOT);
+
+        // Check if FQCN is under the base path (or at root if basePath is empty)
+        if (!basePath.isEmpty()) {
+          if (!fqcnLower.startsWith(basePathLower + ".")) continue;
+        }
+
+        // Get the part after basePath
+        String afterBase = basePath.isEmpty() ? fqcn : fqcn.substring(basePath.length() + 1);
+        String afterBaseLower = afterBase.toLowerCase(Locale.ROOT);
+
+        // Check if the next segment starts with our partial
+        if (!afterBaseLower.startsWith(partialLower)) continue;
+
+        // Find the next dot to determine if this is a package or class
+        int nextDot = afterBase.indexOf('.');
+
+        if (nextDot > 0) {
+          // There's more path - extract the next package segment
+          String nextSegment = afterBase.substring(0, nextDot);
+          String fullPackage = basePath.isEmpty() ? nextSegment : basePath + "." + nextSegment;
+
+          if (addedPackages.add(fullPackage)) {
+            // Use nextSegment for both filtering and insertion
+            // (we're only replacing the partial segment the user typed)
+            out.add(CompletionItem.builder()
+                .completion(nextSegment)  // For filtering: matches "tr" -> "transform"
+                .display(fullPackage)      // Show full path in popup
+                .kind(CompletionItem.Kind.MODULE)
+                .detail("package")
+                .insertText(nextSegment)   // Insert just the segment to replace partial
+                .sortPriority(50)
+                .build());
+            if (++count >= cap) return;
+          }
+        } else {
+          // This is the class name directly under basePath
+          String className = afterBase;  // The simple class name
+          if (addedClasses.add(fqcn)) {
+            out.add(CompletionItem.builder()
+                .completion(className)     // For filtering: matches partial class name
+                .display(fqcn)             // Show full FQCN in popup
+                .kind(CompletionItem.Kind.CLASS)
+                .insertText(className)     // Insert just class name to replace partial
+                .sortPriority(100)
+                .build());
+            if (++count >= cap) return;
+          }
+        }
+      }
+    }
+
+    // Sort: packages first, then classes
+    out.sort(Comparator.comparingInt(CompletionItem::sortPriority)
+        .thenComparing(CompletionItem::completion));
+  }
+
+  private void addFieldCompletion(Field f, String prefix, Set<String> seen,
+                                  List<CompletionItem> out, int priority) {
+    String name = f.getName();
+    if (!name.toLowerCase(Locale.ROOT).startsWith(prefix)) return;
+    if (!seen.add("F:" + name)) return;
+
+    out.add(CompletionItem.builder()
+        .completion(name)
+        .display(name + " : " + simpleName(f.getType()))
+        .kind(CompletionItem.Kind.FIELD)
+        .sortPriority(priority)
+        .build());
+  }
+
+  private void addMethodCompletion(Method method, String prefix, Set<String> seen,
+                                   List<CompletionItem> out, int priority,
+                                   Map<String, Boolean> hasParamsByName) {
+    String name = method.getName();
+    if (!name.toLowerCase(Locale.ROOT).startsWith(prefix)) return;
+    if (EXCLUDED_METHODS.contains(name)) return;
+    if (!seen.add("M:" + name)) return;
+
+    // Insert just methodName() - user fills in parameters themselves
+    String insertText = name + "()";
+    // Display shows full signature so user knows what parameters are expected
+    String display = name + "(" + paramSig(method) + ") : " + simpleName(method.getReturnType());
+
+    // For methods with parameters, cursor inside (); otherwise after ()
+    boolean hasParams = hasParamsByName.getOrDefault(name, method.getParameterCount() > 0);
+    int cursorOffset = hasParams ? -1 : 0;
+
+    out.add(CompletionItem.builder()
+        .completion(name)
+        .display(display)
+        .kind(CompletionItem.Kind.METHOD)
+        .insertText(insertText)
+        .sortPriority(priority)
+        .cursorOffset(cursorOffset)
+        .build());
   }
 
   private static String paramSig(Method m) {
@@ -164,136 +417,16 @@ public final class GroovyCompletionEngine {
     if (p.length == 0) return "";
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < p.length; i++) {
-      b.append(simple(p[i]));
-      if (i < p.length - 1) b.append(", ");
+      if (i > 0) b.append(", ");
+      b.append(simpleName(p[i]));
     }
     return b.toString();
   }
 
-  private static String buildParamList(Method m) {
-    Class<?>[] p = m.getParameterTypes();
-    if (p.length == 0) return ")";
-    StringBuilder b = new StringBuilder();
-    for (int i = 0; i < p.length; i++) {
-      b.append(simple(p[i])).append(" arg").append(i + 1);
-      if (i < p.length - 1) b.append(", ");
-    }
-    b.append(")");
-    return b.toString();
-  }
-
-  private static String simple(Class<?> c) {
+  private static String simpleName(Class<?> c) {
     if (c.isArray()) {
-      return simple(c.getComponentType()) + "[]";
+      return simpleName(c.getComponentType()) + "[]";
     }
     return c.getSimpleName();
-  }
-
-  // build a simpleName -> [fqcn, ...] index once, ordered by preferred packages
-  private static Map<String, List<String>> simpleIndex() {
-    Map<String, List<String>> idx = SIMPLE_TO_FQCN;
-    if (idx != null) return idx;
-    synchronized (GroovyCompletionEngine.class) {
-      if (SIMPLE_TO_FQCN != null) return SIMPLE_TO_FQCN;
-      java.util.Map<String, java.util.List<String>> m = new java.util.HashMap<>();
-      try (io.github.classgraph.ScanResult sr = new io.github.classgraph.ClassGraph()
-          .enableClassInfo()
-          .enableSystemJarsAndModules()
-          .acceptPackages(SCAN_PACKAGES)
-          .scan()) {
-        for (io.github.classgraph.ClassInfo ci : sr.getAllClasses()) {
-          String simple = ci.getSimpleName();
-          if (simple == null || simple.isEmpty()) continue;
-          m.computeIfAbsent(simple, k -> new java.util.ArrayList<>()).add(ci.getName());
-        }
-        java.util.Comparator<String> byPref = java.util.Comparator.comparingInt(fqn -> {
-          for (int i = 0; i < SCAN_PACKAGES.length; i++) {
-            if (fqn.startsWith(SCAN_PACKAGES[i] + ".")) return i;
-          }
-          return SCAN_PACKAGES.length;
-        });
-        for (java.util.List<String> list : m.values()) list.sort(byPref);
-      } catch (Throwable ignore) {}
-      SIMPLE_TO_FQCN = m;
-      return m;
-    }
-  }
-
-  private static Class<?> tryLoad(String name, ClassLoader cl) {
-    try {
-      // false => don't run static initializers; keeps it cheap
-      return Class.forName(name, false, cl);
-    } catch (Throwable ignore) {
-      return null;
-    }
-  }
-
-  // Infer the Class<?> of an expression like "ClassName.staticMethod(...)" or "...).method(...)"
-  private static Class<?> inferType(String expr) {
-    if (expr == null) return null;
-    String s = expr.trim();
-    if (!s.endsWith(")")) {
-      // not a call, try to resolve as a class
-      return resolveClass(s);
-    }
-    // We have a call expression ...(...) — find the last '('
-    int open = s.lastIndexOf('(');
-    if (open < 0) return null;
-
-    String argsText = s.substring(open + 1, s.length() - 1);
-    String call = s.substring(0, open);           // e.g. "LocalDate.now" or "foo().bar"
-    int lastDot = call.lastIndexOf('.');
-    if (lastDot < 0) return null;
-
-    String baseExpr = call.substring(0, lastDot); // e.g. "LocalDate" or "foo()"
-    String method   = call.substring(lastDot + 1);// e.g. "now" or "bar"
-
-    // Resolve base type (recurse if base is itself a call)
-    Class<?> baseType = baseExpr.endsWith(")") ? inferType(baseExpr) : resolveClass(baseExpr);
-    if (baseType == null) return null;
-
-    java.lang.reflect.Method best = pickBestMethod(baseType, method, argsText);
-    if (best == null) return null;
-
-    Class<?> rt = best.getReturnType();
-    return (rt == Void.TYPE) ? null : rt;
-  }
-
-  private static java.lang.reflect.Method pickBestMethod(Class<?> baseType, String name, String argsText) {
-    java.lang.reflect.Method fallback = null;
-    int desiredParams = argsText.trim().isEmpty() ? 0 : -1; // prefer 0-arg if no args typed
-    for (java.lang.reflect.Method m : baseType.getMethods()) {
-      if (!m.getName().equals(name)) continue;
-      if (desiredParams == 0 && m.getParameterCount() == 0) return m; // exact cheap match
-      if (fallback == null) fallback = m;
-    }
-    return fallback;
-  }
-
-  private static Class<?> resolveClass(String token) {
-    if (token == null || token.isEmpty()) return null;
-
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    if (cl == null) cl = GroovyCompletionEngine.class.getClassLoader();
-
-    // 1) FQCN
-    Class<?> c = tryLoad(token, cl);
-    if (c != null) return c;
-
-    // 2) fast common packages
-    for (String pkg : new String[]{"java.lang", "groovy.lang", "java.time"}) {
-      c = tryLoad(pkg + "." + token, cl);
-      if (c != null) return c;
-    }
-
-    // 3) fallback: cached index (must include java.time in SCAN_PACKAGES)
-    java.util.List<String> candidates = simpleIndex().get(token);
-    if (candidates != null) {
-      for (String fqn : candidates) {
-        c = tryLoad(fqn, cl);
-        if (c != null) return c;
-      }
-    }
-    return null;
   }
 }

@@ -15,7 +15,27 @@ public final class EnhancedCompletion {
 
   private EnhancedCompletion() {}
 
-  public static List<CompletionItem> suggest(String lastWord, TreeMap<String, Boolean> keywords, String fullText, int caretPos) {
+  /**
+   * Modern completion using CompletionContext.
+   *
+   * @param context  the completion context
+   * @param language the language identifier ("groovy", "sql", etc.)
+   * @return list of completion items
+   */
+  public static List<CompletionItem> suggest(CompletionContext context, String language) {
+    if ("sql".equalsIgnoreCase(language)) {
+      return SqlCompletionEngine.complete(
+          context.tokenPrefix(), context.fullText(), context.caretPosition());
+    }
+    // Default to Groovy
+    return GroovyCompletionEngine.getInstance().complete(context);
+  }
+
+  /**
+   * Legacy completion method for backward compatibility.
+   */
+  public static List<CompletionItem> suggest(String lastWord, TreeMap<String, Boolean> keywords,
+                                             String fullText, int caretPos) {
     Language lang = detectLanguage(keywords);
     switch (lang) {
       case SQL:

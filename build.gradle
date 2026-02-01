@@ -120,7 +120,7 @@ dependencies {
   implementation("io.github.openhtmltopdf:openhtmltopdf-mathml-support:${openHtmlToPdfVersion}")
   implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openHtmlToPdfVersion}"
 
-  implementation 'se.alipsa:simple-rest:1.1.0'
+  implementation 'se.alipsa:simple-rest:1.1.1'
   implementation("se.alipsa.matrix:matrix-all:2.4.0")
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation 'org.apache.maven:maven-artifact:3.9.12'

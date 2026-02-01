@@ -12,6 +12,9 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.code.completion.CompletionContext;
+import se.alipsa.gade.code.completion.CompletionItem;
+import se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine;
 import se.alipsa.gade.model.GroovyCodeHeader;
 import se.alipsa.gade.utils.Alerts;
 
@@ -252,8 +255,50 @@ public class GroovyTextArea extends CodeTextArea {
 
     // allow empty member prefix after a trailing dot (e.g. "LocalDate.")
     if (!wordToReplace.isEmpty() || dot >= 0) {
-      suggestCompletion(wordToReplace, new java.util.TreeMap<>(), suggestionsPopup);
+      // Build CompletionContext with runtime classloader
+      ClassLoader classLoader = getEffectiveClassLoader();
+
+      CompletionContext context = CompletionContext.builder()
+          .fullText(getText())
+          .caretPosition(getCaretPosition())
+          .lineText(line)
+          .lineOffset(getCaretColumn())
+          .tokenPrefix(wordToReplace)
+          .classLoader(classLoader)
+          .build();
+
+      // Use the new GroovyCompletionEngine
+      List<CompletionItem> items = GroovyCompletionEngine.getInstance().complete(context);
+
+      if (!items.isEmpty()) {
+        suggestCompletion(context, items, suggestionsPopup);
+      }
     }
+  }
+
+  /**
+   * Gets the classloader that includes runtime dependencies (@Grab, Maven, Gradle).
+   */
+  private ClassLoader getEffectiveClassLoader() {
+    try {
+      Gade gui = Gade.instance();
+      if (gui != null) {
+        // Try console component classloader first (includes @Grab jars)
+        if (gui.getConsoleComponent() != null) {
+          ClassLoader cl = gui.getConsoleComponent().getClassLoader();
+          if (cl != null) return cl;
+        }
+        // Fall back to dynamic classloader
+        if (gui.dynamicClassLoader != null) {
+          return gui.dynamicClassLoader;
+        }
+      }
+    } catch (Exception ignore) {
+      // Fall through to default
+    }
+    // Default to thread context classloader
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    return cl != null ? cl : GroovyTextArea.class.getClassLoader();
   }
 
   @Override

@@ -19,6 +19,8 @@ import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.UnStyledCodeArea;
+import se.alipsa.gade.code.completion.CompletionContext;
+import se.alipsa.gade.code.completion.CompletionEngine;
 import se.alipsa.gade.code.completion.CompletionItem;
 import se.alipsa.gade.code.completion.EnhancedCompletion;
 import se.alipsa.gade.utils.StringUtils;
@@ -327,6 +329,28 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     // do nothing per default
   }
 
+  /**
+   * Modern completion method using CompletionContext and CompletionEngine.
+   *
+   * @param context         the completion context
+   * @param items           pre-computed completion items
+   * @param suggestionsPopup the popup to display suggestions
+   */
+  protected void suggestCompletion(CompletionContext context,
+                                   List<CompletionItem> items,
+                                   ContextMenu suggestionsPopup) {
+    if (items == null || items.isEmpty()) return;
+
+    activeCompletionPopup = suggestionsPopup;
+    suggestionsPopup.hide();
+
+    final String initialWord = context.tokenPrefix() != null ? context.tokenPrefix() : "";
+    showCompletionPopup(initialWord, items, suggestionsPopup);
+  }
+
+  /**
+   * Legacy completion method for backward compatibility.
+   */
   protected void suggestCompletion(String lastWord,
                                    TreeMap<String, Boolean> keyWords,
                                    ContextMenu suggestionsPopup) {
@@ -339,6 +363,12 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
         EnhancedCompletion.suggest(
             initialWord, keyWords, this.getText(), getCaretPosition());
     if (items.isEmpty()) return;
+    showCompletionPopup(initialWord, items, suggestionsPopup);
+  }
+
+  private void showCompletionPopup(String initialWord,
+                                   List<CompletionItem> items,
+                                   ContextMenu suggestionsPopup) {
 
     // Anchor where replacement starts (fixed while popup is open)
     final int anchorStart = Math.max(0, getCaretPosition() - initialWord.length());
@@ -394,7 +424,18 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
       if (sel != null) {
         int caret = getCaretPosition();
         if (caret < anchorStart) caret = anchorStart;
-        replaceText(anchorStart, caret, sel.completion());
+        // Use insertText() which may differ from completion() (e.g., for import completion)
+        String text = sel.insertText();
+        replaceText(anchorStart, caret, text);
+
+        int cursorOffset = sel.cursorOffset();
+        if (cursorOffset != 0) {
+          int target = getCaretPosition() + cursorOffset;
+          int min = anchorStart;
+          int max = anchorStart + text.length();
+          moveTo(Math.max(min, Math.min(target, max)));
+        }
+
         suggestionsPopup.hide();
         requestFocus();
       }
