@@ -6,6 +6,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Status;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.GuiUtils;
@@ -14,31 +16,33 @@ import java.util.Set;
 
 public class GitStatusDialog extends Dialog<Status> {
 
+  private static final Logger log = LogManager.getLogger(GitStatusDialog.class);
+
   private final Status status;
 
   public GitStatusDialog(Status gitStatus, String path ) {
     status = gitStatus;
-    System.out.println("---------------- Status ------------------------");
-    System.out.println("Path = " +  path);
+    log.debug("---------------- Status ------------------------");
+    log.debug("Path = {}", path);
     Set<String> added = status.getAdded();
-    System.out.println("Added: " + added);
+    log.debug("Added: {}", added);
     Set<String> changed = status.getChanged();
-    System.out.println("Changed" + changed);
+    log.debug("Changed: {}", changed);
     Set<String> conflicting = status.getConflicting();
-    System.out.println("Conflicting: " + conflicting);
+    log.debug("Conflicting: {}", conflicting);
     Set<String> missing = status.getMissing();
-    System.out.println("Missing: " + missing);
+    log.debug("Missing: {}", missing);
     Set<String> modified = status.getModified();
-    System.out.println("Modified: " + modified);
+    log.debug("Modified: {}", modified);
     Set<String> removed = status.getRemoved();
-    System.out.println("Removed: " + removed);
+    log.debug("Removed: {}", removed);
     Set<String> uncomittedChanges = status.getUncommittedChanges();
-    System.out.println("Uncommited changes" + uncomittedChanges);
+    log.debug("Uncommitted changes: {}", uncomittedChanges);
     Set<String> untracked = status.getUntracked();
-    System.out.println("Untracked: " + untracked);
-    System.out.println("hasUncommittedChanges: " + status.hasUncommittedChanges());
-    System.out.println("isClean: " + status.isClean());
-    System.out.println("---------------- /Status -----------------------");
+    log.debug("Untracked: {}", untracked);
+    log.debug("hasUncommittedChanges: {}", status.hasUncommittedChanges());
+    log.debug("isClean: {}", status.isClean());
+    log.debug("---------------- /Status -----------------------");
 
     setTitle("Git status for " + path);
     GuiUtils.addStyle(Gade.instance(), this);

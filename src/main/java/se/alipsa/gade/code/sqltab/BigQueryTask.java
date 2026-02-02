@@ -3,6 +3,8 @@ package se.alipsa.gade.code.sqltab;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicInteger;
 import javafx.application.Platform;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ScriptThread;
 import se.alipsa.gade.environment.connections.ConnectionException;
@@ -11,6 +13,8 @@ import se.alipsa.matrix.bigquery.Bq;
 import se.alipsa.matrix.core.Matrix;
 
 public class BigQueryTask extends QueryTask {
+
+  private static final Logger log = LogManager.getLogger(BigQueryTask.class);
 
   ConnectionHandler connectionHandler;
   String[] batchedQry;
@@ -25,17 +29,17 @@ public class BigQueryTask extends QueryTask {
 
   @Override
   void abort() throws ConnectionException {
-    System.err.println("Abort is not yet implemented");
+    log.warn("Abort is not yet implemented");
   }
 
   @Override
   public Object execute() throws Exception {
     if (batchedQry == null || batchedQry.length == 0) {
-      System.out.println("No query to execute");
+      log.debug("No query to execute");
       return null;
     }
     if (batchedQry.length > 1) {
-      System.err.println("Multiple query statements detected, not sur how to handle this");
+      log.warn("Multiple query statements detected, not sure how to handle this");
     }
     AtomicInteger queryCount = new AtomicInteger(1);
     Bq bq = new Bq(connectionHandler.getConnectionInfo().getUrl());

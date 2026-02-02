@@ -1,12 +1,14 @@
 package se.alipsa.gade.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.matrix.core.Row;
 
 import java.util.List;
 
 public class TableMetaData {
 
-  //private static final Logger log = LogManager.getLogger(TableMetaData.class);
+  private static final Logger log = LogManager.getLogger(TableMetaData.class);
 
   public static final String COLUMN_META_START = " [ ";
   public static final String COLUMN_META_END = " ]";

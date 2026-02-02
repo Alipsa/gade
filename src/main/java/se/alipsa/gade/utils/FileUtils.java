@@ -2,6 +2,8 @@ package se.alipsa.gade.utils;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileUtils {
+
+  private static final Logger log = LogManager.getLogger(FileUtils.class);
 
   /**
    * Gets a reference to a file or folder in the classpath. Useful for getting test resources and
@@ -127,7 +131,7 @@ public class FileUtils {
     }
 
     if (destFile.exists()) {
-      System.out.println("File " + destFile.getAbsolutePath() + " already exists");
+      log.debug("File {} already exists", destFile.getAbsolutePath());
       return destFile;
     }
     toDir.mkdirs();
@@ -341,12 +345,12 @@ public class FileUtils {
     }
 
     if (userHome == null) {
-      System.out.println("Failed to find user home property");
+      log.error("Failed to find user home property");
       throw new RuntimeException("Failed to find user home property");
     }
     File homeDir = new File(userHome);
     if(!homeDir.exists()) {
-      System.err.printf("User home dir %s does not exist, something is not right%n", homeDir);
+      log.error("User home dir {} does not exist, something is not right", homeDir);
       throw new RuntimeException("User home dir " + homeDir + " does not exist, something is not right");
     }
     return homeDir;

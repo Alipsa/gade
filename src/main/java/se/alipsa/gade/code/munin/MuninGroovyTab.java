@@ -13,6 +13,8 @@ import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import netscape.javascript.JSObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.GroovyTask;
@@ -27,6 +29,8 @@ import java.util.Map;
 import static se.alipsa.gade.code.gmdtab.GmdUtil.BOOTSTRAP_CSS;
 
 public class MuninGroovyTab extends MuninTab {
+
+  private static final Logger log = LogManager.getLogger(MuninGroovyTab.class);
 
   public MuninGroovyTab(Gade gui, MuninReport report) {
     super(gui, report);
@@ -166,7 +170,7 @@ public class MuninGroovyTab extends MuninTab {
 
   public static class Console {
     public void log(String text) {
-      System.out.println(text);
+      MuninGroovyTab.log.debug(text);
     }
   }
 }

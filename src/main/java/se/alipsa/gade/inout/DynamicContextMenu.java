@@ -598,7 +598,7 @@ public class DynamicContextMenu extends ContextMenu {
             } catch (RuntimeException e) {
                // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
                // this way we can get to the original one by extracting the cause from the thrown exception
-               System.out.println("Exception caught, rethrowing as wrapped Exception");
+               log.debug("Exception caught, rethrowing as wrapped Exception");
                throw new Exception(e);
             }
          }
@@ -648,7 +648,7 @@ public class DynamicContextMenu extends ContextMenu {
             } catch (RuntimeException e) {
                // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
                // this way we can get to the original one by extracting the cause from the thrown exception
-               System.out.println("Exception caught, rethrowing as wrapped Exception");
+               log.debug("Exception caught, rethrowing as wrapped Exception");
                throw new Exception(e);
             }
          }
@@ -760,7 +760,7 @@ public class DynamicContextMenu extends ContextMenu {
             } catch (RuntimeException e) {
                // RuntimeExceptions (such as EvalExceptions is not caught so need to wrap all in an exception
                // this way we can get to the original one by extracting the cause from the thrown exception
-               System.out.println("Exception caught, rethrowing as wrapped Exception");
+               log.debug("Exception caught, rethrowing as wrapped Exception");
                throw new Exception(e);
             }
          }

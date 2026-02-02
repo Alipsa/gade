@@ -7,6 +7,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Constants;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.munin.MuninClient;
@@ -19,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class MuninReportDialog extends Dialog<MuninReport> {
+
+  private static final Logger log = LogManager.getLogger(MuninReportDialog.class);
 
   private final ListView<String> reportGroupsLV = new ListView<>();
   private final ListView<MuninReport> muninReportLV = new ListView<>();

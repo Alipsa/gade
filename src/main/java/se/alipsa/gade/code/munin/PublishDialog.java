@@ -91,7 +91,7 @@ public class PublishDialog extends Dialog<Void> {
 
   private void publish(boolean isAddNew) {
     gui.setWaitCursor();
-    System.out.println("Publishing report...");
+    log.info("Publishing report...");
     ta.appendText("\nPublishing report...");
     Task<Void> task = new Task<>() {
       @Override
@@ -102,7 +102,7 @@ public class PublishDialog extends Dialog<Void> {
     };
 
     task.setOnFailed(e -> {
-      System.err.println("Update report failed!");
+      log.error("Update report failed!");
       gui.setNormalCursor();
       Throwable throwable = task.getException();
       Throwable ex = throwable.getCause();

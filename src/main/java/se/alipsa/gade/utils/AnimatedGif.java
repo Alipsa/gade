@@ -3,10 +3,14 @@ package se.alipsa.gade.utils;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.image.BufferedImage;
 
 public class AnimatedGif extends Animation {
+
+  private static final Logger log = LogManager.getLogger(AnimatedGif.class);
 
   public AnimatedGif(String filename, double durationMs) {
 
@@ -21,7 +25,7 @@ public class AnimatedGif extends Animation {
       sequence[i] = SwingFXUtils.toFXImage(bimg, wimg);
 
     }
-    System.out.println("Found " + sequence.length + " sequences in the gif");
+    log.debug("Found {} sequences in the gif", sequence.length);
     super.init(sequence, durationMs);
   }
 

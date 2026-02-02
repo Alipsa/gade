@@ -1,6 +1,8 @@
 package se.alipsa.gade.interaction;
 
 import javafx.scene.image.Image;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.Tika;
 import org.girod.javafx.svgimage.SVGImage;
 import org.girod.javafx.svgimage.SVGLoader;
@@ -17,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReadImage {
+
+  private static final Logger log = LogManager.getLogger(ReadImage.class);
 
     /* Note that SVG images are not supported OOTB in javafx */
     public Image read(String name) throws IOException {
