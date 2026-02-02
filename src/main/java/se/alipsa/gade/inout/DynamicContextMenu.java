@@ -148,7 +148,12 @@ public class DynamicContextMenu extends ContextMenu {
          }
 
          // File (or directory) with new name
-         File file2 = new File(currentFile.getParent(), toName.get());
+         String parentPath = currentFile.getParent();
+         if (parentPath == null) {
+            Alerts.warn("Invalid path", "Cannot rename" + fileType + currentFile.getName() + " - parent directory is null!");
+            return;
+         }
+         File file2 = new File(parentPath, toName.get());
 
          if (file2.exists()) {
             Alerts.warn("File already exists", "Cannot rename" + fileType + currentFile.getName() + " as " + file2.getAbsolutePath() + "already exists!");

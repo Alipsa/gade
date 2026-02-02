@@ -324,10 +324,12 @@ public class JdbcUrlWizardDialog extends Dialog<ConnectionInfo> {
             File dbFile = fc.showOpenDialog(gui.getStage());
             if (dbFile != null && dbFile.exists()) {
               String path = dbFile.getParent();
-              String dbName = dbFile.getName();
-              database.setText(dbName.substring(0, dbName.length() - ".mv.db".length()));
-              urlTemplate = urlTemplate.replace("{path}", path);
-              updateUrl();
+              if (path != null) {
+                String dbName = dbFile.getName();
+                database.setText(dbName.substring(0, dbName.length() - ".mv.db".length()));
+                urlTemplate = urlTemplate.replace("{path}", path);
+                updateUrl();
+              }
             }
           });
         }

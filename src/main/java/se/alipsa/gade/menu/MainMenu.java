@@ -1078,7 +1078,10 @@ public class MainMenu extends MenuBar {
     fileChooser.setInitialFileName(suggestedName);
     File file = fileChooser.showSaveDialog(gui.getStage());
     if (file != null && !file.getName().endsWith(extension)) {
-      file = new File(file.getParentFile(), file.getName() + extension);
+      File parent = file.getParentFile();
+      if (parent != null) {
+        file = new File(parent, file.getName() + extension);
+      }
     }
     return file;
   }

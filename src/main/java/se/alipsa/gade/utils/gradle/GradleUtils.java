@@ -752,7 +752,12 @@ public class GradleUtils {
         props.setProperty(CACHE_OUT_PREFIX + index++, out.getAbsolutePath());
       }
     }
-    File tmp = new File(cacheFile.getParentFile(), cacheFile.getName() + ".tmp");
+    File parentDir = cacheFile.getParentFile();
+    if (parentDir == null) {
+      log.warn("Cannot write Gradle classpath cache - parent directory is null for {}", cacheFile);
+      return;
+    }
+    File tmp = new File(parentDir, cacheFile.getName() + ".tmp");
     try (OutputStream out = new FileOutputStream(tmp)) {
       props.store(out, "Gade Gradle classpath cache");
       Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
@@ -837,9 +842,13 @@ public class GradleUtils {
     }
     String url = MavenRepoLookup.artifactUrl(dependency, MAVEN_CENTRAL.baseUrl);
     URL artifactUrl = new URI(url).toURL();
-    if (!cachedFile.getParentFile().exists()) {
-      if (!cachedFile.getParentFile().mkdirs()) {
-        throw new IOException("Failed to create directory " + cachedFile.getParentFile());
+    File parentDir = cachedFile.getParentFile();
+    if (parentDir == null) {
+      throw new IOException("Cannot cache artifact - parent directory is null for " + cachedFile);
+    }
+    if (!parentDir.exists()) {
+      if (!parentDir.mkdirs()) {
+        throw new IOException("Failed to create directory " + parentDir);
       }
     }
     if (!cachedFile.createNewFile()) {

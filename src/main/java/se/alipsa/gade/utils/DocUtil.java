@@ -58,7 +58,10 @@ public class DocUtil {
               Document doc3 = new W3CDom().fromJsoup(doc2);
               gmd.htmlToPdf(doc3, os);
               if (log.isDebugEnabled()) {
-                FileUtils.writeToFile(new File(target.getParent(), target.getName() + ".html"), toString(doc3));
+                String parentPath = target.getParent();
+                if (parentPath != null) {
+                  FileUtils.writeToFile(new File(parentPath, target.getName() + ".html"), toString(doc3));
+                }
               }
             } catch (Exception e) {
               ExceptionAlert.showAlert("Failed to create PDF", e);

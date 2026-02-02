@@ -64,8 +64,9 @@ public class FileTree extends TreeView<FileItem> {
     File current = new File(getWorkingDirPref());
     boolean workDirExist = current.exists();
     if (!workDirExist) {
-      if (current.getParentFile().exists()) {
-        current = current.getParentFile();
+      File parent = current.getParentFile();
+      if (parent != null && parent.exists()) {
+        current = parent;
       } else {
         current = new File(".");
       }
@@ -175,11 +176,14 @@ public class FileTree extends TreeView<FileItem> {
 
   private void gitColorTree(TreeItem<FileItem> root) {
     File rootDir = root.getValue().getFile();
-    if (rootDir != null && rootDir.exists() && Objects.requireNonNull(rootDir.list((dir, name) -> name.equalsIgnoreCase(".git"))).length > 0) {
-      log.debug("adding git coloring...");
-    } else {
-      log.debug("not a git repository, skipping git coloring");
-      return;
+    if (rootDir != null && rootDir.exists()) {
+      String[] gitCheck = rootDir.list((dir, name) -> name.equalsIgnoreCase(".git"));
+      if (gitCheck != null && gitCheck.length > 0) {
+        log.debug("adding git coloring...");
+      } else {
+        log.debug("not a git repository, skipping git coloring");
+        return;
+      }
     }
     Platform.runLater(() -> {
       try {
