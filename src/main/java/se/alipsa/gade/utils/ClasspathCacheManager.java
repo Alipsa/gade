@@ -4,9 +4,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Manages classpath caching for Gradle and Maven projects.
@@ -187,6 +192,101 @@ public final class ClasspathCacheManager {
    */
   public static void store(File cacheFile, String fingerprint, List<File> dependencies, String comment) {
     store(cacheFile, fingerprint, dependencies, Collections.emptyList(), comment);
+  }
+
+  /**
+   * Returns the base cache directory used by Gade.
+   */
+  public static File getCacheDir() {
+    File dir = new File(FileUtils.getUserHome(), ".gade/cache");
+    if (!dir.exists()) {
+      if (!dir.mkdirs()) {
+        throw new RuntimeException("Failed to create cache dir " + dir);
+      }
+    }
+    return dir;
+  }
+
+  /**
+   * Computes a fingerprint for classpath invalidation.
+   *
+   * @param projectDir the project directory
+   * @param testContext whether test dependencies are in use
+   * @param trackedFiles the ordered list of files to track
+   * @param extraEntries additional key/value pairs to append (order preserved)
+   * @return SHA-256 fingerprint
+   */
+  public static String computeFingerprint(File projectDir, boolean testContext, List<Path> trackedFiles,
+                                          Map<String, String> extraEntries) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("project=").append(projectDir.getAbsolutePath()).append('\n');
+    sb.append("testContext=").append(testContext).append('\n');
+    if (trackedFiles != null) {
+      for (Path p : trackedFiles) {
+        if (p == null) {
+          continue;
+        }
+        sb.append(p).append('|');
+        try {
+          if (Files.exists(p)) {
+            sb.append(Files.size(p)).append('|').append(Files.getLastModifiedTime(p).toMillis());
+          } else {
+            sb.append("missing");
+          }
+        } catch (IOException e) {
+          sb.append("error:").append(e.getClass().getSimpleName());
+        }
+        sb.append('\n');
+      }
+    }
+    if (extraEntries != null) {
+      for (Map.Entry<String, String> entry : extraEntries.entrySet()) {
+        sb.append(entry.getKey()).append('=').append(entry.getValue()).append('\n');
+      }
+    }
+    return sha256Hex(sb.toString());
+  }
+
+  /**
+   * Returns the newest modified timestamp for files under the given directory.
+   */
+  public static long latestModified(Path dir) {
+    if (dir == null || !Files.exists(dir)) {
+      return 0L;
+    }
+    try (Stream<Path> stream = Files.walk(dir)) {
+      return stream
+          .filter(Files::isRegularFile)
+          .limit(2000)
+          .mapToLong(path -> {
+            try {
+              return Files.getLastModifiedTime(path).toMillis();
+            } catch (IOException e) {
+              return 0L;
+            }
+          })
+          .max()
+          .orElse(0L);
+    } catch (IOException e) {
+      return 0L;
+    }
+  }
+
+  /**
+   * Computes a SHA-256 hash from the provided string.
+   */
+  public static String sha256Hex(String str) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] bytes = digest.digest(str.getBytes(StandardCharsets.UTF_8));
+      StringBuilder sb = new StringBuilder(bytes.length * 2);
+      for (byte b : bytes) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 not available", e);
+    }
   }
 
   /**

@@ -6,26 +6,19 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.runtime.MavenResolver;
 import se.alipsa.gade.utils.ClasspathCacheManager;
-import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.mavenutils.DependenciesResolveException;
 import se.alipsa.mavenutils.MavenUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class MavenClasspathUtils {
 
@@ -115,7 +108,7 @@ public final class MavenClasspathUtils {
 
   private static File cacheFile(File projectDir, boolean testContext) {
     String projectKey = MavenBuildUtils.projectKey(projectDir);
-    File dir = new File(GradleUtils.getCacheDir(), "maven-classpath/" + projectKey);
+    File dir = new File(ClasspathCacheManager.getCacheDir(), "maven-classpath/" + projectKey);
     return new File(dir, testContext ? "classpath-test.properties" : "classpath-main.properties");
   }
 
@@ -126,60 +119,9 @@ public final class MavenClasspathUtils {
     tracked.add(projectDir.toPath().resolve(".mvn").resolve("extensions.xml"));
     tracked.add(projectDir.toPath().resolve(".mvn").resolve("wrapper").resolve("maven-wrapper.properties"));
 
-    long dotMvnLatest = latestModified(projectDir.toPath().resolve(".mvn"));
-    StringBuilder sb = new StringBuilder();
-    sb.append("project=").append(projectDir.getAbsolutePath()).append('\n');
-    sb.append("testContext=").append(testContext).append('\n');
-    for (Path p : tracked) {
-      sb.append(p).append('|');
-      try {
-        if (Files.exists(p)) {
-          sb.append(Files.size(p)).append('|').append(Files.getLastModifiedTime(p).toMillis());
-        } else {
-          sb.append("missing");
-        }
-      } catch (IOException e) {
-        sb.append("error:").append(e.getClass().getSimpleName());
-      }
-      sb.append('\n');
-    }
-    sb.append("dotMvnLatest=").append(dotMvnLatest).append('\n');
-    return sha256Hex(sb.toString());
-  }
-
-  private static long latestModified(Path dir) {
-    if (dir == null || !Files.exists(dir)) {
-      return 0L;
-    }
-    try (Stream<Path> stream = Files.walk(dir)) {
-      return stream
-          .filter(Files::isRegularFile)
-          .limit(2000)
-          .mapToLong(path -> {
-            try {
-              return Files.getLastModifiedTime(path).toMillis();
-            } catch (IOException e) {
-              return 0L;
-            }
-          })
-          .max()
-          .orElse(0L);
-    } catch (IOException e) {
-      return 0L;
-    }
-  }
-
-  private static String sha256Hex(String str) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] bytes = digest.digest(str.getBytes(StandardCharsets.UTF_8));
-      StringBuilder sb = new StringBuilder(bytes.length * 2);
-      for (byte b : bytes) {
-        sb.append(String.format("%02x", b));
-      }
-      return sb.toString();
-    } catch (NoSuchAlgorithmException e) {
-      throw new IllegalStateException("SHA-256 not available", e);
-    }
+    long dotMvnLatest = ClasspathCacheManager.latestModified(projectDir.toPath().resolve(".mvn"));
+    Map<String, String> extra = new LinkedHashMap<>();
+    extra.put("dotMvnLatest", String.valueOf(dotMvnLatest));
+    return ClasspathCacheManager.computeFingerprint(projectDir, testContext, tracked, extra);
   }
 }

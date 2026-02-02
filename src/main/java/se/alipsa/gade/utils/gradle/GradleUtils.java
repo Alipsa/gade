@@ -19,28 +19,23 @@ import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.console.WarningAppenderWriter;
 import se.alipsa.gade.utils.ClasspathCacheManager;
 import se.alipsa.gade.utils.ExceptionAlert;
-import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.groovy.resolver.Dependency;
 import se.alipsa.groovy.resolver.DependencyResolver;
 import se.alipsa.groovy.resolver.MavenRepoLookup;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 import java.util.Map;
 import se.alipsa.groovy.resolver.ResolvingException;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 /**
  * Utility class for Gradle project integration and dependency resolution.
@@ -426,7 +421,6 @@ public class GradleUtils {
   }
 
   private String fingerprintProject(boolean testContext) {
-    String fingerprint;
     List<Path> tracked = new ArrayList<>();
     tracked.add(projectDir.toPath().resolve("build.gradle"));
     tracked.add(projectDir.toPath().resolve("build.gradle.kts"));
@@ -436,62 +430,10 @@ public class GradleUtils {
     tracked.add(projectDir.toPath().resolve("gradle").resolve("libs.versions.toml"));
     tracked.add(projectDir.toPath().resolve("gradle").resolve("wrapper").resolve("gradle-wrapper.properties"));
 
-    long buildSrcLatest = latestModified(projectDir.toPath().resolve("buildSrc"));
-    StringBuilder sb = new StringBuilder();
-    sb.append("project=").append(projectDir.getAbsolutePath()).append('\n');
-    sb.append("testContext=").append(testContext).append('\n');
-    for (Path p : tracked) {
-      sb.append(p).append('|');
-      try {
-        if (Files.exists(p)) {
-          sb.append(Files.size(p)).append('|').append(Files.getLastModifiedTime(p).toMillis());
-        } else {
-          sb.append("missing");
-        }
-      } catch (IOException e) {
-        sb.append("error:").append(e.getClass().getSimpleName());
-      }
-      sb.append('\n');
-    }
-    sb.append("buildSrcLatest=").append(buildSrcLatest).append('\n');
-    fingerprint = sha256Hex(sb.toString());
-    return fingerprint;
-  }
-
-  private static long latestModified(Path dir) {
-    if (dir == null || !Files.exists(dir)) {
-      return 0L;
-    }
-    try (Stream<Path> stream = Files.walk(dir)) {
-      return stream
-          .filter(Files::isRegularFile)
-          .limit(2000)
-          .mapToLong(path -> {
-            try {
-              return Files.getLastModifiedTime(path).toMillis();
-            } catch (IOException e) {
-              return 0L;
-            }
-          })
-          .max()
-          .orElse(0L);
-    } catch (IOException e) {
-      return 0L;
-    }
-  }
-
-  private static String sha256Hex(String str) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] bytes = digest.digest(str.getBytes(StandardCharsets.UTF_8));
-      StringBuilder sb = new StringBuilder(bytes.length * 2);
-      for (byte b : bytes) {
-        sb.append(String.format("%02x", b));
-      }
-      return sb.toString();
-    } catch (NoSuchAlgorithmException e) {
-      throw new IllegalStateException("SHA-256 not available", e);
-    }
+    long buildSrcLatest = ClasspathCacheManager.latestModified(projectDir.toPath().resolve("buildSrc"));
+    Map<String, String> extra = new LinkedHashMap<>();
+    extra.put("buildSrcLatest", String.valueOf(buildSrcLatest));
+    return ClasspathCacheManager.computeFingerprint(projectDir, testContext, tracked, extra);
   }
 
   private static File gradleClasspathCacheDir() {
@@ -503,7 +445,7 @@ public class GradleUtils {
   }
 
   File getClasspathCacheFile(boolean testContext) {
-    String key = sha256Hex(projectDir.getAbsolutePath());
+    String key = ClasspathCacheManager.sha256Hex(projectDir.getAbsolutePath());
     String suffix = testContext ? "-test" : "-main";
     return new File(gradleClasspathCacheDir(), key + suffix + ".properties");
   }
@@ -537,13 +479,7 @@ public class GradleUtils {
   }
 
   public static File getCacheDir() {
-    File dir = new File(FileUtils.getUserHome(), ".gade/cache");
-    if (!dir.exists()) {
-      if (!dir.mkdirs()) {
-        throw new RuntimeException("Failed to create cache dir " + dir);
-      }
-    }
-    return dir;
+    return ClasspathCacheManager.getCacheDir();
   }
 
   public static File cachedFile(Dependency dependency) {
