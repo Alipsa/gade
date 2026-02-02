@@ -28,6 +28,9 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class GmdUtil {
 
@@ -71,6 +74,11 @@ public class GmdUtil {
     final ConsoleComponent console = Gade.instance().getConsoleComponent();
     console.addOutput("saveGmdAsPdf", "converting gmd to html", false, true);
     String html = gmd.gmdToHtmlDoc(textContent);
+
+    // Use CountDownLatch to wait for async WebEngine to finish loading
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
     webView = new WebView();
     webView.getEngine().setOnError(handler ->
         ExceptionAlert.showAlert("Error processing gmd content", handler.getException())
@@ -79,7 +87,7 @@ public class GmdUtil {
     webEngine.setJavaScriptEnabled(true);
     webEngine.setUserStyleSheetLocation(HtmlDecorator.BOOTSTRAP_CSS);
     webEngine.getLoadWorker().stateProperty().addListener(( ov,  oldState, newState) ->  {
-      //log.info("loading html document, state is {}", newState);
+      log.debug("WebEngine loading state: {}", newState);
       if (newState == Worker.State.SUCCEEDED) {
         try {
           Document doc = webEngine.getDocument();
@@ -107,21 +115,52 @@ public class GmdUtil {
                 .withW3cDocument(doc3, new File(".").toURI().toString())
                 .toStream(os);
             builder.run();
+            os.flush(); // Ensure all bytes are written before closing
             long fileSize = new File(target.getAbsolutePath()).length();
             console.addOutput("",
                 target + " saved (size: " + fileSize + " bytes)",
                 true,
                 true
             );
+            log.info("PDF saved successfully: {} ({} bytes)", target, fileSize);
           }
         } catch (Throwable t) {
+          log.error("Error generating PDF", t);
+          errorRef.set(t);
           ExceptionAlert.showAlert("Error processing gmd content", t);
         } finally {
           Gade.instance().setNormalCursor();
+          latch.countDown(); // Signal completion
         }
+      } else if (newState == Worker.State.FAILED) {
+        log.error("WebEngine failed to load content");
+        errorRef.set(new GmdException("WebEngine failed to load HTML content"));
+        Gade.instance().setNormalCursor();
+        latch.countDown(); // Signal completion even on failure
       }
     });
     webEngine.loadContent(html);
+
+    // Wait for PDF generation to complete (max 30 seconds)
+    try {
+      boolean completed = latch.await(30, TimeUnit.SECONDS);
+      if (!completed) {
+        Gade.instance().setNormalCursor();
+        throw new GmdException("PDF generation timed out after 30 seconds");
+      }
+      // Rethrow any exception that occurred during PDF generation
+      Throwable error = errorRef.get();
+      if (error != null) {
+        if (error instanceof GmdException) {
+          throw (GmdException) error;
+        }
+        throw new GmdException("Failed to generate PDF: " + error.getMessage(), error);
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      Gade.instance().setNormalCursor();
+      throw new GmdException("PDF generation was interrupted", e);
+    }
   }
 
   public static void saveGmdAsHtml(File target, String textContent) throws GmdException {
