@@ -3,8 +3,6 @@ package se.alipsa.gade.utils.gradle;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,27 +12,33 @@ import static org.junit.jupiter.api.Assertions.*;
 public class GradleUtilsDaemonRecoveryTest {
 
   @Test
-  public void testFindGradleCommand() {
+  public void testFindGradleCommand() throws Exception {
     File projectDir = new File("/Users/pernyf/project/groovier-junit5");
     if (!projectDir.exists()) {
       System.out.println("Skipping test - project directory does not exist");
       return;
     }
 
-    GradleUtils utils = new GradleUtils(null, projectDir, null);
+    // Create a GradleDaemonRecovery instance via reflection since it's package-private
+    var configManagerConstructor = GradleConfigurationManager.class.getDeclaredConstructor(
+        File.class, File.class, String.class);
+    configManagerConstructor.setAccessible(true);
+    var configManager = configManagerConstructor.newInstance(
+        projectDir, new File(projectDir, ".gradle-gade-tooling"), null);
 
-    // Use reflection to call the private findGradleCommand method
-    try {
-      var method = GradleUtils.class.getDeclaredMethod("findGradleCommand");
-      method.setAccessible(true);
-      String gradleCommand = (String) method.invoke(utils);
+    var daemonRecoveryConstructor = GradleDaemonRecovery.class.getDeclaredConstructor(
+        File.class, File.class, GradleConfigurationManager.class);
+    daemonRecoveryConstructor.setAccessible(true);
+    var daemonRecovery = daemonRecoveryConstructor.newInstance(
+        projectDir, new File(projectDir, ".gradle-gade-tooling"), configManager);
 
-      System.out.println("Found Gradle command: " + gradleCommand);
-      assertNotNull(gradleCommand, "Should find a Gradle command");
-      assertTrue(new File(gradleCommand).exists(), "Gradle command should exist");
-    } catch (Exception e) {
-      fail("Failed to test findGradleCommand: " + e.getMessage());
-    }
+    var method = GradleDaemonRecovery.class.getDeclaredMethod("findGradleCommand");
+    method.setAccessible(true);
+    String gradleCommand = (String) method.invoke(daemonRecovery);
+
+    System.out.println("Found Gradle command: " + gradleCommand);
+    assertNotNull(gradleCommand, "Should find a Gradle command");
+    assertTrue(new File(gradleCommand).exists(), "Gradle command should exist");
   }
 
   @Test
@@ -70,18 +74,8 @@ public class GradleUtilsDaemonRecoveryTest {
   }
 
   @Test
-  public void testErrorDetection() throws Exception {
-    File projectDir = new File("/Users/pernyf/project/groovier-junit5");
-    if (!projectDir.exists()) {
-      System.out.println("Skipping test - project directory does not exist");
-      return;
-    }
-
-    GradleUtils utils = new GradleUtils(null, projectDir, null);
-
-    // Test isDaemonOrCacheCorruption method using reflection
-    var isDaemonCorruptionMethod = GradleUtils.class.getDeclaredMethod("isDaemonOrCacheCorruption", Throwable.class);
-    isDaemonCorruptionMethod.setAccessible(true);
+  public void testErrorDetection() {
+    // These methods are now static in GradleDaemonRecovery - test directly
 
     // Create test exceptions
     Exception moduleException = new Exception("Cannot locate manifest for module 'gradle-core' in classpath: []");
@@ -89,34 +83,39 @@ public class GradleUtilsDaemonRecoveryTest {
     Exception toolingApiException = new Exception("Could not create an instance of Tooling API implementation");
     Exception normalException = new Exception("Some other error");
 
-    assertTrue((Boolean) isDaemonCorruptionMethod.invoke(utils, moduleException),
+    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(moduleException),
         "Should detect module manifest error");
-    assertTrue((Boolean) isDaemonCorruptionMethod.invoke(utils, classLoaderException),
+    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(classLoaderException),
         "Should detect ClassLoaderRegistry error");
-    assertTrue((Boolean) isDaemonCorruptionMethod.invoke(utils, toolingApiException),
+    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(toolingApiException),
         "Should detect Tooling API error");
-    assertFalse((Boolean) isDaemonCorruptionMethod.invoke(utils, normalException),
+    assertFalse(GradleDaemonRecovery.isDaemonOrCacheCorruption(normalException),
         "Should not detect normal exceptions as corruption");
 
     System.out.println("Error detection working correctly");
   }
 
   @Test
-  public void testExtractErrorType() throws Exception {
-    File projectDir = new File("/Users/pernyf/project/groovier-junit5");
-    if (!projectDir.exists()) {
-      projectDir = new File(".");
-    }
-
-    GradleUtils utils = new GradleUtils(null, projectDir, null);
-
-    var extractErrorTypeMethod = GradleUtils.class.getDeclaredMethod("extractErrorType", Throwable.class);
-    extractErrorTypeMethod.setAccessible(true);
+  public void testExtractErrorType() {
+    // This method is now static in GradleDaemonRecovery - test directly
 
     Exception moduleException = new Exception("Cannot locate manifest for module 'gradle-core' in classpath: []");
-    String errorType = (String) extractErrorTypeMethod.invoke(utils, moduleException);
+    String errorType = GradleDaemonRecovery.extractErrorType(moduleException);
 
     System.out.println("Extracted error type: " + errorType);
     assertEquals("module manifest not found", errorType);
+  }
+
+  @Test
+  public void testShouldPurgeDistributionCache() {
+    // Test the shouldPurgeDistributionCache static method
+
+    Exception runtimeApiException = new Exception("Error with gradle-runtime-api-info module");
+    Exception normalException = new Exception("Some other error");
+
+    assertTrue(GradleDaemonRecovery.shouldPurgeDistributionCache(runtimeApiException),
+        "Should detect runtime API info error");
+    assertFalse(GradleDaemonRecovery.shouldPurgeDistributionCache(normalException),
+        "Should not purge for normal exceptions");
   }
 }

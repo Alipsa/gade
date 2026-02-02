@@ -10,10 +10,8 @@ import org.gradle.tooling.*;
 import org.gradle.tooling.model.GradleProject;
 import org.gradle.tooling.model.GradleTask;
 import org.gradle.tooling.model.Task;
-import org.gradle.tooling.model.idea.IdeaDependency;
 import org.gradle.tooling.model.idea.IdeaModule;
 import org.gradle.tooling.model.idea.IdeaProject;
-import org.gradle.tooling.model.idea.IdeaSingleEntryLibraryDependency;
 import org.gradle.util.GradleVersion;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
@@ -33,21 +31,15 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 import java.util.Map;
 import se.alipsa.groovy.resolver.ResolvingException;
 import java.util.Objects;
-import java.util.HashMap;
-import java.util.Properties;
 import java.util.stream.Stream;
 
 /**
@@ -68,91 +60,41 @@ import java.util.stream.Stream;
 public class GradleUtils {
 
   private static final Logger log = LogManager.getLogger(GradleUtils.class);
-  private static final String GADE_GRADLE_USER_HOME_ENV = "GADE_GRADLE_USER_HOME";
-  private static final String GADE_GRADLE_USER_HOME_PROP = "gade.gradle.userHome";
 
-  private GradleConnector connector;
   private final File projectDir;
-  private final File gradleInstallationDir;
   private final File projectLocalGradleUserHome;
-  private File gradleUserHomeDir;
-  private boolean useCustomGradleUserHome;
-  private final String javaHomeOverride;
-  private final boolean wrapperAvailable;
-  private final List<DistributionMode> distributionOrder = new ArrayList<>();
-  private int currentDistributionIndex = 0;
-  private volatile ClasspathModel cachedClasspathMain;
+  private volatile GradleDependencyResolver.ClasspathModel cachedClasspathMain;
   private volatile String cachedClasspathFingerprintMain;
-  private volatile ClasspathModel cachedClasspathTest;
+  private volatile GradleDependencyResolver.ClasspathModel cachedClasspathTest;
   private volatile String cachedClasspathFingerprintTest;
+
+  // Extracted helper classes
+  private final GradleConfigurationManager configManager;
+  private final GradleDistributionManager distributionManager;
+  private final GradleDaemonRecovery daemonRecovery;
+  private final GradleDependencyResolver dependencyResolver;
 
   public GradleUtils(Gade gui) {
     this(null, gui.getInoutComponent().projectDir(), null);
   }
 
   public GradleUtils(File gradleInstallationDir, File projectDir, String javaHomeOverride) {
-    this.gradleInstallationDir = gradleInstallationDir;
     this.projectDir = Objects.requireNonNull(projectDir, "Project dir must be provided");
-    this.javaHomeOverride = javaHomeOverride;
     projectLocalGradleUserHome = new File(projectDir, ".gradle-gade-tooling");
-    gradleUserHomeDir = resolveGradleUserHomeDir(projectDir, projectLocalGradleUserHome);
-    useCustomGradleUserHome = gradleUserHomeDir != null;
-    log.debug("Gradle user home set to {} (custom={})", useCustomGradleUserHome ? gradleUserHomeDir.getAbsolutePath() : "~/.gradle", useCustomGradleUserHome);
-    connector = GradleConnector.newConnector();
-    connector.forProjectDirectory(projectDir);
-    if (useCustomGradleUserHome) {
-      connector.useGradleUserHomeDir(gradleUserHomeDir);
-    }
-    wrapperAvailable = new File(projectDir, "gradle/wrapper/gradle-wrapper.properties").exists();
-    configureDistribution();
-  }
 
-  private static File resolveGradleUserHomeDir(File projectDir, File projectLocalGradleUserHome) {
-    String configured = System.getProperty(GADE_GRADLE_USER_HOME_PROP);
-    if (configured == null || configured.isBlank()) {
-      configured = System.getenv(GADE_GRADLE_USER_HOME_ENV);
-    }
-    if (configured == null || configured.isBlank() || "default".equalsIgnoreCase(configured)) {
-      return null;
-    }
-    final File userHomeDir;
-    if ("project".equalsIgnoreCase(configured) || "project-local".equalsIgnoreCase(configured)) {
-      userHomeDir = projectLocalGradleUserHome;
-    } else {
-      File configuredDir = new File(configured);
-      userHomeDir = configuredDir.isAbsolute() ? configuredDir : new File(projectDir, configured);
-    }
-    if (userHomeDir.exists()) {
-      return userHomeDir;
-    }
-    if (userHomeDir.mkdirs()) {
-      return userHomeDir;
-    }
-    log.warn("Failed to create Gradle user home {} ({}={}, {}={}), falling back to default ~/.gradle",
-        userHomeDir,
-        GADE_GRADLE_USER_HOME_PROP, System.getProperty(GADE_GRADLE_USER_HOME_PROP),
-        GADE_GRADLE_USER_HOME_ENV, System.getenv(GADE_GRADLE_USER_HOME_ENV));
-    return null;
-  }
+    // Initialize extracted helpers
+    configManager = new GradleConfigurationManager(projectDir, projectLocalGradleUserHome, javaHomeOverride);
 
-  private record ClasspathModel(List<File> dependencies, List<File> outputDirs, boolean fromCache) {}
+    boolean wrapperAvailable = new File(projectDir, "gradle/wrapper/gradle-wrapper.properties").exists();
+    distributionManager = new GradleDistributionManager(projectDir, gradleInstallationDir,
+        wrapperAvailable, configManager);
 
-  private void configureDistribution() {
-    distributionOrder.clear();
-    // Prefer provided installation if explicitly given, then wrapper, then embedded/tooling API.
-    if (gradleInstallationDir != null && gradleInstallationDir.exists()) {
-      distributionOrder.add(DistributionMode.INSTALLATION);
-    }
-    if (wrapperAvailable) {
-      distributionOrder.add(DistributionMode.WRAPPER);
-    }
-    distributionOrder.add(DistributionMode.EMBEDDED);
-    currentDistributionIndex = 0;
-    applyCurrentDistribution();
+    daemonRecovery = new GradleDaemonRecovery(projectDir, projectLocalGradleUserHome, configManager);
+    dependencyResolver = new GradleDependencyResolver(projectDir);
   }
 
   private ProjectConnection connect() {
-    return connector.connect();
+    return distributionManager.getConnector().connect();
   }
 
   private <T> T withConnection(Function<ProjectConnection, T> action) {
@@ -169,24 +111,21 @@ public class GradleUtils {
           triedDefaultUserHome = true;
           continue;
         }
-        if (!daemonCacheCleared && isDaemonOrCacheCorruption(e)) {
-          String errorType = extractErrorType(e);
+        if (!daemonCacheCleared && GradleDaemonRecovery.isDaemonOrCacheCorruption(e)) {
+          String errorType = GradleDaemonRecovery.extractErrorType(e);
           log.warn("Detected Gradle daemon or cache corruption ({}), attempting cleanup and retry", errorType, e);
-          clearGradleDaemonCache();
+          daemonRecovery.clearDaemonCache();
           daemonCacheCleared = true;
-          applyCurrentDistribution();
+          distributionManager.applyCurrentDistribution();
           continue;
         }
-        if (!cachePurged && shouldPurgeDistributionCache(e)) {
-          purgeGradleUserHomeCache();
+        if (!cachePurged && GradleDaemonRecovery.shouldPurgeDistributionCache(e)) {
+          daemonRecovery.purgeGradleUserHomeCache(distributionManager);
           cachePurged = true;
-          applyCurrentDistribution();
+          distributionManager.applyCurrentDistribution();
           continue;
         }
-        if (currentDistributionIndex < distributionOrder.size() - 1) {
-          currentDistributionIndex++;
-          log.warn("Gradle connection failed, retrying with fallback distribution {}", distributionOrder.get(currentDistributionIndex), e);
-          applyCurrentDistribution();
+        if (distributionManager.tryNextDistribution()) {
           continue;
         }
         throw last;
@@ -195,75 +134,24 @@ public class GradleUtils {
   }
 
   private boolean trySwitchToDefaultUserHome(Throwable throwable) {
-    if (!useCustomGradleUserHome || gradleUserHomeDir == null) {
+    if (!configManager.isUsingCustomGradleUserHome() || configManager.getGradleUserHomeDir() == null) {
       return false;
     }
     // Never fall back away from an explicit user-provided Gradle user home path.
-    if (!isProjectLocalGradleUserHome()) {
+    if (!configManager.isProjectLocalGradleUserHome(projectLocalGradleUserHome)) {
       return false;
     }
     // When the project-local Gradle user home lacks a complete distribution, retrying with the default
     // ~/.gradle is often enough (it may already contain the needed distributions, even in offline setups).
-    if (!(shouldPurgeDistributionCache(throwable) || isDistributionInstallFailure(throwable))) {
+    if (!(GradleDaemonRecovery.shouldPurgeDistributionCache(throwable)
+        || GradleDistributionManager.isDistributionInstallFailure(throwable))) {
       return false;
     }
-    log.warn("Gradle connection failed using project-local Gradle user home {}, retrying with default ~/.gradle", gradleUserHomeDir, throwable);
-    useCustomGradleUserHome = false;
-    gradleUserHomeDir = null;
-    applyCurrentDistribution();
+    log.warn("Gradle connection failed using project-local Gradle user home {}, retrying with default ~/.gradle",
+        configManager.getGradleUserHomeDir(), throwable);
+    configManager.switchToDefaultGradleUserHome();
+    distributionManager.applyCurrentDistribution();
     return true;
-  }
-
-  private boolean isProjectLocalGradleUserHome() {
-    return projectLocalGradleUserHome.getAbsolutePath().equals(gradleUserHomeDir.getAbsolutePath());
-  }
-
-  private boolean isDistributionInstallFailure(Throwable throwable) {
-    Throwable t = throwable;
-    while (t != null) {
-      String msg = t.getMessage();
-      if (msg != null && msg.contains("Could not install Gradle distribution")) {
-        return true;
-      }
-      t = t.getCause();
-    }
-    return false;
-  }
-
-  private void applyCurrentDistribution() {
-    if (useCustomGradleUserHome && gradleUserHomeDir != null && !gradleUserHomeDir.exists() && !gradleUserHomeDir.mkdirs()) {
-      log.warn("Failed to recreate Gradle user home {}", gradleUserHomeDir);
-    }
-    connector = GradleConnector.newConnector();
-    connector.forProjectDirectory(projectDir);
-    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
-      connector.useGradleUserHomeDir(gradleUserHomeDir);
-    }
-    DistributionMode mode = distributionOrder.get(currentDistributionIndex);
-    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
-      log.info("Using Gradle user home {}", gradleUserHomeDir.getAbsolutePath());
-    } else {
-      log.info("Using Gradle user home ~/.gradle");
-    }
-    switch (mode) {
-      case INSTALLATION -> {
-        connector.useInstallation(gradleInstallationDir);
-        log.info("Using Gradle installation at {}", gradleInstallationDir);
-      }
-      case WRAPPER -> {
-        connector.useBuildDistribution();
-        log.info("Using Gradle wrapper distribution for {}", projectDir);
-      }
-      case EMBEDDED -> {
-        String version = GradleVersion.current().getVersion();
-        connector.useGradleVersion(version);
-        log.info("Using embedded/tooling API Gradle version {} for {}", version, projectDir);
-      }
-    }
-  }
-
-  enum DistributionMode {
-    INSTALLATION, WRAPPER, EMBEDDED
   }
 
   public String getGradleVersion() {
@@ -278,8 +166,8 @@ public class GradleUtils {
   public List<GradleTask> getGradleTasks() {
     return withConnection(connection -> {
       GradleProject project = connection.model(GradleProject.class)
-          .setJvmArguments(gradleJvmArgs())
-          .setEnvironmentVariables(gradleEnv())
+          .setJvmArguments(configManager.gradleJvmArgs())
+          .setEnvironmentVariables(configManager.gradleEnv())
           .get();
       return new ArrayList<>(project.getTasks());
     });
@@ -297,16 +185,6 @@ public class GradleUtils {
    */
   public void buildProject(final ConsoleComponent consoleComponent, String... tasks) {
     final ConsoleTextArea console = consoleComponent.getConsole();
-    /*
-    // Standard out gives better info, consider using the listener for debug mode
-    final List<String> dontShow = List.of("Run tasks", "Run build", "Build");
-    final ProgressListener listener = progressEvent -> {
-      String description = progressEvent.getDescription();
-      if (!dontShow.contains(description)) {
-        console.appendFx(progressEvent.getDescription(), true);
-      }
-    };
-     */
     var task = new javafx.concurrent.Task<Void>() {
       @Override
       protected Void call() {
@@ -315,9 +193,8 @@ public class GradleUtils {
                WarningAppenderWriter err = new WarningAppenderWriter(console);
                PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(err).get())) {
             BuildLauncher build = connection.newBuild()
-                .setJvmArguments(gradleJvmArgs())
-                .setEnvironmentVariables(gradleEnv());
-            //build.addProgressListener(listener);
+                .setJvmArguments(configManager.gradleJvmArgs())
+                .setEnvironmentVariables(configManager.gradleEnv());
             if (tasks.length > 0) {
               build.forTasks(tasks);
             }
@@ -334,7 +211,6 @@ public class GradleUtils {
     };
 
     task.setOnSucceeded(e -> {
-      //console.appendFx("Build finished!", true);
       Platform.runLater(consoleComponent::promptAndScrollToEnd);
     });
 
@@ -375,7 +251,6 @@ public class GradleUtils {
       }
       console.appendWarningFx("Build failed!");
       Platform.runLater(consoleComponent::promptAndScrollToEnd);
-      // ExceptionAlert.showAlert("Build failed: " + clazz + ": " + message, exc);
     });
 
     Thread scriptThread = new Thread(task);
@@ -405,7 +280,7 @@ public class GradleUtils {
     if (!javaMismatch && !toolingApiFailed) {
       return null;
     }
-    String javaHome = pickJavaHome();
+    String javaHome = configManager.pickJavaHome();
     if (javaMismatch) {
       return "Hint: The selected Java runtime (" + javaHome + ") is likely too old for this Gradle version. "
           + "Select a JDK 17+ under Runtimes (or set JAVA_HOME) and retry.";
@@ -434,13 +309,7 @@ public class GradleUtils {
   }
 
   public File getOutputDir(IdeaModule module) {
-    File outPutDir = module.getCompilerOutput().getOutputDir();
-    if (outPutDir == null || !outPutDir.exists()) {
-      File moduleDir = module.getGradleProject().getProjectDirectory();
-      moduleDir = moduleDir != null && moduleDir.exists() ? moduleDir : projectDir;
-      outPutDir = new File(moduleDir, "build/classes/groovy/main/");
-    }
-    return outPutDir;
+    return dependencyResolver.getOutputDir(module);
   }
 
   public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console) {
@@ -449,7 +318,7 @@ public class GradleUtils {
 
   public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console, boolean testContext) {
     long start = System.currentTimeMillis();
-    ClasspathModel model = resolveClasspathModel(testContext);
+    GradleDependencyResolver.ClasspathModel model = resolveClasspathModel(testContext);
     if (model.fromCache()) {
       console.appendFx("  Using cached Gradle classpath", true);
     }
@@ -482,7 +351,7 @@ public class GradleUtils {
 
   public ClassLoader createGradleCLassLoader(ClassLoader parent, ConsoleTextArea console) {
     List<URL> urls = new ArrayList<>();
-    ClasspathModel model = resolveClasspathModel(false);
+    GradleDependencyResolver.ClasspathModel model = resolveClasspathModel(false);
     if (model.fromCache()) {
       console.appendFx("  Using cached Gradle classpath", true);
     }
@@ -510,97 +379,50 @@ public class GradleUtils {
     return new URLClassLoader(urls.toArray(new URL[0]), parent);
   }
 
-  private ClasspathModel resolveClasspathModel(boolean testContext) {
+  private GradleDependencyResolver.ClasspathModel resolveClasspathModel(boolean testContext) {
     String fingerprint = fingerprintProject(testContext);
     if (testContext) {
-      ClasspathModel cached = cachedClasspathTest;
+      GradleDependencyResolver.ClasspathModel cached = cachedClasspathTest;
       if (cached != null && Objects.equals(fingerprint, cachedClasspathFingerprintTest)) {
         return cached;
       }
-      ClasspathModel fromDisk = loadClasspathCache(fingerprint, true);
+      GradleDependencyResolver.ClasspathModel fromDisk = loadClasspathCache(fingerprint, true);
       if (fromDisk != null) {
         cachedClasspathTest = fromDisk;
         cachedClasspathFingerprintTest = fingerprint;
         return fromDisk;
       }
-      ClasspathModel resolved = resolveClasspathViaToolingApi(true);
+      GradleDependencyResolver.ClasspathModel resolved = resolveClasspathViaToolingApi(true);
       cachedClasspathTest = resolved;
       cachedClasspathFingerprintTest = fingerprint;
       storeClasspathCache(fingerprint, resolved.dependencies(), resolved.outputDirs(), true);
       return resolved;
     }
-    ClasspathModel cached = cachedClasspathMain;
+    GradleDependencyResolver.ClasspathModel cached = cachedClasspathMain;
     if (cached != null && Objects.equals(fingerprint, cachedClasspathFingerprintMain)) {
       return cached;
     }
-    ClasspathModel fromDisk = loadClasspathCache(fingerprint, false);
+    GradleDependencyResolver.ClasspathModel fromDisk = loadClasspathCache(fingerprint, false);
     if (fromDisk != null) {
       cachedClasspathMain = fromDisk;
       cachedClasspathFingerprintMain = fingerprint;
       return fromDisk;
     }
-    ClasspathModel resolved = resolveClasspathViaToolingApi(false);
+    GradleDependencyResolver.ClasspathModel resolved = resolveClasspathViaToolingApi(false);
     cachedClasspathMain = resolved;
     cachedClasspathFingerprintMain = fingerprint;
     storeClasspathCache(fingerprint, resolved.dependencies(), resolved.outputDirs(), false);
     return resolved;
   }
 
-  private ClasspathModel resolveClasspathViaToolingApi(boolean testContext) {
+  private GradleDependencyResolver.ClasspathModel resolveClasspathViaToolingApi(boolean testContext) {
     return withConnection(connection -> {
-      LinkedHashSet<File> dependencyFiles = new LinkedHashSet<>();
-      LinkedHashSet<File> outputDirs = new LinkedHashSet<>();
       IdeaProject project = connection.model(IdeaProject.class)
-          .setJvmArguments(gradleJvmArgs())
-          .setEnvironmentVariables(gradleEnv())
+          .setJvmArguments(configManager.gradleJvmArgs())
+          .setEnvironmentVariables(configManager.gradleEnv())
           .get();
-      for (IdeaModule module : project.getModules()) {
-        for (IdeaDependency dependency : module.getDependencies()) {
-          if (dependency instanceof IdeaSingleEntryLibraryDependency ideaDependency) {
-            if (shouldIncludeDependency(dependency, testContext)) {
-              dependencyFiles.add(ideaDependency.getFile());
-            }
-          }
-        }
-        outputDirs.add(getOutputDir(module));
-        if (testContext) {
-          File testOut = getTestOutputDir(module);
-          if (testOut != null) {
-            outputDirs.add(testOut);
-          }
-        }
-      }
-      return new ClasspathModel(List.copyOf(dependencyFiles), List.copyOf(outputDirs), false);
+      return dependencyResolver.resolveFromIdeaProject(project, testContext);
     });
-  }
-
-  private static boolean shouldIncludeDependency(IdeaDependency dependency, boolean testContext) {
-    if (dependency == null || dependency.getScope() == null) {
-      return true;
-    }
-    String scope = dependency.getScope().getScope();
-    if (scope == null || scope.isBlank()) {
-      return true;
-    }
-    scope = scope.toUpperCase();
-    if ("COMPILE".equals(scope) || "RUNTIME".equals(scope) || "PROVIDED".equals(scope)) {
-      return true;
-    }
-    return testContext && "TEST".equals(scope);
-  }
-
-  private File getTestOutputDir(IdeaModule module) {
-    if (module == null || module.getCompilerOutput() == null) {
-      return null;
-    }
-    File out = module.getCompilerOutput().getTestOutputDir();
-    if (out != null && out.exists()) {
-      return out;
-    }
-    File moduleDir = module.getGradleProject().getProjectDirectory();
-    moduleDir = moduleDir != null && moduleDir.exists() ? moduleDir : projectDir;
-    File fallback = new File(moduleDir, "build/classes/groovy/test/");
-    return fallback.exists() ? fallback : null;
   }
 
   private String fingerprintProject(boolean testContext) {
@@ -686,13 +508,13 @@ public class GradleUtils {
     return new File(gradleClasspathCacheDir(), key + suffix + ".properties");
   }
 
-  private ClasspathModel loadClasspathCache(String expectedFingerprint, boolean testContext) {
+  private GradleDependencyResolver.ClasspathModel loadClasspathCache(String expectedFingerprint, boolean testContext) {
     File cacheFile = getClasspathCacheFile(testContext);
     ClasspathCacheManager.CachedClasspath cached = ClasspathCacheManager.load(cacheFile, expectedFingerprint, true);
     if (cached == null) {
       return null;
     }
-    return new ClasspathModel(cached.dependencies(), cached.outputDirs(), true);
+    return new GradleDependencyResolver.ClasspathModel(cached.dependencies(), cached.outputDirs(), true);
   }
 
 
@@ -701,44 +523,7 @@ public class GradleUtils {
     ClasspathCacheManager.store(cacheFile, fingerprint, dependencies, outputDirs, "Gade Gradle classpath cache");
   }
 
-  private String[] gradleJvmArgs() {
-    List<String> args = new ArrayList<>();
-    String javaHome = pickJavaHome();
-    args.add("-Dorg.gradle.java.home=" + javaHome);
-    args.add("-Dorg.gradle.ignoreInitScripts=true");
-    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
-      args.add("-Dgradle.user.home=" + gradleUserHomeDir.getAbsolutePath());
-    }
-    return args.toArray(new String[0]);
-  }
-
-  private Map<String, String> gradleEnv() {
-    Map<String, String> env = new HashMap<>(System.getenv());
-    String javaHome = pickJavaHome();
-    env.put("JAVA_HOME", javaHome);
-    if (useCustomGradleUserHome && gradleUserHomeDir != null) {
-      env.put("GRADLE_USER_HOME", gradleUserHomeDir.getAbsolutePath());
-    }
-    return env;
-  }
-
-  private String pickJavaHome() {
-    String javaHome = javaHomeOverride;
-    if (javaHome == null || javaHome.isBlank()) {
-      javaHome = System.getenv("JAVA_HOME");
-    }
-    if (javaHome == null || javaHome.isBlank()) {
-      javaHome = System.getProperty("java.home");
-    }
-    if (javaHome != null && !javaHome.isBlank() && !new File(javaHome).exists()) {
-      log.warn("Configured JAVA_HOME {} does not exist, falling back to system default", javaHome);
-      javaHome = System.getProperty("java.home", "");
-    }
-    if (javaHome == null || javaHome.isBlank()) {
-      javaHome = "";
-    }
-    return javaHome;
-  }
+  // Static utility methods for artifact management
 
   public static void purgeCache(Dependency dependency) {
     File cachedFile = cachedFile(dependency);
@@ -803,243 +588,31 @@ public class GradleUtils {
     }
   }
 
-  private boolean isDaemonOrCacheCorruption(Throwable throwable) {
-    Throwable t = throwable;
-    while (t != null) {
-      String msg = t.getMessage();
-      if (msg != null) {
-        // Common daemon/cache corruption indicators
-        if (msg.contains("Cannot locate manifest for module")) {
-          return true;
-        }
-        if (msg.contains("Could not create service of type ClassLoaderRegistry")) {
-          return true;
-        }
-        if (msg.contains("Could not create an instance of Tooling API implementation")) {
-          return true;
-        }
-      }
-      String className = t.getClass().getName();
-      if (className.contains("UnknownModuleException")) {
-        return true;
-      }
-      t = t.getCause();
-    }
-    return false;
-  }
+  // Package-private accessors for tests
 
-  private String extractErrorType(Throwable throwable) {
-    Throwable t = throwable;
-    while (t != null) {
-      String msg = t.getMessage();
-      if (msg != null) {
-        if (msg.contains("Cannot locate manifest for module")) {
-          return "module manifest not found";
-        }
-        if (msg.contains("Could not create service of type ClassLoaderRegistry")) {
-          return "ClassLoaderRegistry creation failed";
-        }
-        if (msg.contains("Could not create an instance of Tooling API implementation")) {
-          return "Tooling API initialization failed";
-        }
-      }
-      String className = t.getClass().getName();
-      if (className.contains("UnknownModuleException")) {
-        return "unknown module: " + msg;
-      }
-      t = t.getCause();
-    }
-    return "unknown corruption";
-  }
-
-  private boolean shouldPurgeDistributionCache(Throwable throwable) {
-    Throwable t = throwable;
-    while (t != null) {
-      String msg = t.getMessage();
-      if (msg != null && msg.contains("gradle-runtime-api-info")) {
-        return true;
-      }
-      if (t.getClass().getName().contains("UnknownModuleException")) {
-        return true;
-      }
-      t = t.getCause();
-    }
-    return false;
-  }
-
-  private void clearGradleDaemonCache() {
-    File gradleHome = useCustomGradleUserHome && gradleUserHomeDir != null
-        ? gradleUserHomeDir
-        : new File(FileUtils.getUserHome(), ".gradle");
-
-    File daemonDir = new File(gradleHome, "daemon");
-    File cachesDir = new File(gradleHome, "caches");
-
-    log.info("Clearing Gradle daemon cache at {}", gradleHome);
-
-    // Stop all Gradle daemons
-    try {
-      ProcessBuilder pb = new ProcessBuilder();
-      String gradleCommand = findGradleCommand();
-      if (gradleCommand != null) {
-        pb.command(gradleCommand, "--stop");
-        pb.directory(projectDir);
-        Process process = pb.start();
-        int exitCode = process.waitFor();
-        if (exitCode == 0) {
-          log.info("Successfully stopped Gradle daemons");
-        } else {
-          log.warn("Gradle --stop command exited with code {}", exitCode);
-        }
-      } else {
-        log.debug("No gradle command found, skipping daemon stop");
-      }
-    } catch (Exception e) {
-      log.warn("Failed to stop Gradle daemons, proceeding with cache cleanup", e);
-    }
-
-    // Clear daemon directory
-    if (daemonDir.exists()) {
-      try (Stream<Path> walker = Files.walk(daemonDir.toPath())) {
-        walker.sorted((a, b) -> b.compareTo(a))
-            .filter(path -> !path.equals(daemonDir.toPath()))
-            .forEach(path -> {
-              try {
-                Files.deleteIfExists(path);
-              } catch (IOException ex) {
-                log.debug("Failed to delete {}", path, ex);
-              }
-            });
-        log.info("Cleared Gradle daemon cache at {}", daemonDir);
-      } catch (IOException e) {
-        log.warn("Failed to clear daemon cache at {}", daemonDir, e);
-      }
-    }
-
-    // Clear version-specific caches that might be corrupted
-    if (cachesDir.exists()) {
-      try {
-        File[] versionDirs = cachesDir.listFiles(f -> f.isDirectory() && f.getName().matches("\\d+\\.\\d+.*"));
-        if (versionDirs != null) {
-          for (File versionDir : versionDirs) {
-            File[] subdirs = versionDir.listFiles(f -> f.isDirectory() &&
-                (f.getName().equals("scripts") || f.getName().equals("scripts-remapped")));
-            if (subdirs != null) {
-              for (File subdir : subdirs) {
-                try (Stream<Path> walker = Files.walk(subdir.toPath())) {
-                  walker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
-                    try {
-                      Files.deleteIfExists(path);
-                    } catch (IOException ex) {
-                      log.debug("Failed to delete {}", path, ex);
-                    }
-                  });
-                  log.debug("Cleared cache directory {}", subdir);
-                } catch (IOException e) {
-                  log.debug("Failed to clear cache directory {}", subdir, e);
-                }
-              }
-            }
-          }
-        }
-      } catch (Exception e) {
-        log.warn("Failed to clear version-specific caches", e);
-      }
-    }
-  }
-
-  private String findGradleCommand() {
-    // Check for gradle wrapper first
-    File gradlew = new File(projectDir, "gradlew");
-    if (gradlew.exists() && gradlew.canExecute()) {
-      return gradlew.getAbsolutePath();
-    }
-
-    // Check for gradle in PATH
-    String gradleHome = System.getenv("GRADLE_HOME");
-    if (gradleHome != null) {
-      File gradle = new File(gradleHome, "bin/gradle");
-      if (gradle.exists()) {
-        return gradle.getAbsolutePath();
-      }
-    }
-
-    // Try to find gradle on PATH
-    String path = System.getenv("PATH");
-    if (path != null) {
-      for (String dir : path.split(File.pathSeparator)) {
-        File gradle = new File(dir, "gradle");
-        if (gradle.exists() && gradle.canExecute()) {
-          return gradle.getAbsolutePath();
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private void purgeGradleUserHomeCache() {
-    if (!useCustomGradleUserHome || gradleUserHomeDir == null) {
-      log.warn("Skipping purge of Gradle user home because a shared/default location is in use");
-      return;
-    }
-    if (!isProjectLocalGradleUserHome()) {
-      log.warn("Skipping purge of Gradle user home {} because it is not project-local", gradleUserHomeDir);
-      return;
-    }
-    if (!projectLocalGradleUserHome.exists()) {
-      return;
-    }
-    // Switch to default user home before purging so we have a better chance of succeeding without downloads.
-    useCustomGradleUserHome = false;
-    gradleUserHomeDir = null;
-    applyCurrentDistribution();
-
-    Path backup = projectLocalGradleUserHome.toPath().resolveSibling(projectLocalGradleUserHome.getName() + "-backup");
-    try {
-      if (Files.exists(backup)) {
-        try (Stream<Path> backupWalker = Files.walk(backup)) {
-          backupWalker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
-            try {
-              Files.deleteIfExists(path);
-            } catch (IOException ex) {
-              log.warn("Failed to delete {}", path, ex);
-            }
-          });
-        }
-      }
-      Files.move(projectLocalGradleUserHome.toPath(), backup, StandardCopyOption.REPLACE_EXISTING);
-      log.warn("Purged corrupted Gradle user home {}, backup kept at {}", projectLocalGradleUserHome, backup);
-      Files.createDirectories(projectLocalGradleUserHome.toPath());
-    } catch (IOException ex) {
-      log.warn("Failed to purge Gradle user home {}, proceeding with deletion attempt", projectLocalGradleUserHome, ex);
-      try (Stream<Path> walker = Files.walk(projectLocalGradleUserHome.toPath())) {
-        walker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
-          try {
-            Files.deleteIfExists(path);
-          } catch (IOException e) {
-            log.warn("Failed to delete {}", path, e);
-          }
-        });
-        Files.createDirectories(projectLocalGradleUserHome.toPath());
-      } catch (IOException walkEx) {
-        log.warn("Failed to delete Gradle user home {}", projectLocalGradleUserHome, walkEx);
-      }
-    }
-  }
-
-  // package-private for tests
   File getGradleUserHomeDir() {
-    return gradleUserHomeDir;
+    return configManager.getGradleUserHomeDir();
   }
 
-  // package-private for tests
   List<DistributionMode> getDistributionOrder() {
-    return List.copyOf(distributionOrder);
+    // Convert from internal DistributionMode to public one for backward compatibility
+    return distributionManager.getDistributionOrder().stream()
+        .map(mode -> switch (mode) {
+          case INSTALLATION -> DistributionMode.INSTALLATION;
+          case WRAPPER -> DistributionMode.WRAPPER;
+          case EMBEDDED -> DistributionMode.EMBEDDED;
+        })
+        .toList();
   }
 
-  // package-private for tests
   String getProjectFingerprint() {
     return fingerprintProject(false);
+  }
+
+  /**
+   * Exposes the DistributionMode enum at the GradleUtils level for backward compatibility.
+   */
+  public enum DistributionMode {
+    INSTALLATION, WRAPPER, EMBEDDED
   }
 }
