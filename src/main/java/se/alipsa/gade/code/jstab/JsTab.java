@@ -9,10 +9,9 @@ import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
-import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.code.ExecutableTab;
 import se.alipsa.gade.console.AppenderWriter;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
@@ -27,7 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class JsTab extends TextAreaTab implements TaskListener {
+public class JsTab extends ExecutableTab {
 
   public static final String RESTART_JS_SESSION_AFTER_RUN = "JsTab.RestartJsSessionAfterRun";
   private final JsTextArea jsTextArea;
@@ -36,7 +35,6 @@ public class JsTab extends TextAreaTab implements TaskListener {
   private static final Logger log = LogManager.getLogger(JsTab.class);
   private ScriptEngine engine;
   private static String initScript;
-  private Button executeButton;
 
   static {
     try {
@@ -49,9 +47,6 @@ public class JsTab extends TextAreaTab implements TaskListener {
   public JsTab(String title, Gade gui) {
     super(gui, CodeType.JAVA_SCRIPT);
     setTitle(title);
-    executeButton = new Button("Run");
-    executeButton.setOnAction(a -> runJavascript());
-    buttonPane.getChildren().add(executeButton);
     Button resetButton = new Button("Restart session");
     resetButton.setOnAction(a -> {
       initSession();
@@ -80,6 +75,16 @@ public class JsTab extends TextAreaTab implements TaskListener {
     } catch (ScriptException e) {
       ExceptionAlert.showAlert("Failed to add View function", e);
     }
+  }
+
+  @Override
+  protected void executeAction() {
+    runJavascript(getTextContent());
+  }
+
+  @Override
+  protected CodeTextArea getTextArea() {
+    return jsTextArea;
   }
 
   public void runJavascript() {
@@ -141,50 +146,5 @@ public class JsTab extends TextAreaTab implements TaskListener {
       gui.getConsoleComponent().promptAndScrollToEnd();
     });
     consoleComponent.startTaskWhenOthersAreFinished(task, "javascript");
-  }
-
-  @Override
-  public File getFile() {
-    return jsTextArea.getFile();
-  }
-
-  @Override
-  public void setFile(File file) {
-    jsTextArea.setFile(file);
-  }
-
-  @Override
-  public String getTextContent() {
-    return jsTextArea.getTextContent();
-  }
-
-  @Override
-  public String getAllTextContent() {
-    return jsTextArea.getAllTextContent();
-  }
-
-  @Override
-  public void replaceContentText(int start, int end, String content) {
-    jsTextArea.replaceContentText(start, end, content);
-  }
-
-  @Override
-  public void replaceContentText(String content, boolean isReadFromFile) {
-    jsTextArea.replaceContentText(content, isReadFromFile);
-  }
-
-  @Override
-  public CodeTextArea getCodeArea() {
-    return jsTextArea;
-  }
-
-  @Override
-  public void taskStarted() {
-    executeButton.setDisable(true);
-  }
-
-  @Override
-  public void taskEnded() {
-    executeButton.setDisable(false);
   }
 }

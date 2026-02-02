@@ -8,10 +8,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
-import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.code.ExecutableTab;
 import se.alipsa.gade.code.xmltab.XmlTextArea;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.maven.MavenBuildUtils;
@@ -19,32 +18,38 @@ import se.alipsa.gade.utils.maven.MavenBuildUtils;
 import java.io.File;
 import java.util.prefs.Preferences;
 
-public class MavenTab extends TextAreaTab implements TaskListener {
+public class MavenTab extends ExecutableTab {
 
   private static final Logger log = LogManager.getLogger(MavenTab.class);
   private static final String PREF_LAST_GOALS_PREFIX = "MavenTab.lastGoals.";
 
   private final XmlTextArea xmlTextArea;
-  private final Button runButton;
   private final TextField goalsField;
 
   public MavenTab(String title, Gade gui) {
-    super(gui, CodeType.MAVEN);
+    super(gui, CodeType.MAVEN, "Run build");
     setTitle(title);
-
-    runButton = new Button("Run build");
-    runButton.setOnAction(a -> runMaven());
 
     Label goalLabel = new Label("Goals:");
     goalsField = new TextField();
     goalsField.setPrefColumnCount(30);
     goalsField.setText(loadDefaultGoals());
 
-    buttonPane.getChildren().addAll(runButton, goalLabel, goalsField);
+    buttonPane.getChildren().addAll(goalLabel, goalsField);
 
     xmlTextArea = new XmlTextArea(this);
     VirtualizedScrollPane<CodeTextArea> xmlPane = new VirtualizedScrollPane<>(xmlTextArea);
     pane.setCenter(xmlPane);
+  }
+
+  @Override
+  protected void executeAction() {
+    runMaven();
+  }
+
+  @Override
+  protected CodeTextArea getTextArea() {
+    return xmlTextArea;
   }
 
   private String loadDefaultGoals() {
@@ -102,51 +107,11 @@ public class MavenTab extends TextAreaTab implements TaskListener {
   }
 
   @Override
-  public File getFile() {
-    return xmlTextArea.getFile();
-  }
-
-  @Override
-  public void setFile(File file) {
-    xmlTextArea.setFile(file);
-  }
-
-  @Override
-  public String getTextContent() {
-    return xmlTextArea.getTextContent();
-  }
-
-  @Override
-  public String getAllTextContent() {
-    return xmlTextArea.getAllTextContent();
-  }
-
-  @Override
-  public void replaceContentText(int start, int end, String content) {
-    xmlTextArea.replaceContentText(start, end, content);
-  }
-
-  @Override
   public void replaceContentText(String content, boolean isReadFromFile) {
     xmlTextArea.replaceText(content);
     if (isReadFromFile) {
       contentSaved();
     }
-  }
-
-  @Override
-  public CodeTextArea getCodeArea() {
-    return xmlTextArea;
-  }
-
-  @Override
-  public void taskStarted() {
-    runButton.setDisable(true);
-  }
-
-  @Override
-  public void taskEnded() {
-    runButton.setDisable(false);
   }
 }
 

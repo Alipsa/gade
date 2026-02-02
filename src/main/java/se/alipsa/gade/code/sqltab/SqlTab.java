@@ -11,10 +11,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import se.alipsa.gade.Gade;
-import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
-import se.alipsa.gade.code.TextAreaTab;
+import se.alipsa.gade.code.ExecutableTab;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.environment.connections.ConnectionHandler;
 import se.alipsa.groovy.datautil.ConnectionInfo;
@@ -26,11 +25,10 @@ import java.io.File;
 import java.sql.*;
 import java.util.Set;
 
-public class SqlTab extends TextAreaTab implements TaskListener {
+public class SqlTab extends ExecutableTab {
 
   private SqlTextArea sqlTextArea = null;
   private final Button formatButton;
-  private final Button executeButton;
   private final ComboBox<ConnectionInfo> connectionCombo;
 
   private final CheckBox keepConnectionOpenCheckBox;
@@ -43,11 +41,7 @@ public class SqlTab extends TextAreaTab implements TaskListener {
   public SqlTab(String title, Gade gui) {
     super(gui, CodeType.SQL);
     setTitle(title);
-
-    executeButton = new Button("Run");
     executeButton.setDisable(true);
-    executeButton.setOnAction(e -> executeQuery(getTextContent()));
-    buttonPane.getChildren().add(executeButton);
 
     formatButton = new Button("Format");
     formatButton.setTooltip(new Tooltip("Format SQL code"));
@@ -125,6 +119,16 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     sqlTextArea = new SqlTextArea(this);
     VirtualizedScrollPane<SqlTextArea> scrollPane = new VirtualizedScrollPane<>(sqlTextArea);
     pane.setCenter(scrollPane);
+  }
+
+  @Override
+  protected void executeAction() {
+    executeQuery(getTextContent());
+  }
+
+  @Override
+  protected CodeTextArea getTextArea() {
+    return sqlTextArea;
   }
 
   public void updateConnections() {
@@ -217,53 +221,8 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     return keepConnectionOpenCheckBox.isSelected();
   }
 
-  @Override
-  public File getFile() {
-    return sqlTextArea.getFile();
-  }
-
-  @Override
-  public void setFile(File file) {
-    sqlTextArea.setFile(file);
-  }
-
-  @Override
-  public String getTextContent() {
-    return sqlTextArea.getTextContent();
-  }
-
-  @Override
-  public String getAllTextContent() {
-    return sqlTextArea.getAllTextContent();
-  }
-
-  @Override
-  public void replaceContentText(int start, int end, String content) {
-    sqlTextArea.replaceContentText(start, end, content);
-  }
-
   public void replaceSelectedContent(String content) {
     var indexArea = sqlTextArea.getSelection();
     replaceContentText(indexArea.getStart(), indexArea.getEnd(), content);
-  }
-
-  @Override
-  public void replaceContentText(String content, boolean isReadFromFile) {
-    sqlTextArea.replaceContentText(content, isReadFromFile);
-  }
-
-  @Override
-  public CodeTextArea getCodeArea() {
-    return sqlTextArea;
-  }
-
-  @Override
-  public void taskStarted() {
-    executeButton.setDisable(true);
-  }
-
-  @Override
-  public void taskEnded() {
-    executeButton.setDisable(false);
   }
 }

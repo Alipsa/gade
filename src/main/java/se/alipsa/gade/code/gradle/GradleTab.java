@@ -19,8 +19,8 @@ public class GradleTab extends GroovyTab implements TaskListener {
   TextField targetsField;
   public GradleTab(String title, Gade gui) {
     super(title, gui, false);
-    runButton.setText("Run build");
-    runButton.setOnAction(a -> runGradle());
+    executeButton.setText("Run build");
+    executeButton.setOnAction(a -> runGradle());
 
     Label goalLabel = new Label("Goals:");
     targetsField = new TextField();
@@ -64,11 +64,11 @@ public class GradleTab extends GroovyTab implements TaskListener {
 
   @Override
   public void taskStarted() {
-    runButton.setDisable(true);
+    executeButton.setDisable(true);
   }
 
   @Override
   public void taskEnded() {
-    runButton.setDisable(false);
+    executeButton.setDisable(false);
   }
 }
