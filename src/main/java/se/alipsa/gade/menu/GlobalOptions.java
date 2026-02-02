@@ -17,6 +17,8 @@ public class GlobalOptions extends HashMap<String, Object> {
   public static final String TIMEZONE = "GlobalOptions.timezone";
   public static final String ADD_IMPORTS = "GlobalOptions.addImports";
   public static final String ADD_DEPENDENCIES = "GlobalOptions.addDependencies";
+  public static final String PRINT_EVAL_RESULT = "GlobalOptions.printEvalResult";
+  public static final String AUTO_CLOSE_BRACKETS = "GlobalOptions.autoCloseBrackets";
 
   private static final long serialVersionUID = -4781261903018339389L;
 

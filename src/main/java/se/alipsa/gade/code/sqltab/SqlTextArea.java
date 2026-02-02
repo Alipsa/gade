@@ -149,13 +149,14 @@ public class SqlTextArea extends CodeTextArea {
   }
 
   private void suggestMetaData() {
-    //TODO: Should suggest a column name here if a recognised table name is used based on meta data
+    // v1.1 FEATURE: Context-aware column suggestions based on table names in query.
+    // Would require parsing SQL to extract table references and querying ConnectionHandler for metadata.
   }
 
 
-  // TODO, while this works most of the time, sometimes for highly complex SQl code matching
-  //  goes into an infinite loop. An alternative approach is to either parse to an AST and apply
-  //  styling on the AST model or create an eventparser (like SAX) and apply styling that way.
+  // KNOWN LIMITATION: Regex-based highlighting may enter infinite loop on highly complex SQL.
+  // v1.1 IMPROVEMENT: Consider AST-based parsing (ANTLR SQL grammar) or SAX-style event parser
+  // for more robust syntax highlighting.
   @Override
   protected StyleSpans<Collection<String>> computeHighlighting(String text) {
     log.trace("Computing highlighting for sql");

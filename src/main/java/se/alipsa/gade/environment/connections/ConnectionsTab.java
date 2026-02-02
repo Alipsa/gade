@@ -519,7 +519,8 @@ public class ConnectionsTab extends Tab {
     ta.setWrapText(false);
     ta.replaceText(content);
 
-    //TODO: get the fontsize from the ta instead of the below!
+    // WORKAROUND: RichTextFX CodeArea doesn't expose Font.getSize() API. Using hardcoded fallback.
+    // v1.1: Investigate alternative font size detection via CSS or scene graph traversal.
     double fontSize = 8.5; // ta.getFont().getSize() does not exist
 
     double height = text.getLayoutBounds().getHeight() +  fontSize * 2;

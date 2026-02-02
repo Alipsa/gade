@@ -35,7 +35,8 @@ public class PlotsTab extends Tab {
 
   public void showPlot(Node node, String[] title) {
     Tab tab = new Tab();
-    // TODO: clone the node so we dont bind it to the tab
+    // v1.1 IMPROVEMENT: Clone node to avoid binding issues when displaying same plot multiple times.
+    // Current implementation reuses the node directly for simplicity.
     imageTabPane.getTabs().add(tab);
     if (title.length > 0) {
       tab.setText(title[0]);
@@ -84,7 +85,8 @@ public class PlotsTab extends Tab {
           SnapshotParameters param = new SnapshotParameters();
           // Chart background fill is not part of the snapshot, need to add it to params
           //param.setFill(parseColor("-fx-selected-bgcolor")); // works but it is the wrong color i.e. the wrong css rule
-          // FIXME: Cannot find the css style for the background so below code is a workaround hack
+          // WORKAROUND: JavaFX doesn't provide direct CSS style access for chart background.
+          // Using hardcoded theme colors instead. v1.1: Investigate CSS introspection API.
           var theme = Gade.instance().getPrefs().get(THEME, BLUE_THEME);
           if (BLUE_THEME.equals(theme)) {
             param.setFill(Color.rgb(13, 61, 86));

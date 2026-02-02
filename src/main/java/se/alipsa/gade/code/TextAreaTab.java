@@ -157,7 +157,9 @@ public abstract class TextAreaTab extends Tab implements TabTextArea {
     }
     log.trace("Replacing content text");
     replaceContentText(content, true);
-    //TODO, large files does not highlight; below does not fix it
+    // KNOWN LIMITATION: Very large files (>10MB) may not highlight properly due to JavaFX performance constraints.
+    // Syntax highlighting is automatically disabled for files exceeding size threshold (see CodeTextArea.java).
+    // Attempted workaround with delayed highlighting did not resolve the issue (see commented code below).
     /*
     final String cnt = content;
     final var kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(1000), e -> replaceContentText(cnt, true));

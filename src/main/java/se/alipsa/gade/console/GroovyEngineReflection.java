@@ -15,7 +15,8 @@ import javax.script.ScriptException;
 
 import static se.alipsa.gade.utils.ReflectUtils.*;
 
-// TODO: investigate invokevirtual and invokedynamic as alternatives to reflection invocation
+// Uses reflection to invoke Groovy engine methods for cross-classloader isolation.
+// v1.1 OPTIMIZATION: Investigate MethodHandles (invokevirtual/invokedynamic) for better performance.
 public class GroovyEngineReflection implements GroovyEngine {
   private static final Logger log = LoggerFactory.getLogger(GroovyEngineReflection.class);
   private final Object engine;

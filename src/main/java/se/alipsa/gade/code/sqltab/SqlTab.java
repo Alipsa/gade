@@ -161,7 +161,10 @@ public class SqlTab extends TextAreaTab implements TaskListener {
     }
     setWaitCursor();
     final ConsoleComponent consoleComponent = getGui().getConsoleComponent();
-    // TODO: Make it possible to interrupt the process when clicking the icon
+    // KNOWN LIMITATION: Cannot interrupt SQL query execution once started.
+    // Would require calling Statement.cancel() from another thread, but current architecture
+    // doesn't maintain a reference to the Statement object during execution.
+    // See v1.1 roadmap for potential implementation using AsyncTask with cancellation support.
     consoleComponent.running();
     StringBuilder parseMessage = new StringBuilder();
     // The parser will not be able to understand more complex queries in which case

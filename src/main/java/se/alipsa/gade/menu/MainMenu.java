@@ -106,10 +106,7 @@ public class MainMenu extends MenuBar {
     });
   }
 
-  // TODO:
-  //  - add actions to all items
-  //  - add custom items if defined before
-  //  - mark the currently selected runtime if any
+  // Creates the Runtimes menu with dynamic runtime selection
   private Menu createRuntimesMenu() {
     runtimesMenu = new Menu("Runtimes");
     refreshRuntimesMenu();

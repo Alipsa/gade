@@ -295,8 +295,8 @@ public class ViewTab extends Tab {
       fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("CSV", "*.csv"));
       File outFile = fc.showSaveDialog(gui.getStage());
       if (outFile == null ) {
-        // Clicking cancel and still have an action performed is not very good UX
-        // TODO: Consider changing this to an explicit action (export csv -> to clipboard) instead
+        // v1.1 UX IMPROVEMENT: Add explicit "Copy to Clipboard" button instead of auto-copying on cancel.
+        // Current behavior: Cancelling file save automatically copies CSV to clipboard as fallback.
         final ClipboardContent clipboardContent = new ClipboardContent();
         clipboardContent.putString(sw.toString());
         Clipboard.getSystemClipboard().setContent(clipboardContent);

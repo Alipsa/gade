@@ -233,8 +233,10 @@ public class RTextArea extends CodeTextArea {
   }
 
   /**
-   * TODO: maybe a regex would be more performant?
-   * "^.*?(\\w+)\\W*$" is not sufficient as it handles dots as word boundary
+   * Handles auto-completion for R keywords.
+   * <p>
+   * v1.1 OPTIMIZATION: Consider using regex for better performance.
+   * Note: "^.*?(\\w+)\\W*$" is not sufficient as it treats dots as word boundaries.
    */
   @Override
   public void autoComplete() {

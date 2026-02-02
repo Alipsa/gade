@@ -70,7 +70,8 @@ public class LibraryUtils {
   }
 
   public static void loadOrUnloadLibrary(ConsoleComponent console, PackagesTab.AvailablePackage pkg, Boolean isLoaded) throws Exception {
-    // TODO not sure what to do here, comment out the stuff from Ride
+    // Legacy code from Ride (R IDE). Package loading/unloading disabled for Groovy environment.
+    // v1.1: Implement Groovy @Grab-based dependency management if needed.
     try {
       //Object result;
       if (isLoaded) {

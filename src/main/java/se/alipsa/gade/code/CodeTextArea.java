@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 import static javafx.scene.input.KeyCode.ENTER;
 import static se.alipsa.gade.Constants.INDENT;
+import static se.alipsa.gade.menu.GlobalOptions.AUTO_CLOSE_BRACKETS;
 
 
 /**
@@ -182,12 +183,13 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
     addEventHandler(KeyEvent.KEY_TYPED, e -> {
       String character = e.getCharacter();
       String line = getText(getCurrentParagraph());
-      // TODO add option to disable this
-      if ("(".equals(character)) {
+      // Auto-close brackets feature (can be disabled via GlobalOptions.AUTO_CLOSE_BRACKETS preference)
+      boolean autoClose = Gade.instance().getPrefs().getBoolean(AUTO_CLOSE_BRACKETS, true);
+      if (autoClose && "(".equals(character)) {
         if (line.length() == getCaretColumn()) {
           insertTextAndMoveBack(")");
         }
-      } else if ("{".equals(character)) {
+      } else if (autoClose && "{".equals(character)) {
         String indent = StringUtils.getLeadingSpaces(line);
         if (line.length() == getCaretColumn()) {
 
@@ -203,7 +205,7 @@ public abstract class CodeTextArea extends UnStyledCodeArea implements TabTextAr
             moveTo(targetCaretPos);
           }
         }
-      } else if ("[".equals(character) && line.length() == getCaretColumn()) {
+      } else if (autoClose && "[".equals(character) && line.length() == getCaretColumn()) {
         insertTextAndMoveBack("]");
       }
     });

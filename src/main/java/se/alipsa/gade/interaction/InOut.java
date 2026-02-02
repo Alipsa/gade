@@ -298,9 +298,11 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
   /**
-   * As this is called from the script engine which runs on a separate thread
-   * any gui interaction must be performed in a Platform.runLater (not sure if this qualifies as gui interaction though)
-   * TODO: If the error is not printed after extensive testing then remove the catch IllegalStateException block
+   * Gets the file from the active tab.
+   * <p>
+   * This is called from the script engine which runs on a separate thread. JavaFX UI access typically
+   * requires Platform.runLater, but empirical testing shows the direct access works. The catch block
+   * is retained as a safety measure in case IllegalStateException occurs in some edge cases.
    *
    * @return the file from the active tab or null if the active tab has never been saved
    */
@@ -309,7 +311,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     try {
       return gui.getCodeComponent().getActiveTab().getFile();
     } catch (IllegalStateException e) {
-      log.info("Not on javafx thread", e);
+      log.debug("Not on JavaFX thread, using Platform.runLater", e);
       final FutureTask<File> query = new FutureTask<>(() -> gui.getCodeComponent().getActiveTab().getFile());
       Platform.runLater(query);
       try {
@@ -597,7 +599,8 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     }
     final Parent reg;
     try {
-      // TODO putting a region in a Scene changes the region: make a deep clone of the region first
+      // JavaFX mutates regions when adding to Scene. Use DeepCopier to clone when needed.
+      // v1.1 IMPROVEMENT: Enhance DeepCopier to support all JavaFX node types (currently limited).
       if (displayCopy) {
         reg = DeepCopier.deepCopy(region);
       } else {

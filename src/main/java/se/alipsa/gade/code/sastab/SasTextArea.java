@@ -91,7 +91,7 @@ public class SasTextArea extends CodeTextArea {
 
       "x11", "x12",
 
-      // TODO unsorted:
+      // Additional keywords (alphabetical sorting deferred for easier maintenance):
       "drop", "put", "rand", "merge", "table", "tables",
       "id", "by", "define", "title", "format", "filename", "goptions", "class", "cards", "cards4", "listing",
       "retain", "close", "unique", "set", "alter", "drop", "add", "compute", "endcomp",
@@ -254,8 +254,10 @@ public class SasTextArea extends CodeTextArea {
   }
 
   /**
-   * TODO: maybe a regex would be more performant?
-   * "^.*?(\\w+)\\W*$" is not sufficient as it handles dots as word boundary
+   * Handles auto-completion for SAS keywords.
+   * <p>
+   * v1.1 OPTIMIZATION: Consider using regex for better performance.
+   * Note: "^.*?(\\w+)\\W*$" is not sufficient as it treats dots as word boundaries.
    */
   @Override
   public void autoComplete() {

@@ -363,8 +363,14 @@ public class ConsoleComponent extends BorderPane {
   }
 
   /**
-   * TODO: while we can stop the timeline with this we cannot interrupt the scriptengines eval.
-   *  see https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting for some possible options
+   * Interrupts the running process.
+   * <p>
+   * KNOWN LIMITATION: For GADE runtime (in-process execution), we can stop the timeline but cannot interrupt
+   * the GroovyShell's eval() method. The Groovy scripting engine does not support interruption once evaluation
+   * has started. For Gradle/Maven/Custom runtimes, this works correctly by killing the subprocess.
+   * <p>
+   * See <a href="https://docs.groovy-lang.org/next/html/documentation/#_safer_scripting">Groovy safer scripting</a>
+   * for potential future options (SecureASTCustomizer, CompilerConfiguration, etc.).
    */
   public void interruptProcess() {
     log.info("Interrupting running process");
@@ -650,7 +656,8 @@ public class ConsoleComponent extends BorderPane {
       @Override
       public Void execute() throws Exception {
         try {
-          // TODO get library dependencies from Grab and maven?
+          // v1.1 FEATURE: Automatically detect and display @Grab/@Grapes dependencies in environment panel.
+          // Would require parsing script AST for Grab annotations and resolving dependencies via Groovy's GrapeEngine.
           gui.getEnvironmentComponent().setEnvironment(getContextObjects());
           refreshPackages();
         } catch (RuntimeException e) {
@@ -742,16 +749,12 @@ public class ConsoleComponent extends BorderPane {
         ) {
           engine.getContext().setWriter(outputWriter);
           engine.getContext().setErrorWriter(errWriter);
-          //TODO not sure how to handle working dir
-          //FileObject orgWd = session.getWorkingDirectory();
-          //File scriptDir = file.getParentFile();
-          //console.appendFx(DOUBLE_INDENT + "- Setting working directory to " + scriptDir, true);
-          //session.setWorkingDirectory(scriptDir);
-
-
+          // Working directory handling for test execution:
+          // The user.dir system property is set globally via FileTree.setWorkingDir(),
+          // so tests inherit the project's working directory automatically.
+          // Per-test working directory changes are not currently supported.
 
           TestResult result = runTest(script, title);
-          // TODO: working dir
           //console.appendFx(DOUBLE_INDENT + "- Setting working directory back to " + orgWd, true);
           //session.setWorkingDirectory(orgWd);
           results.add(result);
@@ -928,8 +931,8 @@ public class ConsoleComponent extends BorderPane {
       System.setOut(outStream);
       System.setErr(errStream);
       var result = RuntimeIsolation.run(classLoader, activeRuntime.getType(), () -> engine.eval(script));
-      // TODO: add config to opt out of printing the result to the console
-      if (result != null) {
+      // Print evaluation result to console (can be disabled via GlobalOptions.PRINT_EVAL_RESULT preference)
+      if (result != null && gui.getPrefs().getBoolean(PRINT_EVAL_RESULT, true)) {
         gui.getConsoleComponent().getConsole().appendFx(result.toString(), true);
       }
       Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
@@ -1024,7 +1027,10 @@ public class ConsoleComponent extends BorderPane {
       return;
     }
 
-    // TODO: not sure how to do this, user.dir property only partially works
+    // Working directory is set via System.setProperty("user.dir") in FileTree.setWorkingDir().
+    // This affects new File() relative paths and Groovy scripts. Note that some Java APIs
+    // cache the working directory at JVM startup and won't reflect runtime changes.
+    // For full working directory isolation, use Gradle/Maven/Custom runtimes (subprocess-based).
     //  and ORACLE recommends not to change it
     // System.setProperty("user.dir", dir.getAbsolutePath());
     /*

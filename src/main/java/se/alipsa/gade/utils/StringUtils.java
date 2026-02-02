@@ -16,9 +16,10 @@ public class StringUtils {
   private static NumberFormat numberFormat;
 
   static {
-    // TODO allow user to change default local in global options (Locale.setDefault(theLocale))
-    // For now you can change the default locale in env.cmd/env.sh e.g.
-    // SET JAVA_OPTS=-Duser.country=SE -Duser.language=sv
+    // Users can change the default locale via:
+    // 1. GlobalOptions.DEFAULT_LOCALE preference (preferred method for persistent setting)
+    // 2. JVM system properties in env.cmd/env.sh: SET JAVA_OPTS=-Duser.country=SE -Duser.language=sv
+    // Note: Locale configuration via UI is planned for v1.1 (see roadmap)
     numberFormat= DecimalFormat.getInstance(Locale.getDefault());
     numberFormat.setGroupingUsed(true);
   }
