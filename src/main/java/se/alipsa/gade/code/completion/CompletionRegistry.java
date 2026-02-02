@@ -12,6 +12,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * Registry for managing completion engine instances.
  * Provides centralized access to language-specific completion engines
  * and handles engine lifecycle (registration, lookup, invalidation).
+ * <p>
+ * <b>Thread Safety:</b> This class is thread-safe. The singleton instance uses double-checked
+ * locking with a volatile field to ensure safe publication across threads. All engine storage
+ * uses {@link ConcurrentHashMap} for thread-safe concurrent access without external synchronization.
+ * Multiple threads can safely register engines, perform lookups, and invalidate caches concurrently.
+ *
+ * @see ConcurrentHashMap
+ * @threadsafe
  */
 public final class CompletionRegistry {
 

@@ -23,6 +23,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Manages a long-lived external Groovy runner process for non-GADE runtimes.
+ * <p>
+ * Handles subprocess lifecycle (start, communication, shutdown) and provides asynchronous
+ * script evaluation via JSON-RPC protocol over TCP sockets.
+ * <p>
+ * <b>Thread Safety:</b> This class is thread-safe for concurrent script evaluation requests.
+ * The {@link #start()} and {@link #close()} methods use synchronized blocks with {@code procLock}
+ * to protect process lifecycle operations. Pending request tracking uses {@link ConcurrentHashMap}
+ * for lock-free concurrent access. The stderr buffer uses {@link LinkedBlockingDeque} for
+ * thread-safe producer-consumer pattern. Multiple threads can safely submit eval requests
+ * concurrently; responses are delivered via {@link CompletableFuture}.
+ *
+ * @see CompletableFuture
+ * @see ConcurrentHashMap
+ * @threadsafe
  */
 public class RuntimeProcessRunner implements Closeable {
 
@@ -329,7 +343,17 @@ public class RuntimeProcessRunner implements Closeable {
       return;
     }
     switch (type) {
-      case "hello" -> log.debug("Runner {} handshake received: {}", runtime.getName(), msg);
+      case "hello" -> {
+        String version = (String) msg.get("protocolVersion");
+        if (!ProtocolVersion.isCompatible(version)) {
+          log.error("Runner {} protocol version incompatible: {}", runtime.getName(),
+              ProtocolVersion.getCompatibilityMessage(version));
+          console.appendWarningFx("Runner protocol version incompatible: " + version);
+        } else {
+          log.debug("Runner {} handshake received: {} - {}",
+              runtime.getName(), msg, ProtocolVersion.getCompatibilityMessage(version));
+        }
+      }
       case "out" -> {
         String text = (String) msg.getOrDefault("text", "");
         log.info("Runner {} out: {}", runtime.getName(), text.replace("\n", "\\n"));
@@ -459,7 +483,18 @@ public class RuntimeProcessRunner implements Closeable {
           if (helloLine == null) {
             throw new IOException("Runner socket closed before handshake");
           }
-          log.info("Received handshake from runner {}: {}", runtime.getName(), helloLine);
+
+          // Validate protocol version
+          Map<String, Object> helloMsg = mapper.readValue(helloLine, Map.class);
+          String version = (String) helloMsg.get("protocolVersion");
+          if (!ProtocolVersion.isCompatible(version)) {
+            String errorMsg = "Incompatible protocol version: " + ProtocolVersion.getCompatibilityMessage(version);
+            log.error("Runner {} - {}", runtime.getName(), errorMsg);
+            throw new IOException(errorMsg);
+          }
+
+          log.info("Received handshake from runner {}: {} - {}",
+              runtime.getName(), helloLine, ProtocolVersion.getCompatibilityMessage(version));
         } finally {
           try {
             socket.setSoTimeout(0);

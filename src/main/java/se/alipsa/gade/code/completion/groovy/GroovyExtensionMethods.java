@@ -16,6 +16,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * For example: DefaultGroovyMethods.collect(Iterable, Closure) appears as
  * iterable.collect(closure) in Groovy code.
+ * <p>
+ * <b>Thread Safety:</b> This class is thread-safe. The extension method registry uses a
+ * {@code volatile} field with lazy initialization (thread-safe via happens-before guarantees).
+ * Method caching by receiver type uses {@link ConcurrentHashMap} for lock-free concurrent access.
+ * Multiple threads can safely query extension methods concurrently; first access triggers
+ * registry initialization which is safely published via volatile semantics.
+ *
+ * @see ConcurrentHashMap
+ * @threadsafe
  */
 public final class GroovyExtensionMethods {
 

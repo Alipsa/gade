@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
+import se.alipsa.gade.runtime.ProtocolVersion;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -70,7 +72,7 @@ public class GadeRunnerMain {
             return;
           }
 
-          emit(Map.of("type", "hello", "port", actualPort), writer);
+          emit(Map.of("type", "hello", "port", actualPort, "protocolVersion", ProtocolVersion.CURRENT), writer);
 
           try {
             String line;

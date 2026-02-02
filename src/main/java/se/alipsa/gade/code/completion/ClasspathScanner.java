@@ -16,6 +16,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * Dynamically scans classpath to discover available classes.
  * Supports scanning from any ClassLoader (including DynamicClassLoader
  * and GroovyClassLoader) to include @Grab, Maven, and Gradle dependencies.
+ * <p>
+ * <b>Thread Safety:</b> This class is thread-safe for concurrent scanning operations.
+ * The singleton instance uses a {@code volatile} field for safe publication across threads.
+ * ClassLoader-based caching uses {@link ConcurrentHashMap} keyed by classloader identity hash,
+ * allowing multiple threads to safely scan different classloaders or reuse cached results
+ * concurrently without synchronization overhead.
+ *
+ * @see ConcurrentHashMap
+ * @threadsafe
  */
 public final class ClasspathScanner {
 

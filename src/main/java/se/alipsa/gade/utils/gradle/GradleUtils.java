@@ -49,6 +49,21 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+/**
+ * Utility class for Gradle project integration and dependency resolution.
+ * <p>
+ * Provides Gradle Tooling API access, classpath resolution with caching, daemon management,
+ * and artifact downloading from Maven Central.
+ * <p>
+ * <b>Thread Safety:</b> This class is thread-safe for concurrent classpath resolution.
+ * Cached classpath models use {@code volatile} fields to ensure safe publication and visibility
+ * across threads without synchronization. The cache fingerprints are also volatile to prevent
+ * stale reads. Gradle Tooling API connections are not thread-safe and should not be shared
+ * across concurrent operations.
+ *
+ * @see org.gradle.tooling.GradleConnector
+ * @threadsafe
+ */
 public class GradleUtils {
 
   private static final Logger log = LogManager.getLogger(GradleUtils.class);
