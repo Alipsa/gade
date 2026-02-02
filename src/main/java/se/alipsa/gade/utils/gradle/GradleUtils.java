@@ -149,6 +149,7 @@ public class GradleUtils {
     GradleConnectionException last = null;
     boolean cachePurged = false;
     boolean triedDefaultUserHome = false;
+    boolean daemonCacheCleared = false;
     while (true) {
       try (ProjectConnection connection = connect()) {
         return action.apply(connection);
@@ -156,6 +157,14 @@ public class GradleUtils {
         last = e;
         if (!triedDefaultUserHome && trySwitchToDefaultUserHome(e)) {
           triedDefaultUserHome = true;
+          continue;
+        }
+        if (!daemonCacheCleared && isDaemonOrCacheCorruption(e)) {
+          String errorType = extractErrorType(e);
+          log.warn("Detected Gradle daemon or cache corruption ({}), attempting cleanup and retry", errorType, e);
+          clearGradleDaemonCache();
+          daemonCacheCleared = true;
+          applyCurrentDistribution();
           continue;
         }
         if (!cachePurged && shouldPurgeDistributionCache(e)) {
@@ -853,6 +862,55 @@ public class GradleUtils {
     }
   }
 
+  private boolean isDaemonOrCacheCorruption(Throwable throwable) {
+    Throwable t = throwable;
+    while (t != null) {
+      String msg = t.getMessage();
+      if (msg != null) {
+        // Common daemon/cache corruption indicators
+        if (msg.contains("Cannot locate manifest for module")) {
+          return true;
+        }
+        if (msg.contains("Could not create service of type ClassLoaderRegistry")) {
+          return true;
+        }
+        if (msg.contains("Could not create an instance of Tooling API implementation")) {
+          return true;
+        }
+      }
+      String className = t.getClass().getName();
+      if (className.contains("UnknownModuleException")) {
+        return true;
+      }
+      t = t.getCause();
+    }
+    return false;
+  }
+
+  private String extractErrorType(Throwable throwable) {
+    Throwable t = throwable;
+    while (t != null) {
+      String msg = t.getMessage();
+      if (msg != null) {
+        if (msg.contains("Cannot locate manifest for module")) {
+          return "module manifest not found";
+        }
+        if (msg.contains("Could not create service of type ClassLoaderRegistry")) {
+          return "ClassLoaderRegistry creation failed";
+        }
+        if (msg.contains("Could not create an instance of Tooling API implementation")) {
+          return "Tooling API initialization failed";
+        }
+      }
+      String className = t.getClass().getName();
+      if (className.contains("UnknownModuleException")) {
+        return "unknown module: " + msg;
+      }
+      t = t.getCause();
+    }
+    return "unknown corruption";
+  }
+
   private boolean shouldPurgeDistributionCache(Throwable throwable) {
     Throwable t = throwable;
     while (t != null) {
@@ -866,6 +924,117 @@ public class GradleUtils {
       t = t.getCause();
     }
     return false;
+  }
+
+  private void clearGradleDaemonCache() {
+    File gradleHome = useCustomGradleUserHome && gradleUserHomeDir != null
+        ? gradleUserHomeDir
+        : new File(FileUtils.getUserHome(), ".gradle");
+
+    File daemonDir = new File(gradleHome, "daemon");
+    File cachesDir = new File(gradleHome, "caches");
+
+    log.info("Clearing Gradle daemon cache at {}", gradleHome);
+
+    // Stop all Gradle daemons
+    try {
+      ProcessBuilder pb = new ProcessBuilder();
+      String gradleCommand = findGradleCommand();
+      if (gradleCommand != null) {
+        pb.command(gradleCommand, "--stop");
+        pb.directory(projectDir);
+        Process process = pb.start();
+        int exitCode = process.waitFor();
+        if (exitCode == 0) {
+          log.info("Successfully stopped Gradle daemons");
+        } else {
+          log.warn("Gradle --stop command exited with code {}", exitCode);
+        }
+      } else {
+        log.debug("No gradle command found, skipping daemon stop");
+      }
+    } catch (Exception e) {
+      log.warn("Failed to stop Gradle daemons, proceeding with cache cleanup", e);
+    }
+
+    // Clear daemon directory
+    if (daemonDir.exists()) {
+      try (Stream<Path> walker = Files.walk(daemonDir.toPath())) {
+        walker.sorted((a, b) -> b.compareTo(a))
+            .filter(path -> !path.equals(daemonDir.toPath()))
+            .forEach(path -> {
+              try {
+                Files.deleteIfExists(path);
+              } catch (IOException ex) {
+                log.debug("Failed to delete {}", path, ex);
+              }
+            });
+        log.info("Cleared Gradle daemon cache at {}", daemonDir);
+      } catch (IOException e) {
+        log.warn("Failed to clear daemon cache at {}", daemonDir, e);
+      }
+    }
+
+    // Clear version-specific caches that might be corrupted
+    if (cachesDir.exists()) {
+      try {
+        File[] versionDirs = cachesDir.listFiles(f -> f.isDirectory() && f.getName().matches("\\d+\\.\\d+.*"));
+        if (versionDirs != null) {
+          for (File versionDir : versionDirs) {
+            File[] subdirs = versionDir.listFiles(f -> f.isDirectory() &&
+                (f.getName().equals("scripts") || f.getName().equals("scripts-remapped")));
+            if (subdirs != null) {
+              for (File subdir : subdirs) {
+                try (Stream<Path> walker = Files.walk(subdir.toPath())) {
+                  walker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
+                    try {
+                      Files.deleteIfExists(path);
+                    } catch (IOException ex) {
+                      log.debug("Failed to delete {}", path, ex);
+                    }
+                  });
+                  log.debug("Cleared cache directory {}", subdir);
+                } catch (IOException e) {
+                  log.debug("Failed to clear cache directory {}", subdir, e);
+                }
+              }
+            }
+          }
+        }
+      } catch (Exception e) {
+        log.warn("Failed to clear version-specific caches", e);
+      }
+    }
+  }
+
+  private String findGradleCommand() {
+    // Check for gradle wrapper first
+    File gradlew = new File(projectDir, "gradlew");
+    if (gradlew.exists() && gradlew.canExecute()) {
+      return gradlew.getAbsolutePath();
+    }
+
+    // Check for gradle in PATH
+    String gradleHome = System.getenv("GRADLE_HOME");
+    if (gradleHome != null) {
+      File gradle = new File(gradleHome, "bin/gradle");
+      if (gradle.exists()) {
+        return gradle.getAbsolutePath();
+      }
+    }
+
+    // Try to find gradle on PATH
+    String path = System.getenv("PATH");
+    if (path != null) {
+      for (String dir : path.split(File.pathSeparator)) {
+        File gradle = new File(dir, "gradle");
+        if (gradle.exists() && gradle.canExecute()) {
+          return gradle.getAbsolutePath();
+        }
+      }
+    }
+
+    return null;
   }
 
   private void purgeGradleUserHomeCache() {

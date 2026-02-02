@@ -1,8 +1,3 @@
-buildscript {
-  dependencies {
-    classpath 'se.alipsa:nexus-release-plugin:2.0.1'
-  }
-}
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -17,6 +12,7 @@ plugins {
   id('signing')
   id('maven-publish')
   //id("org.openjfx.javafxplugin") version "0.1.0"
+  id("se.alipsa.nexus-release-plugin").version'2.0.1'
 }
 
 group = 'se.alipsa'

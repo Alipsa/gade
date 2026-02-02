@@ -6,7 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +67,22 @@ public class RuntimePreferences {
     if (projectDir == null) {
       return "default";
     }
-    return Base64.getUrlEncoder().encodeToString(projectDir.getAbsolutePath().getBytes(StandardCharsets.UTF_8));
+    // Use SHA-256 hash to create a short, consistent key that fits within
+    // Java Preferences 80-character limit (hash in hex is 64 chars).
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(projectDir.getAbsolutePath().getBytes(StandardCharsets.UTF_8));
+      StringBuilder hexString = new StringBuilder();
+      for (byte b : hash) {
+        String hex = Integer.toHexString(0xff & b);
+        if (hex.length() == 1) {
+          hexString.append('0');
+        }
+        hexString.append(hex);
+      }
+      return hexString.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 algorithm not available", e);
+    }
   }
 }

@@ -56,7 +56,7 @@ public final class MavenClasspathUtils {
         loader.addURL(f.toURI().toURL());
       }
       long ms = System.currentTimeMillis() - start;
-      console.appendFx("  Maven classpath resolved in " + (ms / 1000) + "s", true);
+      log.info("  Maven classpath resolved in {}s", ms / 1000.0);
     } catch (Exception e) {
       log.warn("Failed to resolve Maven dependencies for {}", pom, e);
       console.appendWarningFx("Failed to resolve Maven dependencies: " + e.getMessage());

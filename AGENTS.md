@@ -16,5 +16,8 @@ UI-light logic belongs in `src/test/java` with naming `ClassNameTest` or behavio
 ## Commit & Pull Request Guidelines
 Match the existing history: short, imperative commit subjects ("Ensure ivy runtime is available to isolated scripts"), optional context in the body, and reference issues with `#id` when applicable. Each PR should describe purpose, highlight risky areas, enumerate manual/automated tests, and include UI screenshots or screen recordings when user-facing panes change. Keep PRs focused; split refactors from feature changes, and check `todo.md` for related tasks before submitting.
 
+## Documentation Guidelines
+Feature explanations, improvement summaries, and architectural decisions should be documented in `docs/improvements/` unless otherwise instructed. Use clear markdown formatting with sections for Problem, Solution, Testing, and Impact. Include code examples where helpful, and link to related files with relative paths. Keep the root directory clean—only essential files like README.md, CLAUDE.md, and AGENTS.md belong there.
+
 ## Security & Configuration Tips
 Never commit secrets or developer-specific tweaks; put overrides in `env.sh`/`env.cmd` alongside `gade.sh` and keep them untracked. Use `JAVA_OPTS` to adjust memory or HiDPI scaling, and prefer JDK 21+ to match the toolchain enforced in `build.gradle`. When configuring JDBC connections or REST endpoints for tests, point them at local containers or sanitized fixtures so the repo stays reproducible.

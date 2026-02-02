@@ -54,7 +54,11 @@ public class RuntimeClassLoaderFactory {
       case MAVEN -> createMavenClassLoader(config, testContext, console);
       case CUSTOM -> createCustomClassLoader(runtime, config, console);
     };
-    ensureGroovyScriptEngine(loader, runtime, console);
+    // Only GADE runtime uses GroovyEngine directly in Gade's JVM.
+    // Gradle/Maven runtimes run scripts in a separate process via RuntimeProcessRunner.
+    if (runtime.getType() == RuntimeType.GADE || runtime.getType() == RuntimeType.CUSTOM) {
+      ensureGroovyScriptEngine(loader, runtime, console);
+    }
     return loader;
   }
 
@@ -71,8 +75,8 @@ public class RuntimeClassLoaderFactory {
   private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
     File projectDir = gui.getProjectDir();
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
-    addDefaultGroovyRuntime(loader);
     if (projectDir == null) {
+      addDefaultGroovyRuntime(loader);
       return loader;
     }
     var gradleUtils = new GradleUtils(
@@ -81,20 +85,24 @@ public class RuntimeClassLoaderFactory {
         gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome()
     );
     gradleUtils.addGradleDependencies(loader, console, testContext);
+    // Add default Groovy runtime AFTER project dependencies so project version takes precedence
+    addDefaultGroovyRuntimeIfMissing(loader);
     return loader;
   }
 
   private GroovyClassLoader createMavenClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
-    addDefaultGroovyRuntime(loader);
     File projectDir = gui.getProjectDir();
     if (projectDir == null) {
+      addDefaultGroovyRuntime(loader);
       return loader;
     }
     MavenClasspathUtils.addPomDependenciesTo(loader, projectDir, testContext, console);
     if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true)) {
       addMavenOutputs(loader, projectDir, testContext);
     }
+    // Add default Groovy runtime AFTER project dependencies so project version takes precedence
+    addDefaultGroovyRuntimeIfMissing(loader);
     return loader;
   }
 
@@ -170,6 +178,23 @@ public class RuntimeClassLoaderFactory {
   private void addDefaultGroovyRuntime(GroovyClassLoader loader) {
     URL groovyLocation = GroovySystem.class.getProtectionDomain().getCodeSource().getLocation();
     loader.addURL(groovyLocation);
+  }
+
+  /**
+   * Add default Groovy runtime only if GroovySystem is not already available in the classloader.
+   * This ensures project-specific Groovy versions take precedence over Gade's bundled version.
+   */
+  private void addDefaultGroovyRuntimeIfMissing(GroovyClassLoader loader) {
+    try {
+      // Try to load GroovySystem from the current classloader
+      loader.loadClass("groovy.lang.GroovySystem");
+      // If successful, Groovy is already available, don't add Gade's version
+      log.debug("Groovy runtime already available in classloader, skipping default Groovy");
+    } catch (ClassNotFoundException e) {
+      // Groovy not found, add Gade's bundled version as fallback
+      log.debug("Groovy runtime not found in classloader, adding default Groovy as fallback");
+      addDefaultGroovyRuntime(loader);
+    }
   }
 
   private void addJarOrDir(GroovyClassLoader loader, File file, ConsoleTextArea console) {
