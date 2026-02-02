@@ -3,11 +3,8 @@ package se.alipsa.gade.runner;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
-
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptException;
+import groovy.lang.Binding;
+import groovy.lang.GroovyShell;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -61,17 +58,17 @@ public class GadeRunnerMain {
           System.setOut(outStream);
           System.setErr(errStream);
 
-          GroovyScriptEngineImpl engine;
+          Binding binding;
+          GroovyShell shell;
           try {
-            engine = new GroovyScriptEngineImpl();
+            binding = new Binding();
+            shell = new GroovyShell(binding);
           } catch (Throwable t) {
-            emitRaw("engine init failed: " + t);
+            emitRaw("shell init failed: " + t);
             emitRaw(getStackTrace(t));
-            emitError("init", "Engine init failed: " + t.getMessage(), getStackTrace(t), writer);
+            emitError("init", "Shell init failed: " + t.getMessage(), getStackTrace(t), writer);
             return;
           }
-          engine.getContext().setWriter(new PrintWriter(System.out, true));
-          engine.getContext().setErrorWriter(new PrintWriter(System.err, true));
 
           emit(Map.of("type", "hello", "port", actualPort), writer);
 
@@ -88,8 +85,8 @@ public class GadeRunnerMain {
                 String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
                 try {
                   switch (action) {
-                    case "eval" -> handleEval(engine, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer);
-                    case "bindings" -> handleBindings(engine, id, writer);
+                    case "eval" -> handleEval(binding, shell, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer);
+                    case "bindings" -> handleBindings(binding, id, writer);
                     case "interrupt" -> handleInterrupt(id, writer);
                     case "shutdown" -> {
                       emit(Map.of("type", "shutdown", "id", id), writer);
@@ -151,7 +148,7 @@ public class GadeRunnerMain {
     }
   }
 
-  private static void handleEval(GroovyScriptEngineImpl engine, String id, String script, Map<String, Object> bindings, BufferedWriter writer) {
+  private static void handleEval(Binding binding, GroovyShell shell, String id, String script, Map<String, Object> bindings, BufferedWriter writer) {
     if (script == null) {
       emitError(id, "No script provided", null, writer);
       return;
@@ -164,17 +161,15 @@ public class GadeRunnerMain {
       currentEvalThread.set(Thread.currentThread());
       try {
         if (bindings != null) {
-          ensureUnsupportedGuiInteractions(engine, bindings.get(GUI_INTERACTION_KEYS));
+          ensureUnsupportedGuiInteractions(binding, bindings.get(GUI_INTERACTION_KEYS));
           bindings.forEach((k, v) -> {
             if (!GUI_INTERACTION_KEYS.equals(k)) {
-              engine.put(k, v);
+              binding.setVariable(k, v);
             }
           });
         }
-        Object result = engine.eval(script);
+        Object result = shell.evaluate(script);
         emit(Map.of("type", "result", "id", id, "result", result == null ? "null" : String.valueOf(result)), writer);
-      } catch (ScriptException e) {
-        emitError(id, e.getMessage(), getStackTrace(e), writer);
       } catch (Exception e) {
         emitError(id, e.getMessage(), getStackTrace(e), writer);
       } finally {
@@ -184,30 +179,30 @@ public class GadeRunnerMain {
     t.start();
   }
 
-  private static void ensureUnsupportedGuiInteractions(GroovyScriptEngineImpl engine, Object keys) {
+  private static void ensureUnsupportedGuiInteractions(Binding binding, Object keys) {
     if (keys == null) {
       return;
     }
     if (!(keys instanceof Iterable<?> iterable)) {
       return;
     }
-    Bindings engineBindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+    Map<String, Object> variables = binding.getVariables();
     for (Object key : iterable) {
       String name = key == null ? "" : String.valueOf(key).trim();
       if (name.isEmpty()) {
         continue;
       }
-      if (engineBindings.containsKey(name)) {
+      if (variables.containsKey(name)) {
         continue;
       }
-      engine.put(name, new UnsupportedGuiInteraction(name));
+      binding.setVariable(name, new UnsupportedGuiInteraction(name));
     }
   }
 
-  private static void handleBindings(GroovyScriptEngineImpl engine, String id, BufferedWriter writer) {
-    Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+  private static void handleBindings(Binding binding, String id, BufferedWriter writer) {
+    Map<String, Object> variables = binding.getVariables();
     Map<String, String> serialized = new HashMap<>();
-    bindings.forEach((k, v) -> serialized.put(String.valueOf(k), v == null ? "null" : v.toString()));
+    variables.forEach((k, v) -> serialized.put(String.valueOf(k), v == null ? "null" : v.toString()));
     emit(Map.of("type", "bindings", "id", id, "bindings", serialized), writer);
   }
 

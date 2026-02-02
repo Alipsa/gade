@@ -55,7 +55,8 @@ public class RuntimeClassLoaderFactory {
       case CUSTOM -> createCustomClassLoader(runtime, config, console);
     };
     // Only GADE runtime uses GroovyEngine directly in Gade's JVM.
-    // Gradle/Maven runtimes run scripts in a separate process via RuntimeProcessRunner.
+    // Gradle/Maven runtimes run scripts in a separate process that now uses GroovyShell (core Groovy).
+    // Only check/warn for GADE and CUSTOM runtimes.
     if (runtime.getType() == RuntimeType.GADE || runtime.getType() == RuntimeType.CUSTOM) {
       ensureGroovyScriptEngine(loader, runtime, console);
     }
