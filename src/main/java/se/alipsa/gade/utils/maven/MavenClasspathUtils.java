@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.runtime.MavenResolver;
+import se.alipsa.gade.utils.ClasspathCacheManager;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.mavenutils.DependenciesResolveException;
 import se.alipsa.mavenutils.MavenUtils;
@@ -29,11 +30,6 @@ import java.util.stream.Stream;
 public final class MavenClasspathUtils {
 
   private static final Logger log = LogManager.getLogger(MavenClasspathUtils.class);
-  private static final String CACHE_SCHEMA = "schema";
-  private static final String CACHE_SCHEMA_VERSION = "1";
-  private static final String CACHE_FINGERPRINT = "fingerprint";
-  private static final String CACHE_DEP_PREFIX = "dep.";
-  private static final String CACHE_CREATED_AT = "createdAtEpochMs";
 
   private MavenClasspathUtils() {}
 
@@ -106,54 +102,15 @@ public final class MavenClasspathUtils {
   }
 
   private static List<File> load(File cacheFile, String expectedFingerprint) {
-    if (cacheFile == null || !cacheFile.exists()) {
+    ClasspathCacheManager.CachedClasspath cached = ClasspathCacheManager.load(cacheFile, expectedFingerprint, false);
+    if (cached == null) {
       return null;
     }
-    Properties props = new Properties();
-    try (FileInputStream in = new FileInputStream(cacheFile)) {
-      props.load(in);
-    } catch (IOException e) {
-      log.debug("Failed to read Maven classpath cache {}", cacheFile, e);
-      return null;
-    }
-    if (!CACHE_SCHEMA_VERSION.equals(props.getProperty(CACHE_SCHEMA))) {
-      return null;
-    }
-    if (!Objects.equals(expectedFingerprint, props.getProperty(CACHE_FINGERPRINT))) {
-      return null;
-    }
-    List<File> deps = new ArrayList<>();
-    for (String key : props.stringPropertyNames()) {
-      if (key.startsWith(CACHE_DEP_PREFIX)) {
-        deps.add(new File(props.getProperty(key)));
-      }
-    }
-    deps.sort(Comparator.comparing(File::getAbsolutePath));
-    return deps;
+    return cached.dependencies();
   }
 
   private static void store(File cacheFile, String fingerprint, List<File> deps) {
-    if (cacheFile == null) {
-      return;
-    }
-    Properties props = new Properties();
-    props.setProperty(CACHE_SCHEMA, CACHE_SCHEMA_VERSION);
-    props.setProperty(CACHE_FINGERPRINT, fingerprint);
-    props.setProperty(CACHE_CREATED_AT, String.valueOf(System.currentTimeMillis()));
-    int i = 0;
-    for (File dep : deps) {
-      props.setProperty(CACHE_DEP_PREFIX + (++i), dep.getAbsolutePath());
-    }
-    File parent = cacheFile.getParentFile();
-    if (parent != null && !parent.exists() && !parent.mkdirs()) {
-      log.warn("Failed to create Maven classpath cache dir {}", parent);
-      return;
-    }
-    try (FileOutputStream out = new FileOutputStream(cacheFile)) {
-      props.store(out, "Gade Maven classpath cache");
-    } catch (IOException e) {
-      log.debug("Failed to write Maven classpath cache {}", cacheFile, e);
-    }
+    ClasspathCacheManager.store(cacheFile, fingerprint, deps, "Gade Maven classpath cache");
   }
 
   private static File cacheFile(File projectDir, boolean testContext) {

@@ -19,6 +19,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.console.WarningAppenderWriter;
+import se.alipsa.gade.utils.ClasspathCacheManager;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.groovy.resolver.Dependency;
@@ -69,12 +70,6 @@ public class GradleUtils {
   private static final Logger log = LogManager.getLogger(GradleUtils.class);
   private static final String GADE_GRADLE_USER_HOME_ENV = "GADE_GRADLE_USER_HOME";
   private static final String GADE_GRADLE_USER_HOME_PROP = "gade.gradle.userHome";
-  private static final String CACHE_SCHEMA = "schema";
-  private static final String CACHE_SCHEMA_VERSION = "1";
-  private static final String CACHE_FINGERPRINT = "fingerprint";
-  private static final String CACHE_DEP_PREFIX = "dep.";
-  private static final String CACHE_OUT_PREFIX = "out.";
-  private static final String CACHE_CREATED_AT = "createdAtEpochMs";
 
   private GradleConnector connector;
   private final File projectDir;
@@ -693,95 +688,17 @@ public class GradleUtils {
 
   private ClasspathModel loadClasspathCache(String expectedFingerprint, boolean testContext) {
     File cacheFile = getClasspathCacheFile(testContext);
-    if (!cacheFile.exists()) {
+    ClasspathCacheManager.CachedClasspath cached = ClasspathCacheManager.load(cacheFile, expectedFingerprint, true);
+    if (cached == null) {
       return null;
     }
-    Properties props = new Properties();
-    try (InputStream in = new FileInputStream(cacheFile)) {
-      props.load(in);
-    } catch (IOException e) {
-      log.debug("Failed to read Gradle classpath cache {}", cacheFile, e);
-      return null;
-    }
-    if (!CACHE_SCHEMA_VERSION.equals(props.getProperty(CACHE_SCHEMA))) {
-      return null;
-    }
-    if (!Objects.equals(expectedFingerprint, props.getProperty(CACHE_FINGERPRINT))) {
-      return null;
-    }
-    LinkedHashSet<File> deps = new LinkedHashSet<>();
-    LinkedHashSet<File> outs = new LinkedHashSet<>();
-    props.stringPropertyNames().stream()
-        .filter(key -> key.startsWith(CACHE_DEP_PREFIX))
-        .sorted(Comparator.comparingInt(GradleUtils::cacheIndex))
-        .forEach(key -> deps.add(new File(props.getProperty(key))));
-    props.stringPropertyNames().stream()
-        .filter(key -> key.startsWith(CACHE_OUT_PREFIX))
-        .sorted(Comparator.comparingInt(GradleUtils::cacheIndex))
-        .forEach(key -> outs.add(new File(props.getProperty(key))));
-    if (deps.isEmpty() && outs.isEmpty()) {
-      return null;
-    }
-    if (!allExist(deps)) {
-      return null;
-    }
-    return new ClasspathModel(List.copyOf(deps), List.copyOf(outs), true);
+    return new ClasspathModel(cached.dependencies(), cached.outputDirs(), true);
   }
 
-  private static int cacheIndex(String key) {
-    int dot = key.lastIndexOf('.');
-    if (dot < 0 || dot >= key.length() - 1) {
-      return Integer.MAX_VALUE;
-    }
-    try {
-      return Integer.parseInt(key.substring(dot + 1));
-    } catch (NumberFormatException e) {
-      return Integer.MAX_VALUE;
-    }
-  }
-
-  private static boolean allExist(LinkedHashSet<File> files) {
-    for (File f : files) {
-      if (f == null || !f.exists()) {
-        return false;
-      }
-    }
-    return true;
-  }
 
   private void storeClasspathCache(String fingerprint, List<File> dependencies, List<File> outputDirs, boolean testContext) {
     File cacheFile = getClasspathCacheFile(testContext);
-    Properties props = new Properties();
-    props.setProperty(CACHE_SCHEMA, CACHE_SCHEMA_VERSION);
-    props.setProperty(CACHE_FINGERPRINT, fingerprint);
-    props.setProperty(CACHE_CREATED_AT, String.valueOf(System.currentTimeMillis()));
-    int index = 0;
-    for (File dep : dependencies) {
-      if (dep != null) {
-        props.setProperty(CACHE_DEP_PREFIX + index++, dep.getAbsolutePath());
-      }
-    }
-    index = 0;
-    for (File out : outputDirs) {
-      if (out != null) {
-        props.setProperty(CACHE_OUT_PREFIX + index++, out.getAbsolutePath());
-      }
-    }
-    File parentDir = cacheFile.getParentFile();
-    if (parentDir == null) {
-      log.warn("Cannot write Gradle classpath cache - parent directory is null for {}", cacheFile);
-      return;
-    }
-    File tmp = new File(parentDir, cacheFile.getName() + ".tmp");
-    try (OutputStream out = new FileOutputStream(tmp)) {
-      props.store(out, "Gade Gradle classpath cache");
-      Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-    } catch (Exception e) {
-      log.debug("Failed to write Gradle classpath cache {}", cacheFile, e);
-      if (tmp.exists() && !tmp.delete()) {
-        tmp.deleteOnExit();
-      }
-    }
+    ClasspathCacheManager.store(cacheFile, fingerprint, dependencies, outputDirs, "Gade Gradle classpath cache");
   }
 
   private String[] gradleJvmArgs() {
