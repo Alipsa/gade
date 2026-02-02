@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 // Run `gradle runtimeZip` to create the distributions
 plugins {
   id('java')
+  id('jacoco')
   id('application')
   id('org.beryx.runtime').version('2.0.1')
   //id "com.github.spotbugs" version "5.0.9"
@@ -302,6 +303,17 @@ test {
     }
   }
 }
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+    xml.required = true
+    html.required = true
+    csv.required = false
+  }
+}
+
+test.finalizedBy jacocoTestReport
 
 runtime {
   //options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']

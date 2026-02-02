@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.TreeMap;
 
 import se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine;
+import se.alipsa.gade.code.completion.javascript.JavascriptCompletionEngine;
 import se.alipsa.gade.code.completion.sql.SqlCompletionEngine;
 
 /**
@@ -26,6 +27,9 @@ public final class EnhancedCompletion {
     if ("sql".equalsIgnoreCase(language)) {
       return SqlCompletionEngine.complete(
           context.tokenPrefix(), context.fullText(), context.caretPosition());
+    }
+    if ("javascript".equalsIgnoreCase(language) || "js".equalsIgnoreCase(language)) {
+      return new JavascriptCompletionEngine().complete(context);
     }
     // Default to Groovy
     return GroovyCompletionEngine.getInstance().complete(context);

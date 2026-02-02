@@ -3,6 +3,7 @@ package se.alipsa.gade.code.gmdtab;
 import com.openhtmltopdf.mathmlsupport.MathMLDrawer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.openhtmltopdf.svgsupport.BatikSVGDrawer;
+import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -143,10 +144,30 @@ public class GmdUtil {
 
     // Wait for PDF generation to complete (max 30 seconds)
     try {
-      boolean completed = latch.await(30, TimeUnit.SECONDS);
-      if (!completed) {
-        Gade.instance().setNormalCursor();
-        throw new GmdException("PDF generation timed out after 30 seconds");
+      if (Platform.isFxApplicationThread()) {
+        Object eventLoopKey = new Object();
+        Thread waiter = new Thread(() -> {
+          boolean completed = false;
+          try {
+            completed = latch.await(30, TimeUnit.SECONDS);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            errorRef.compareAndSet(null, new GmdException("PDF generation was interrupted", e));
+          }
+          if (!completed) {
+            errorRef.compareAndSet(null, new GmdException("PDF generation timed out after 30 seconds"));
+          }
+          Platform.runLater(() -> Platform.exitNestedEventLoop(eventLoopKey, null));
+        }, "gmd-pdf-waiter");
+        waiter.setDaemon(true);
+        waiter.start();
+        Platform.enterNestedEventLoop(eventLoopKey);
+      } else {
+        boolean completed = latch.await(30, TimeUnit.SECONDS);
+        if (!completed) {
+          Gade.instance().setNormalCursor();
+          throw new GmdException("PDF generation timed out after 30 seconds");
+        }
       }
       // Rethrow any exception that occurred during PDF generation
       Throwable error = errorRef.get();
