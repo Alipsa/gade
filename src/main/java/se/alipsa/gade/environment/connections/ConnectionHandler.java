@@ -142,8 +142,11 @@ public class ConnectionHandler {
         if (jdbcCon == null) {
           throw new ConnectionFailedException("Failed to establish a connection to SQLite");
         }
-        ResultSet rs = jdbcCon.createStatement().executeQuery("select * from sqlite_master");
-        if (rs.next()) hasTables = true;
+        // try-with-resources ensures Statement and ResultSet are closed before connection
+        try (Statement stmt = jdbcCon.createStatement();
+             ResultSet rs = stmt.executeQuery("select * from sqlite_master")) {
+          if (rs.next()) hasTables = true;
+        }
         jdbcCon.close();
       } catch (SQLException e) {
         ExceptionAlert.showAlert("Failed to query sqlite_master", e);

@@ -610,7 +610,7 @@ public class ConsoleComponent extends BorderPane {
     } else if (ex instanceof Exception) {
       msg = "An Exception occurred: ";
     } else if (ex != null){
-      msg = "Unknwn exception of type " + ex.getClass() + ": " + ex.getMessage();
+      msg = "Unknown exception of type " + ex.getClass() + ": " + ex.getMessage();
     } else {
       // this should never happen
       msg = "An unknown error occurred (the Throwable is null): ";

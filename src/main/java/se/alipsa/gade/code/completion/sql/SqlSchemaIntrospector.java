@@ -1,5 +1,8 @@
 package se.alipsa.gade.code.completion.sql;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -18,6 +21,7 @@ public interface SqlSchemaIntrospector {
   };
 
   final class Introspector implements SqlSchemaIntrospector {
+    private static final Logger log = LogManager.getLogger(Introspector.class);
     private final Connection conn;
     public Introspector(Connection conn) { this.conn = conn; }
 
@@ -32,7 +36,9 @@ public interface SqlSchemaIntrospector {
             out.add(rs.getString("TABLE_NAME"));
           }
         }
-      } catch (Exception ignore) {}
+      } catch (Exception e) {
+        log.debug("Failed to introspect database tables, returning empty list", e);
+      }
       return out;
     }
 
@@ -48,7 +54,9 @@ public interface SqlSchemaIntrospector {
             out.add(rs.getString("COLUMN_NAME"));
           }
         }
-      } catch (Exception ignore) {}
+      } catch (Exception e) {
+        log.debug("Failed to introspect table columns for '{}', returning empty list", table, e);
+      }
       return out;
     }
   }

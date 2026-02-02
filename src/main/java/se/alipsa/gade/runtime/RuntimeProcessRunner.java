@@ -402,7 +402,9 @@ public class RuntimeProcessRunner implements Closeable {
     }
     try {
       c.close();
-    } catch (IOException ignored) {}
+    } catch (IOException e) {
+      log.debug("Failed to close closeable during cleanup, continuing", e);
+    }
   }
 
   private int pickPort() throws IOException {
@@ -461,7 +463,9 @@ public class RuntimeProcessRunner implements Closeable {
         } finally {
           try {
             socket.setSoTimeout(0);
-          } catch (IOException ignore) {}
+          } catch (IOException e) {
+            log.debug("Failed to reset socket timeout, continuing", e);
+          }
         }
         readerService.submit(this::socketReadLoop);
         log.info("Connected to runner {} on port {}", runtime.getName(), runnerPort);

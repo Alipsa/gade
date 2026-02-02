@@ -144,7 +144,8 @@ public class GadeRunnerMain {
     try {
       ROOT_ERR.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
       ROOT_ERR.flush();
-    } catch (IOException ignore) {
+    } catch (IOException e) {
+      // Last resort - if stderr write fails, nowhere left to report it
     }
   }
 
@@ -233,7 +234,9 @@ public class GadeRunnerMain {
         mapper.writeValue(ROOT_OUT, payload);
         ROOT_OUT.write('\n');
         ROOT_OUT.flush();
-      } catch (IOException ignored) {}
+      } catch (IOException e) {
+        emitRaw("emit to ROOT_OUT failed: " + e);
+      }
       return;
     }
     // Multiple threads (eval thread + stdout/stderr EventOutputStream) share the same writer.

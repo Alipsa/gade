@@ -2,6 +2,8 @@ package se.alipsa.gade.code.groovytab;
 
 import io.github.classgraph.*;
 import javafx.application.Platform;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -30,6 +32,7 @@ import static se.alipsa.gade.menu.GlobalOptions.ADD_IMPORTS;
 
 public class GroovyTextArea extends CodeTextArea {
 
+  private static final Logger log = LogManager.getLogger(GroovyTextArea.class);
   private static final Pattern SIMPLE_TYPE = Pattern.compile("\\b([A-Z][A-Za-z0-9_]*)\\b");
 
   private static final List<String> DEFAULT_PKGS = List.of("java.lang", "groovy.lang", "java.io",
@@ -293,8 +296,8 @@ public class GroovyTextArea extends CodeTextArea {
           return gui.dynamicClassLoader;
         }
       }
-    } catch (Exception ignore) {
-      // Fall through to default
+    } catch (Exception e) {
+      log.debug("Failed to get classloader from runtime, falling back to default", e);
     }
     // Default to thread context classloader
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -534,8 +537,8 @@ public class GroovyTextArea extends CodeTextArea {
         if (cl == null) cl = g.dynamicClassLoader;
         if (cl != null) return cl;
       }
-    } catch (Throwable ignore) {
-      // fall through
+    } catch (Throwable e) {
+      log.debug("Failed to get classloader for completion, falling back to default", e);
     }
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     return cl != null ? cl : GroovyTextArea.class.getClassLoader();
