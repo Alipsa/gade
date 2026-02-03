@@ -147,7 +147,7 @@ Ensure gi-console has functional implementations for non-interactive methods, no
 - `promptYearMonth()` / `promptDate()` / `promptPassword()` - No user input
 
 **Display Methods:**
-- `display(Chart/File/String/JComponent)` - Could save to file instead of showing
+- `display(Chart/File/String/JComponent)` - Could save to file and use default associated application to show
 - `view(Matrix/List)` - Could print summary to stdout
 
 ### Implementation Example
