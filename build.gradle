@@ -14,6 +14,7 @@ plugins {
   id('maven-publish')
   //id("org.openjfx.javafxplugin") version "0.1.0"
   id("se.alipsa.nexus-release-plugin").version'2.0.1'
+  id("me.champeau.jmh").version("0.7.2") // JMH for performance benchmarks
 }
 
 group = 'se.alipsa'
