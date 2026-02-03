@@ -104,7 +104,6 @@ dependencies {
   implementation 'io.github.classgraph:classgraph:4.8.184'
   implementation 'com.github.spotbugs:spotbugs-annotations:4.9.8'
   implementation "se.alipsa.gi:gi-fx:0.2.0"
-  // gi-console not yet published, using AbstractInOut from gi-common for headless tests
   implementation "org.commonmark:commonmark:0.27.1"
   implementation "org.commonmark:commonmark-ext-gfm-tables:0.27.1"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
@@ -143,8 +142,8 @@ dependencies {
   testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.6'
   testImplementation 'org.testfx:testfx-core:4.0.18'
   testImplementation 'org.testfx:testfx-junit5:4.0.18'
-  // Monocle (headless JavaFX) incompatible with current JavaFX version
-  // Will use gi-console when published (currently only 0.1.0 available, needs 0.2.0+)
+  testImplementation 'org.testfx:openjfx-monocle:21.0.2'
+  testImplementation 'se.alipsa.gi:gi-console:0.2.0'
   testImplementation 'org.mockito:mockito-core:5.21.0'
 }
 
@@ -273,14 +272,27 @@ test {
       '--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED',
   ]
 
-  useJUnitPlatform() {
-    // GUI tests excluded by default - infrastructure ready for gi-console when published
-    // Current status: TestGade + HeadlessInOut implemented, but gi-console not yet available
-    // To run GUI tests: ./gradlew test -Dgroups=gui (will show windows)
-    if (!System.getProperty('groups', '').contains('gui')) {
-      excludeTags 'gui'
-    }
+  // Headless mode is enabled by default using Monocle
+  // Usage: ./gradlew test (headless, no windows)
+  //        ./gradlew test -Dheadless=false (with windows)
+  if (System.getProperty('headless', 'true') != 'false') {
+    jvmArgs += [
+        '--add-exports', 'javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+        '--add-exports', 'javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED',
+        '--add-opens', 'javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+        '--add-opens', 'javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED',
+    ]
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
+    systemProperty 'testfx.headless', 'true'
+    // Set screen size large enough for Gade's window
+    systemProperty 'headless.geometry', '1920x1080-32'
+    // Prevent Monocle crash on JVM shutdown by keeping platform alive
+    systemProperty 'glass.noImplicitExit', 'true'
   }
+
+  useJUnitPlatform()
   testLogging {
     // set options for log level LIFECYCLE
     events TestLogEvent.FAILED,

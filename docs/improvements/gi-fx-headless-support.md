@@ -39,7 +39,7 @@ The GuiInteraction library ([GitHub](https://github.com/Alipsa/GuiInteraction)) 
 |--------|-----------|-------------|-------------------|
 | **gi-fx** | JavaFX | Desktop GUI | 0.2.0 ✅ (currently used) |
 | **gi-swing** | Swing | Desktop GUI | 0.2.0 |
-| **gi-console** | Text/Console | **Headless/CI** | 0.2.0 ⚠️ (not yet added) |
+| **gi-console** | Text/Console | **Headless/CI** | 0.2.0 ✅ (added) |
 
 **Key Finding:** The error message explicitly recommends using **gi-console for headless environments**.
 

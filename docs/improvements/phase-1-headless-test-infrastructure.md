@@ -1,7 +1,7 @@
 # Phase 1: Headless Test Infrastructure - Implementation Summary
 
 **Date:** February 3, 2026
-**Status:** ✅ Infrastructure Complete (Pending gi-console Publication)
+**Status:** ✅ Complete (Using gi-console:0.2.0)
 
 ---
 
@@ -50,27 +50,16 @@ protected GuiInteraction createInOut() {
 
 ### 3. HeadlessInOut Implementation ✅
 
-**Extends:** `se.alipsa.gi.AbstractInOut` (from gi-common:0.2.0)
+**Extends:** `se.alipsa.gi.txt.InOut` (from gi-console:0.2.0)
 
-**Methods Implemented:** 23 methods with noop/minimal implementations:
+**gi-console provides:** Sensible defaults for headless mode:
 - File choosers → return null
-- Prompts → return defaults
-- Display methods → log only
-- View methods → log only
+- Prompts → return defaults or throw UnsupportedOperationException
+- Display methods → no-op or save to file
+- View methods → print to stdout
 
-**Why AbstractInOut (not gi-console):**
-- gi-console:0.1.0 exists but incompatible with gi-common:0.2.0
-- gi-console:0.2.0 not yet published to Maven Central
-- AbstractInOut provides base implementation
-
-**Future:** When gi-console:0.2.0 is published, change line 22:
-```java
-// Current:
-public class HeadlessInOut extends se.alipsa.gi.AbstractInOut {
-
-// Future:
-public class HeadlessInOut extends se.alipsa.gi.console.InOut {
-```
+**Implementation:** HeadlessInOut is now a minimal class that extends gi-console.InOut,
+inheriting all the proper headless implementations.
 
 ### 4. Test Results ✅
 
@@ -181,29 +170,19 @@ protected GuiInteraction createInOut() {
 - Future: Production headless mode
 - Future: Alternative InOut implementations (gi-swing, custom)
 
-### Prepared for gi-console
+### gi-console Integration ✅
 
-When gi-console:0.2.0 is published:
-
-**1. Update dependency (build.gradle):**
+**Dependency (build.gradle):**
 ```gradle
 testImplementation "se.alipsa.gi:gi-console:0.2.0"
 ```
 
-**2. Update HeadlessInOut:**
+**HeadlessInOut:**
 ```java
-public class HeadlessInOut extends se.alipsa.gi.console.InOut {
-    // Remove current method implementations
-    // gi-console provides proper implementations
+public class HeadlessInOut extends se.alipsa.gi.txt.InOut {
+    // Minimal class - gi-console provides all implementations
 }
 ```
-
-**3. Verify tests still pass:**
-```bash
-./gradlew test -Dgroups=gui
-```
-
-**Estimated effort:** 15 minutes
 
 ---
 
@@ -216,7 +195,7 @@ public class HeadlessInOut extends se.alipsa.gi.console.InOut {
 | **InOut creation** | Hardcoded in Gade.start() | Factory method (extensible) ✅ |
 | **Test infrastructure** | None | TestGade + HeadlessInOut ✅ |
 | **gi-fx issue** | Blocks test execution | Resolved via HeadlessInOut ✅ |
-| **True headless** | Not possible | Not possible (pending gi-console) 🔄 |
+| **True headless** | Not possible | Infrastructure ready (gi-console available) ✅ |
 
 ---
 
@@ -225,7 +204,7 @@ public class HeadlessInOut extends se.alipsa.gi.console.InOut {
 ### Prerequisites
 - ✅ HeadlessInOut infrastructure (done)
 - ✅ TestGade factory pattern (done)
-- ⏳ gi-console:0.2.0 published to Maven Central
+- ✅ gi-console:0.2.0 published to Maven Central
 
 ### Implementation Tasks
 
@@ -353,4 +332,4 @@ build.gradle                                     (updated comments, test config)
 **Completed:** February 3, 2026
 **Tests Passing:** 285/285 ✅
 **Infrastructure Ready:** ✅
-**Awaiting:** gi-console:0.2.0 publication
+**gi-console:** 0.2.0 integrated ✅
