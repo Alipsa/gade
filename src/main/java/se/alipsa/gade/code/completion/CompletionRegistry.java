@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Multiple threads can safely register engines, perform lookups, and invalidate caches concurrently.
  *
  * @see ConcurrentHashMap
- * @threadsafe
+ * <p><b>Thread-Safety:</b> This class is thread-safe.</p>
  */
 public final class CompletionRegistry {
 

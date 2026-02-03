@@ -29,7 +29,7 @@ import java.io.File;
  *
  * <p>
  * The execute button is automatically added to the buttonPane in the constructor.
- * Subclasses can customize the button text via {@link #getExecuteButtonText()}.
+ * Subclasses can customize the button text by passing it to the constructor.
  */
 public abstract class ExecutableTab extends TextAreaTab implements TaskListener {
 

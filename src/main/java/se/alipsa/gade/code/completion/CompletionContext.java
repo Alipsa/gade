@@ -9,6 +9,76 @@ import java.util.regex.Pattern;
 /**
  * Rich context for completion requests, providing all information
  * that completion engines need to generate relevant suggestions.
+ * <p>
+ * This class contains the full document text, caret position, and
+ * utility methods for analyzing the completion context (e.g., checking
+ * if we're inside a string, comment, or member access expression).
+ * </p>
+ *
+ * <h2>Creating Contexts</h2>
+ * <p>
+ * Use the builder pattern to create completion contexts:
+ * </p>
+ * <pre>{@code
+ * String code = "def text = 'hello'\ntext.";
+ * int caretPos = code.length();  // After the dot
+ *
+ * CompletionContext context = CompletionContext.builder()
+ *     .fullText(code)
+ *     .caretPosition(caretPos)
+ *     .classLoader(Thread.currentThread().getContextClassLoader())
+ *     .metadata("projectRoot", "/path/to/project")
+ *     .build();
+ *
+ * // Check context state
+ * boolean memberAccess = context.isMemberAccess();  // true
+ * String before = context.textBeforeCaret();  // "def text = 'hello'\ntext."
+ * }</pre>
+ *
+ * <h2>Context Detection</h2>
+ * <p>
+ * The context provides several utility methods for analyzing code context:
+ * </p>
+ * <ul>
+ *   <li>{@link #isMemberAccess()} - True if completing after a dot (e.g., {@code object.|})</li>
+ *   <li>{@link #isInsideString()} - True if caret is inside a string literal</li>
+ *   <li>{@link #isInsideComment()} - True if caret is inside a comment</li>
+ *   <li>{@link #textBeforeCaret()} - All text before the cursor</li>
+ * </ul>
+ *
+ * <h2>Usage in Completion Engines</h2>
+ * <pre>{@code
+ * @Override
+ * public List<CompletionItem> complete(CompletionContext context) {
+ *     // Skip completion inside strings and comments
+ *     if (context.isInsideString() || context.isInsideComment()) {
+ *         return Collections.emptyList();
+ *     }
+ *
+ *     // Member access completion (e.g., object.method)
+ *     if (context.isMemberAccess()) {
+ *         String expr = extractExpression(context.textBeforeCaret());
+ *         Class<?> type = resolveType(expr, context.classLoader());
+ *         return getMemberCompletions(type);
+ *     }
+ *
+ *     // General completions (keywords, imports, etc.)
+ *     return getGeneralCompletions(context);
+ * }
+ * }</pre>
+ *
+ * <h2>Metadata</h2>
+ * <p>
+ * Arbitrary metadata can be attached to contexts for engine-specific use:
+ * </p>
+ * <pre>{@code
+ * context.getMetadata("projectRoot");  // Get metadata value
+ * context.hasMetadata("currentFile");  // Check if metadata exists
+ * }</pre>
+ *
+ * @see CompletionEngine
+ * @see CompletionItem
+ * @since 1.0.0
  */
 public final class CompletionContext {
 

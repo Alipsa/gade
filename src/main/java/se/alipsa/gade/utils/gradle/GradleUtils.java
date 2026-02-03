@@ -50,7 +50,7 @@ import java.util.Objects;
  * across concurrent operations.
  *
  * @see org.gradle.tooling.GradleConnector
- * @threadsafe
+ * <p><b>Thread-Safety:</b> This class is thread-safe.</p>
  */
 public class GradleUtils {
 

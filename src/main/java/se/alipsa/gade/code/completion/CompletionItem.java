@@ -2,6 +2,72 @@ package se.alipsa.gade.code.completion;
 
 /**
  * Represents a single code completion suggestion.
+ * <p>
+ * Completion items are displayed in the completion popup when the user
+ * requests code completion (typically via Ctrl+Space). Each item contains
+ * the text to insert, display information, and metadata about the completion.
+ * </p>
+ *
+ * <h2>Creating Completion Items</h2>
+ *
+ * <h3>Simple Completions</h3>
+ * <pre>{@code
+ * // Basic keyword
+ * CompletionItem item = CompletionItem.keyword("if");
+ *
+ * // Method completion
+ * CompletionItem method = new CompletionItem("toString", Kind.METHOD);
+ * }</pre>
+ *
+ * <h3>Advanced Completions with Builder</h3>
+ * <pre>{@code
+ * CompletionItem item = CompletionItem.builder()
+ *     .label("println")
+ *     .kind(CompletionKind.METHOD)
+ *     .detail("void")
+ *     .documentation("Prints to console")
+ *     .insertText("println()")
+ *     .cursorOffset(-1)  // Place cursor inside parens: println(|)
+ *     .sortPriority(10)  // Lower = higher priority
+ *     .build();
+ * }</pre>
+ *
+ * <h3>Snippet Completions</h3>
+ * <pre>{@code
+ * // Insert multi-line code template
+ * CompletionItem snippet = CompletionItem.builder()
+ *     .label("for")
+ *     .kind(CompletionKind.SNIPPET)
+ *     .insertText("for (int i = 0; i < ; i++) {\n    \n}")
+ *     .cursorOffset(-13)  // Place cursor at loop condition
+ *     .build();
+ * }</pre>
+ *
+ * <h2>Cursor Positioning</h2>
+ * <p>
+ * The {@code cursorOffset} field controls cursor placement after insertion:
+ * </p>
+ * <ul>
+ *   <li>{@code 0} (default): Cursor after inserted text</li>
+ *   <li>{@code -1}: One character before end (e.g., inside parentheses)</li>
+ *   <li>{@code -N}: N characters before end</li>
+ * </ul>
+ *
+ * <h2>Sort Priority</h2>
+ * <p>
+ * Lower priority values appear first in the completion list. Default is 100.
+ * Use this to promote relevant completions:
+ * </p>
+ * <ul>
+ *   <li>0-10: Exact matches, local variables</li>
+ *   <li>50: Keywords, common methods</li>
+ *   <li>100: Default (class members, general suggestions)</li>
+ *   <li>200+: Low-priority suggestions</li>
+ * </ul>
+ *
+ * @see CompletionEngine
+ * @see CompletionContext
+ * @since 1.0.0
  */
 public final class CompletionItem {
 

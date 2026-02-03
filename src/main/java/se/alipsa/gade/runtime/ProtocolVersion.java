@@ -6,7 +6,7 @@ package se.alipsa.gade.runtime;
  * The protocol governs message exchange between {@link RuntimeProcessRunner} (Gade main process)
  * and {@link se.alipsa.gade.runner.GadeRunnerMain} (external runtime subprocess).
  *
- * <h3>Version History:</h3>
+ * <h2>Version History:</h2>
  * <ul>
  *   <li><b>1.0</b> - Initial versioned protocol with handshake support
  *     <ul>
@@ -16,7 +16,7 @@ package se.alipsa.gade.runtime;
  *   </li>
  * </ul>
  *
- * <h3>Protocol Messages:</h3>
+ * <h2>Protocol Messages:</h2>
  * <pre>
  * // Runner → Gade (handshake initiation)
  * {"type":"hello","port":12345,"protocolVersion":"1.0"}

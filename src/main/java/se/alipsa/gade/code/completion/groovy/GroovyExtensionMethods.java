@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * registry initialization which is safely published via volatile semantics.
  *
  * @see ConcurrentHashMap
- * @threadsafe
+ * <p><b>Thread-Safety:</b> This class is thread-safe.</p>
  */
 public final class GroovyExtensionMethods {
 

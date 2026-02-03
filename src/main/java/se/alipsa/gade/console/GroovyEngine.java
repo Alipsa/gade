@@ -9,10 +9,10 @@ public interface GroovyEngine {
 
   /**
    * Equivalent of
-   * <code><pre>
+   * <pre>
    * engine.getContext().setWriter(outputWriter);
    * engine.getContext().setErrorWriter(errWriter);
-   * </pre></code>
+   * </pre>
    *
    * @param out the standard out PrintWriter
    * @param err the standard err PrintWriter

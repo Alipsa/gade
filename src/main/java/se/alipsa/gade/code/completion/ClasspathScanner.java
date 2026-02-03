@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * concurrently without synchronization overhead.
  *
  * @see ConcurrentHashMap
- * @threadsafe
+ * <p><b>Thread-Safety:</b> This class is thread-safe.</p>
  */
 public final class ClasspathScanner {
 

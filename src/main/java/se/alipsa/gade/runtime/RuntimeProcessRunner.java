@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @see CompletableFuture
  * @see ConcurrentHashMap
- * @threadsafe
+ * <p><b>Thread-Safety:</b> This class is thread-safe.</p>
  */
 public class RuntimeProcessRunner implements Closeable {
 
