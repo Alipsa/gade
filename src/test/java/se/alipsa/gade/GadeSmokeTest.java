@@ -14,14 +14,12 @@ import java.util.concurrent.TimeUnit;
  * Smoke test suite for Gade using TestFX.
  * Tests core functionality to verify application works after build.
  *
- * IMPORTANT: These tests require a graphical environment and will show GUI windows.
- * They are DISABLED by default in automated builds to prevent popup windows.
+ * UPDATED: Now uses TestGade with HeadlessInOut to support running in headless mode.
+ * Tests can run in CI/CD environments without showing GUI windows.
  *
- * To run these tests explicitly:
- *   ./gradlew test --tests GadeSmokeTest
- *
- * Or enable the "gui" tag:
- *   ./gradlew test -Dgroups=gui
+ * To run these tests:
+ *   ./gradlew test --tests GadeSmokeTest        (headless mode)
+ *   ./gradlew test -Dgroups=gui                 (all GUI tests)
  *
  * Test Coverage:
  * 1. Application launch (no exceptions)
@@ -44,8 +42,8 @@ class GadeSmokeTest extends ApplicationTest {
 
   @Override
   public void start(Stage stage) throws Exception {
-    // Launch Gade application
-    Gade app = new Gade();
+    // Launch TestGade (uses HeadlessInOut for headless compatibility)
+    Gade app = new TestGade();
     app.start(stage);
 
     this.gadeApp = app;

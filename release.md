@@ -8,7 +8,8 @@ Gade is a modern IDE specifically designed for data analysis, visualization, and
 
 ### Overview
 
-This is the first production-ready release of Gade, representing over 2 years of development and refinement. The 1.0.0 release focuses on stability, performance, and comprehensive documentation, making Gade ready for professional data science and analytics work.
+This is the first production-ready release of Gade, representing over 2 years of development and refinement. 
+The 1.0.0 release focuses on stability, performance, and comprehensive documentation, making Gade ready for professional data science and analytics work.
 
 **Key Highlights:**
 - 🚀 Multiple runtime modes (Gade, Gradle, Maven, Custom)

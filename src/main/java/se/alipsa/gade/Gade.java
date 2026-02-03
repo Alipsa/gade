@@ -173,12 +173,22 @@ public class Gade extends Application {
     enableDragDrop(scene);
     //consoleComponent.initGroovy(Gade.this.getClass().getClassLoader());
     guiInteractions = Map.of(
-        "io", new se.alipsa.gade.interaction.InOut()
+        "io", createInOut()
     );
     consoleComponent.initGroovy(getActiveRuntime());
     // Ensure the runtime menu reflects the actually loaded runtime on startup
     mainMenu.refreshRuntimesMenu();
     primaryStage.show();
+  }
+
+  /**
+   * Creates the InOut instance for GUI interactions.
+   * This method can be overridden in subclasses (e.g., for testing with headless mode).
+   *
+   * @return GuiInteraction instance for the "io" variable in scripts
+   */
+  protected GuiInteraction createInOut() {
+    return new se.alipsa.gade.interaction.InOut();
   }
 
   private void enableDragDrop(Scene scene) {
