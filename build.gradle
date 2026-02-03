@@ -269,7 +269,15 @@ test {
   jvmArgs += [
       '--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED',
   ]
-  useJUnitPlatform()
+
+  useJUnitPlatform() {
+    // Exclude GUI smoke tests by default (they require graphical environment and show windows)
+    // To run them: ./gradlew test --tests GadeSmokeTest
+    // Or: ./gradlew test -Dgroups=gui
+    if (!System.getProperty('groups', '').contains('gui')) {
+      excludeTags 'gui'
+    }
+  }
   testLogging {
     // set options for log level LIFECYCLE
     events TestLogEvent.FAILED,

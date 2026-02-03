@@ -14,11 +14,14 @@ import java.util.concurrent.TimeUnit;
  * Smoke test suite for Gade using TestFX.
  * Tests core functionality to verify application works after build.
  *
- * Run in headless mode (recommended for CI/CD):
- *   ./gradlew test --tests GadeSmokeTest -Dtestfx.headless=true
+ * IMPORTANT: These tests require a graphical environment and will show GUI windows.
+ * They are DISABLED by default in automated builds to prevent popup windows.
  *
- * Run with GUI (for debugging):
+ * To run these tests explicitly:
  *   ./gradlew test --tests GadeSmokeTest
+ *
+ * Or enable the "gui" tag:
+ *   ./gradlew test -Dgroups=gui
  *
  * Test Coverage:
  * 1. Application launch (no exceptions)
@@ -32,25 +35,12 @@ import java.util.concurrent.TimeUnit;
  * Note: Full smoke tests for runtime switching, SQL, charts, and PDF export
  * require extensive setup and are better suited for manual/integration testing.
  */
+@Tag("gui")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class GadeSmokeTest extends ApplicationTest {
 
   private Gade gadeApp;
   private Stage stage;
-
-  static {
-    // Enable headless mode when -Dtestfx.headless=true is passed
-    // Recommended for CI/CD to avoid popup windows
-    if (Boolean.getBoolean("testfx.headless")) {
-      System.setProperty("java.awt.headless", "true");
-      System.setProperty("testfx.robot", "glass");
-      System.setProperty("testfx.headless", "true");
-      System.setProperty("prism.order", "sw");
-      System.setProperty("prism.text", "t2k");
-      System.setProperty("glass.platform", "Monocle");
-      System.setProperty("monocle.platform", "Headless");
-    }
-  }
 
   @Override
   public void start(Stage stage) throws Exception {

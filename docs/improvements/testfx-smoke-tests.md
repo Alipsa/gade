@@ -87,30 +87,32 @@ testImplementation 'org.testfx:testfx-junit5:4.0.18'
 
 TestFX was already in build.gradle - no dependency changes needed.
 
-### Headless Mode Support
+### Test Execution Strategy
 
-The smoke test automatically enables headless mode when system property is set:
+**GUI tests are EXCLUDED by default** to prevent popup windows during automated builds.
 
+**Default behavior (no GUI windows):**
 ```bash
-gradle test --tests "se.alipsa.gade.GadeSmokeTest" -Dtestfx.headless=true
+./gradlew test
+# Runs 278 unit tests only
+# 7 GUI smoke tests skipped
 ```
 
-**Headless Configuration:**
-- Uses Monocle headless platform (built into TestFX)
-- Sets JavaFX rendering to software mode
-- Disables hardware acceleration
-- No display server required
-
-**System Properties Set:**
-```java
-System.setProperty("java.awt.headless", "true");
-System.setProperty("testfx.robot", "glass");
-System.setProperty("testfx.headless", "true");
-System.setProperty("prism.order", "sw");
-System.setProperty("prism.text", "t2k");
-System.setProperty("glass.platform", "Monocle");
-System.setProperty("monocle.platform", "Headless");
+**Run GUI tests explicitly:**
+```bash
+./gradlew test -Dgroups=gui
+# Runs all 285 tests (278 unit + 7 GUI)
+# GUI windows will appear briefly
 ```
+
+**Implementation:**
+- GUI smoke tests tagged with `@Tag("gui")`
+- Build configuration excludes "gui" tag by default
+- Override with `-Dgroups=gui` to include GUI tests
+
+**Note:** Headless mode was attempted but incompatible with gi-fx library used by Gade.
+The InOut class requires a graphical environment and cannot initialize in true headless mode.
+Therefore, GUI tests are simply excluded by default rather than run headless.
 
 ---
 
