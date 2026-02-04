@@ -2,100 +2,106 @@
 
 ## Overview
 
-Enable `io` object to work in external runtimes (Gradle, Maven, Custom) by serializing GUI calls over the existing socket protocol.
+Enable `io` object to work in external runtimes (Gradle, Maven, Custom) by creating a proxy implementation (`RemoteInOut`) that forwards GUI calls over the existing socket protocol to the real `InOut` in the main Gade process.
 
-## Three-Repository Implementation
+## Architecture - Gade Only
 
-### 1. gi-console (Base library)
+**No changes needed to gi-console or matrix library!**
 
-**What:** Add remote serialization infrastructure
+All implementation happens in Gade:
 
-**New files:**
-- `RemoteSerializable.java` - Interface for serializable objects
-- `RemoteSerializationRegistry.java` - Registry for deserializers
-- `RemoteSerializationHelper.java` - Serialize/deserialize helpers
+```
+External Runtime:
+  io = new RemoteInOut(...)  // Proxy implementation
+  io.display(chart) → serialize → send gui_request via socket
 
-**Time:** 0.5 days
+Main Gade Process:
+  receive gui_request → deserialize → realInOut.display(chart) → GUI appears
+  → serialize result → send gui_response via socket
+```
 
-### 2. matrix library (Data types)
+## Implementation - Single Repository
 
-**What:** Make Matrix, Chart, MatrixXChart remoteable
+### Phase 1: Create RemoteInOut (2-3 hours)
 
-**Changes:**
-- `Matrix.java` - Implement RemoteSerializable, add toRemoteMap/fromRemoteMap (wraps existing toCsvString/MatrixBuilder.data)
-- `Chart.java` - Implement RemoteSerializable (Base64 PNG snapshot)
-- `MatrixXChart.java` - Implement RemoteSerializable (Base64 PNG)
-- `MatrixRemoteInit.java` - Register deserializers
+**File:** `src/main/java/se/alipsa/gade/runner/RemoteInOut.java`
 
-**Time:** 1 day
+- Extends `AbstractInOut` (or implements `GuiInteraction`)
+- Overrides all methods to proxy via socket
+- Uses `ArgumentSerializer` to serialize/deserialize arguments
 
-### 3. Gade (IDE)
+**File:** `src/main/java/se/alipsa/gade/runner/ArgumentSerializer.java`
 
-**What:** Handle gui_request/gui_response messages
+- Serializes Matrix using `matrix.toCsvString(true, true)`
+- Deserializes using `Matrix.builder().csvString(csv).build()`
+- Serializes charts as Base64 PNG
+- Handles primitives (String, Integer, etc.)
 
-**New files:**
-- `RemoteGuiInteraction.java` - Proxy for remote GUI calls
+### Phase 2: Update GadeRunnerMain (1 hour)
 
-**Changes:**
-- `GadeRunnerMain.java` - Inject RemoteGuiInteraction, handle gui_response
-- `RuntimeProcessRunner.java` - Handle gui_request, invoke actual methods
-- `ProtocolVersion.java` - Bump to 1.1
-- `Gade.java` - Call MatrixRemoteInit.init() on startup
+- Replace `UnsupportedGuiInteraction` with `RemoteInOut`
+- Add `gui_response` / `gui_error` handlers
+- Maintain pending futures map for async responses
 
-**Time:** 1 day
+### Phase 3: Update RuntimeProcessRunner (2-3 hours)
+
+- Add `gui_request` message handler
+- Deserialize arguments
+- Invoke real `InOut` methods via reflection
+- Serialize and send response
+
+### Phase 4: Protocol Version (15 min)
+
+- Bump protocol version from 1.0 to 1.1
+- Maintain backward compatibility
 
 ## Key Design Decisions
 
-### Serialization Strategy
+### Serialization (All in Gade)
 
-**Matrix:** Typed CSV (reuses existing toCsvString/Matrix.builder().csvString())
-```json
-{
-  "_type": "se.alipsa.matrix.core.Matrix",
-  "csv": "#name: Sales\n#types: String, Integer\nMonth,Revenue\nJan,1000\nFeb,1200\n"
-}
+**Matrix:**
+```java
+// Serialize
+Map<String, Object> map = new HashMap<>();
+map.put("_type", "se.alipsa.matrix.core.Matrix");
+map.put("csv", matrix.toCsvString(true, true));
+
+// Deserialize
+String csv = (String) map.get("csv");
+Matrix matrix = Matrix.builder().csvString(csv).build();
 ```
 
-The CSV format includes:
-- Line 1: `#name: Sales` - Matrix name as comment
-- Line 2: `#types: String, Integer` - Type information as comment
-- Line 3: Column headers
-- Line 4+: Data rows
+The CSV includes metadata:
+```csv
+#name: Sales
+#types: String, Integer
+Month,Revenue
+Jan,1000
+Feb,1200
+```
 
-**Serialization:** `matrix.toCsvString(true, true)`
-**Deserialization:** `Matrix.builder().csvString(csv).build()`
+**Charts:**
+```java
+// Serialize as PNG
+BufferedImage image = renderChart(chart);
+String base64 = Base64.getEncoder().encodeToString(pngBytes);
+map.put("imageData", base64);
 
-This reuses Matrix's existing, tested serialization - no new parsing logic needed!
-
-**Charts:** Base64-encoded PNG snapshots
-```json
-{
-  "_type": "se.alipsa.groovy.charts.Chart",
-  "imageData": "iVBORw0KGgoAAAANSUhEUg...",
-  "title": "Sales Chart"
-}
+// Deserialize
+byte[] pngBytes = Base64.getDecoder().decode(base64);
+ImageView view = new ImageView(new Image(...));
 ```
 
 **Rationale:**
-- Matrix: Full fidelity, supports filtering/sorting in UI
-- Charts: Simple, works for all chart types, good quality
+- Matrix: Full fidelity, can filter/sort in GUI
+- Charts: Simple, works for all chart types
+- No new dependencies - uses existing Matrix methods
 
-### Registry Pattern
+### No Library Changes
 
-Libraries register their own deserializers on startup:
-
-```java
-// In matrix library
-RemoteSerializationRegistry.register(
-    "se.alipsa.matrix.core.Matrix",
-    Matrix::fromRemoteMap
-);
-
-// Gade calls on startup
-MatrixRemoteInit.init();
-```
-
-This decouples serialization logic from Gade.
+- gi-console: Stays generic, no Gade-specific code
+- matrix: Uses existing toCsvString/csvString methods
+- All serialization lives in Gade where protocol lives
 
 ## Protocol Changes
 
@@ -106,9 +112,11 @@ This decouples serialization logic from Gade.
 {
   "type": "gui_request",
   "id": "uuid",
-  "object": "io",
-  "method": "display",
-  "args": [{serialized object}, "title"]
+  "method": "view",
+  "args": [
+    {"_type": "se.alipsa.matrix.core.Matrix", "csv": "..."},
+    "My Table"
+  ]
 }
 ```
 
@@ -117,7 +125,7 @@ This decouples serialization logic from Gade.
 {
   "type": "gui_response",
   "id": "uuid",
-  "result": {serialized result or null}
+  "result": null
 }
 ```
 
@@ -135,95 +143,81 @@ This decouples serialization logic from Gade.
 **Current:** 1.0
 **New:** 1.1
 
-Major version must match for compatibility. Old runners (1.0) will still connect but won't support GUI operations.
+Major version must match. Old runners (1.0) still connect but won't support GUI.
 
 ## Testing Strategy
 
 ### Unit Tests
 
-**gi-console:**
-- RemoteSerializationRegistry: register/deserialize
-- RemoteSerializationHelper: serialize/deserialize primitives
+**ArgumentSerializer:**
+- Matrix round-trip (serialize/deserialize)
+- Chart PNG encoding/decoding
+- Primitives pass through
+- Null handling
 
-**matrix:**
-- Matrix round-trip: toRemoteMap → fromRemoteMap
-- Chart serialization: PNG quality, size
-- Type conversion: Integer/Double/LocalDate/etc.
+**RemoteInOut:**
+- Method calls create correct gui_request
+- Timeout after 60 seconds
+- Error handling
 
-**Gade:**
-- RemoteGuiInteraction: method invocation, timeout
-- Protocol handlers: gui_request/gui_response
-- Backward compatibility: protocol 1.0 runners
+**RuntimeProcessRunner:**
+- Handle gui_request
+- Invoke InOut methods
+- Send responses
 
 ### Integration Tests
 
 1. **External runtime with Matrix:**
    ```groovy
-   def matrix = Matrix.create(...)
-   io.view(matrix, "Test")  // Should display in Gade GUI
+   io.view(Matrix.create(...), "Test")
    ```
 
 2. **External runtime with Chart:**
    ```groovy
-   def chart = PieChart.create(...)
-   io.display(chart, "Test")  // Should display in Gade GUI
+   io.display(PieChart.create(...), "Test")
    ```
 
-3. **Timeout handling:**
-   ```groovy
-   // Simulate 61-second GUI operation
-   io.slowOperation()  // Should timeout at 60 seconds
-   ```
+3. **Timeout handling**
+4. **Error messages**
 
-4. **Error handling:**
-   ```groovy
-   io.display(brokenChart)  // Should show clear error message
-   ```
+## Implementation Timeline
 
-## Rollout Plan
+**Total: 1.5-2 days** (all in Gade repository)
 
-### Phase 1: gi-console (Day 1)
+### Day 1 (Morning)
+- [ ] Create ArgumentSerializer (1-2 hours)
+  - Matrix serialization using toCsvString
+  - Chart serialization as PNG
+  - Unit tests
 
-- [ ] Implement RemoteSerializable interface
-- [ ] Implement RemoteSerializationRegistry
-- [ ] Implement RemoteSerializationHelper
-- [ ] Unit tests
-- [ ] Publish gi-console 0.3.0-SNAPSHOT
+- [ ] Create RemoteInOut (2-3 hours)
+  - Implement GuiInteraction interface
+  - Proxy all methods via socket
+  - Unit tests
 
-### Phase 2: matrix library (Day 2)
+### Day 1 (Afternoon)
+- [ ] Update GadeRunnerMain (1 hour)
+  - Replace UnsupportedGuiInteraction
+  - Add gui_response/gui_error handlers
+  - Update tests
 
-- [ ] Update to gi-console 0.3.0-SNAPSHOT
-- [ ] Implement Matrix.toRemoteMap/fromRemoteMap (wraps toCsvString/MatrixBuilder.data)
-- [ ] Implement Chart.toRemoteMap/fromRemoteMap
-- [ ] Implement MatrixXChart.toRemoteMap/fromRemoteMap
-- [ ] Implement MatrixRemoteInit
-- [ ] Unit tests for each type
-- [ ] Integration tests
-- [ ] Publish matrix 2.5.0-SNAPSHOT
+- [ ] Update RuntimeProcessRunner (2-3 hours)
+  - Add gui_request handler
+  - Invoke InOut methods via reflection
+  - Unit tests
 
-### Phase 3: Gade (Day 3)
+### Day 2 (Morning)
+- [ ] Integration testing (2-3 hours)
+  - Test with real Matrix/Chart objects
+  - Test timeout handling
+  - Test error cases
+  - Manual testing with examples
 
-- [ ] Update to gi-console 0.3.0-SNAPSHOT
-- [ ] Update to matrix 2.5.0-SNAPSHOT
-- [ ] Implement RemoteGuiInteraction
-- [ ] Update GadeRunnerMain
-- [ ] Update RuntimeProcessRunner
-- [ ] Bump protocol version to 1.1
-- [ ] Call MatrixRemoteInit.init() on startup
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Manual testing with examples
-
-### Phase 4: Documentation & Release (0.5 days)
-
-- [ ] Update AGENTS.md
-- [ ] Update GRADLE_TOOLING_API_JAVA21.md
-- [ ] Create REMOTE_GUI_INTERACTION_USER_GUIDE.md
-- [ ] Add examples to examples/
-- [ ] Release notes
-- [ ] Publish stable versions
-
-**Total: 2.5-3 days** (reduced from 3-4 days by reusing typed CSV)
+- [ ] Protocol version bump (15 min)
+- [ ] Documentation (1-2 hours)
+  - Update AGENTS.md
+  - Add examples
+  - Update user guide
 
 ## User Experience
 
@@ -235,97 +229,43 @@ def chart = PieChart.create(...)
 io.display(chart)  // ERROR: UnsupportedOperationException
 ```
 
-**User must:**
-1. Switch to GADE runtime
-2. Re-run script
-3. Lose Gradle classpath
+**User must switch to GADE runtime**
 
 ### After
 
 ```groovy
 // In Gradle runtime
 def chart = PieChart.create(...)
-io.display(chart)  // Works! Chart appears in GUI
+io.display(chart)  // Works! (~100ms latency)
 ```
 
-**No changes needed!** Transparent remote execution with ~5-10ms latency.
+**No changes needed - works everywhere!**
 
-## Performance Considerations
-
-### Latency
+## Performance
 
 - **Local socket roundtrip:** ~1-5ms
-- **Matrix serialization (1000 rows):** ~10-20ms
+- **Matrix CSV serialization (1000 rows):** ~10-20ms
 - **Chart PNG encoding (800x600):** ~50-100ms
 - **Total for io.display(chart):** ~60-125ms
 
-Acceptable for interactive use. Batch operations could add `io.batch { }` wrapper in future.
-
-### Memory
-
-- **Matrix:** ~2x memory (original + JSON)
-- **Chart PNG:** ~500KB per chart
-- **Concurrent operations:** Limited by socket (one request at a time per runner)
-
-Reasonable for typical use cases. Could add streaming for very large matrices in future.
-
-## Future Enhancements
-
-### 1. Async Variants
-
-```groovy
-io.displayAsync(chart).whenComplete { result ->
-  println "Displayed!"
-}
-```
-
-Non-blocking for long operations.
-
-### 2. Batch Operations
-
-```groovy
-io.batch {
-  display(chart1)
-  display(chart2)
-  view(table)
-}
-```
-
-Single roundtrip for multiple GUI operations.
-
-### 3. Data-Based Chart Serialization
-
-Instead of PNG snapshots, serialize chart data for full interactivity:
-
-```json
-{
-  "_type": "se.alipsa.groovy.charts.PieChart",
-  "series": [{"name": "A", "value": 10}, ...]
-}
-```
-
-Allows zooming, tooltips, etc. in GUI.
-
-### 4. Streaming Large Data
-
-```groovy
-// Stream table in 1000-row chunks
-io.viewStream(millionRowTable, chunkSize: 1000)
-```
-
-For very large datasets.
+Acceptable for interactive use.
 
 ## Success Criteria
 
 - ✅ `io.display(chart)` works in Gradle runtime
-- ✅ `io.view(matrix)` works in Gradle runtime
-- ✅ `io.prompt(...)` works in Gradle runtime
+- ✅ `io.view(matrix)` works in Maven runtime
+- ✅ `io.prompt(...)` works in Custom runtime
 - ✅ All existing tests pass
 - ✅ No performance regression in GADE runtime
 - ✅ Backward compatible with protocol 1.0
-- ✅ Clear error messages for unsupported types
-- ✅ Documentation complete
+- ✅ Clear error messages
+- ✅ No changes to gi-console or matrix library
 
-## Questions?
+## Notes
 
-See full design document: `REMOTE_GUI_INTERACTION.md`
+- Implementation is entirely within Gade repository
+- Reuses existing Matrix serialization (no new code)
+- Clean separation: RemoteInOut proxies, InOut implements
+- Protocol remains simple and debuggable
+
+See full design: `REMOTE_GUI_INTERACTION.md`
