@@ -24,17 +24,19 @@ def matrix = Matrix.builder()
 **What `matrix.toCsvString(true, true)` produces:**
 
 ```csv
+#name: Sales
+#types: String, Integer, LocalDate, Boolean
 Month,Revenue,Date,Active
-String,Integer,LocalDate,Boolean
 Jan,1000,2024-01-31,true
 Feb,1200,2024-02-29,true
 Mar,1100,2024-03-31,false
 ```
 
-**Row breakdown:**
-- **Row 1:** Column headers (Month, Revenue, Date, Active)
-- **Row 2:** Type information (String, Integer, LocalDate, Boolean)
-- **Row 3+:** Data rows
+**Format breakdown:**
+- **Line 1:** `#name: Sales` - Matrix name as comment
+- **Line 2:** `#types: String, Integer, LocalDate, Boolean` - Type information as comment
+- **Line 3:** Column headers (Month, Revenue, Date, Active)
+- **Line 4+:** Data rows
 
 ### Remote Serialization Map
 
@@ -43,10 +45,11 @@ Mar,1100,2024-03-31,false
 ```json
 {
   "_type": "se.alipsa.matrix.core.Matrix",
-  "name": "Sales",
-  "csv": "Month,Revenue,Date,Active\nString,Integer,LocalDate,Boolean\nJan,1000,2024-01-31,true\nFeb,1200,2024-02-29,true\nMar,1100,2024-03-31,false\n"
+  "csv": "#name: Sales\n#types: String, Integer, LocalDate, Boolean\nMonth,Revenue,Date,Active\nJan,1000,2024-01-31,true\nFeb,1200,2024-02-29,true\nMar,1100,2024-03-31,false\n"
 }
 ```
+
+Note: The matrix name and types are embedded in the CSV string as comment lines (`#name:` and `#types:`), so we don't need separate fields!
 
 ### Deserialization
 
@@ -55,18 +58,15 @@ Mar,1100,2024-03-31,false
 ```java
 Map<String, Object> map = ... // received from socket
 String csv = (String) map.get("csv");
-Matrix matrix = MatrixBuilder.data(csv);  // Parses types and data!
-String name = (String) map.get("name");
-if (name != null) {
-    matrix.setMatrixName(name);
-}
+Matrix matrix = Matrix.builder().csvString(csv).build();  // Fully restores everything!
 ```
 
-`MatrixBuilder.data()` automatically:
-- Reads column names from row 1
-- Parses type information from row 2
+`Matrix.builder().csvString(csv).build()` automatically:
+- Reads matrix name from `#name:` comment line
+- Parses type information from `#types:` comment line
+- Reads column names from header row
 - Converts string values to proper types (Integer, LocalDate, Boolean, etc.)
-- Creates a fully-typed Matrix object
+- Creates a fully-typed Matrix object with original name
 
 ## Type Support
 
@@ -158,7 +158,7 @@ io.view(sales, "Sales Report")  // This triggers remote call
    sales.toRemoteMap()
    → {
        "_type": "se.alipsa.matrix.core.Matrix",
-       "csv": "Month,Revenue\nString,Integer\nJan,1000\nFeb,1200\n"
+       "csv": "#name: (null)\n#types: String, Integer\nMonth,Revenue\nJan,1000\nFeb,1200\n"
      }
    ```
 
@@ -172,7 +172,7 @@ io.view(sales, "Sales Report")  // This triggers remote call
      "args": [
        {
          "_type": "se.alipsa.matrix.core.Matrix",
-         "csv": "Month,Revenue\nString,Integer\nJan,1000\nFeb,1200\n"
+         "csv": "#name: (null)\n#types: String, Integer\nMonth,Revenue\nJan,1000\nFeb,1200\n"
        },
        "Sales Report"
      ]

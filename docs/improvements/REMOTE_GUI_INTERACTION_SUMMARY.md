@@ -48,19 +48,22 @@ Enable `io` object to work in external runtimes (Gradle, Maven, Custom) by seria
 
 ### Serialization Strategy
 
-**Matrix:** Typed CSV (reuses existing toCsvString/MatrixBuilder.data)
+**Matrix:** Typed CSV (reuses existing toCsvString/Matrix.builder().csvString())
 ```json
 {
   "_type": "se.alipsa.matrix.core.Matrix",
-  "name": "Sales",
-  "csv": "Month,Revenue\nString,Integer\nJan,1000\nFeb,1200\n"
+  "csv": "#name: Sales\n#types: String, Integer\nMonth,Revenue\nJan,1000\nFeb,1200\n"
 }
 ```
 
 The CSV format includes:
-- Row 1: Column headers
-- Row 2: Type information (String, Integer, LocalDate, etc.)
-- Row 3+: Data rows
+- Line 1: `#name: Sales` - Matrix name as comment
+- Line 2: `#types: String, Integer` - Type information as comment
+- Line 3: Column headers
+- Line 4+: Data rows
+
+**Serialization:** `matrix.toCsvString(true, true)`
+**Deserialization:** `Matrix.builder().csvString(csv).build()`
 
 This reuses Matrix's existing, tested serialization - no new parsing logic needed!
 

@@ -381,9 +381,9 @@ public class Matrix implements RemoteSerializable {
   public Map<String, Object> toRemoteMap() {
     Map<String, Object> map = new HashMap<>();
     map.put("_type", "se.alipsa.matrix.core.Matrix");
-    map.put("name", matrixName);
 
     // Use existing toCsvString method with header and types
+    // This includes #name and #types comment lines!
     map.put("csv", toCsvString(true, true));
 
     return map;
@@ -391,31 +391,35 @@ public class Matrix implements RemoteSerializable {
 
   /**
    * Deserialize from remote map.
-   * Uses existing MatrixBuilder.data() to parse typed CSV.
+   * Uses existing MatrixBuilder.csvString() to parse typed CSV.
    */
   public static Matrix fromRemoteMap(Map<String, Object> map) {
-    String name = (String) map.get("name");
     String csv = (String) map.get("csv");
 
-    // Use existing MatrixBuilder.data() to parse typed CSV
-    Matrix matrix = MatrixBuilder.data(csv);
-
-    // Restore original name if present
-    if (name != null && !name.isEmpty()) {
-      matrix.setMatrixName(name);
-    }
-
-    return matrix;
+    // Use existing MatrixBuilder.csvString() - fully restores name, types, and data!
+    return Matrix.builder().csvString(csv).build();
   }
 }
+```
+
+**CSV Format (from toCsvString(true, true)):**
+```csv
+#name: employeeData
+#types: int, String, BigDecimal
+id, name, score
+1, Alice, 95.5
+2, Bob, 87.3
 ```
 
 **Benefits of using typed CSV:**
 - ✅ Reuses existing, tested serialization code
 - ✅ No new parsing logic needed
-- ✅ Full type fidelity (Integer, Double, LocalDate, etc.)
+- ✅ Full type fidelity (Integer, BigDecimal, LocalDate, etc.)
+- ✅ Matrix name preserved in #name comment
+- ✅ Type information in #types comment
 - ✅ Compact and readable format
 - ✅ Already handles edge cases (nulls, quotes, etc.)
+- ✅ Single method call for serialize/deserialize
 
 #### 3. Enhance Chart Class
 
