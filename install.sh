@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -e
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 TARGET_JAVA_VERSION=21
 JAVA_SWITCH_SCRIPT="jdk${TARGET_JAVA_VERSION}"
@@ -63,22 +64,44 @@ function toWinPath {
   echo "$1" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/'
 }
 
-PREF_TARGET="${1:-$HOME/programs}"
+# Parse arguments
+GRADLE_OPTS=""
+POSITIONAL_ARGS=()
+
+for arg in "$@"; do
+  case $arg in
+    -DskipTestFx|-DskipTestFx=true)
+      GRADLE_OPTS="$GRADLE_OPTS -DskipTestFx=true"
+      ;;
+    -D*)
+      GRADLE_OPTS="$GRADLE_OPTS $arg"
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$arg")
+      ;;
+  esac
+done
+
+PREF_TARGET="${POSITIONAL_ARGS[0]:-$HOME/programs}"
 if [[ "msys" == "${OSTYPE}" ]]; then
   default_target=$(toMsysPath "$USERPROFILE/programs")
-  PREF_TARGET="${1:-$default_target}"
+  PREF_TARGET="${POSITIONAL_ARGS[0]:-$default_target}"
 fi
-PLATFORM="${2:-$(platform)}"
+PLATFORM="${POSITIONAL_ARGS[1]:-$(platform)}"
 
-echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM} "
+echo "PREF_TARGET=${PREF_TARGET}, PLATFORM=${PLATFORM}"
+if [[ -n "$GRADLE_OPTS" ]]; then
+  echo "GRADLE_OPTS=${GRADLE_OPTS}"
+fi
 
-cd "${SCRIPT_DIR}" || exit
+cd "${SCRIPT_DIR}"
 
 # dependencies are declared in the gradle build script, no need to download outside of that
 #./downloadJfxJars.sh "$PLATFORM"
 
 echo "- Building Gade"
-./gradlew clean build runtime -g ./.gradle-user || exit 1
+./gradlew clean build $GRADLE_OPTS
+./gradlew runtime -g ./.gradle-user
 
 PROPERTY_FILE=version.properties
 
@@ -92,22 +115,22 @@ LINK_DIR=$(dirname "${TARGET_DIR}")/gade
 
 if ls "$LINK_DIR"/env.* 1>/dev/null 2>&1; then
   echo "- Saving env files"
-  tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX) || exit
-  cp "$LINK_DIR"/env.* "${tmp_dir}/" || exit
+  tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
+  cp "$LINK_DIR"/env.* "${tmp_dir}/"
 fi
 
 if [[ -d "$TARGET_DIR" ]]; then
   echo "- Remove existing Gade installation"
-  rm -rf "$TARGET_DIR" || exit
+  rm -rf "$TARGET_DIR"
 fi
-mkdir -p "$TARGET_DIR" || exit
+mkdir -p "$TARGET_DIR"
 
 echo "- Copy ${PLATFORM} dist to $TARGET_DIR"
-cp -r "build/image/gade-${PLATFORM}/." "$TARGET_DIR" || exit
+cp -r "build/image/gade-${PLATFORM}/." "$TARGET_DIR"
 
 if [[ -d "${LINK_DIR}" || -L "${LINK_DIR}" ]]; then
   echo "- Remove existing dir link (or dir)"
-  rm -rf "${LINK_DIR}" || exit
+  rm -rf "${LINK_DIR}"
 fi
 echo "- Create dir link"
 if [[ "$PLATFORM" == "win" ]]; then
@@ -133,15 +156,15 @@ if [[ "$PLATFORM" == "win" ]]; then
     /mnt/c/windows/system32/cmd.exe /c "mklink /J $lnkDir $srcDir"
   fi
 else
-  chmod +x "${TARGET_DIR}"/*.sh || exit
+  chmod +x "${TARGET_DIR}"/*.sh
   echo "- creating symlink to ${TARGET_DIR} from ${LINK_DIR}"
-  ln -sf "${TARGET_DIR}" "${LINK_DIR}" || exit
+  ln -sf "${TARGET_DIR}" "${LINK_DIR}"
 fi
 
 if [[ -d "${tmp_dir}" ]]; then
   echo "- Restore env files"
-  cp "${tmp_dir}"/env.* "$TARGET_DIR"/ || exit
-  rm -rf "${tmp_dir}" || exit
+  cp "${tmp_dir}"/env.* "$TARGET_DIR"/
+  rm -rf "${tmp_dir}"
 fi
 
 if [[ "${PLATFORM}" == "mac" ]]; then

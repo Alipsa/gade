@@ -2,7 +2,7 @@ import se.alipsa.gmd.core.Gmd
 
 String text = """\
 # Some equations
-X = &sum;(&radic;2&pi; + &#8731;3)
+X = &sum;(&radic;(2&pi;) + &#8731;3)
 """.stripIndent()
 def gmd = new Gmd()
 def html = gmd.gmdToHtml(text)

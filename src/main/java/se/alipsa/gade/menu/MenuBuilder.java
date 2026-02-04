@@ -38,6 +38,7 @@ import se.alipsa.gade.runtime.RuntimeEditorDialog;
 import se.alipsa.gade.runtime.RuntimeEditorResult;
 import se.alipsa.gade.runtime.RuntimeManager;
 import se.alipsa.gade.utils.*;
+import se.alipsa.gade.utils.gradle.GradleDaemonRecovery;
 
 import java.io.File;
 import java.io.IOException;
@@ -571,8 +572,43 @@ public class MenuBuilder {
     Menu toolsMenu = new Menu("Tools");
     MenuItem globalOption = new MenuItem("Global Options");
     globalOption.setOnAction(this::handleGlobalOptions);
-    toolsMenu.getItems().add(globalOption);
+
+    MenuItem purgeGradleCache = new MenuItem("Purge Gradle Cache");
+    purgeGradleCache.setOnAction(this::handlePurgeGradleCache);
+
+    toolsMenu.getItems().addAll(globalOption, purgeGradleCache);
     return toolsMenu;
+  }
+
+  private void handlePurgeGradleCache(ActionEvent event) {
+    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+    confirm.setTitle("Purge Gradle Cache");
+    confirm.setHeaderText("This will delete all cached Gradle distributions");
+    confirm.setContentText("Corrupted Gradle distributions can cause 'Could not fetch model' or "
+        + "'Cannot locate manifest for module' errors.\n\n"
+        + "After purging, Gradle will re-download distributions as needed "
+        + "(requires internet connection).\n\n"
+        + "Continue?");
+    GuiUtils.addStyle(gui, confirm);
+
+    Optional<ButtonType> result = confirm.showAndWait();
+    if (result.isEmpty() || result.get() != ButtonType.OK) {
+      return;
+    }
+
+    gui.setWaitCursor();
+    boolean success = GradleDaemonRecovery.purgeWrapperDistributions();
+    gui.setNormalCursor();
+
+    if (success) {
+      Alerts.info("Gradle Cache Purged",
+          "Gradle wrapper distributions have been removed.\n\n"
+              + "Restart the Gradle runtime to re-download and initialize.");
+    } else {
+      Alerts.warn("Purge Incomplete",
+          "Some files could not be deleted. This may be due to running Gradle daemons.\n\n"
+              + "Try closing any terminals or IDEs using Gradle, then retry.");
+    }
   }
 
   private void handleGlobalOptions(ActionEvent actionEvent) {

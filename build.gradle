@@ -294,11 +294,19 @@ test {
     systemProperty 'com.sun.javafx.isEmbedded', 'true'
   }
 
+  // Skip TestFX tests with -DskipTestFx=true
+  // Usage: ./gradlew test -DskipTestFx=true
+  if (System.getProperty('skipTestFx', 'false') == 'true') {
+    exclude '**/GadeSmokeTest.class'
+    exclude '**/*FxTest.class'
+    exclude '**/*TestFx.class'
+  }
+
   useJUnitPlatform()
   testLogging {
     // set options for log level LIFECYCLE
     events TestLogEvent.FAILED,
-        TestLogEvent.PASSED,
+        //TestLogEvent.PASSED,
         TestLogEvent.SKIPPED,
         TestLogEvent.STANDARD_OUT
     exceptionFormat = TestExceptionFormat.FULL

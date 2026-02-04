@@ -17,6 +17,8 @@ import se.alipsa.gade.Gade;
 import java.net.URL;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import se.alipsa.gade.UnStyledCodeArea;
 
 public class Alerts {
@@ -57,6 +59,40 @@ public class Alerts {
 
     Optional<ButtonType> result = alert.showAndWait();
     return result.isPresent() && result.get() == ButtonType.YES;
+  }
+
+  /**
+   * Shows a confirmation dialog from a background thread, blocking until the user responds.
+   * Safe to call from any thread - will execute on FX Application Thread.
+   *
+   * @param title the dialog title
+   * @param content the dialog content
+   * @return true if user confirmed (clicked OK), false otherwise
+   */
+  public static boolean confirmFx(String title, String content) {
+    if (Platform.isFxApplicationThread()) {
+      return confirm(title, null, content);
+    }
+
+    AtomicBoolean result = new AtomicBoolean(false);
+    CountDownLatch latch = new CountDownLatch(1);
+
+    Platform.runLater(() -> {
+      try {
+        result.set(confirm(title, null, content));
+      } finally {
+        latch.countDown();
+      }
+    });
+
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return false;
+    }
+
+    return result.get();
   }
   public static Optional<ButtonType> showAlert(String title, String content, Alert.AlertType information) {
 

@@ -14,8 +14,10 @@ import se.alipsa.gade.runtime.RuntimeProcessRunner;
 import se.alipsa.gade.runtime.RuntimeSelectionDialog;
 import se.alipsa.gade.runtime.RuntimeType;
 import se.alipsa.gade.runner.GadeRunnerMain;
+import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
+import se.alipsa.gade.utils.gradle.GradleDaemonRecovery;
 import se.alipsa.gi.GuiInteraction;
 
 import java.io.File;
@@ -26,6 +28,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Manages Groovy runtime lifecycle including classloader setup, engine initialization,
@@ -104,6 +107,7 @@ final class GroovyRuntimeManager {
   Void resetClassloaderAndGroovy(RuntimeConfig runtime, boolean testContext, ConsoleTextArea console) throws Exception {
     RuntimeConfig targetRuntime = runtime;
     boolean retriedWithGade = false;
+    boolean corruptionFixAttempted = false;
     while (true) {
       try {
         if (gui.getInoutComponent() == null) {
@@ -138,6 +142,52 @@ final class GroovyRuntimeManager {
 
       } catch (Exception ex) {
         if (!RuntimeType.GADE.equals(targetRuntime.getType()) && !retriedWithGade) {
+          // Check for corrupted Gradle distributions (both wrapper and embedded)
+          // Only attempt corruption fix once to avoid infinite retry loops
+          if (RuntimeType.GRADLE.equals(targetRuntime.getType()) && !corruptionFixAttempted) {
+            corruptionFixAttempted = true;
+            // Embedded Gradle version from Tooling API (matches gradle-tooling-api dependency)
+            String embeddedVersion = "9.3.1";
+            List<GradleDaemonRecovery.CorruptedDistribution> corrupted =
+                GradleDaemonRecovery.findAllCorruptedDistributions(gui.getProjectDir(), embeddedVersion);
+
+            if (!corrupted.isEmpty()) {
+              String distNames = corrupted.stream()
+                  .map(GradleDaemonRecovery.CorruptedDistribution::name)
+                  .collect(Collectors.joining(", "));
+              String reasons = corrupted.stream()
+                  .map(d -> "  - " + d.name() + ": " + d.reason())
+                  .collect(Collectors.joining("\n"));
+
+              log.warn("Detected {} corrupted Gradle distribution(s): {}", corrupted.size(), distNames);
+
+              boolean userConfirmed = Alerts.confirmFx("Corrupted Gradle Distribution(s)",
+                  "The following Gradle distribution(s) appear to be corrupted:\n\n"
+                      + reasons + "\n\n"
+                      + "Would you like to delete them and retry?\n"
+                      + "(The distributions will be re-downloaded)");
+
+              if (userConfirmed) {
+                boolean allDeleted = true;
+                for (GradleDaemonRecovery.CorruptedDistribution dist : corrupted) {
+                  boolean deleted = GradleDaemonRecovery.deleteCorruptedDistribution(dist);
+                  if (deleted) {
+                    console.appendFx("Deleted corrupted distribution: " + dist.name(), true);
+                  } else {
+                    console.appendWarningFx("Failed to delete: " + dist.name());
+                    allDeleted = false;
+                  }
+                }
+                if (allDeleted) {
+                  continue; // Retry with the same runtime after deletion
+                } else {
+                  console.appendWarningFx("Some distributions could not be deleted. "
+                      + "Try Tools > Purge Gradle Cache manually.");
+                }
+              }
+            }
+          }
+
           retriedWithGade = true;
           log.warn("Failed to initialize runtime {}, falling back to Gade runtime: {}",
               targetRuntime.getName(), ex.toString());

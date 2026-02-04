@@ -9,7 +9,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 
 /**
  * Handles Gradle daemon corruption detection and recovery.
@@ -25,7 +32,7 @@ import java.util.stream.Stream;
  *
  * @see GradleUtils
  */
-final class GradleDaemonRecovery {
+public final class GradleDaemonRecovery {
 
   private static final Logger log = LogManager.getLogger(GradleDaemonRecovery.class);
 
@@ -45,6 +52,304 @@ final class GradleDaemonRecovery {
     this.projectDir = projectDir;
     this.projectLocalGradleUserHome = projectLocalGradleUserHome;
     this.configManager = configManager;
+  }
+
+  /**
+   * Represents a corrupted Gradle distribution found in the cache.
+   */
+  public record CorruptedDistribution(String name, File directory, File zipFile, String reason) {}
+
+  /**
+   * Extracts the distribution URL from an error message.
+   *
+   * @param throwable the exception to analyze
+   * @return the distribution URL if found, empty otherwise
+   */
+  public static Optional<String> extractDistributionUrl(Throwable throwable) {
+    Pattern pattern = Pattern.compile("Gradle distribution '(https?://[^']+)'");
+    Throwable t = throwable;
+    while (t != null) {
+      String msg = t.getMessage();
+      if (msg != null) {
+        Matcher matcher = pattern.matcher(msg);
+        if (matcher.find()) {
+          return Optional.of(matcher.group(1));
+        }
+      }
+      t = t.getCause();
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Finds a corrupted distribution based on the error message.
+   *
+   * @param throwable the exception from Gradle
+   * @return the corrupted distribution if found, empty otherwise
+   */
+  public static Optional<CorruptedDistribution> findCorruptedDistribution(Throwable throwable) {
+    Optional<String> urlOpt = extractDistributionUrl(throwable);
+    if (urlOpt.isEmpty()) {
+      return Optional.empty();
+    }
+
+    String url = urlOpt.get();
+    // Extract distribution name from URL (e.g., gradle-8.13-all from gradle-8.13-all.zip)
+    String fileName = url.substring(url.lastIndexOf('/') + 1);
+    String distName = fileName.replace(".zip", "");
+
+    return findCorruptedDistributionByName(distName, isDaemonOrCacheCorruption(throwable));
+  }
+
+  /**
+   * Finds a corrupted distribution by name.
+   *
+   * @param distName the distribution name (e.g., "gradle-8.13-all")
+   * @param assumeCorruptIfExists if true, assume corruption even if no obvious signs
+   * @return the corrupted distribution if found, empty otherwise
+   */
+  private static Optional<CorruptedDistribution> findCorruptedDistributionByName(String distName, boolean assumeCorruptIfExists) {
+    File wrapperDists = new File(FileUtils.getUserHome(), ".gradle/wrapper/dists");
+    if (!wrapperDists.exists()) {
+      return Optional.empty();
+    }
+
+    // Look for the distribution directory
+    File distDir = new File(wrapperDists, distName);
+    if (!distDir.exists() || !distDir.isDirectory()) {
+      return Optional.empty();
+    }
+
+    // Find subdirectories (Gradle uses hash subdirectories)
+    File[] hashDirs = distDir.listFiles(File::isDirectory);
+    if (hashDirs == null || hashDirs.length == 0) {
+      return Optional.of(new CorruptedDistribution(distName, distDir, null, "Empty distribution directory"));
+    }
+
+    // Check each hash directory for a corrupted zip or incomplete extraction
+    for (File hashDir : hashDirs) {
+      File[] zipFiles = hashDir.listFiles((dir, name) -> name.endsWith(".zip"));
+      if (zipFiles != null && zipFiles.length > 0) {
+        for (File zipFile : zipFiles) {
+          String corruptReason = checkZipCorruption(zipFile);
+          if (corruptReason != null) {
+            return Optional.of(new CorruptedDistribution(distName, hashDir, zipFile, corruptReason));
+          }
+        }
+      }
+
+      // Check for incomplete extraction (missing essential files)
+      File[] extractedDirs = hashDir.listFiles(f -> f.isDirectory() && f.getName().startsWith("gradle-"));
+      if (extractedDirs != null && extractedDirs.length > 0) {
+        for (File extractedDir : extractedDirs) {
+          File libDir = new File(extractedDir, "lib");
+          if (!libDir.exists() || !new File(libDir, "gradle-core-api-" + extractedDir.getName().replace("gradle-", "") + ".jar").exists()) {
+            // Check for any gradle-core jar
+            File[] coreJars = libDir.listFiles((dir, name) -> name.startsWith("gradle-core"));
+            if (coreJars == null || coreJars.length == 0) {
+              return Optional.of(new CorruptedDistribution(distName, hashDir, null, "Incomplete extraction - missing gradle-core"));
+            }
+          }
+        }
+      }
+    }
+
+    // If we got here with a corruption error but didn't find obvious corruption,
+    // the distribution is likely corrupted in a way we can't easily detect
+    if (assumeCorruptIfExists) {
+      return Optional.of(new CorruptedDistribution(distName, hashDirs[0], null, "Distribution initialization failed"));
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Finds all potentially corrupted distributions for a project.
+   * This checks both the wrapper distribution (if specified) and the embedded distribution.
+   *
+   * @param projectDir the project directory to check for wrapper configuration
+   * @param embeddedVersion the embedded Gradle version (from Tooling API)
+   * @return list of corrupted distributions found
+   */
+  public static List<CorruptedDistribution> findAllCorruptedDistributions(File projectDir, String embeddedVersion) {
+    List<CorruptedDistribution> corrupted = new ArrayList<>();
+
+    // Check wrapper distribution if project has one
+    File wrapperProps = new File(projectDir, "gradle/wrapper/gradle-wrapper.properties");
+    if (wrapperProps.exists()) {
+      try {
+        java.util.Properties props = new java.util.Properties();
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(wrapperProps)) {
+          props.load(fis);
+        }
+        String distUrl = props.getProperty("distributionUrl");
+        if (distUrl != null) {
+          // Extract distribution name from URL
+          String fileName = distUrl.substring(distUrl.lastIndexOf('/') + 1);
+          String distName = fileName.replace(".zip", "").replace("\\:", ":");
+          // Clean up any URL encoding
+          distName = distName.replace("%2F", "/");
+          if (distName.contains("/")) {
+            distName = distName.substring(distName.lastIndexOf('/') + 1);
+          }
+          findCorruptedDistributionByName(distName, true).ifPresent(corrupted::add);
+        }
+      } catch (IOException e) {
+        log.debug("Failed to read wrapper properties", e);
+      }
+    }
+
+    // Check embedded distribution
+    if (embeddedVersion != null && !embeddedVersion.isEmpty()) {
+      String embeddedDistName = "gradle-" + embeddedVersion + "-bin";
+      findCorruptedDistributionByName(embeddedDistName, true).ifPresent(dist -> {
+        // Avoid duplicates
+        if (corrupted.stream().noneMatch(c -> c.name().equals(dist.name()))) {
+          corrupted.add(dist);
+        }
+      });
+    }
+
+    return corrupted;
+  }
+
+  /**
+   * Checks if a zip file is corrupted.
+   *
+   * @param zipFile the zip file to check
+   * @return a reason string if corrupted, null if valid
+   */
+  public static String checkZipCorruption(File zipFile) {
+    if (!zipFile.exists()) {
+      return "File does not exist";
+    }
+    if (zipFile.length() == 0) {
+      return "File is empty (0 bytes)";
+    }
+    // Check for incomplete download (presence of .part or .lck files)
+    File partFile = new File(zipFile.getParent(), zipFile.getName() + ".part");
+    File lckFile = new File(zipFile.getParent(), zipFile.getName() + ".lck");
+    if (partFile.exists() || lckFile.exists()) {
+      return "Download appears incomplete (.part or .lck file present)";
+    }
+
+    // Try to read the zip to verify it's valid
+    try (ZipFile zip = new ZipFile(zipFile)) {
+      // Just opening it validates the basic structure
+      // Check it has some entries
+      if (zip.size() == 0) {
+        return "Zip file is empty (no entries)";
+      }
+    } catch (ZipException e) {
+      return "Invalid zip format: " + e.getMessage();
+    } catch (IOException e) {
+      return "Cannot read zip file: " + e.getMessage();
+    }
+
+    return null; // No corruption detected
+  }
+
+  /**
+   * Deletes a specific corrupted distribution.
+   * Deletes the entire distribution directory (e.g., gradle-8.13-all/) to ensure
+   * Gradle will perform a fresh download.
+   *
+   * @param distribution the distribution to delete
+   * @return true if deletion was successful
+   */
+  public static boolean deleteCorruptedDistribution(CorruptedDistribution distribution) {
+    if (distribution.directory() == null || !distribution.directory().exists()) {
+      return true;
+    }
+
+    // Find the distribution's root directory (e.g., gradle-8.13-all/)
+    // The distribution.directory() might be a hash subdirectory
+    File wrapperDists = new File(FileUtils.getUserHome(), ".gradle/wrapper/dists");
+    File distRootDir = new File(wrapperDists, distribution.name());
+
+    if (!distRootDir.exists()) {
+      // Fall back to the directory in the record
+      distRootDir = distribution.directory();
+    }
+
+    log.info("Deleting corrupted distribution {} at {}", distribution.name(), distRootDir);
+
+    // Stop daemons first to release file locks
+    stopAllDaemons(new File(FileUtils.getUserHome(), ".gradle"));
+
+    // Delete the entire distribution directory for a clean re-download
+    final File targetDir = distRootDir;
+    try (Stream<Path> walker = Files.walk(targetDir.toPath())) {
+      walker.sorted((a, b) -> b.compareTo(a))
+          .forEach(path -> {
+            try {
+              Files.deleteIfExists(path);
+            } catch (IOException ex) {
+              log.debug("Failed to delete {}", path, ex);
+            }
+          });
+      log.info("Successfully deleted corrupted distribution {}", distribution.name());
+
+      // Also clear version-specific caches that might prevent re-download
+      clearVersionCaches(distribution.name());
+
+      return true;
+    } catch (IOException e) {
+      log.warn("Failed to delete corrupted distribution {}", distribution.name(), e);
+      return false;
+    }
+  }
+
+  /**
+   * Clears version-specific caches for a distribution.
+   * This helps ensure Gradle will perform a clean re-download.
+   *
+   * @param distributionName the distribution name (e.g., "gradle-8.13-all")
+   */
+  private static void clearVersionCaches(String distributionName) {
+    // Extract version number from distribution name (e.g., "8.13" from "gradle-8.13-all")
+    String version = distributionName.replace("gradle-", "").replaceAll("-(all|bin)$", "");
+    File cachesDir = new File(FileUtils.getUserHome(), ".gradle/caches");
+
+    if (!cachesDir.exists()) {
+      return;
+    }
+
+    // Clear version-specific caches
+    File[] versionDirs = cachesDir.listFiles(f -> f.isDirectory() && f.getName().startsWith(version));
+    if (versionDirs != null) {
+      for (File versionDir : versionDirs) {
+        log.debug("Clearing cache directory {}", versionDir);
+        try (Stream<Path> walker = Files.walk(versionDir.toPath())) {
+          walker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
+            try {
+              Files.deleteIfExists(path);
+            } catch (IOException ex) {
+              log.debug("Failed to delete {}", path, ex);
+            }
+          });
+        } catch (IOException e) {
+          log.debug("Failed to clear cache directory {}", versionDir, e);
+        }
+      }
+    }
+
+    // Also clear modules-2/files-2.1 metadata that might reference the distribution
+    File modulesDir = new File(cachesDir, "modules-2/metadata-" + version);
+    if (modulesDir.exists()) {
+      log.debug("Clearing modules metadata {}", modulesDir);
+      try (Stream<Path> walker = Files.walk(modulesDir.toPath())) {
+        walker.sorted((a, b) -> b.compareTo(a)).forEach(path -> {
+          try {
+            Files.deleteIfExists(path);
+          } catch (IOException ex) {
+            log.debug("Failed to delete {}", path, ex);
+          }
+        });
+      } catch (IOException e) {
+        log.debug("Failed to clear modules metadata {}", modulesDir, e);
+      }
+    }
   }
 
   /**
@@ -264,6 +569,89 @@ final class GradleDaemonRecovery {
       }
     }
 
+    return null;
+  }
+
+  /**
+   * Purges corrupted wrapper distributions from the Gradle user home.
+   * <p>
+   * This method removes all cached Gradle distributions from ~/.gradle/wrapper/dists/
+   * which can become corrupted during interrupted downloads or other failures.
+   * After purging, Gradle will re-download distributions as needed.
+   *
+   * @return true if the purge was successful or cache was empty
+   */
+  public static boolean purgeWrapperDistributions() {
+    File gradleHome = new File(FileUtils.getUserHome(), ".gradle");
+    File wrapperDists = new File(gradleHome, "wrapper/dists");
+
+    if (!wrapperDists.exists()) {
+      log.info("No wrapper distributions cache found at {}", wrapperDists);
+      return true;
+    }
+
+    log.info("Purging Gradle wrapper distributions at {}", wrapperDists);
+
+    // Stop daemons first to release any locks
+    stopAllDaemons(gradleHome);
+
+    try (Stream<Path> walker = Files.walk(wrapperDists.toPath())) {
+      walker.sorted((a, b) -> b.compareTo(a))
+          .filter(path -> !path.equals(wrapperDists.toPath()))
+          .forEach(path -> {
+            try {
+              Files.deleteIfExists(path);
+            } catch (IOException ex) {
+              log.debug("Failed to delete {}", path, ex);
+            }
+          });
+      log.info("Successfully purged Gradle wrapper distributions");
+      return true;
+    } catch (IOException e) {
+      log.warn("Failed to purge wrapper distributions at {}", wrapperDists, e);
+      return false;
+    }
+  }
+
+  private static void stopAllDaemons(File gradleHome) {
+    // Try to stop daemons using any gradle wrapper or system gradle
+    String gradleCommand = findSystemGradle();
+    if (gradleCommand == null) {
+      log.debug("No system gradle found, skipping daemon stop");
+      return;
+    }
+    try {
+      ProcessBuilder pb = new ProcessBuilder(gradleCommand, "--stop");
+      pb.directory(gradleHome);
+      Process process = pb.start();
+      int exitCode = process.waitFor();
+      if (exitCode == 0) {
+        log.info("Successfully stopped Gradle daemons");
+      } else {
+        log.debug("Gradle --stop exited with code {}", exitCode);
+      }
+    } catch (Exception e) {
+      log.debug("Failed to stop Gradle daemons", e);
+    }
+  }
+
+  private static String findSystemGradle() {
+    String gradleHome = System.getenv("GRADLE_HOME");
+    if (gradleHome != null) {
+      File gradle = new File(gradleHome, "bin/gradle");
+      if (gradle.exists()) {
+        return gradle.getAbsolutePath();
+      }
+    }
+    String path = System.getenv("PATH");
+    if (path != null) {
+      for (String dir : path.split(File.pathSeparator)) {
+        File gradle = new File(dir, "gradle");
+        if (gradle.exists() && gradle.canExecute()) {
+          return gradle.getAbsolutePath();
+        }
+      }
+    }
     return null;
   }
 
