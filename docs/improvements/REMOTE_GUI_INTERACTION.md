@@ -169,6 +169,49 @@ All serialization logic lives in Gade - no changes to gi-console or matrix libra
 - String, Integer, Boolean, null: Pass through as-is
 - No serialization needed
 
+### Handling Type-Specific Method Overloads
+
+**Challenge:** InOut has many type-specific overloads like `display(Chart chart)`, `display(XChart xchart)`, etc.
+
+**Solution:** Convert to generic types before serializing (mirrors what real InOut does internally):
+
+```java
+// Type-specific overloads in RemoteInOut
+@Override
+public void display(Chart chart, String... title) {
+    // Convert Chart → JavaFX Node (same as real InOut)
+    Node node = Plot.jfx(chart);
+    display(node, title);  // Delegate to generic overload
+}
+
+@Override
+public void display(org.knowm.xchart.internal.chartpart.Chart xchart, String... title) {
+    // Convert XChart → BufferedImage
+    BufferedImage image = BitmapEncoder.getBufferedImage(xchart);
+    display(image, title);  // Delegate to Image overload
+}
+
+@Override
+public void display(Node node, String... title) {
+    // Generic Node handler - serialize as PNG
+    sendGuiRequest("display", serializeNode(node), title);
+}
+
+@Override
+public void display(Image image, String... title) {
+    // Generic Image handler - serialize as PNG
+    sendGuiRequest("display", serializeImage(image), title);
+}
+```
+
+**Benefits:**
+- All chart types → PNG images (simple, works everywhere)
+- Reuses existing conversion logic (Plot.jfx, BitmapEncoder)
+- No need to add serialization to chart libraries
+- Consistent serialization format
+
+**Trade-off:** Charts are rendered to images, losing interactivity. This is acceptable for remote runtimes since the GUI is in a different process anyway.
+
 ### Implementation Classes
 
 #### ArgumentSerializer (Gade)
