@@ -142,9 +142,10 @@ final class GroovyRuntimeManager {
 
       } catch (Exception ex) {
         if (!RuntimeType.GADE.equals(targetRuntime.getType()) && !retriedWithGade) {
-          // Check for corrupted Gradle distributions (both wrapper and embedded)
+          // Check for corrupted Gradle distributions ONLY if the error indicates corruption
           // Only attempt corruption fix once to avoid infinite retry loops
-          if (RuntimeType.GRADLE.equals(targetRuntime.getType()) && !corruptionFixAttempted) {
+          if (RuntimeType.GRADLE.equals(targetRuntime.getType()) && !corruptionFixAttempted
+              && GradleDaemonRecovery.isDaemonOrCacheCorruption(ex)) {
             corruptionFixAttempted = true;
             // Embedded Gradle version from Tooling API (matches gradle-tooling-api dependency)
             String embeddedVersion = "9.3.1";

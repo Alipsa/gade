@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
  * - Prompts return defaults
  * - Display methods are no-ops or save to file
  */
-public class HeadlessInOut extends se.alipsa.gi.txt.InOut {
+public class HeadlessInOut extends se.alipsa.gi.console.InOut {
 
   private static final Logger log = LogManager.getLogger(HeadlessInOut.class);
 

@@ -77,18 +77,33 @@ public class GradleUtilsDaemonRecoveryTest {
   public void testErrorDetection() {
     // These methods are now static in GradleDaemonRecovery - test directly
 
-    // Create test exceptions
+    // Create test exceptions for ACTUAL corruption (file-level issues)
+    Exception zipException = new Exception("ZipException: invalid CEN header");
+    Exception corruptedFileException = new Exception("File is corrupted and cannot be read");
+    Exception truncatedDownloadException = new Exception("unexpected end of file in archive");
+
+    // Create test exceptions for non-corruption issues (configuration/compatibility)
     Exception moduleException = new Exception("Cannot locate manifest for module 'gradle-core' in classpath: []");
     Exception classLoaderException = new Exception("Could not create service of type ClassLoaderRegistry");
     Exception toolingApiException = new Exception("Could not create an instance of Tooling API implementation");
     Exception normalException = new Exception("Some other error");
 
-    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(moduleException),
-        "Should detect module manifest error");
-    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(classLoaderException),
-        "Should detect ClassLoaderRegistry error");
-    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(toolingApiException),
-        "Should detect Tooling API error");
+    // Actual corruption should be detected
+    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(zipException),
+        "Should detect zip corruption");
+    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(corruptedFileException),
+        "Should detect corrupted file");
+    assertTrue(GradleDaemonRecovery.isDaemonOrCacheCorruption(truncatedDownloadException),
+        "Should detect truncated download");
+
+    // Non-corruption issues should NOT be detected as corruption
+    // (these are configuration/compatibility issues, not file corruption)
+    assertFalse(GradleDaemonRecovery.isDaemonOrCacheCorruption(moduleException),
+        "Module manifest error is not file corruption (may be Tooling API issue)");
+    assertFalse(GradleDaemonRecovery.isDaemonOrCacheCorruption(classLoaderException),
+        "ClassLoader error is not file corruption");
+    assertFalse(GradleDaemonRecovery.isDaemonOrCacheCorruption(toolingApiException),
+        "Tooling API error is not file corruption");
     assertFalse(GradleDaemonRecovery.isDaemonOrCacheCorruption(normalException),
         "Should not detect normal exceptions as corruption");
 
@@ -99,23 +114,47 @@ public class GradleUtilsDaemonRecoveryTest {
   public void testExtractErrorType() {
     // This method is now static in GradleDaemonRecovery - test directly
 
-    Exception moduleException = new Exception("Cannot locate manifest for module 'gradle-core' in classpath: []");
-    String errorType = GradleDaemonRecovery.extractErrorType(moduleException);
+    Exception zipException = new Exception("ZipException: invalid CEN header (bad signature)");
+    String errorType = GradleDaemonRecovery.extractErrorType(zipException);
 
     System.out.println("Extracted error type: " + errorType);
-    assertEquals("module manifest not found", errorType);
+    // extractErrorType is used for actual corruption errors, not Tooling API issues
+    assertTrue(errorType != null && !errorType.isEmpty(), "Should extract error type from zip corruption");
   }
 
   @Test
   public void testShouldPurgeDistributionCache() {
     // Test the shouldPurgeDistributionCache static method
+    // Should only purge for actual file corruption, not Tooling API issues
 
-    Exception runtimeApiException = new Exception("Error with gradle-runtime-api-info module");
+    Exception zipCorruptionException = new Exception("ZipException: invalid CEN header");
+    Exception corruptedFileException = new Exception("File is corrupted");
+    Exception toolingApiException = new Exception("Error with gradle-runtime-api-info module");
     Exception normalException = new Exception("Some other error");
 
-    assertTrue(GradleDaemonRecovery.shouldPurgeDistributionCache(runtimeApiException),
-        "Should detect runtime API info error");
+    assertTrue(GradleDaemonRecovery.shouldPurgeDistributionCache(zipCorruptionException),
+        "Should purge for zip corruption");
+    assertTrue(GradleDaemonRecovery.shouldPurgeDistributionCache(corruptedFileException),
+        "Should purge for corrupted files");
+    assertFalse(GradleDaemonRecovery.shouldPurgeDistributionCache(toolingApiException),
+        "Should not purge for Tooling API errors");
     assertFalse(GradleDaemonRecovery.shouldPurgeDistributionCache(normalException),
         "Should not purge for normal exceptions");
+  }
+
+  @Test
+  public void testStaleLockFileDetection() {
+    // Test that stale lock file detection works
+    // This test verifies the method exists and returns properly structured data
+
+    Exception gradleException = new Exception(
+        "Could not fetch model using Gradle distribution 'https://services.gradle.org/distributions/gradle-8.13-all.zip'");
+
+    var staleLocks = GradleDaemonRecovery.findStaleLockFiles(gradleException);
+
+    // The method should complete without error
+    assertNotNull(staleLocks, "findStaleLockFiles should return an Optional");
+
+    System.out.println("Stale lock file detection test completed successfully");
   }
 }

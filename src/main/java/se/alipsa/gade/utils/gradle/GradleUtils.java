@@ -17,6 +17,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.console.WarningAppenderWriter;
+import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ClasspathCacheManager;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.groovy.resolver.Dependency;
@@ -28,6 +29,7 @@ import java.net.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -97,11 +99,17 @@ public class GradleUtils {
     boolean cachePurged = false;
     boolean triedDefaultUserHome = false;
     boolean daemonCacheCleared = false;
+    boolean lockFilesChecked = false;
     while (true) {
       try (ProjectConnection connection = connect()) {
         return action.apply(connection);
       } catch (GradleConnectionException e) {
         last = e;
+        // Log detailed error information to help diagnose Tooling API issues
+        log.debug("Gradle connection failed: {}", e.getMessage());
+        if (e.getCause() != null) {
+          log.debug("Root cause: {}", e.getCause().getMessage(), e.getCause());
+        }
         if (!triedDefaultUserHome && trySwitchToDefaultUserHome(e)) {
           triedDefaultUserHome = true;
           continue;
@@ -114,7 +122,55 @@ public class GradleUtils {
           distributionManager.applyCurrentDistribution();
           continue;
         }
+        // Check for stale lock files before checking for full corruption
+        if (!lockFilesChecked) {
+          lockFilesChecked = true;
+          Optional<GradleDaemonRecovery.StaleLockFiles> staleLocks =
+              GradleDaemonRecovery.findStaleLockFiles(e);
+          if (staleLocks.isPresent()) {
+            String lockFileList = staleLocks.get().lockFiles().stream()
+                .map(File::getName)
+                .collect(Collectors.joining(", "));
+            log.warn("Found stale lock files for {}: {}", staleLocks.get().distributionName(), lockFileList);
+
+            boolean userConfirmed = Alerts.confirmFx(
+                "Stale Lock Files Detected",
+                "Found stale lock files blocking Gradle distribution '" + staleLocks.get().distributionName() + "':\n\n" +
+                lockFileList + "\n\n" +
+                "These lock files may be left over from an interrupted download.\n" +
+                "Would you like to delete them and retry?\n\n" +
+                "(The distribution itself appears to be complete and intact)"
+            );
+
+            if (userConfirmed) {
+              boolean deleted = GradleDaemonRecovery.deleteStaleLockFiles(staleLocks.get());
+              if (deleted) {
+                log.info("Deleted all stale lock files, retrying connection");
+                distributionManager.applyCurrentDistribution();
+                continue;
+              } else {
+                log.warn("Failed to delete some lock files");
+              }
+            }
+          }
+        }
         if (!cachePurged && GradleDaemonRecovery.shouldPurgeDistributionCache(e)) {
+          // Try to find and delete the specific corrupted distribution
+          Optional<GradleDaemonRecovery.CorruptedDistribution> corruptedDist =
+              GradleDaemonRecovery.findCorruptedDistribution(e);
+          if (corruptedDist.isPresent()) {
+            log.warn("Found corrupted distribution: {} - {}", corruptedDist.get().name(), corruptedDist.get().reason());
+            boolean deleted = GradleDaemonRecovery.deleteCorruptedDistribution(corruptedDist.get());
+            if (deleted) {
+              log.info("Deleted corrupted distribution, will retry with fresh download");
+              cachePurged = true;
+              distributionManager.applyCurrentDistribution();
+              continue;
+            } else {
+              log.warn("Failed to delete corrupted distribution, attempting full purge");
+            }
+          }
+          // Fallback to purging project-local Gradle user home if applicable
           daemonRecovery.purgeGradleUserHomeCache(distributionManager);
           cachePurged = true;
           distributionManager.applyCurrentDistribution();
@@ -122,6 +178,15 @@ public class GradleUtils {
         }
         if (distributionManager.tryNextDistribution()) {
           continue;
+        }
+        // Log the full exception chain before throwing
+        log.error("All Gradle distribution attempts failed. Last error:", last);
+        Throwable cause = last.getCause();
+        int depth = 1;
+        while (cause != null && depth < 10) {
+          log.error("  Caused by [{}]: {}", depth, cause.getMessage());
+          cause = cause.getCause();
+          depth++;
         }
         throw last;
       }

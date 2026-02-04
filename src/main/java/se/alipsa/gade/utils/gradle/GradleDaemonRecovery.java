@@ -60,6 +60,11 @@ public final class GradleDaemonRecovery {
   public record CorruptedDistribution(String name, File directory, File zipFile, String reason) {}
 
   /**
+   * Represents stale lock files blocking a Gradle distribution.
+   */
+  public record StaleLockFiles(String distributionName, List<File> lockFiles) {}
+
+  /**
    * Extracts the distribution URL from an error message.
    *
    * @param throwable the exception to analyze
@@ -98,7 +103,10 @@ public final class GradleDaemonRecovery {
     String fileName = url.substring(url.lastIndexOf('/') + 1);
     String distName = fileName.replace(".zip", "");
 
-    return findCorruptedDistributionByName(distName, isDaemonOrCacheCorruption(throwable));
+    // For UnknownModuleException, assume distribution is corrupt even if we can't detect why
+    // (the files may be there but Gradle can't load them properly)
+    boolean assumeCorrupt = isDaemonOrCacheCorruption(throwable);
+    return findCorruptedDistributionByName(distName, assumeCorrupt);
   }
 
   /**
@@ -169,7 +177,7 @@ public final class GradleDaemonRecovery {
    *
    * @param projectDir the project directory to check for wrapper configuration
    * @param embeddedVersion the embedded Gradle version (from Tooling API)
-   * @return list of corrupted distributions found
+   * @return list of corrupted distributions found (only those with actual corruption evidence)
    */
   public static List<CorruptedDistribution> findAllCorruptedDistributions(File projectDir, String embeddedVersion) {
     List<CorruptedDistribution> corrupted = new ArrayList<>();
@@ -192,17 +200,19 @@ public final class GradleDaemonRecovery {
           if (distName.contains("/")) {
             distName = distName.substring(distName.lastIndexOf('/') + 1);
           }
-          findCorruptedDistributionByName(distName, true).ifPresent(corrupted::add);
+          // Only report distributions with actual corruption evidence (not assumptions)
+          findCorruptedDistributionByName(distName, false).ifPresent(corrupted::add);
         }
       } catch (IOException e) {
         log.debug("Failed to read wrapper properties", e);
       }
     }
 
-    // Check embedded distribution
-    if (embeddedVersion != null && !embeddedVersion.isEmpty()) {
+    // Only check embedded distribution if project doesn't have a wrapper
+    // (otherwise we might delete unrelated distributions)
+    if (!wrapperProps.exists() && embeddedVersion != null && !embeddedVersion.isEmpty()) {
       String embeddedDistName = "gradle-" + embeddedVersion + "-bin";
-      findCorruptedDistributionByName(embeddedDistName, true).ifPresent(dist -> {
+      findCorruptedDistributionByName(embeddedDistName, false).ifPresent(dist -> {
         // Avoid duplicates
         if (corrupted.stream().noneMatch(c -> c.name().equals(dist.name()))) {
           corrupted.add(dist);
@@ -211,6 +221,99 @@ public final class GradleDaemonRecovery {
     }
 
     return corrupted;
+  }
+
+  /**
+   * Finds stale lock files for a distribution based on the error.
+   *
+   * @param throwable the exception from Gradle
+   * @return the stale lock files if found, empty otherwise
+   */
+  public static Optional<StaleLockFiles> findStaleLockFiles(Throwable throwable) {
+    Optional<String> urlOpt = extractDistributionUrl(throwable);
+    if (urlOpt.isEmpty()) {
+      return Optional.empty();
+    }
+
+    String url = urlOpt.get();
+    // Extract distribution name from URL
+    String fileName = url.substring(url.lastIndexOf('/') + 1);
+    String distName = fileName.replace(".zip", "");
+
+    return findStaleLockFilesByName(distName);
+  }
+
+  /**
+   * Finds stale lock files for a distribution by name.
+   *
+   * @param distName the distribution name (e.g., "gradle-8.13-all")
+   * @return the stale lock files if found, empty otherwise
+   */
+  private static Optional<StaleLockFiles> findStaleLockFilesByName(String distName) {
+    File wrapperDists = new File(FileUtils.getUserHome(), ".gradle/wrapper/dists");
+    if (!wrapperDists.exists()) {
+      return Optional.empty();
+    }
+
+    File distDir = new File(wrapperDists, distName);
+    if (!distDir.exists() || !distDir.isDirectory()) {
+      return Optional.empty();
+    }
+
+    // Look for lock files in hash subdirectories
+    File[] hashDirs = distDir.listFiles(File::isDirectory);
+    if (hashDirs == null || hashDirs.length == 0) {
+      return Optional.empty();
+    }
+
+    List<File> staleLockFiles = new ArrayList<>();
+    for (File hashDir : hashDirs) {
+      // Check for .lck files
+      File[] lockFiles = hashDir.listFiles((dir, name) -> name.endsWith(".lck"));
+      if (lockFiles != null && lockFiles.length > 0) {
+        // Check if the distribution is fully extracted (has .ok file)
+        File okFile = new File(hashDir, distName + ".zip.ok");
+        if (okFile.exists()) {
+          // Distribution is complete but lock files remain - these are stale
+          for (File lockFile : lockFiles) {
+            staleLockFiles.add(lockFile);
+          }
+        }
+      }
+    }
+
+    if (!staleLockFiles.isEmpty()) {
+      return Optional.of(new StaleLockFiles(distName, staleLockFiles));
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Deletes stale lock files.
+   *
+   * @param staleLocks the stale lock files to delete
+   * @return true if all lock files were successfully deleted
+   */
+  public static boolean deleteStaleLockFiles(StaleLockFiles staleLocks) {
+    boolean allDeleted = true;
+    for (File lockFile : staleLocks.lockFiles()) {
+      try {
+        if (lockFile.exists()) {
+          boolean deleted = lockFile.delete();
+          if (deleted) {
+            log.info("Deleted stale lock file: {}", lockFile.getAbsolutePath());
+          } else {
+            log.warn("Failed to delete stale lock file: {}", lockFile.getAbsolutePath());
+            allDeleted = false;
+          }
+        }
+      } catch (Exception e) {
+        log.warn("Error deleting stale lock file: {}", lockFile.getAbsolutePath(), e);
+        allDeleted = false;
+      }
+    }
+    return allDeleted;
   }
 
   /**
@@ -354,28 +457,35 @@ public final class GradleDaemonRecovery {
 
   /**
    * Checks if the given throwable indicates daemon or cache corruption.
+   * Only returns true for actual file corruption, not configuration/compatibility issues.
    *
    * @param throwable the exception to analyze
    * @return true if the error indicates daemon or cache corruption
    */
-  static boolean isDaemonOrCacheCorruption(Throwable throwable) {
+  public static boolean isDaemonOrCacheCorruption(Throwable throwable) {
     Throwable t = throwable;
     while (t != null) {
       String msg = t.getMessage();
       if (msg != null) {
-        // Common daemon/cache corruption indicators
-        if (msg.contains("Cannot locate manifest for module")) {
+        // Only trigger on actual file corruption indicators
+        if (msg.contains("ZipException") || msg.contains("error in opening zip file")) {
           return true;
         }
-        if (msg.contains("Could not create service of type ClassLoaderRegistry")) {
+        if (msg.contains("corrupted") || msg.contains("Corrupted")) {
           return true;
         }
-        if (msg.contains("Could not create an instance of Tooling API implementation")) {
+        if (msg.contains("invalid CEN header") || msg.contains("invalid LOC header")) {
+          return true;
+        }
+        if (msg.contains("unexpected end of file") || msg.contains("premature end of GZIP")) {
+          return true;
+        }
+        if (msg.contains("truncated") || msg.contains("incomplete download")) {
           return true;
         }
       }
       String className = t.getClass().getName();
-      if (className.contains("UnknownModuleException")) {
+      if (className.contains("ZipException")) {
         return true;
       }
       t = t.getCause();
@@ -385,6 +495,7 @@ public final class GradleDaemonRecovery {
 
   /**
    * Extracts a human-readable error type from the given throwable.
+   * Only extracts types for actual file corruption errors.
    *
    * @param throwable the exception to analyze
    * @return a descriptive error type string
@@ -394,44 +505,42 @@ public final class GradleDaemonRecovery {
     while (t != null) {
       String msg = t.getMessage();
       if (msg != null) {
-        if (msg.contains("Cannot locate manifest for module")) {
-          return "module manifest not found";
+        if (msg.contains("ZipException") || msg.contains("error in opening zip file")) {
+          return "corrupted zip file";
         }
-        if (msg.contains("Could not create service of type ClassLoaderRegistry")) {
-          return "ClassLoaderRegistry creation failed";
+        if (msg.contains("invalid CEN header") || msg.contains("invalid LOC header")) {
+          return "invalid zip header";
         }
-        if (msg.contains("Could not create an instance of Tooling API implementation")) {
-          return "Tooling API initialization failed";
+        if (msg.contains("corrupted") || msg.contains("Corrupted")) {
+          return "corrupted distribution file";
+        }
+        if (msg.contains("unexpected end of file") || msg.contains("premature end")) {
+          return "truncated/incomplete file";
+        }
+        if (msg.contains("truncated") || msg.contains("incomplete download")) {
+          return "incomplete download";
         }
       }
       String className = t.getClass().getName();
-      if (className.contains("UnknownModuleException")) {
-        return "unknown module: " + msg;
+      if (className.contains("ZipException")) {
+        return "zip file corruption";
       }
       t = t.getCause();
     }
-    return "unknown corruption";
+    return "unknown file corruption";
   }
 
   /**
    * Checks if the distribution cache should be purged based on the error.
+   * Only returns true for actual file corruption that warrants purging.
    *
    * @param throwable the exception to analyze
    * @return true if the distribution cache should be purged
    */
-  static boolean shouldPurgeDistributionCache(Throwable throwable) {
-    Throwable t = throwable;
-    while (t != null) {
-      String msg = t.getMessage();
-      if (msg != null && msg.contains("gradle-runtime-api-info")) {
-        return true;
-      }
-      if (t.getClass().getName().contains("UnknownModuleException")) {
-        return true;
-      }
-      t = t.getCause();
-    }
-    return false;
+  public static boolean shouldPurgeDistributionCache(Throwable throwable) {
+    // Only purge if we've detected actual file corruption
+    // Don't purge for Tooling API issues or configuration problems
+    return isDaemonOrCacheCorruption(throwable);
   }
 
   /**

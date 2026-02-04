@@ -6,6 +6,33 @@ The Gradle build expects JVM sources in `src/main/java` and supporting Groovy/ut
 ## Build, Test, and Development Commands
 `./gradlew build -g ./.gradle-user` compiles Java/Groovy sources, runs the full test suite, and produces jars in `build/libs`. Use `./gradlew run -g ./.gradle-user` for a fast developer launch that opens the JavaFX UI with your local classes. `./gradlew runtimeZip -g ./.gradle-user` creates the distributable runtime zips under `build/`. Run `./gradlew dependencyUpdates -Drevision=release -g ./.gradle-user` before touching `version.properties` to see vetted upgrades. If javafx is not supported in the environment, use targeted testing, `./gradlew test --tests "se.alipsa.gade.utils.*" -g ./.gradle-user` runs only specified packages or classes.
 - Always run `./gradlew test -g ./.gradle-user` when a task is finished to validate changes.
+- **macOS Note**: TestFX tests are automatically skipped on macOS due to known SIGTRAP crashes in Monocle. Tests pass successfully but JVM crashes during shutdown. Run `./gradlew test -DskipTestFx=false -g ./.gradle-user` to force enable (tests will pass but build may report failure due to crash). Run `./gradlew test -DskipTestFx=true -g ./.gradle-user` on any platform to skip TestFX tests.
+
+## Runtime Distribution & Launcher Scripts
+The `./gradlew runtimeZip -g ./.gradle-user` task creates platform-specific runtime packages under `build/` that bundle the application, dependencies, and a JDK. Each distribution contains launcher scripts that must be configured with the correct JVM arguments for Java 21 compatibility with the Gradle Tooling API.
+
+**Critical Scripts**:
+- `src/bin/cponly/gade.sh` - Unix/Linux/macOS launcher script (manually maintained, copied to runtime distributions)
+- `src/bin/cponly/gade.cmd` - Windows launcher script (manually maintained, copied to runtime distributions)
+- `build/image/gade-*/bin/gade` - Auto-generated Unix scripts (created by beryx runtime plugin, configured via `build.gradle`)
+- `build/image/gade-*/bin/gade.bat` - Auto-generated Windows scripts (created by beryx runtime plugin, configured via `build.gradle`)
+
+**JVM Arguments for Java 21**:
+The main Gade application (NOT the splash screen) requires these JVM args to allow Gradle Tooling API access to internal JDK modules:
+```
+--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED
+--add-opens=java.base/java.lang=ALL-UNNAMED
+--add-opens=java.base/java.util=ALL-UNNAMED
+--add-opens=java.base/java.io=ALL-UNNAMED
+--add-opens=java.base/java.net=ALL-UNNAMED
+```
+
+These are configured in:
+1. `build.gradle` - `applicationDefaultJvmArgs` for `./gradlew run` and runtime plugin auto-generated scripts
+2. `src/bin/cponly/gade.sh` - Main application commands only (lines ~100-130, not splash screen)
+3. `src/bin/cponly/gade.cmd` - Main application command only (lines ~41-50, not splash screen)
+
+**Important**: The splash screen commands only need `--enable-native-access` for JavaFX, not the `--add-opens` flags. Only the main Gade application needs full module access for the Gradle Tooling API. See `docs/GRADLE_TOOLING_API_JAVA21.md` for details.
 
 ## Coding Style & Naming Conventions
 Java and Groovy code both follow two-space indents, braces on the same line, and descriptive camelCase identifiers (`matrixLoader`, `semanticVersion`). Prefer `final` where fields should not mutate, and use `Optional`/`null` defensively around UI state. Logging should go through Log4j2’s `LogManager` (`private static final Logger log = ...`). Resource bundles, icons, and templates belong in `src/main/resources` with lowercase dashed filenames.

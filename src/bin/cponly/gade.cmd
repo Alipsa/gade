@@ -30,13 +30,19 @@ set MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 set JAVA_OPTS="%JAVA_OPTS% -Djava.security.auth.login.config=$DIR\conf\jaas.conf"
 
 start %BIN_DIR%\%JAVA_CMD% ^
+%JAVA_OPTS% ^
 --enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
 --module-path %LIB_DIR%/win --add-modules %MODULES% ^
--cp %LIB_DIR%/%JAR_NAME% %JAVA_OPTS% se.alipsa.gade.splash.SplashScreen
+-cp %LIB_DIR%\* se.alipsa.gade.splash.SplashScreen
 
 start %BIN_DIR%\%JAVA_CMD% ^
---enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
---module-path %LIB_DIR%/win --add-modules %MODULES% ^
--Djava.library.path="%LIB_DIR%" -cp %LIB_DIR%\* ^
 %JAVA_OPTS% ^
+--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
+--add-opens=java.base/java.lang=ALL-UNNAMED ^
+--add-opens=java.base/java.util=ALL-UNNAMED ^
+--add-opens=java.base/java.io=ALL-UNNAMED ^
+--add-opens=java.base/java.net=ALL-UNNAMED ^
+-Djava.library.path="%LIB_DIR%" ^
+--module-path %LIB_DIR%/win --add-modules %MODULES% ^
+-cp %LIB_DIR%\* ^
 se.alipsa.gade.Gade

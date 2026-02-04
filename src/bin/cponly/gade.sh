@@ -68,10 +68,8 @@ fi
 
 JAVA_OPTS="$JAVA_OPTS -Djava.security.auth.login.config=$DIR/conf/jaas.conf"
 
-# enables @GrabConfig(systemClassLoader=true)
-if [[ ! "$JAVA_OPTS" =~ -Djava\.system\.class\.loader= ]]; then
-  JAVA_OPTS="$JAVA_OPTS -Djava.system.class.loader=org.codehaus.groovy.tools.RootLoader"
-fi
+# Note: RootLoader system classloader is not used in packaged distributions
+# All dependencies are already bundled in the lib directory
 
 if [[ "${OS}" == "mac" ]]; then
   JAVA_OPTS="$JAVA_OPTS -Xdock:name=gade -Xdock:icon=$DIR/Contents/Resources/gade.icns"
@@ -89,27 +87,43 @@ if [[ "${OS}" == "win" ]]; then
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
 	start "${BIN_DIR}\${JAVA_CMD}" \
+		$JAVA_OPTS \
 		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
-    --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
-    -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen
+		-Djava.library.path="${LD_PATH}" \
+		--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
+		-cp "${LIB_DIR}/*" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
-	start "${BIN_DIR}\${JAVA_CMD}" -Djava.library.path="${LD_PATH}" \
+	start "${BIN_DIR}\${JAVA_CMD}" \
+		$JAVA_OPTS \
 		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
-    --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
-    -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
+		--add-opens=java.base/java.lang=ALL-UNNAMED \
+		--add-opens=java.base/java.util=ALL-UNNAMED \
+		--add-opens=java.base/java.io=ALL-UNNAMED \
+		--add-opens=java.base/java.net=ALL-UNNAMED \
+		-Djava.library.path="${LD_PATH}" \
+		--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
+		-cp "${CLASSPATH}" se.alipsa.gade.Gade
 
 else
 	JAVA_CMD="java"
 	LD_PATH="${LIB_DIR}"
 	"${BIN_DIR}/${JAVA_CMD}" \
+	$JAVA_OPTS \
 	--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
-  --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
-  -cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS \
+	-Djava.library.path="${LD_PATH}" \
+	--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
+	-cp "${LIB_DIR}/*" \
 	se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
-	"${BIN_DIR}/${JAVA_CMD}" -Djava.library.path="${LD_PATH}" \
+	"${BIN_DIR}/${JAVA_CMD}" \
+		$JAVA_OPTS \
 		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
-    --module-path ${LIB_DIR}/$OS --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
-    -cp "${LIB_DIR}/*" $JAVA_OPTS \
+		--add-opens=java.base/java.lang=ALL-UNNAMED \
+		--add-opens=java.base/java.util=ALL-UNNAMED \
+		--add-opens=java.base/java.io=ALL-UNNAMED \
+		--add-opens=java.base/java.net=ALL-UNNAMED \
+		-Djava.library.path="${LD_PATH}" \
+		--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
+		-cp "${LIB_DIR}/*" \
 	se.alipsa.gade.Gade &
 fi
