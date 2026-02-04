@@ -2,8 +2,8 @@ package se.alipsa.gade.console;
 
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -18,7 +18,7 @@ import static se.alipsa.gade.utils.ReflectUtils.*;
 // Uses reflection to invoke Groovy engine methods for cross-classloader isolation.
 // v1.1 OPTIMIZATION: Investigate MethodHandles (invokevirtual/invokedynamic) for better performance.
 public class GroovyEngineReflection implements GroovyEngine {
-  private static final Logger log = LoggerFactory.getLogger(GroovyEngineReflection.class);
+  private static final Logger log = LogManager.getLogger(GroovyEngineReflection.class);
   private final Object engine;
   //private final Class<?> engineClass;
 

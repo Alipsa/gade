@@ -6,8 +6,8 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
@@ -23,7 +23,7 @@ import static se.alipsa.gade.environment.connections.ConnectionsTab.*;
 
 public class ConnectionDialog extends Dialog<ConnectionInfo> {
 
-  private static final Logger log = LoggerFactory.getLogger(ConnectionDialog.class);
+  private static final Logger log = LogManager.getLogger(ConnectionDialog.class);
   private final TextField name = new TextField();
   private final TextField dependencyText = new TextField();
   private final TextField driverText = new TextField();

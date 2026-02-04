@@ -4,8 +4,8 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.script.ScriptException;
 import java.io.PrintWriter;
@@ -18,7 +18,7 @@ import java.util.Map;
  * This implementation doesn't require groovy-jsr223, only core Groovy classes.
  */
 public class GroovyShellEngine implements GroovyEngine {
-  private static final Logger log = LoggerFactory.getLogger(GroovyShellEngine.class);
+  private static final Logger log = LogManager.getLogger(GroovyShellEngine.class);
 
   private final Object shell;
   private final Object binding;
