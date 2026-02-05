@@ -298,7 +298,7 @@ class RuntimeProcessRunnerProtocolTest {
   void testConstructorInitializesMapper() throws Exception {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("cp1", "cp2"), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("cp1", "cp2"), console, Map.of());
 
     // Verify mapper is initialized
     Field mapperField = RuntimeProcessRunner.class.getDeclaredField("mapper");
@@ -313,7 +313,7 @@ class RuntimeProcessRunnerProtocolTest {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of(), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of(), console, Map.of());
 
     assertNotNull(runner, "Should create runner even with empty classpath");
     // Start will fail with empty classpath (tested elsewhere)
@@ -325,7 +325,7 @@ class RuntimeProcessRunnerProtocolTest {
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
     List<String> cp = List.of("/lib/a.jar", "/lib/b.jar", "/lib/c.jar");
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, cp, console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, cp, console, Map.of());
 
     assertNotNull(runner);
   }
@@ -334,7 +334,7 @@ class RuntimeProcessRunnerProtocolTest {
 
   private RuntimeProcessRunner createRunner(ConsoleTextArea console) {
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
-    return new RuntimeProcessRunner(runtime, List.of("dummy"), console);
+    return new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
   }
 
   @SuppressWarnings("unchecked")

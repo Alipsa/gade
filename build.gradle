@@ -145,7 +145,7 @@ dependencies {
   implementation "org.commonmark:commonmark-ext-gfm-tables:0.27.1"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
   implementation 'se.alipsa.groovy:data-utils:2.0.4'
-  implementation('se.alipsa.gmd:gmd-core:3.0.1') {
+  implementation('se.alipsa.gmd:gmd-core:3.0.2-SNAPSHOT') {
     exclude group: 'se.alipsa.matrix', module: 'matrix-core'
     exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
     exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
@@ -156,7 +156,7 @@ dependencies {
   implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openHtmlToPdfVersion}"
 
   implementation 'se.alipsa:simple-rest:1.1.1'
-  implementation("se.alipsa.matrix:matrix-all:2.4.0")
+  implementation("se.alipsa.matrix:matrix-all:2.4.1-SNAPSHOT")
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation 'org.apache.maven:maven-artifact:3.9.11'
   implementation 'org.apache.maven:maven-model:3.9.11'

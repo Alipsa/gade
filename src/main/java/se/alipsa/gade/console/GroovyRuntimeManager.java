@@ -131,7 +131,7 @@ final class GroovyRuntimeManager {
           engine = new GroovyEngineReflection(classLoader);
           addObjectsToBindings(gui.guiInteractions);
         } else {
-          processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console);
+          processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console, gui.guiInteractions);
         }
 
         activeRuntime = targetRuntime;

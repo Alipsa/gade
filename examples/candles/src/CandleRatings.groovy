@@ -16,6 +16,10 @@
  * Original code is here: https://github.com/paulk-asert/groovy-data-science/blob/master/subprojects/Candles/src/main/groovy/CandleRatings.groovy
  * Slightly modified to behave nicely in Gade
  */
+@Grab("tech.tablesaw:tablesaw-core:0.44.1")
+@Grab("tech.tablesaw:tablesaw-excel:0.44.1")
+@Grab("tech.tablesaw:tablesaw-html:0.44.1")
+@Grab("tech.tablesaw:tablesaw-aggregate:0.44.1")
 import tech.tablesaw.api.*
 import tech.tablesaw.io.xlsx.XlsxReader
 import tech.tablesaw.plotly.components.*
@@ -31,6 +35,29 @@ import static tech.tablesaw.aggregate.AggregateFunctions.mean
 import static tech.tablesaw.api.QuerySupport.and
 import static tech.tablesaw.io.xlsx.XlsxReadOptions.builder
 
+javaFXPlatform = {
+  def os = System.getProperty('os.name').toLowerCase()
+  if (os.contains('mac')) {
+    def arch = System.getProperty('os.arch').toLowerCase()
+    return arch.contains('aarch64') || arch.contains('arm') ? 'mac-aarch64' : 'mac'
+  } else if (os.contains('linux')) {
+    return 'linux'
+  } else if (os.contains('win')) {
+    return 'win'
+  }
+  throw new Exception("Unsupported OS: ${os}")
+}.call()
+
+if (! binding.hasVariable('io')) {
+  groovy.grape.Grape.grab(group:"se.alipsa.gi", module: "gi-fx", version:"0.3.0")
+  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-web", version:"23.0.2", classifier: javaFXPlatform)
+  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-base", version:"23.0.2", classifier: javaFXPlatform)
+  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-controls", version:"23.0.2", classifier: javaFXPlatform)
+  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-graphics", version:"23.0.2", classifier: javaFXPlatform)
+  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-media", version:"23.0.2", classifier: javaFXPlatform)
+  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-swing", version:"23.0.2", classifier: javaFXPlatform)
+  binding.setVariable('io', this.class.classLoader.loadClass("se.alipsa.gi.fx.InOut").getDeclaredConstructor().newInstance())
+}
 // helper function
 List<Trace> traces(URL url, String lineColor, String markerColor) {
     def table = new XlsxReader().read(builder(url).build())
@@ -59,6 +86,13 @@ List<Trace> traces(URL url, String lineColor, String markerColor) {
     [averaged, scatter]
 }
 
+void display(Figure figure, String... titleOpt) {
+  String title = titleOpt.length > 0 ? titleOpt[0] : ''
+  Page page = Page.pageBuilder(figure, "target").build()
+  String output = page.asJavascript()
+  io.view(output, title)
+}
+  
 Layout layout(String variant) {
     Layout.builder("Top 3 $variant candles Amazon reviews 2017-2020", 'Date', 'Average daily rating (1-5)')
             .showLegend(false).width(1000).height(500).build()
@@ -74,15 +108,12 @@ line = ScatterTrace.builder(reported.dateTimeColumn('Date'), reported.nCol('Val'
         .line(Line.builder().width(2).dash(Line.Dash.DOT).color('red').build())
         .build()
 
-url = new File(io.scriptDir(), '../data/Scented_all.xlsx').toURL()
+url = io.projectFile('../data/Scented_all.xlsx').toURL()
 (sAverage, sScatter) = traces(url, 'seablue', 'lightskyblue')
 
-url = new File(io.scriptDir(), '../data/Unscented_all.xlsx').toURL()
+url = io.projectFile('../data/Unscented_all.xlsx').toURL()
 (uAverage, uScatter) = traces(url, 'seagreen', 'lightgreen')
 
-io.display(new Figure(layout(''), sAverage, sScatter, uAverage, uScatter, line))
-io.display(new Figure(layout('scented'), sAverage, sScatter, line), 'ScentedRatings')
-io.display(new Figure(layout('unscented'), uAverage, uScatter, line), 'UnscentedRatings')
-//helper.show(new Figure(layout(''), sAverage, sScatter, uAverage, uScatter, line))
-//helper.show(new Figure(layout('scented'), sAverage, sScatter, line), 'ScentedRatings')
-//helper.show(new Figure(layout('unscented'), uAverage, uScatter, line), 'UnscentedRatings')
+display(new Figure(layout(''), sAverage, sScatter, uAverage, uScatter, line))
+display(new Figure(layout('scented'), sAverage, sScatter, line), 'ScentedRatings')
+display(new Figure(layout('unscented'), uAverage, uScatter, line), 'UnscentedRatings')

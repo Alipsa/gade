@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.console.ConsoleTextArea;
 
@@ -32,7 +33,7 @@ class RuntimeProcessRunnerUtilityMethodsTest {
     String javaHome = System.getProperty("java.home");
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM, javaHome, null, null, null);
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
 
     Method method = RuntimeProcessRunner.class.getDeclaredMethod("resolveJavaExecutable");
     method.setAccessible(true);
@@ -48,7 +49,7 @@ class RuntimeProcessRunnerUtilityMethodsTest {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM, null, null, null, null);
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
 
     Method method = RuntimeProcessRunner.class.getDeclaredMethod("resolveJavaExecutable");
     method.setAccessible(true);
@@ -63,7 +64,7 @@ class RuntimeProcessRunnerUtilityMethodsTest {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM, "", null, null, null);
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
 
     Method method = RuntimeProcessRunner.class.getDeclaredMethod("resolveJavaExecutable");
     method.setAccessible(true);
@@ -77,7 +78,7 @@ class RuntimeProcessRunnerUtilityMethodsTest {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM, "/nonexistent/path/to/java", null, null, null);
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
 
     Method method = RuntimeProcessRunner.class.getDeclaredMethod("resolveJavaExecutable");
     method.setAccessible(true);
@@ -298,7 +299,7 @@ class RuntimeProcessRunnerUtilityMethodsTest {
   private RuntimeProcessRunner createRunner() {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
-    return new RuntimeProcessRunner(runtime, List.of("dummy"), console);
+    return new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
   }
 
   private boolean invokeIsRunnerPath(RuntimeProcessRunner runner, String path) throws Exception {

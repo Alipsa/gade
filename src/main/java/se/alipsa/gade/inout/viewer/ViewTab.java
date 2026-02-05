@@ -3,6 +3,8 @@ package se.alipsa.gade.inout.viewer;
 import static se.alipsa.gade.Constants.KEY_CODE_COPY;
 import static se.alipsa.gade.inout.viewer.ViewHelper.createContextMenu;
 
+import java.nio.ByteBuffer;
+import java.sql.Timestamp;
 import java.util.StringJoiner;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -151,7 +153,9 @@ public class ViewTab extends Tab {
         for (Object obj : row) {
           if (obj instanceof Number) {
             obsRow.add(numberFormatter.format(obj));
-          } else {
+          } else if (obj instanceof byte[] bytes) {
+            obsRow.add(String.valueOf(ByteBuffer.wrap(bytes).getLong()));
+          }else {
             obsRow.add(String.valueOf(obj));
           }
         }

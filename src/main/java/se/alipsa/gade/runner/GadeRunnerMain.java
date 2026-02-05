@@ -1,7 +1,5 @@
 package se.alipsa.gade.runner;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
@@ -15,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -27,11 +27,7 @@ public class GadeRunnerMain {
   private static final OutputStream ROOT_ERR = new FileOutputStream(FileDescriptor.err);
   private static final boolean VERBOSE = Boolean.getBoolean("gade.runner.verbose");
   public static final String GUI_INTERACTION_KEYS = "__gadeGuiInteractionKeys";
-  // Keep stdout/stderr sockets open across multiple JSON messages (one per line). AUTO_CLOSE would close the shared
-  // writer/reader, breaking the protocol, since multiple threads (eval + out/err forwarding) use the same streams.
-  private static final ObjectMapper mapper = new ObjectMapper()
-      .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
-      .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+  private static final ObjectMapper mapper = ProtocolMapper.create();
 
   private static final AtomicReference<Thread> currentEvalThread = new AtomicReference<>();
 
@@ -74,6 +70,9 @@ public class GadeRunnerMain {
 
           emit(Map.of("type", "hello", "port", actualPort, "protocolVersion", ProtocolVersion.CURRENT), writer);
 
+          // Track pending GUI requests for async response handling
+          ConcurrentHashMap<String, CompletableFuture<Object>> guiPending = new ConcurrentHashMap<>();
+
           try {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -84,10 +83,23 @@ public class GadeRunnerMain {
               try {
                 Map<String, Object> cmd = mapper.readValue(line, Map.class);
                 String action = (String) cmd.get("cmd");
+                String type = (String) cmd.get("type");
                 String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
+
+                // Handle responses from Gade (gui_response, gui_error)
+                if (type != null) {
+                  switch (type) {
+                    case "gui_response" -> handleGuiResponse(cmd, guiPending);
+                    case "gui_error" -> handleGuiError(cmd, guiPending);
+                    default -> emitRaw("Unhandled message type: " + type);
+                  }
+                  continue;
+                }
+
+                // Handle commands from Gade (eval, bindings, interrupt, shutdown)
                 try {
                   switch (action) {
-                    case "eval" -> handleEval(binding, shell, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer);
+                    case "eval" -> handleEval(binding, shell, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer, guiPending);
                     case "bindings" -> handleBindings(binding, id, writer);
                     case "interrupt" -> handleInterrupt(id, writer);
                     case "shutdown" -> {
@@ -151,7 +163,7 @@ public class GadeRunnerMain {
     }
   }
 
-  private static void handleEval(Binding binding, GroovyShell shell, String id, String script, Map<String, Object> bindings, BufferedWriter writer) {
+  private static void handleEval(Binding binding, GroovyShell shell, String id, String script, Map<String, Object> bindings, BufferedWriter writer, ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
     if (script == null) {
       emitError(id, "No script provided", null, writer);
       return;
@@ -164,7 +176,7 @@ public class GadeRunnerMain {
       currentEvalThread.set(Thread.currentThread());
       try {
         if (bindings != null) {
-          ensureUnsupportedGuiInteractions(binding, bindings.get(GUI_INTERACTION_KEYS));
+          ensureRemoteGuiInteractions(binding, bindings.get(GUI_INTERACTION_KEYS), writer, guiPending);
           bindings.forEach((k, v) -> {
             if (!GUI_INTERACTION_KEYS.equals(k)) {
               binding.setVariable(k, v);
@@ -182,7 +194,11 @@ public class GadeRunnerMain {
     t.start();
   }
 
-  private static void ensureUnsupportedGuiInteractions(Binding binding, Object keys) {
+  private static void ensureRemoteGuiInteractions(
+      Binding binding,
+      Object keys,
+      BufferedWriter writer,
+      ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
     if (keys == null) {
       return;
     }
@@ -198,7 +214,8 @@ public class GadeRunnerMain {
       if (variables.containsKey(name)) {
         continue;
       }
-      binding.setVariable(name, new UnsupportedGuiInteraction(name));
+      // Inject RemoteInOut proxy instead of UnsupportedGuiInteraction
+      binding.setVariable(name, new RemoteInOut(writer, guiPending));
     }
   }
 
@@ -216,6 +233,38 @@ public class GadeRunnerMain {
       emit(Map.of("type", "interrupted", "id", id), writer);
     } else {
       emit(Map.of("type", "interrupted", "id", id, "message", "No script running"), writer);
+    }
+  }
+
+  private static void handleGuiResponse(Map<String, Object> cmd, ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
+    String id = (String) cmd.get("id");
+    if (id == null) {
+      emitRaw("GUI response missing id, ignoring");
+      return;
+    }
+    CompletableFuture<Object> future = guiPending.remove(id);
+    if (future != null) {
+      Object result = cmd.get("result");
+      future.complete(result);
+      emitRaw("GUI response completed for id: " + id);
+    } else {
+      emitRaw("GUI response for unknown id: " + id);
+    }
+  }
+
+  private static void handleGuiError(Map<String, Object> cmd, ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
+    String id = (String) cmd.get("id");
+    if (id == null) {
+      emitRaw("GUI error missing id, ignoring");
+      return;
+    }
+    CompletableFuture<Object> future = guiPending.remove(id);
+    if (future != null) {
+      String error = (String) cmd.getOrDefault("error", "GUI operation failed");
+      future.completeExceptionally(new RuntimeException(error));
+      emitRaw("GUI error completed for id: " + id + " error: " + error);
+    } else {
+      emitRaw("GUI error for unknown id: " + id);
     }
   }
 

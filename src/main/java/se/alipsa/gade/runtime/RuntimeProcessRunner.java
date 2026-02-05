@@ -1,14 +1,17 @@
 package se.alipsa.gade.runtime;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.console.ConsoleTextArea;
+import se.alipsa.gade.runner.ArgumentSerializer;
 import se.alipsa.gade.runner.GadeRunnerMain;
+import se.alipsa.gade.runner.ProtocolMapper;
+import se.alipsa.gi.GuiInteraction;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -50,11 +53,8 @@ public class RuntimeProcessRunner implements Closeable {
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
   private final ConsoleTextArea console;
-  // Keep the socket open across multiple JSON messages (one per line). The runner shares the socket streams
-  // between threads; auto-closing would accidentally terminate the connection during mapper reads/writes.
-  private final ObjectMapper mapper = new ObjectMapper()
-      .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
-      .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+  private final Map<String, GuiInteraction> guiInteractions;
+  private final ObjectMapper mapper = ProtocolMapper.create();
 
   private Process process;
   private Socket socket;
@@ -66,10 +66,11 @@ public class RuntimeProcessRunner implements Closeable {
   private final LinkedBlockingDeque<String> stderrBuffer = new LinkedBlockingDeque<>(STDERR_BUFFER_SIZE);
   private final Object procLock = new Object();
 
-  public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console) {
+  public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions) {
     this.runtime = runtime;
     this.classPathEntries = classPathEntries;
     this.console = console;
+    this.guiInteractions = guiInteractions;
     if (log.isDebugEnabled()) {
       log.debug("Runner classpath entries ({}): {}", classPathEntries.size(), classPathEntries);
     }
@@ -366,6 +367,7 @@ public class RuntimeProcessRunner implements Closeable {
       }
       case "result", "bindings", "interrupted", "shutdown" -> complete(msg);
       case "error" -> completeExceptionally(msg);
+      case "gui_request" -> handleGuiRequest(msg);
       default -> log.debug("Unhandled runner message type {}", type);
     }
   }
@@ -387,6 +389,197 @@ public class RuntimeProcessRunner implements Closeable {
     String err = (String) msg.getOrDefault("error", "");
     String stack = (String) msg.getOrDefault("stacktrace", "");
     console.appendWarningFx(err + (stack == null ? "" : "\n" + stack));
+  }
+
+  /**
+   * Handle GUI request from remote runner.
+   * Deserializes arguments, invokes the real InOut method on JavaFX thread, and sends response.
+   */
+  private void handleGuiRequest(Map<String, Object> msg) {
+    String id = (String) msg.get("id");
+    String method = (String) msg.get("method");
+    List<?> argsList = (List<?>) msg.get("args");
+
+    if (id == null || method == null) {
+      log.warn("GUI request missing id or method, ignoring: {}", msg);
+      return;
+    }
+
+    log.debug("Handling GUI request: method={}, id={}", method, id);
+
+    // Run on JavaFX thread since GUI operations require it
+    Platform.runLater(() -> {
+      try {
+        // Get the real InOut instance
+        GuiInteraction inOut = guiInteractions.get("io");
+        if (inOut == null) {
+          sendGuiError(id, "InOut instance not available");
+          return;
+        }
+
+        // Deserialize arguments
+        Object[] args = argsList == null ? new Object[0] : argsList.stream()
+            .map(ArgumentSerializer::deserialize)
+            .toArray();
+
+        // Invoke method via reflection
+        Object result = invokeMethod(inOut, method, args);
+
+        // Serialize result
+        Object serializedResult = ArgumentSerializer.serialize(result);
+
+        // Send response
+        Map<String, Object> response = new HashMap<>();
+        response.put("type", "gui_response");
+        response.put("id", id);
+        response.put("result", serializedResult);
+        send(response);
+
+        log.debug("GUI request completed: method={}, id={}", method, id);
+
+      } catch (Exception e) {
+        log.error("GUI request failed: method={}, id={}", method, id, e);
+        sendGuiError(id, e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * Invoke a method on the InOut instance using reflection.
+   * Attempts to find a matching method by name and argument count/types.
+   */
+  private Object invokeMethod(GuiInteraction inOut, String methodName, Object[] args) throws Exception {
+    Class<?> clazz = inOut.getClass();
+
+    // Try to find matching method by name and argument count
+    Method[] methods = clazz.getMethods();
+    Method bestMatch = null;
+    int bestScore = -1;
+
+    for (Method method : methods) {
+      if (!method.getName().equals(methodName)) {
+        continue;
+      }
+
+      Class<?>[] paramTypes = method.getParameterTypes();
+
+      // Handle varargs by checking minimum parameter count
+      int minParams = paramTypes.length;
+      boolean hasVarargs = method.isVarArgs();
+      if (hasVarargs) {
+        minParams = paramTypes.length - 1;
+      }
+
+      // Check if argument count matches
+      if (args.length < minParams || (!hasVarargs && args.length != paramTypes.length)) {
+        continue;
+      }
+
+      // Score based on how well types match
+      int score = scoreMethodMatch(paramTypes, args, hasVarargs);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = method;
+      }
+    }
+
+    if (bestMatch == null) {
+      throw new NoSuchMethodException("No matching method found: " + methodName + " with " + args.length + " arguments");
+    }
+
+    // Invoke the method with proper varargs handling
+    if (bestMatch.isVarArgs()) {
+      Class<?>[] paramTypes = bestMatch.getParameterTypes();
+      int fixedParams = paramTypes.length - 1;
+
+      // Prepare arguments array with varargs properly set up
+      Object[] invokeArgs = new Object[paramTypes.length];
+
+      // Copy fixed parameters
+      for (int i = 0; i < fixedParams; i++) {
+        invokeArgs[i] = i < args.length ? args[i] : null;
+      }
+
+      // Create varargs array
+      Class<?> varargsType = paramTypes[fixedParams].getComponentType();
+      int varargsCount = Math.max(0, args.length - fixedParams);
+      Object varargsArray = java.lang.reflect.Array.newInstance(varargsType, varargsCount);
+      for (int i = 0; i < varargsCount; i++) {
+        java.lang.reflect.Array.set(varargsArray, i, args[fixedParams + i]);
+      }
+      invokeArgs[fixedParams] = varargsArray;
+
+      return bestMatch.invoke(inOut, invokeArgs);
+    } else {
+      return bestMatch.invoke(inOut, args);
+    }
+  }
+
+  /**
+   * Score how well a method's parameters match the provided arguments.
+   * Higher score means better match.
+   */
+  private int scoreMethodMatch(Class<?>[] paramTypes, Object[] args, boolean hasVarargs) {
+    int score = 0;
+
+    for (int i = 0; i < args.length; i++) {
+      if (args[i] == null) {
+        score += 1; // Null matches any reference type
+        continue;
+      }
+
+      Class<?> paramType;
+      if (hasVarargs && i >= paramTypes.length - 1) {
+        // Varargs parameter
+        paramType = paramTypes[paramTypes.length - 1].getComponentType();
+      } else if (i < paramTypes.length) {
+        paramType = paramTypes[i];
+      } else {
+        return -1; // Too many arguments
+      }
+
+      Class<?> argType = args[i].getClass();
+
+      if (paramType.isAssignableFrom(argType)) {
+        score += 10; // Exact or subtype match
+      } else if (isCompatiblePrimitive(paramType, argType)) {
+        score += 5; // Primitive/wrapper match
+      } else {
+        return -1; // Incompatible type
+      }
+    }
+
+    return score;
+  }
+
+  /**
+   * Check if a primitive type and wrapper type are compatible.
+   */
+  private boolean isCompatiblePrimitive(Class<?> paramType, Class<?> argType) {
+    if (paramType == int.class && argType == Integer.class) return true;
+    if (paramType == long.class && argType == Long.class) return true;
+    if (paramType == double.class && argType == Double.class) return true;
+    if (paramType == float.class && argType == Float.class) return true;
+    if (paramType == boolean.class && argType == Boolean.class) return true;
+    if (paramType == byte.class && argType == Byte.class) return true;
+    if (paramType == short.class && argType == Short.class) return true;
+    if (paramType == char.class && argType == Character.class) return true;
+    return false;
+  }
+
+  /**
+   * Send GUI error response back to runner.
+   */
+  private void sendGuiError(String id, String error) {
+    try {
+      Map<String, Object> response = new HashMap<>();
+      response.put("type", "gui_error");
+      response.put("id", id);
+      response.put("error", error == null ? "GUI operation failed" : error);
+      send(response);
+    } catch (IOException e) {
+      log.error("Failed to send GUI error response for id={}", id, e);
+    }
   }
 
   private String resolveJavaExecutable() {

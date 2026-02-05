@@ -255,7 +255,7 @@ class GroovyTabRunGroovyTest {
       return null;
     }).when(console).appendWarningFx(org.mockito.ArgumentMatchers.anyString());
 
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, cp, console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, cp, console, Map.of());
     try (runner) {
       try {
         runner.start();

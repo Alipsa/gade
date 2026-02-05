@@ -26,7 +26,7 @@ class RuntimeProcessRunnerTest {
   void startFailsWithoutClasspathEntries() {
     ConsoleTextArea console = Mockito.mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("TestRuntime", RuntimeType.CUSTOM);
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of(), console);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of(), console, Map.of());
 
     IOException ex = assertThrows(IOException.class, runner::start);
     assertTrue(ex.getMessage().contains("Classpath"), "Expected classpath warning in exception");
@@ -37,7 +37,7 @@ class RuntimeProcessRunnerTest {
   void handleMessageCompletesPendingResult() throws Exception {
     ConsoleTextArea console = Mockito.mock(ConsoleTextArea.class);
     RuntimeProcessRunner runner = new RuntimeProcessRunner(new RuntimeConfig("Test", RuntimeType.CUSTOM),
-        List.of("dummy"), console);
+        List.of("dummy"), console, Map.of());
 
     Map<String, CompletableFuture<Map<String, Object>>> pending = pending(runner);
     CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
@@ -60,7 +60,7 @@ class RuntimeProcessRunnerTest {
   void handleMessageCompletesExceptionallyOnError() throws Exception {
     ConsoleTextArea console = Mockito.mock(ConsoleTextArea.class);
     RuntimeProcessRunner runner = new RuntimeProcessRunner(new RuntimeConfig("Test", RuntimeType.CUSTOM),
-        List.of("dummy"), console);
+        List.of("dummy"), console, Map.of());
 
     Map<String, CompletableFuture<Map<String, Object>>> pending = pending(runner);
     CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
@@ -90,7 +90,7 @@ class RuntimeProcessRunnerTest {
   void handleMessageWritesOutputAndError() throws Exception {
     ConsoleTextArea console = Mockito.mock(ConsoleTextArea.class);
     RuntimeProcessRunner runner = new RuntimeProcessRunner(new RuntimeConfig("Test", RuntimeType.CUSTOM),
-        List.of("dummy"), console);
+        List.of("dummy"), console, Map.of());
 
     invokeHandleMessage(runner, Map.of("type", "out", "text", "hello"));
     invokeHandleMessage(runner, Map.of("type", "err", "text", "oops"));
@@ -103,7 +103,7 @@ class RuntimeProcessRunnerTest {
   void handleMessageWarnsOnIncompatibleProtocol() throws Exception {
     ConsoleTextArea console = Mockito.mock(ConsoleTextArea.class);
     RuntimeProcessRunner runner = new RuntimeProcessRunner(new RuntimeConfig("Test", RuntimeType.CUSTOM),
-        List.of("dummy"), console);
+        List.of("dummy"), console, Map.of());
 
     invokeHandleMessage(runner, Map.of("type", "hello", "protocolVersion", "2.0"));
 
