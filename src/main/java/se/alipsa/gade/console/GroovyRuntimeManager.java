@@ -128,7 +128,7 @@ final class GroovyRuntimeManager {
         classLoader = runtimeClassLoaderFactory.create(targetRuntime, testContext, console);
 
         if (RuntimeType.GADE.equals(targetRuntime.getType())) {
-          engine = new GroovyEngineReflection(classLoader);
+          engine = new GroovyShellEngine(classLoader);
           addObjectsToBindings(gui.guiInteractions);
         } else {
           processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console, gui.guiInteractions);

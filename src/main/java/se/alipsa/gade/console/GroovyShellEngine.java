@@ -3,13 +3,11 @@ package se.alipsa.gade.console;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import javax.script.ScriptException;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,73 +18,43 @@ import java.util.Map;
 public class GroovyShellEngine implements GroovyEngine {
   private static final Logger log = LogManager.getLogger(GroovyShellEngine.class);
 
-  private final Object shell;
-  private final Object binding;
+  private final GroovyShell shell;
+  private final Binding binding;
   private final GroovyClassLoader classLoader;
 
   public GroovyShellEngine(GroovyClassLoader classLoader) {
     this.classLoader = classLoader;
-    try {
-      // Load classes from the runtime classloader
-      Class<?> bindingClass = classLoader.loadClass("groovy.lang.Binding");
-      Class<?> shellClass = classLoader.loadClass("groovy.lang.GroovyShell");
-      Class<?> configClass = classLoader.loadClass("org.codehaus.groovy.control.CompilerConfiguration");
 
-      // Create binding and configuration
-      this.binding = bindingClass.getDeclaredConstructor().newInstance();
-      Object config = configClass.getDeclaredConstructor().newInstance();
+    // Create binding and shell directly (no reflection needed for GADE runtime)
+    this.binding = new Binding();
+    this.shell = new GroovyShell(classLoader, binding);
 
-      // Create shell using the runtime classloader
-      Constructor<?> shellConstructor = shellClass.getDeclaredConstructor(
-          ClassLoader.class, bindingClass, configClass);
-      this.shell = shellConstructor.newInstance(classLoader, binding, config);
-
-      log.debug("Created GroovyShell using runtime classloader");
-    } catch (Exception e) {
-      throw new GroovyEngineException("Failed to create GroovyShell from runtime classloader", e);
-    }
+    log.debug("Created GroovyShell with classloader: {}", classLoader.getClass().getName());
   }
 
   @Override
   public Object eval(String script) throws ScriptException {
     try {
-      // Call shell.evaluate(script)
-      return shell.getClass()
-          .getMethod("evaluate", String.class)
-          .invoke(shell, script);
+      return shell.evaluate(script);
     } catch (Exception e) {
-      Throwable cause = e.getCause();
-      if (cause != null) {
-        // Wrap Groovy exceptions in ScriptException for consistency with JSR-223
-        throw new ScriptException(cause.getMessage());
-      }
-      throw new ScriptException(e.getMessage());
+      // Wrap Groovy exceptions in ScriptException for consistency with JSR-223
+      String message = e.getMessage() != null ? e.getMessage() : e.getClass().getName();
+      ScriptException se = new ScriptException(message);
+      se.initCause(e);
+      throw se;
     }
   }
 
   @Override
   public void setOutputWriters(PrintWriter out, PrintWriter err) {
-    try {
-      // binding.setProperty("out", out)
-      // binding.setProperty("err", err)
-      binding.getClass()
-          .getMethod("setProperty", String.class, Object.class)
-          .invoke(binding, "out", out);
-      binding.getClass()
-          .getMethod("setProperty", String.class, Object.class)
-          .invoke(binding, "err", err);
-    } catch (Exception e) {
-      throw new GroovyEngineException("Failed to set output writers", e);
-    }
+    binding.setProperty("out", out);
+    binding.setProperty("err", err);
   }
 
   @Override
   public Object fetchVar(String varName) {
     try {
-      // binding.getVariable(varName)
-      return binding.getClass()
-          .getMethod("getVariable", String.class)
-          .invoke(binding, varName);
+      return binding.getVariable(varName);
     } catch (Exception e) {
       // Variable not found, return null like ScriptEngine does
       return null;
@@ -95,43 +63,18 @@ public class GroovyShellEngine implements GroovyEngine {
 
   @Override
   public Map<String, Object> getContextObjects() {
-    try {
-      // binding.getVariables() returns Map<String, Object>
-      @SuppressWarnings("unchecked")
-      Map<String, Object> variables = (Map<String, Object>) binding.getClass()
-          .getMethod("getVariables")
-          .invoke(binding);
-
-      log.info("Bindings size: {}", variables.size());
-      return new HashMap<>(variables);
-    } catch (Exception e) {
-      throw new GroovyEngineException("Failed to get context objects", e);
-    }
+    Map<String, Object> variables = binding.getVariables();
+    log.info("Bindings size: {}", variables.size());
+    return new HashMap<>(variables);
   }
 
   @Override
   public void addVariableToSession(String key, Object value) {
-    try {
-      // binding.setVariable(key, value)
-      binding.getClass()
-          .getMethod("setVariable", String.class, Object.class)
-          .invoke(binding, key, value);
-    } catch (Exception e) {
-      throw new GroovyEngineException("Failed to add variable to session", e);
-    }
+    binding.setVariable(key, value);
   }
 
   @Override
   public void removeVariableFromSession(String varName) {
-    try {
-      // binding.getVariables().remove(varName)
-      @SuppressWarnings("unchecked")
-      Map<String, Object> variables = (Map<String, Object>) binding.getClass()
-          .getMethod("getVariables")
-          .invoke(binding);
-      variables.remove(varName);
-    } catch (Exception e) {
-      throw new GroovyEngineException("Failed to remove variable from session", e);
-    }
+    binding.getVariables().remove(varName);
   }
 }
