@@ -2,7 +2,7 @@ package se.alipsa.gade.console;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import se.alipsa.gade.runner.GadeRunnerMain;
+import se.alipsa.gade.runner.GadeRunnerEngine;
 import se.alipsa.gi.GuiInteraction;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.util.Map;
 final class ScriptExecutionHelper {
 
   private static final Logger log = LogManager.getLogger(ScriptExecutionHelper.class);
-  private static final String GUI_INTERACTION_KEYS = GadeRunnerMain.GUI_INTERACTION_KEYS;
+  private static final String GUI_INTERACTION_KEYS = GadeRunnerEngine.GUI_INTERACTION_KEYS;
 
   private ScriptExecutionHelper() {
     throw new AssertionError("No instances");

@@ -1,8 +1,5 @@
 package se.alipsa.gade.runtime;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * Manages a long-lived external Groovy runner process for non-GADE runtimes.
  * <p>
  * Handles subprocess lifecycle (start, communication, shutdown) and provides asynchronous
- * script evaluation via JSON-RPC protocol over TCP sockets.
+ * script evaluation via XML protocol over TCP sockets.
  * <p>
  * <b>Thread Safety:</b> This class is thread-safe for concurrent script evaluation requests.
  * The {@link #start()} and {@link #close()} methods use synchronized blocks with {@code procLock}
@@ -54,11 +51,10 @@ public class RuntimeProcessRunner implements Closeable {
 
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
+  private final List<String> groovyEntries;
+  private final List<String> projectDepEntries;
   private final ConsoleTextArea console;
   private final Map<String, GuiInteraction> guiInteractions;
-  private final ObjectMapper mapper = new ObjectMapper()
-      .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
-      .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
   private volatile File workingDir;
 
   private Process process;
@@ -72,17 +68,31 @@ public class RuntimeProcessRunner implements Closeable {
   private final Object procLock = new Object();
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions) {
-    this(runtime, classPathEntries, console, guiInteractions, null);
+    this(runtime, classPathEntries, List.of(), List.of(), console, guiInteractions, null);
   }
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions, File workingDir) {
+    this(runtime, classPathEntries, List.of(), List.of(), console, guiInteractions, workingDir);
+  }
+
+  public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries,
+                               List<String> groovyEntries, List<String> projectDepEntries,
+                               ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions, File workingDir) {
     this.runtime = runtime;
     this.classPathEntries = classPathEntries;
+    this.groovyEntries = groovyEntries;
+    this.projectDepEntries = projectDepEntries;
     this.console = console;
     this.guiInteractions = guiInteractions;
     this.workingDir = workingDir;
     if (log.isDebugEnabled()) {
       log.debug("Runner classpath entries ({}): {}", classPathEntries.size(), classPathEntries);
+      if (!groovyEntries.isEmpty()) {
+        log.debug("Runner groovy bootstrap entries ({}): {}", groovyEntries.size(), groovyEntries);
+      }
+      if (!projectDepEntries.isEmpty()) {
+        log.debug("Runner project dep entries ({}): {}", projectDepEntries.size(), projectDepEntries);
+      }
     }
   }
 
@@ -245,7 +255,7 @@ public class RuntimeProcessRunner implements Closeable {
           if (socket == null || socket.isClosed()) {
             throw new IOException("Runner socket is closed before send");
           }
-          mapper.writeValue(socketWriter, payload);
+          socketWriter.write(ProtocolXml.toXml(payload));
           socketWriter.write("\n");
           socketWriter.flush();
           return;
@@ -289,7 +299,7 @@ public class RuntimeProcessRunner implements Closeable {
           log.debug("Runner {} -> {}", runtime.getName(), line);
         }
         try {
-          Map<String, Object> msg = mapper.readValue(line, Map.class);
+          Map<String, Object> msg = ProtocolXml.fromXml(line);
           handleMessage(msg);
         } catch (Exception parse) {
           log.warn("Failed to parse runner message: {}", line, parse);
@@ -679,7 +689,7 @@ public class RuntimeProcessRunner implements Closeable {
             }
             Map<String, Object> msg;
             try {
-              msg = mapper.readValue(line, Map.class);
+              msg = ProtocolXml.fromXml(line);
             } catch (Exception parse) {
               log.debug("Ignoring unparsable handshake line from runner: {}", line, parse);
               continue;
@@ -706,7 +716,7 @@ public class RuntimeProcessRunner implements Closeable {
           }
 
           // Validate protocol version
-          Map<String, Object> helloMsg = mapper.readValue(helloLine, Map.class);
+          Map<String, Object> helloMsg = ProtocolXml.fromXml(helloLine);
           String version = (String) helloMsg.get("protocolVersion");
           if (!ProtocolVersion.isCompatible(version)) {
             String errorMsg = "Incompatible protocol version: " + ProtocolVersion.getCompatibilityMessage(version);
@@ -716,6 +726,13 @@ public class RuntimeProcessRunner implements Closeable {
 
           log.info("Received handshake from runner {}: {} - {}",
               runtime.getName(), helloLine, ProtocolVersion.getCompatibilityMessage(version));
+
+          // Send addClasspath command with dependency entries
+          sendAddClasspath();
+
+          // Wait for classpathAdded ack
+          waitForClasspathAdded(socket);
+
         } finally {
           try {
             socket.setSoTimeout(0);
@@ -737,6 +754,78 @@ public class RuntimeProcessRunner implements Closeable {
       }
     }
     throw new IOException("Failed to connect to runner on port " + runnerPort, last);
+  }
+
+  /**
+   * Sends an addClasspath command with the Groovy bootstrap entries and project
+   * dependency entries to the runner subprocess. The runner uses these to build
+   * its classloader hierarchy:
+   * <ul>
+   *   <li>{@code groovyEntries} → bootstrap URLClassLoader (Groovy/Ivy jars)</li>
+   *   <li>{@code projectEntries} → GroovyClassLoader via addURL (project deps)</li>
+   * </ul>
+   * For GADE/Custom runtimes both lists are empty (Groovy is on {@code -cp}).
+   */
+  private void sendAddClasspath() throws IOException {
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("cmd", "addClasspath");
+    payload.put("groovyEntries", groovyEntries);
+    payload.put("projectEntries", projectDepEntries);
+    socketWriter.write(ProtocolXml.toXml(payload));
+    socketWriter.write("\n");
+    socketWriter.flush();
+    log.debug("Sent addClasspath with {} groovy + {} project entries to runner {}",
+        groovyEntries.size(), projectDepEntries.size(), runtime.getName());
+  }
+
+  /**
+   * Waits for a classpathAdded acknowledgement from the runner subprocess.
+   * Handles out/err messages that may arrive before the ack.
+   */
+  private void waitForClasspathAdded(Socket socket) throws IOException {
+    // Reuse the handshake timeout for classpath loading
+    socket.setSoTimeout(30_000); // 30 seconds — classpath loading may take time
+    try {
+      while (true) {
+        String line = socketReader.readLine();
+        if (line == null) {
+          throw new IOException("Runner socket closed before classpathAdded");
+        }
+        if (line.isBlank()) {
+          continue;
+        }
+        Map<String, Object> msg;
+        try {
+          msg = ProtocolXml.fromXml(line);
+        } catch (Exception parse) {
+          log.debug("Ignoring unparsable line during classpath loading: {}", line, parse);
+          continue;
+        }
+        String type = (String) msg.get("type");
+        if ("out".equals(type)) {
+          console.appendFx(String.valueOf(msg.getOrDefault("text", "")), false);
+          continue;
+        }
+        if ("err".equals(type)) {
+          console.appendWarningFx(String.valueOf(msg.getOrDefault("text", "")));
+          continue;
+        }
+        if ("error".equals(type)) {
+          throw new IOException("Runner failed during classpath loading: " + msg.getOrDefault("error", "unknown error"));
+        }
+        if ("classpathAdded".equals(type)) {
+          log.info("Runner {} acknowledged classpath loaded", runtime.getName());
+          return;
+        }
+        log.debug("Ignoring unexpected message during classpath loading: {}", type);
+      }
+    } finally {
+      try {
+        socket.setSoTimeout(0);
+      } catch (IOException e) {
+        log.debug("Failed to reset socket timeout after classpath loading", e);
+      }
+    }
   }
 
   private void sleepQuietly(long millis) {

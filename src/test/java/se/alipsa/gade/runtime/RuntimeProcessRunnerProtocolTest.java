@@ -295,20 +295,6 @@ class RuntimeProcessRunnerProtocolTest {
   // ========== Constructor and Initialization Tests ==========
 
   @Test
-  void testConstructorInitializesMapper() throws Exception {
-    ConsoleTextArea console = mock(ConsoleTextArea.class);
-    RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
-    RuntimeProcessRunner runner = new RuntimeProcessRunner(runtime, List.of("cp1", "cp2"), console, Map.of());
-
-    // Verify mapper is initialized
-    Field mapperField = RuntimeProcessRunner.class.getDeclaredField("mapper");
-    mapperField.setAccessible(true);
-    Object mapper = mapperField.get(runner);
-
-    assertNotNull(mapper, "ObjectMapper should be initialized");
-  }
-
-  @Test
   void testConstructorWithEmptyClasspath() {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);

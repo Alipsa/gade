@@ -1,10 +1,11 @@
 package se.alipsa.gade.runtime;
 
 /**
- * Defines the JSON-RPC protocol version for Gade ↔ Runtime subprocess communication.
+ * Defines the XML protocol version for Gade ↔ Runtime subprocess communication.
  * <p>
  * The protocol governs message exchange between {@link RuntimeProcessRunner} (Gade main process)
  * and {@link se.alipsa.gade.runner.GadeRunnerMain} (external runtime subprocess).
+ * Messages are serialized as single-line XML via {@link ProtocolXml}.
  *
  * <h2>Version History:</h2>
  * <ul>
@@ -16,21 +17,21 @@ package se.alipsa.gade.runtime;
  *   </li>
  * </ul>
  *
- * <h2>Protocol Messages:</h2>
+ * <h2>Protocol Messages (XML format):</h2>
  * <pre>
  * // Runner → Gade (handshake initiation)
- * {"type":"hello","port":12345,"protocolVersion":"1.0"}
+ * &lt;msg&gt;&lt;e k="type"&gt;hello&lt;/e&gt;&lt;e k="port" t="int"&gt;12345&lt;/e&gt;&lt;e k="protocolVersion"&gt;1.0&lt;/e&gt;&lt;/msg&gt;
  *
  * // Gade → Runner (eval request)
- * {"cmd":"eval","id":"uuid","script":"code","bindings":{}}
+ * &lt;msg&gt;&lt;e k="cmd"&gt;eval&lt;/e&gt;&lt;e k="id"&gt;uuid&lt;/e&gt;&lt;e k="script"&gt;code&lt;/e&gt;&lt;/msg&gt;
  *
  * // Runner → Gade (eval response)
- * {"type":"result","id":"uuid","result":"value"}
- * {"type":"error","id":"uuid","error":"message","stacktrace":"..."}
+ * &lt;msg&gt;&lt;e k="type"&gt;result&lt;/e&gt;&lt;e k="id"&gt;uuid&lt;/e&gt;&lt;e k="result"&gt;value&lt;/e&gt;&lt;/msg&gt;
+ * &lt;msg&gt;&lt;e k="type"&gt;error&lt;/e&gt;&lt;e k="id"&gt;uuid&lt;/e&gt;&lt;e k="error"&gt;message&lt;/e&gt;&lt;/msg&gt;
  *
  * // Runner → Gade (output forwarding)
- * {"type":"out","text":"stdout line"}
- * {"type":"err","text":"stderr line"}
+ * &lt;msg&gt;&lt;e k="type"&gt;out&lt;/e&gt;&lt;e k="text"&gt;stdout line&lt;/e&gt;&lt;/msg&gt;
+ * &lt;msg&gt;&lt;e k="type"&gt;err&lt;/e&gt;&lt;e k="text"&gt;stderr line&lt;/e&gt;&lt;/msg&gt;
  * </pre>
  *
  * <h3>Version Compatibility:</h3>
@@ -41,6 +42,7 @@ package se.alipsa.gade.runtime;
  * </ul>
  *
  * @see RuntimeProcessRunner
+ * @see ProtocolXml
  * @see se.alipsa.gade.runner.GadeRunnerMain
  */
 public final class ProtocolVersion {

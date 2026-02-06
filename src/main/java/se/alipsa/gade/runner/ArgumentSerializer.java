@@ -58,7 +58,7 @@ public class ArgumentSerializer {
       return serializeFile((File) arg);
     }
 
-    // Collections and Maps pass through (Jackson will handle)
+    // Collections and Maps pass through (protocol layer will handle)
     if (arg instanceof Collection || arg instanceof Map) {
       return arg;
     }

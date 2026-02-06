@@ -1,7 +1,7 @@
 package se.alipsa.gade.runner;
 
-import groovy.json.JsonOutput;
 import groovy.lang.GroovyObjectSupport;
+import se.alipsa.gade.runtime.ProtocolXml;
 
 import java.io.BufferedWriter;
 import java.util.*;
@@ -82,7 +82,7 @@ public class RemoteInOut extends GroovyObjectSupport {
 
       // Send request
       synchronized (writer) {
-        writer.write(JsonOutput.toJson(request));
+        writer.write(ProtocolXml.toXml(request));
         writer.write("\n");
         writer.flush();
       }

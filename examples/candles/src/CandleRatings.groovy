@@ -16,13 +16,14 @@
  * Original code is here: https://github.com/paulk-asert/groovy-data-science/blob/master/subprojects/Candles/src/main/groovy/CandleRatings.groovy
  * Slightly modified to behave nicely in Gade
  */
+/*
 @Grab("tech.tablesaw:tablesaw-core:0.44.1")
 @Grab("tech.tablesaw:tablesaw-excel:0.44.1")
 @Grab("tech.tablesaw:tablesaw-html:0.44.1")
 @Grab("tech.tablesaw:tablesaw-aggregate:0.44.1")
-//@GrabConfig(useSystemClassLoader=true)
 @Grab(group='org.apache.logging.log4j', module='log4j-slf4j2-impl', version='2.25.3')
 @Grab(group='org.apache.logging.log4j', module='log4j-core', version='2.25.3')
+*/
 import tech.tablesaw.api.*
 import tech.tablesaw.io.xlsx.XlsxReader
 import tech.tablesaw.plotly.components.*

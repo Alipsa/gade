@@ -1,36 +1,43 @@
 package se.alipsa.gade.runner;
 
-import groovy.json.JsonOutput;
-import groovy.json.JsonSlurper;
-import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
 import se.alipsa.gade.runtime.ProtocolVersion;
+import se.alipsa.gade.runtime.ProtocolXml;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Small out-of-process runner that keeps a Groovy engine alive and communicates via JSON over stdin/stdout.
- * Stdout/stderr from scripts are forwarded as JSON events to the parent process.
+ * Bootstrap entry point for the runner subprocess.
+ * <p>
+ * This class has NO Groovy imports. It:
+ * <ol>
+ *   <li>Creates a {@link ServerSocket} and accepts a connection from the main Gade process</li>
+ *   <li>Redirects {@code System.out}/{@code System.err} to {@link EventOutputStream}</li>
+ *   <li>Sends a {@code hello} handshake</li>
+ *   <li>Waits for an {@code addClasspath} command with Groovy and project dependency entries</li>
+ *   <li>For Gradle/Maven: creates a bootstrap {@link URLClassLoader} with Groovy jars
+ *       (parent = platform classloader), then creates a {@code GroovyClassLoader} via reflection
+ *       and adds project dependencies + runner jar via {@code addURL()}</li>
+ *   <li>For GADE/Custom: Groovy is already on the system classpath, so the engine is loaded
+ *       directly from the system classloader</li>
+ *   <li>Loads {@link GadeRunnerEngine} and invokes its
+ *       {@code run(BufferedReader, BufferedWriter)} method</li>
+ * </ol>
  */
 public class GadeRunnerMain {
 
   private static final OutputStream ROOT_OUT = new FileOutputStream(FileDescriptor.out);
   private static final OutputStream ROOT_ERR = new FileOutputStream(FileDescriptor.err);
   private static final boolean VERBOSE = Boolean.getBoolean("gade.runner.verbose");
-  public static final String GUI_INTERACTION_KEYS = "__gadeGuiInteractionKeys";
-  private static final JsonSlurper jsonSlurper = new JsonSlurper();
-
-  private static final AtomicReference<Thread> currentEvalThread = new AtomicReference<>();
 
   private GadeRunnerMain() {}
 
@@ -45,7 +52,6 @@ public class GadeRunnerMain {
            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
 
         emitRaw("runner accepted connection on port " + actualPort);
-        emitRaw("runner entering read loop");
         emitRaw("runner local=" + socket.getLocalSocketAddress() + " remote=" + socket.getRemoteSocketAddress());
         PrintStream previousOut = System.out;
         PrintStream previousErr = System.err;
@@ -57,76 +63,53 @@ public class GadeRunnerMain {
           System.setOut(outStream);
           System.setErr(errStream);
 
-          Binding binding;
-          GroovyShell shell;
-          try {
-            binding = new Binding();
-            shell = new GroovyShell(binding);
-          } catch (Throwable t) {
-            emitRaw("shell init failed: " + t);
-            emitRaw(getStackTrace(t));
-            emitError("init", "Shell init failed: " + t.getMessage(), getStackTrace(t), writer);
-            return;
-          }
-
+          // Send hello handshake
           emit(Map.of("type", "hello", "port", actualPort, "protocolVersion", ProtocolVersion.CURRENT), writer);
 
-          // Track pending GUI requests for async response handling
-          ConcurrentHashMap<String, CompletableFuture<Object>> guiPending = new ConcurrentHashMap<>();
+          // Wait for addClasspath command (blocking read before engine starts)
+          Map<String, Object> cpCmd = waitForClasspath(reader, writer);
+          List<String> groovyEntries = toStringList(cpCmd.get("groovyEntries"));
+          List<String> projectEntries = toStringList(cpCmd.get("projectEntries"));
+          emitRaw("received " + groovyEntries.size() + " groovy entries, "
+              + projectEntries.size() + " project entries");
 
-          try {
-            String line;
-            while ((line = reader.readLine()) != null) {
-              if (line.isBlank()) {
-                continue;
-              }
-              emitRaw("runner received: " + line);
-              try {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> cmd = (Map<String, Object>) jsonSlurper.parseText(line);
-                String action = (String) cmd.get("cmd");
-                String type = (String) cmd.get("type");
-                String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
+          // Build classloader for the engine.
+          // Project deps are NOT loaded here — they are passed to GadeRunnerEngine
+          // which adds them to the shell's GroovyClassLoader via addURL(), matching
+          // how @Grab works in GADE mode. This ensures SLF4J/Log4j and all deps
+          // live on the same GroovyClassLoader as scripts.
+          ClassLoader engineCL;
+          URL runnerJarUrl = GadeRunnerMain.class.getProtectionDomain().getCodeSource().getLocation();
 
-                // Handle responses from Gade (gui_response, gui_error)
-                if (type != null) {
-                  switch (type) {
-                    case "gui_response" -> handleGuiResponse(cmd, guiPending);
-                    case "gui_error" -> handleGuiError(cmd, guiPending);
-                    default -> emitRaw("Unhandled message type: " + type);
-                  }
-                  continue;
-                }
-
-                // Handle commands from Gade (eval, bindings, interrupt, shutdown)
-                try {
-                  switch (action) {
-                    case "eval" -> handleEval(binding, shell, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer, guiPending);
-                    case "bindings" -> handleBindings(binding, id, writer);
-                    case "interrupt" -> handleInterrupt(id, writer);
-                    case "setWorkingDir" -> handleSetWorkingDir(id, (String) cmd.get("dir"), writer);
-                    case "shutdown" -> {
-                      emit(Map.of("type", "shutdown", "id", id), writer);
-                      return;
-                    }
-                    default -> emitError(id, "Unknown command: " + action, null, writer);
-                  }
-                } catch (Exception e) {
-                  emitRaw("command failed: " + e);
-                  emitRaw(getStackTrace(e));
-                  emitError(id, e.getMessage(), getStackTrace(e), writer);
-                }
-              } catch (Exception parse) {
-                emitRaw("protocol parse failed: " + parse);
-                emitRaw(getStackTrace(parse));
-                emitError("protocol", "Failed to parse command: " + parse.getMessage(), getStackTrace(parse), writer);
-              }
+          if (!groovyEntries.isEmpty()) {
+            // Gradle/Maven mode: Groovy is NOT on -cp
+            // Bootstrap URLClassLoader with Groovy/Ivy jars + runner jar
+            // (parent = platform CL for isolation from system CL)
+            List<URL> bootstrapUrls = new ArrayList<>();
+            for (URL u : toUrls(groovyEntries)) {
+              bootstrapUrls.add(u);
             }
-            emitRaw("runner received EOF, shutting down");
-          } catch (IOException loopEx) {
-            emitRaw("runner read loop exception: " + loopEx);
-            emitRaw(getStackTrace(loopEx));
+            bootstrapUrls.add(runnerJarUrl);
+            engineCL = new URLClassLoader(bootstrapUrls.toArray(new URL[0]),
+                ClassLoader.getPlatformClassLoader());
+          } else {
+            // GADE/Custom mode: Groovy is already on the system classpath
+            engineCL = GadeRunnerMain.class.getClassLoader();
           }
+
+          Thread.currentThread().setContextClassLoader(engineCL);
+
+          // Send classpathAdded ack
+          emit(Map.of("type", "classpathAdded"), writer);
+
+          // Load and invoke GadeRunnerEngine via reflection (no Groovy import needed here).
+          // Project dep paths are passed so the engine can add them to the shell's
+          // GroovyClassLoader — keeping deps on the same CL as scripts.
+          Class<?> engineClass = engineCL.loadClass("se.alipsa.gade.runner.GadeRunnerEngine");
+          Method runMethod = engineClass.getMethod("run",
+              BufferedReader.class, BufferedWriter.class, String[].class);
+          runMethod.invoke(null, reader, writer, projectEntries.toArray(new String[0]));
+
         } finally {
           System.setOut(previousOut);
           System.setErr(previousErr);
@@ -143,6 +126,65 @@ public class GadeRunnerMain {
       emitRaw(getStackTrace(t));
       emitError("init", "Runner failed: " + t.getMessage(), getStackTrace(t), null);
     }
+  }
+
+  /**
+   * Reads lines from the socket until an {@code addClasspath} command is received.
+   * Returns the parsed command map containing {@code groovyEntries} and {@code projectEntries}.
+   * Any non-addClasspath messages received during this phase are logged and skipped.
+   */
+  private static Map<String, Object> waitForClasspath(BufferedReader reader, BufferedWriter writer) throws IOException {
+    String line;
+    while ((line = reader.readLine()) != null) {
+      if (line.isBlank()) {
+        continue;
+      }
+      emitRaw("bootstrap received: " + line);
+      try {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> cmd = ProtocolXml.fromXml(line);
+        String action = (String) cmd.get("cmd");
+        if ("addClasspath".equals(action)) {
+          return cmd;
+        } else {
+          emitRaw("ignoring non-addClasspath command during bootstrap: " + action);
+        }
+      } catch (Exception parse) {
+        emitRaw("bootstrap parse failed: " + parse);
+      }
+    }
+    throw new IOException("Socket closed before addClasspath command received");
+  }
+
+  /**
+   * Converts a list-like object from the protocol into a {@code List<String>}.
+   */
+  private static List<String> toStringList(Object obj) {
+    if (!(obj instanceof List<?> list)) {
+      return List.of();
+    }
+    List<String> result = new ArrayList<>();
+    for (Object item : list) {
+      if (item != null) {
+        result.add(String.valueOf(item));
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Converts a list of file paths to an array of URLs.
+   */
+  private static URL[] toUrls(List<String> paths) {
+    List<URL> urls = new ArrayList<>();
+    for (String path : paths) {
+      try {
+        urls.add(new File(path).toURI().toURL());
+      } catch (Exception e) {
+        emitRaw("skipping bad classpath entry: " + path + " (" + e + ")");
+      }
+    }
+    return urls.toArray(new URL[0]);
   }
 
   private static InetAddress loopbackV4() throws IOException {
@@ -166,121 +208,8 @@ public class GadeRunnerMain {
     }
   }
 
-  private static void handleEval(Binding binding, GroovyShell shell, String id, String script, Map<String, Object> bindings, BufferedWriter writer, ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
-    if (script == null) {
-      emitError(id, "No script provided", null, writer);
-      return;
-    }
-    if (currentEvalThread.get() != null) {
-      emitError(id, "Runner is busy executing another script", null, writer);
-      return;
-    }
-    Thread t = new Thread(() -> {
-      currentEvalThread.set(Thread.currentThread());
-      try {
-        if (bindings != null) {
-          ensureRemoteGuiInteractions(binding, bindings.get(GUI_INTERACTION_KEYS), writer, guiPending);
-          bindings.forEach((k, v) -> {
-            if (!GUI_INTERACTION_KEYS.equals(k)) {
-              binding.setVariable(k, v);
-            }
-          });
-        }
-        Object result = shell.evaluate(script);
-        emit(Map.of("type", "result", "id", id, "result", result == null ? "null" : String.valueOf(result)), writer);
-      } catch (Exception e) {
-        emitError(id, e.getMessage(), getStackTrace(e), writer);
-      } finally {
-        currentEvalThread.set(null);
-      }
-    }, "gade-runner-eval");
-    t.start();
-  }
-
-  private static void ensureRemoteGuiInteractions(
-      Binding binding,
-      Object keys,
-      BufferedWriter writer,
-      ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
-    if (keys == null) {
-      return;
-    }
-    if (!(keys instanceof Iterable<?> iterable)) {
-      return;
-    }
-    Map<String, Object> variables = binding.getVariables();
-    for (Object key : iterable) {
-      String name = key == null ? "" : String.valueOf(key).trim();
-      if (name.isEmpty()) {
-        continue;
-      }
-      if (variables.containsKey(name)) {
-        continue;
-      }
-      // Inject RemoteInOut proxy instead of UnsupportedGuiInteraction
-      binding.setVariable(name, new RemoteInOut(writer, guiPending));
-    }
-  }
-
-  private static void handleBindings(Binding binding, String id, BufferedWriter writer) {
-    Map<String, Object> variables = binding.getVariables();
-    Map<String, String> serialized = new HashMap<>();
-    variables.forEach((k, v) -> serialized.put(String.valueOf(k), v == null ? "null" : v.toString()));
-    emit(Map.of("type", "bindings", "id", id, "bindings", serialized), writer);
-  }
-
-  private static void handleSetWorkingDir(String id, String dir, BufferedWriter writer) {
-    if (dir != null && !dir.isBlank()) {
-      System.setProperty("user.dir", dir);
-      emitRaw("Working directory set to: " + dir);
-    }
-    emit(Map.of("type", "result", "id", id, "result", dir == null ? "" : dir), writer);
-  }
-
-  private static void handleInterrupt(String id, BufferedWriter writer) {
-    Thread running = currentEvalThread.get();
-    if (running != null) {
-      running.interrupt();
-      emit(Map.of("type", "interrupted", "id", id), writer);
-    } else {
-      emit(Map.of("type", "interrupted", "id", id, "message", "No script running"), writer);
-    }
-  }
-
-  private static void handleGuiResponse(Map<String, Object> cmd, ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
-    String id = (String) cmd.get("id");
-    if (id == null) {
-      emitRaw("GUI response missing id, ignoring");
-      return;
-    }
-    CompletableFuture<Object> future = guiPending.remove(id);
-    if (future != null) {
-      Object result = cmd.get("result");
-      future.complete(result);
-      emitRaw("GUI response completed for id: " + id);
-    } else {
-      emitRaw("GUI response for unknown id: " + id);
-    }
-  }
-
-  private static void handleGuiError(Map<String, Object> cmd, ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
-    String id = (String) cmd.get("id");
-    if (id == null) {
-      emitRaw("GUI error missing id, ignoring");
-      return;
-    }
-    CompletableFuture<Object> future = guiPending.remove(id);
-    if (future != null) {
-      String error = (String) cmd.getOrDefault("error", "GUI operation failed");
-      future.completeExceptionally(new RuntimeException(error));
-      emitRaw("GUI error completed for id: " + id + " error: " + error);
-    } else {
-      emitRaw("GUI error for unknown id: " + id);
-    }
-  }
-
   private static void emitError(String id, String msg, String stackTrace, BufferedWriter writer) {
-    Map<String, Object> payload = new HashMap<>();
+    java.util.HashMap<String, Object> payload = new java.util.HashMap<>();
     payload.put("type", "error");
     payload.put("id", id);
     payload.put("error", msg);
@@ -291,21 +220,19 @@ public class GadeRunnerMain {
   }
 
   private static void emit(Map<String, ?> payload, BufferedWriter writer) {
-    String json = JsonOutput.toJson(payload);
+    String xml = ProtocolXml.toXml(payload);
     if (writer == null) {
       try {
-        ROOT_OUT.write((json + "\n").getBytes(StandardCharsets.UTF_8));
+        ROOT_OUT.write((xml + "\n").getBytes(StandardCharsets.UTF_8));
         ROOT_OUT.flush();
       } catch (IOException e) {
         emitRaw("emit to ROOT_OUT failed: " + e);
       }
       return;
     }
-    // Multiple threads (eval thread + stdout/stderr EventOutputStream) share the same writer.
-    // Synchronize on the writer to avoid interleaved JSON messages corrupting the stream.
     synchronized (writer) {
       try {
-        writer.write(json);
+        writer.write(xml);
         writer.write("\n");
         writer.flush();
       } catch (IOException e) {
@@ -321,7 +248,8 @@ public class GadeRunnerMain {
   }
 
   /**
-   * OutputStream that turns writes into JSON events on the root stdout/stderr to avoid recursion.
+   * OutputStream that turns writes into XML events on the socket.
+   * No Groovy deps — writes ProtocolXml directly.
    */
   static class EventOutputStream extends OutputStream {
     private final String type;

@@ -122,7 +122,9 @@ final class GroovyRuntimeManager {
 
         classLoader = runtimeClassLoaderFactory.create(targetRuntime, testContext, console);
         File projectDir = gui.getInoutComponent() != null ? gui.getInoutComponent().projectDir() : null;
-        processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console, gui.guiInteractions, projectDir);
+        processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(targetRuntime),
+            buildGroovyBootstrapEntries(targetRuntime), buildProjectDepEntries(targetRuntime),
+            console, gui.guiInteractions, projectDir);
 
         activeRuntime = targetRuntime;
         runtimeTestContext = (RuntimeType.GRADLE.equals(targetRuntime.getType())
@@ -300,34 +302,47 @@ final class GroovyRuntimeManager {
   }
 
   /**
-   * Builds the classpath entries for subprocess execution.
+   * Builds the JVM {@code -cp} entries for subprocess execution.
    * <p>
-   * Only Groovy, Ivy, and the runner JAR are included. All other libraries
-   * (logging, Jackson, Gade application classes, project dependencies) are
-   * excluded so the subprocess has a fully isolated classpath. Users add
-   * their own dependencies via {@code @Grab}.
+   * For <b>Gradle/Maven</b> runtimes, only the runner JAR is included on
+   * {@code -cp}. Groovy and project dependencies are loaded dynamically —
+   * see {@link #buildGroovyBootstrapEntries(RuntimeConfig)} and
+   * {@link #buildProjectDepEntries(RuntimeConfig)}.
+   * <p>
+   * For <b>GADE</b> runtime, Groovy/Ivy jars + runner JAR are on {@code -cp}.
+   * Users add their own dependencies via {@code @Grab}.
+   * <p>
+   * For <b>Custom</b> runtime, Groovy/Ivy jars + additional configured jars +
+   * classloader URLs + runner JAR are on {@code -cp}.
    *
+   * @param runtime the runtime configuration to build classpath for
    * @return list of classpath entry paths
    */
-  List<String> buildClassPathEntries() {
+  List<String> buildClassPathEntries(RuntimeConfig runtime) {
     Set<String> entries = new LinkedHashSet<>();
-    addGroovyJarsFromDir(entries);
-    addRunnerJar(entries);
-    // Fallback: if no directory-based jars found, use classloader URLs (development mode)
-    if (entries.isEmpty() && classLoader != null) {
-      for (URL url : classLoader.getURLs()) {
-        try {
-          File file = Paths.get(url.toURI()).toFile();
-          String name = file.getName().toLowerCase(java.util.Locale.ROOT);
-          if (file.isFile() && name.endsWith(".jar")
-              && (name.startsWith("groovy-") || name.startsWith("groovy.") || name.startsWith("ivy-"))) {
-            entries.add(file.getAbsolutePath());
+
+    if (RuntimeType.GRADLE.equals(runtime.getType()) || RuntimeType.MAVEN.equals(runtime.getType())) {
+      // Gradle/Maven: runner jar only on -cp; deps loaded dynamically
+      addRunnerJar(entries);
+    } else {
+      // GADE/Custom: Groovy/Ivy + classloader URLs (if Custom) + runner jar on -cp
+      addGroovyJarsFromDir(entries);
+      if (entries.isEmpty()) {
+        addGroovyJarsByClassResolution(entries);
+      }
+
+      // For Custom runtime, include additional jars from classloader
+      if (classLoader != null && RuntimeType.CUSTOM.equals(runtime.getType())) {
+        for (URL url : classLoader.getURLs()) {
+          try {
+            entries.add(Paths.get(url.toURI()).toFile().getAbsolutePath());
+          } catch (Exception e) {
+            log.debug("Failed to add classpath url {}", url, e);
           }
-        } catch (Exception e) {
-          log.debug("Failed to add classpath url {}", url, e);
         }
       }
-      addRunnerJar(entries); // retry runner jar for dev mode
+
+      addRunnerJar(entries);
     }
 
     if (entries.isEmpty()) {
@@ -336,6 +351,186 @@ final class GroovyRuntimeManager {
       log.debug("Classpath entries for runtime runner ({}):\n{}", entries.size(), String.join("\n", entries));
     }
     return new ArrayList<>(entries);
+  }
+
+  /**
+   * Builds the Groovy/Ivy bootstrap entries for the subprocess.
+   * <p>
+   * For <b>Gradle/Maven</b> runtimes, returns Groovy and Ivy jar paths extracted
+   * from the project's resolved dependencies. These are used to create a bootstrap
+   * {@link java.net.URLClassLoader} in the subprocess so that a
+   * {@code GroovyClassLoader} can be instantiated via reflection.
+   * <p>
+   * For <b>GADE/Custom</b> runtimes, returns an empty list — Groovy is already
+   * on the JVM {@code -cp}.
+   *
+   * @param runtime the runtime configuration
+   * @return list of Groovy/Ivy jar paths for the bootstrap classloader
+   */
+  List<String> buildGroovyBootstrapEntries(RuntimeConfig runtime) {
+    if (!RuntimeType.GRADLE.equals(runtime.getType()) && !RuntimeType.MAVEN.equals(runtime.getType())) {
+      return List.of();
+    }
+    if (classLoader == null) {
+      log.warn("No classloader available for building Groovy bootstrap entries");
+      return List.of();
+    }
+    Set<String> entries = new LinkedHashSet<>();
+    boolean hasIvy = false;
+    for (URL url : classLoader.getURLs()) {
+      try {
+        String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
+        String name = new File(path).getName();
+        if (isGroovyOrIvyJar(name)) {
+          entries.add(path);
+          if (isIvyJar(name)) {
+            hasIvy = true;
+          }
+        }
+      } catch (Exception e) {
+        log.debug("Failed to convert dependency url {}", url, e);
+      }
+    }
+    // Ivy is needed for @Grab support. If the project's resolved deps don't
+    // include Ivy (common in Groovy 4+ where Ivy is optional), fall back to
+    // Gade's bundled Ivy jar so @Grab still works in Gradle/Maven mode.
+    if (!hasIvy) {
+      addIvyFallback(entries);
+    }
+    if (!entries.isEmpty()) {
+      log.debug("Groovy bootstrap entries ({}):\n{}", entries.size(), String.join("\n", entries));
+    } else {
+      log.warn("No Groovy/Ivy jars found in resolved dependencies for {} runtime", runtime.getType());
+    }
+    return new ArrayList<>(entries);
+  }
+
+  /**
+   * Tries to add Ivy jars from Gade's bundled {@code lib/groovy/} directory
+   * or by resolving the Ivy class from the host classloader.
+   */
+  private void addIvyFallback(Set<String> entries) {
+    // Try lib/groovy/ directory (distribution mode)
+    File libDir = resolveLibDir();
+    if (libDir != null) {
+      File groovyDir = new File(libDir, "groovy");
+      if (groovyDir.isDirectory()) {
+        File[] jars = groovyDir.listFiles((dir, name) -> isIvyJar(name));
+        if (jars != null && jars.length > 0) {
+          for (File jar : jars) {
+            entries.add(jar.getAbsolutePath());
+          }
+          log.debug("Added {} Ivy jar(s) from {} (fallback)", jars.length, groovyDir);
+          return;
+        }
+      }
+    }
+    // Try class resolution (development mode)
+    try {
+      Class<?> ivyClass = Class.forName("org.apache.ivy.Ivy");
+      URL location = ivyClass.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+        log.debug("Added Ivy jar via class resolution (fallback)");
+      }
+    } catch (ClassNotFoundException e) {
+      log.debug("Ivy not available on host classpath, @Grab may not work in subprocess");
+    } catch (Exception e) {
+      log.debug("Failed to resolve Ivy code source", e);
+    }
+  }
+
+  /**
+   * Builds the project dependency entries (excluding Groovy/Ivy) for the subprocess.
+   * <p>
+   * For <b>Gradle/Maven</b> runtimes, returns all non-Groovy/Ivy dependency paths
+   * from the project's resolved dependencies. These are added to the
+   * {@code GroovyClassLoader} in the subprocess via {@code addURL()}.
+   * <p>
+   * For <b>GADE/Custom</b> runtimes, returns an empty list — users add deps via
+   * {@code @Grab} or additional jars.
+   *
+   * @param runtime the runtime configuration
+   * @return list of project dependency paths
+   */
+  List<String> buildProjectDepEntries(RuntimeConfig runtime) {
+    if (!RuntimeType.GRADLE.equals(runtime.getType()) && !RuntimeType.MAVEN.equals(runtime.getType())) {
+      return List.of();
+    }
+    if (classLoader == null) {
+      log.warn("No classloader available for building project dependency entries");
+      return List.of();
+    }
+    List<String> entries = new ArrayList<>();
+    for (URL url : classLoader.getURLs()) {
+      try {
+        String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
+        if (!isGroovyOrIvyJar(new File(path).getName())) {
+          entries.add(path);
+        }
+      } catch (Exception e) {
+        log.debug("Failed to convert dependency url {}", url, e);
+      }
+    }
+    if (!entries.isEmpty()) {
+      log.debug("Project dependency entries ({}):\n{}", entries.size(), String.join("\n", entries));
+    }
+    return entries;
+  }
+
+  /**
+   * Checks if a jar filename belongs to Groovy or Ivy.
+   * Used to separate Groovy/Ivy jars (for bootstrap classloader) from project deps.
+   */
+  private boolean isGroovyOrIvyJar(String fileName) {
+    String name = fileName.toLowerCase(Locale.ROOT);
+    return name.startsWith("groovy-") || name.startsWith("groovy.")
+        || isIvyJar(name);
+  }
+
+  /**
+   * Checks if a jar filename is an Ivy jar.
+   */
+  private boolean isIvyJar(String fileName) {
+    String name = fileName.toLowerCase(Locale.ROOT);
+    return name.startsWith("ivy-") || name.startsWith("ivy.");
+  }
+
+  /**
+   * Development mode fallback: resolves essential Groovy and Ivy jars from the
+   * host classloader by looking up known classes. Used when {@code lib/groovy/}
+   * is not available (i.e. running via {@code ./gradlew run}).
+   */
+  private void addGroovyJarsByClassResolution(Set<String> entries) {
+    String[] classNames = {
+        "groovy.lang.GroovySystem",                   // groovy (core)
+        "groovy.json.JsonSlurper",                    // groovy-json
+        "groovy.xml.XmlSlurper",                      // groovy-xml
+        "groovy.sql.Sql",                             // groovy-sql
+        "groovy.yaml.YamlSlurper",                    // groovy-yaml
+        "groovy.console.ui.Console",                  // groovy-console
+        "groovy.text.markup.MarkupTemplateEngine",    // groovy-templates
+        "groovy.ant.AntBuilder",                      // groovy-ant
+        "groovy.swing.SwingBuilder",                  // groovy-swing
+        "groovy.transform.ThreadInterrupt",           // groovy-groovydoc
+        "org.apache.ivy.Ivy",                         // ivy
+    };
+    for (String className : classNames) {
+      try {
+        Class<?> cls = Class.forName(className);
+        URL location = cls.getProtectionDomain().getCodeSource().getLocation();
+        if (location != null) {
+          entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+        }
+      } catch (ClassNotFoundException e) {
+        log.debug("Class {} not found on host classpath, skipping", className);
+      } catch (Exception e) {
+        log.debug("Failed to resolve code source for {}", className, e);
+      }
+    }
+    if (!entries.isEmpty()) {
+      log.debug("Added {} Groovy/Ivy jars via class resolution (development mode)", entries.size());
+    }
   }
 
   /**

@@ -156,7 +156,13 @@ dependencies {
   implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openHtmlToPdfVersion}"
 
   implementation 'se.alipsa:simple-rest:1.1.1'
-  implementation("se.alipsa.matrix:matrix-all:2.4.1-SNAPSHOT")
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.4.1-SNAPSHOT"))
+  implementation("se.alipsa.matrix:matrix-core")
+  implementation("se.alipsa.matrix:matrix-stats")
+  implementation("se.alipsa.matrix:matrix-charts")
+  implementation("se.alipsa.matrix:matrix-xchart")
+  implementation("se.alipsa.matrix:matrix-bigquery")
+  implementation("se.alipsa.matrix:matrix-sql")
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation 'org.apache.maven:maven-artifact:3.9.11'
   implementation 'org.apache.maven:maven-model:3.9.11'
@@ -268,7 +274,14 @@ processResources.doLast {
       ext.matrixChartsVersion = extractVersionNumber('matrix-charts', fileName)
     } else if (fileName.contains('matrix-stats')) {
       ext.matrixStatsVersion = extractVersionNumber('matrix-stats', fileName)
-    } else if (fileName.contains('matrix-datasets')) {
+    } else if (fileName.contains('matrix-xchart')) {
+      ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
+    } else if (fileName.contains('matrix-bigquery')) {
+      ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
+    } else if (fileName.contains('matrix-sql')) {
+      ext.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
+    }
+    /*else if (fileName.contains('matrix-datasets')) {
       ext.matrixDatasetsVersion = extractVersionNumber('matrix-datasets', fileName)
     } else if (fileName.contains('matrix-spreadsheet')) {
       ext.matrixSpreadsheetVersion = extractVersionNumber('matrix-spreadsheet', fileName)
@@ -276,21 +289,15 @@ processResources.doLast {
       ext.matrixJsonVersion = extractVersionNumber('matrix-json', fileName)
     } else if (fileName.contains('matrix-csv')) {
       ext.matrixCsvVersion = extractVersionNumber('matrix-csv', fileName)
-    } else if (fileName.contains('matrix-sql')) {
-      ext.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
     } else if (fileName.contains('matrix-parquet')) {
       ext.matrixParquetVersion = extractVersionNumber('matrix-parquet', fileName)
-    } else if (fileName.contains('matrix-bigquery')) {
-      ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
-    } else if (fileName.contains('matrix-xchart')) {
-      ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
     } else if (fileName.contains('matrix-tablesaw')) {
       ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
     } else if (fileName.contains('matrix-gsheets')) {
       ext.matrixGsheetsVersion = extractVersionNumber('matrix-gsheets', fileName)
     } else if (fileName.contains('matrix-avro')) {
       ext.matrixAvroVersion = extractVersionNumber('matrix-avro', fileName)
-    } else if (fileName.contains('gmd-core')) {
+    }*/ else if (fileName.contains('gmd-core')) {
       ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
     }
   }
@@ -303,18 +310,18 @@ processResources.doLast {
     ant.entry(key: "matrixCoreVersion", value: "${matrixCoreVersion}")
     ant.entry(key: "matrixChartsVersion", value: "${matrixChartsVersion}")
     ant.entry(key: "matrixStatsVersion", value: "${matrixStatsVersion}")
-    ant.entry(key: "matrixDatasetsVersion", value: "${matrixDatasetsVersion}")
-    ant.entry(key: "matrixSpreadsheetVersion", value: "${matrixSpreadsheetVersion}")
-    ant.entry(key: "matrixJsonVersion", value: "${matrixJsonVersion}")
-    ant.entry(key: "matrixCsvVersion", value: "${matrixCsvVersion}")
+    //ant.entry(key: "matrixDatasetsVersion", value: "${matrixDatasetsVersion}")
+    //ant.entry(key: "matrixSpreadsheetVersion", value: "${matrixSpreadsheetVersion}")
+    //ant.entry(key: "matrixJsonVersion", value: "${matrixJsonVersion}")
+    //ant.entry(key: "matrixCsvVersion", value: "${matrixCsvVersion}")
     ant.entry(key: "matrixSqlVersion", value: "${matrixSqlVersion}")
-    ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
+    //ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
     ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
     ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
-    ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
-    ant.entry(key: "matrixAvroVersion", value: "${matrixAvroVersion}")
+    //ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
+    //ant.entry(key: "matrixAvroVersion", value: "${matrixAvroVersion}")
     ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
-    ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
+    //ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
   }
   ant.copy(
       file: "${projectDir}/version.properties",
@@ -623,6 +630,7 @@ task runnerJar(type: Jar, dependsOn: classes) {
   from sourceSets.main.output
   include 'se/alipsa/gade/runner/**'
   include 'se/alipsa/gade/runtime/ProtocolVersion**'
+  include 'se/alipsa/gade/runtime/ProtocolXml**'
 }
 
 // Ensure runnerJar is built before run and runtime tasks
