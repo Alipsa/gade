@@ -26,6 +26,10 @@
       <AppenderRef ref="console"/>
       <AppenderRef ref="GadeLog"/>
     </logger>
+    <logger name="com.openhtmltopdf" level="error" additivity="false">
+      <AppenderRef ref="console"/>
+      <AppenderRef ref="GadeLog"/>
+    </logger>
     <logger name="se.alipsa" level="info" additivity="false">
       <AppenderRef ref="console"/>
       <AppenderRef ref="GadeLog"/>

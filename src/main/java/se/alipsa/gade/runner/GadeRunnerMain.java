@@ -1,6 +1,7 @@
 package se.alipsa.gade.runner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import groovy.json.JsonOutput;
+import groovy.json.JsonSlurper;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import se.alipsa.gade.runtime.ProtocolVersion;
@@ -27,7 +28,7 @@ public class GadeRunnerMain {
   private static final OutputStream ROOT_ERR = new FileOutputStream(FileDescriptor.err);
   private static final boolean VERBOSE = Boolean.getBoolean("gade.runner.verbose");
   public static final String GUI_INTERACTION_KEYS = "__gadeGuiInteractionKeys";
-  private static final ObjectMapper mapper = ProtocolMapper.create();
+  private static final JsonSlurper jsonSlurper = new JsonSlurper();
 
   private static final AtomicReference<Thread> currentEvalThread = new AtomicReference<>();
 
@@ -81,7 +82,8 @@ public class GadeRunnerMain {
               }
               emitRaw("runner received: " + line);
               try {
-                Map<String, Object> cmd = mapper.readValue(line, Map.class);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> cmd = (Map<String, Object>) jsonSlurper.parseText(line);
                 String action = (String) cmd.get("cmd");
                 String type = (String) cmd.get("type");
                 String id = (String) cmd.getOrDefault("id", UUID.randomUUID().toString());
@@ -102,6 +104,7 @@ public class GadeRunnerMain {
                     case "eval" -> handleEval(binding, shell, id, (String) cmd.get("script"), (Map<String, Object>) cmd.get("bindings"), writer, guiPending);
                     case "bindings" -> handleBindings(binding, id, writer);
                     case "interrupt" -> handleInterrupt(id, writer);
+                    case "setWorkingDir" -> handleSetWorkingDir(id, (String) cmd.get("dir"), writer);
                     case "shutdown" -> {
                       emit(Map.of("type", "shutdown", "id", id), writer);
                       return;
@@ -226,6 +229,14 @@ public class GadeRunnerMain {
     emit(Map.of("type", "bindings", "id", id, "bindings", serialized), writer);
   }
 
+  private static void handleSetWorkingDir(String id, String dir, BufferedWriter writer) {
+    if (dir != null && !dir.isBlank()) {
+      System.setProperty("user.dir", dir);
+      emitRaw("Working directory set to: " + dir);
+    }
+    emit(Map.of("type", "result", "id", id, "result", dir == null ? "" : dir), writer);
+  }
+
   private static void handleInterrupt(String id, BufferedWriter writer) {
     Thread running = currentEvalThread.get();
     if (running != null) {
@@ -280,10 +291,10 @@ public class GadeRunnerMain {
   }
 
   private static void emit(Map<String, ?> payload, BufferedWriter writer) {
+    String json = JsonOutput.toJson(payload);
     if (writer == null) {
       try {
-        mapper.writeValue(ROOT_OUT, payload);
-        ROOT_OUT.write('\n');
+        ROOT_OUT.write((json + "\n").getBytes(StandardCharsets.UTF_8));
         ROOT_OUT.flush();
       } catch (IOException e) {
         emitRaw("emit to ROOT_OUT failed: " + e);
@@ -294,7 +305,7 @@ public class GadeRunnerMain {
     // Synchronize on the writer to avoid interleaved JSON messages corrupting the stream.
     synchronized (writer) {
       try {
-        mapper.writeValue(writer, payload);
+        writer.write(json);
         writer.write("\n");
         writer.flush();
       } catch (IOException e) {

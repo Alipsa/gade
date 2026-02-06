@@ -65,36 +65,35 @@ After installing Gade, launch the application and you'll see:
 
 ## Runtime Selection
 
-Gade supports three runtime modes. Choose the right one for your workflow:
+Gade supports four runtime types. All runtimes execute scripts in a separate subprocess with a clean classpath, ensuring full isolation from the IDE.
 
-### Runtime Modes Comparison
+### Runtime Overview
 
-| Feature | Gade Runtime | Gradle Runtime | Maven Runtime |
-|---------|-------------|----------------|---------------|
-| **Speed** | ⚡⚡⚡ Fastest | ⚡ Slower (dependency resolution) | ⚡ Slower (dependency resolution) |
-| **Dependencies** | ❌ No external deps | ✅ Full Gradle support | ✅ Full Maven support |
-| **Use Case** | Quick scripts, exploration | Complex projects, libraries | Enterprise projects |
-| **Completion** | ✅ Built-in classes | ✅ Project dependencies | ✅ Project dependencies |
-| **Execution Model** | Embedded GroovyShell | Separate Gradle process | Separate Maven process |
+| Feature | Gade | Gradle | Maven | Custom |
+|---------|------|--------|-------|--------|
+| **Purpose** | Scripting, ad-hoc analysis | Gradle-based projects | Maven-based projects | Full control over JVM/Groovy |
+| **Classpath source** | JDK + Groovy | `build.gradle` dependencies | `pom.xml` dependencies | User-specified jars |
+| **Build file required** | No | `build.gradle` | `pom.xml` | No |
+| **`@Grab` support** | Yes | Yes | Yes | Yes |
+| **Custom JVM** | No (uses bundled) | Configurable | Configurable | Configurable |
 
-### When to Use Each Runtime
+### Gade Runtime
 
-#### 1. Gade Runtime (Default - Embedded)
+This is a "bare" runtime with the JDK and Groovy on the classpath. The primary use is for scripting — creating an analysis, doing simple tasks, or exploring data without needing a build system.
 
 **Best for:**
 - Quick data exploration and ad-hoc analysis
-- Simple scripts without external dependencies
-- Fast iteration during development
+- Simple scripts and prototyping
 - Learning Groovy and testing code snippets
+- Scripts that use `@Grab` to pull in dependencies on the fly
 
 **How to use:**
-1. Go to **Tools → Runtime → Select Runtime**
-2. Choose **Gade Runtime**
-3. Your scripts execute immediately in the embedded GroovyShell
+1. Select **Gade** from the **Runtimes** menu
+2. Write and run your script
 
 **Example:**
 ```groovy
-// No dependencies needed - everything built-in
+// Built-in classes are available directly
 import se.alipsa.groovy.matrix.*
 
 def data = Matrix.builder()
@@ -105,14 +104,21 @@ def data = Matrix.builder()
 println data.summary()
 ```
 
-**Limitations:**
-- Cannot add external Maven/Gradle dependencies
-- Only classes bundled with Gade are available
-- No custom dependency management
+**Using `@Grab` to add dependencies:**
+```groovy
+@Grab('org.apache.commons:commons-math3:3.6.1')
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+
+def stats = new DescriptiveStatistics()
+[1, 2, 3, 4, 5].each { stats.addValue(it) }
+println "Mean: ${stats.mean}"
+```
 
 ---
 
-#### 2. Gradle Runtime
+### Gradle Runtime
+
+This is meant to be used for projects where you use Gradle as the build system. The runtime classpath is created based on the dependencies defined in the Gradle build script. Only available when a `build.gradle` file exists in the project root.
 
 **Best for:**
 - Projects requiring external libraries (Apache Commons, Guava, etc.)
@@ -133,21 +139,17 @@ println data.summary()
    }
 
    dependencies {
-       // Groovy is automatically included
        implementation 'org.apache.commons:commons-math3:3.6.1'
        implementation 'com.google.guava:guava:31.1-jre'
        implementation 'org.apache.commons:commons-csv:1.9.0'
    }
    ```
 
-2. **Select Gradle Runtime:**
-   - Go to **Tools → Runtime → Select Runtime**
-   - Choose **Gradle Runtime**
+2. **Select Gradle from the Runtimes menu**
    - Gade automatically detects build.gradle
 
 3. **Run your script:**
    ```groovy
-   // Now you can use dependencies from build.gradle
    import org.apache.commons.math3.stat.descriptive.*
    import com.google.common.collect.ImmutableList
 
@@ -156,27 +158,17 @@ println data.summary()
 
    println "Mean: ${stats.mean}"
    println "Std Dev: ${stats.standardDeviation}"
-
-   def list = ImmutableList.of(1, 2, 3)
-   println "Immutable list: ${list}"
    ```
 
 **First-run behavior:**
 - Gradle downloads dependencies (may take time)
 - Subsequent runs use cached dependencies (fast)
 
-**Gradle commands:**
-```bash
-# View dependencies
-./gradlew dependencies
-
-# Clear cache (if issues)
-./gradlew clean
-```
-
 ---
 
-#### 3. Maven Runtime
+### Maven Runtime
+
+This is meant to be used for projects where you use Maven as the build system. The runtime classpath is created based on the dependencies defined in the Maven POM file. Only available when a `pom.xml` file exists in the project root.
 
 **Best for:**
 - Enterprise projects using Maven
@@ -215,13 +207,65 @@ println data.summary()
    </project>
    ```
 
-2. **Select Maven Runtime:**
-   - Go to **Tools → Runtime → Select Runtime**
-   - Choose **Maven Runtime**
+2. **Select Maven from the Runtimes menu**
 
-3. **Execute scripts with Maven classpath:**
+3. **Run your script:**
    - All dependencies from pom.xml are available
-   - Execution happens in a separate Maven process
+
+---
+
+### Custom Runtime
+
+This is a runtime where you specify the JVM and Groovy installation that you want to use. You also have the possibility to add additional jars to the classpath and declare dependencies using Gradle short notation (`groupId:artifactId:version`).
+
+**Best for:**
+- Using a specific JDK version different from the one bundled with Gade
+- Using a specific Groovy version
+- Environments where you need precise control over the classpath
+- Testing scripts against different JVM/Groovy combinations
+
+**Setup:**
+
+1. Go to **Runtimes → Add custom runtime**
+2. Configure the runtime:
+   - **Name:** A descriptive name (e.g., "Java 17 + Groovy 4.0")
+   - **JVM Home:** Path to the JDK installation (optional — defaults to the bundled JDK)
+   - **Groovy Home:** Path to a Groovy installation (optional — defaults to bundled Groovy)
+   - **Additional JARs:** Extra jar files to add to the classpath
+   - **Dependencies:** Maven coordinates in Gradle short notation (e.g., `org.apache.commons:commons-math3:3.6.1`)
+3. Select your custom runtime from the **Runtimes** menu
+
+**Editing or deleting custom runtimes:**
+- Go to **Runtimes → Edit custom runtimes** to modify, add, or remove custom runtimes
+
+---
+
+### Using `@Grab` Annotations
+
+`@Grab` annotations work with all runtime types and can be used to add dependencies to the classpath at script compilation time. Since all runtimes execute in an isolated subprocess, `@Grab` downloads are fully separated from the IDE classpath.
+
+```groovy
+@Grab('tech.tablesaw:tablesaw-core:0.44.1')
+@Grab('tech.tablesaw:tablesaw-html:0.44.1')
+import tech.tablesaw.api.Table
+
+def table = Table.read().url("https://example.com/data.csv")
+println table.structure()
+```
+
+`@GrabConfig(systemClassLoader=true)` also works safely since it only affects the subprocess JVM:
+
+```groovy
+@GrabConfig(systemClassLoader=true)
+@Grab('com.h2database:h2:2.2.224')
+import java.sql.DriverManager
+
+def conn = DriverManager.getConnection("jdbc:h2:mem:test")
+println "Connected: ${conn.catalog}"
+conn.close()
+```
+
+**Caution with Gradle and Maven runtimes:** Using `@Grab` in projects that already have a build system (Gradle or Maven) managing dependencies can easily become confusing and hard to maintain. The `@Grab` dependencies are invisible to the build system, which means other developers won't know about them, builds may not be reproducible, and version conflicts can arise. Use `@Grab` with utmost care in Gradle and Maven projects — prefer declaring dependencies in the build file instead.
 
 ---
 
@@ -229,11 +273,13 @@ println data.summary()
 
 You can switch runtimes at any time:
 
-1. **Tools → Runtime → Select Runtime**
-2. Choose the desired runtime
+1. Select the desired runtime from the **Runtimes** menu
+2. The active runtime is marked with a checkmark
 3. Scripts will execute in the new runtime on next run
 
-**Note:** Code completion updates when you switch runtimes to reflect available classes.
+The runtime selection is stored per project directory, so different projects can use different runtimes.
+
+**Note:** If a selected runtime becomes unavailable (e.g., a `build.gradle` file is deleted while the Gradle runtime is active), Gade will prompt you to select an alternative runtime.
 
 ---
 

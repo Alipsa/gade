@@ -463,6 +463,45 @@ runtime {
 }
 
 tasks.runtime.doLast {
+  // Reorganize jars into subdirectories for clean classpath isolation
+  // lib/groovy/   - Groovy + Ivy jars (subprocess + Gade app)
+  // lib/app/      - Gade application dependencies (Gade app only)
+  // lib/runtimes/ - gade-runner.jar (subprocess only)
+  ['linux', 'mac', 'win'].each { platform ->
+    def libDir = project.layout.buildDirectory.dir("image/gade-${platform}/lib").get().asFile
+
+    // Create subdirectories
+    def groovyDir = new File(libDir, 'groovy')
+    def appDir = new File(libDir, 'app')
+    def runtimesDir = new File(libDir, 'runtimes')
+    groovyDir.mkdirs()
+    appDir.mkdirs()
+    runtimesDir.mkdirs()
+
+    // Move groovy and ivy jars to lib/groovy/
+    libDir.listFiles({ File f ->
+      f.isFile() && f.name.endsWith('.jar') &&
+      (f.name.startsWith('groovy-') || f.name == 'groovy.jar' || f.name.startsWith('ivy-'))
+    } as FileFilter)?.each { it.renameTo(new File(groovyDir, it.name)) }
+
+    // Move groovy-all .pom file to lib/groovy/ (part of the Groovy distribution)
+    libDir.listFiles({ File f ->
+      f.isFile() && f.name.endsWith('.pom') &&
+      (f.name.startsWith('groovy-'))
+    } as FileFilter)?.each { it.renameTo(new File(groovyDir, it.name)) }
+
+    // Copy gade-runner.jar to lib/runtimes/
+    copy {
+      from runnerJar.archiveFile
+      into runtimesDir
+    }
+
+    // Move remaining jars to lib/app/
+    libDir.listFiles({ File f ->
+      f.isFile() && f.name.endsWith('.jar')
+    } as FileFilter)?.each { it.renameTo(new File(appDir, it.name)) }
+  }
+
   copy {
     from("$projectDir/src/main/resources/script/")
     into(project.layout.buildDirectory.dir("image/gade-linux/"))
@@ -576,6 +615,19 @@ task sourcesJar(type: Jar, dependsOn: classes) {
   from sourceSets.main.allSource
   archiveClassifier.set('sources')
 }
+
+// Separate JAR for the subprocess runner — contains only the classes needed
+// by GadeRunnerMain. No Jackson, no Log4j, no Gade application classes.
+task runnerJar(type: Jar, dependsOn: classes) {
+  archiveBaseName = 'gade-runner'
+  from sourceSets.main.output
+  include 'se/alipsa/gade/runner/**'
+  include 'se/alipsa/gade/runtime/ProtocolVersion**'
+}
+
+// Ensure runnerJar is built before run and runtime tasks
+tasks.named('run').configure { dependsOn runnerJar }
+tasks.named('runtime').configure { dependsOn runnerJar }
 
 publishing {
   publications {

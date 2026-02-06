@@ -23,7 +23,6 @@ import se.alipsa.gi.GuiInteraction;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,14 +37,12 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>Runtime initialization and switching between GADE/Gradle/Maven/Custom</li>
  *   <li>Classloader creation and management</li>
- *   <li>GroovyEngine lifecycle for in-process (GADE) execution</li>
- *   <li>RuntimeProcessRunner lifecycle for subprocess execution</li>
+ *   <li>RuntimeProcessRunner lifecycle for subprocess execution (all runtimes)</li>
  *   <li>Groovy version detection</li>
  * </ul>
  *
  * @see ConsoleComponent
  * @see RuntimeProcessRunner
- * @see GroovyEngine
  */
 final class GroovyRuntimeManager {
 
@@ -59,7 +56,6 @@ final class GroovyRuntimeManager {
   private boolean runtimeTestContext;
   private String cachedGroovyVersion;
   private RuntimeProcessRunner processRunner;
-  private GroovyEngine engine;
 
   /**
    * Creates a new runtime manager.
@@ -118,7 +114,6 @@ final class GroovyRuntimeManager {
         if (processRunner != null) {
           processRunner.stop();
         }
-        engine = null;
         processRunner = null;
 
         if (RuntimeType.GRADLE.equals(targetRuntime.getType())) {
@@ -126,13 +121,8 @@ final class GroovyRuntimeManager {
         }
 
         classLoader = runtimeClassLoaderFactory.create(targetRuntime, testContext, console);
-
-        if (RuntimeType.GADE.equals(targetRuntime.getType())) {
-          engine = new GroovyShellEngine(classLoader);
-          addObjectsToBindings(gui.guiInteractions);
-        } else {
-          processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console, gui.guiInteractions);
-        }
+        File projectDir = gui.getInoutComponent() != null ? gui.getInoutComponent().projectDir() : null;
+        processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(), console, gui.guiInteractions, projectDir);
 
         activeRuntime = targetRuntime;
         runtimeTestContext = (RuntimeType.GRADLE.equals(targetRuntime.getType())
@@ -204,13 +194,6 @@ final class GroovyRuntimeManager {
         }
         throw ex;
       }
-    }
-  }
-
-  private void addObjectsToBindings(Map<String, GuiInteraction> map)
-      throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-    for (Map.Entry<String, GuiInteraction> entry : gui.guiInteractions.entrySet()) {
-      addVariableToSession(entry.getKey(), entry.getValue());
     }
   }
 
@@ -318,28 +301,34 @@ final class GroovyRuntimeManager {
 
   /**
    * Builds the classpath entries for subprocess execution.
+   * <p>
+   * Only Groovy, Ivy, and the runner JAR are included. All other libraries
+   * (logging, Jackson, Gade application classes, project dependencies) are
+   * excluded so the subprocess has a fully isolated classpath. Users add
+   * their own dependencies via {@code @Grab}.
    *
    * @return list of classpath entry paths
    */
   List<String> buildClassPathEntries() {
     Set<String> entries = new LinkedHashSet<>();
-    // Primary source: runtime classloader URLs
-    if (classLoader != null) {
+    addGroovyJarsFromDir(entries);
+    addRunnerJar(entries);
+    // Fallback: if no directory-based jars found, use classloader URLs (development mode)
+    if (entries.isEmpty() && classLoader != null) {
       for (URL url : classLoader.getURLs()) {
         try {
-          entries.add(Paths.get(url.toURI()).toFile().getAbsolutePath());
+          File file = Paths.get(url.toURI()).toFile();
+          String name = file.getName().toLowerCase(java.util.Locale.ROOT);
+          if (file.isFile() && name.endsWith(".jar")
+              && (name.startsWith("groovy-") || name.startsWith("groovy.") || name.startsWith("ivy-"))) {
+            entries.add(file.getAbsolutePath());
+          }
         } catch (Exception e) {
           log.debug("Failed to add classpath url {}", url, e);
         }
       }
+      addRunnerJar(entries); // retry runner jar for dev mode
     }
-    // Ensure runner classes are available
-    addCodeSource(entries, GadeRunnerMain.class);
-    // Jackson is needed for the IPC protocol
-    addCodeSource(entries, com.fasterxml.jackson.databind.ObjectMapper.class);
-    addCodeSource(entries, com.fasterxml.jackson.core.JsonFactory.class);
-    addCodeSource(entries, com.fasterxml.jackson.annotation.JsonCreator.class);
-    addCodeSource(entries, com.fasterxml.jackson.core.json.PackageVersion.class);
 
     if (entries.isEmpty()) {
       log.warn("No classpath entries collected for runtime runner");
@@ -349,15 +338,111 @@ final class GroovyRuntimeManager {
     return new ArrayList<>(entries);
   }
 
-  private void addCodeSource(Set<String> entries, Class<?> cls) {
+  /**
+   * Resolves the lib/ directory from the Gade jar's code source location.
+   * In distribution the Gade jar is in lib/app/, so we go up one level.
+   *
+   * @return the lib/ directory, or null if it cannot be determined
+   */
+  private File resolveLibDir() {
     try {
-      URL location = cls.getProtectionDomain().getCodeSource().getLocation();
-      if (location != null) {
-        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+      URL gadeLocation = gui.getClass().getProtectionDomain().getCodeSource().getLocation();
+      if (gadeLocation != null) {
+        File gadeFile = Paths.get(gadeLocation.toURI()).toFile();
+        File parentDir = gadeFile.isDirectory() ? gadeFile : gadeFile.getParentFile();
+        // In distribution: Gade jar is in lib/app/, go up to lib/
+        if ("app".equals(parentDir.getName()) && parentDir.getParentFile() != null) {
+          return parentDir.getParentFile();
+        }
+        return parentDir;
       }
     } catch (Exception e) {
-      log.debug("Failed adding code source for {}", cls.getName(), e);
+      log.debug("Failed to resolve lib directory from Gade code source", e);
     }
+    return null;
+  }
+
+  /**
+   * Scans lib/groovy/ for all jar files and adds them to the classpath entries.
+   * In distribution mode, all Groovy and Ivy jars live in this directory.
+   */
+  private void addGroovyJarsFromDir(Set<String> entries) {
+    File libDir = resolveLibDir();
+    if (libDir == null) {
+      return;
+    }
+    File groovyDir = new File(libDir, "groovy");
+    if (groovyDir.isDirectory()) {
+      File[] jars = groovyDir.listFiles((dir, name) -> name.endsWith(".jar"));
+      if (jars != null) {
+        for (File jar : jars) {
+          entries.add(jar.getAbsolutePath());
+        }
+        log.debug("Added {} Groovy/Ivy jars from {}", jars.length, groovyDir);
+      }
+    }
+  }
+
+  /**
+   * Locates gade-runner.jar and adds it to the classpath entries.
+   * <p>
+   * In distribution: scans lib/runtimes/ for gade-runner*.jar.
+   * In development: looks in build/libs/ for gade-runner*.jar.
+   * Fallback: resolves via GadeRunnerMain code source (for test compatibility).
+   */
+  private void addRunnerJar(Set<String> entries) {
+    // Try distribution lib/runtimes/ directory first
+    File libDir = resolveLibDir();
+    if (libDir != null) {
+      File runtimesDir = new File(libDir, "runtimes");
+      if (runtimesDir.isDirectory()) {
+        File found = findRunnerJar(runtimesDir);
+        if (found != null) {
+          entries.add(found.getAbsolutePath());
+          return;
+        }
+      }
+      // Also check lib/ directly (backward compatibility)
+      File found = findRunnerJar(libDir);
+      if (found != null) {
+        entries.add(found.getAbsolutePath());
+        return;
+      }
+    }
+
+    // Try build/libs/ directory (development mode: ./gradlew run)
+    File buildLibs = new File("build/libs");
+    if (buildLibs.isDirectory()) {
+      File found = findRunnerJar(buildLibs);
+      if (found != null) {
+        entries.add(found.getAbsolutePath());
+        return;
+      }
+    }
+
+    // Fallback: resolve via GadeRunnerMain code source (for test compatibility)
+    try {
+      URL location = GadeRunnerMain.class.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+        log.debug("Added runner classes via GadeRunnerMain code source (fallback)");
+      }
+    } catch (Exception e) {
+      log.warn("Failed to locate runner jar or classes", e);
+    }
+  }
+
+  private File findRunnerJar(File dir) {
+    if (dir == null || !dir.isDirectory()) {
+      return null;
+    }
+    File[] matches = dir.listFiles((d, name) ->
+        name.startsWith("gade-runner") && name.endsWith(".jar"));
+    if (matches != null && matches.length > 0) {
+      log.debug("Found runner jar: {}", matches[0]);
+      return matches[0];
+    }
+    return null;
   }
 
   /**
@@ -419,25 +504,18 @@ final class GroovyRuntimeManager {
     return runtimeTestContext;
   }
 
-  GroovyEngine getEngine() {
-    return engine;
-  }
-
   RuntimeProcessRunner getProcessRunner() {
     return processRunner;
   }
 
   void addVariableToSession(String key, Object value) {
-    log.info("adding {} to session", key);
-    if (engine != null) {
-      engine.addVariableToSession(key, value);
-    }
+    // Variables are passed as bindings when eval() is called on the processRunner.
+    log.debug("addVariableToSession: {} (will be passed via eval bindings)", key);
   }
 
   void removeVariableFromSession(String varName) {
-    if (engine != null) {
-      engine.removeVariableFromSession(varName);
-    }
+    // Variables are managed per-eval in the subprocess.
+    log.debug("removeVariableFromSession: {} (subprocess manages bindings per-eval)", varName);
   }
 
   Map<String, Object> getContextObjects() {
@@ -445,13 +523,6 @@ final class GroovyRuntimeManager {
     if (activeRuntime == null) {
       log.warn("No active runtime when fetching context objects");
       return Collections.emptyMap();
-    }
-    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
-      if (engine == null) {
-        log.warn("Groovy engine not initialized when fetching context objects for {}", activeRuntime.getName());
-        return Collections.emptyMap();
-      }
-      return engine.getContextObjects();
     }
     if (processRunner == null) {
       log.warn("Process runner is not available when fetching bindings for {}", activeRuntime.getName());
@@ -467,8 +538,9 @@ final class GroovyRuntimeManager {
   }
 
   Object fetchVar(String varName) {
-    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
-      return engine.fetchVar(varName);
+    if (processRunner == null) {
+      log.warn("Process runner is not available when fetching var {}", varName);
+      return null;
     }
     try {
       Map<String, String> bindings = processRunner.fetchBindings().get();

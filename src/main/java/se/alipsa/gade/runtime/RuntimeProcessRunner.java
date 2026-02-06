@@ -1,5 +1,7 @@
 package se.alipsa.gade.runtime;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
@@ -7,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.runner.ArgumentSerializer;
 import se.alipsa.gade.runner.GadeRunnerMain;
-import se.alipsa.gade.runner.ProtocolMapper;
+
 import se.alipsa.gi.GuiInteraction;
 
 import java.io.*;
@@ -54,7 +56,10 @@ public class RuntimeProcessRunner implements Closeable {
   private final List<String> classPathEntries;
   private final ConsoleTextArea console;
   private final Map<String, GuiInteraction> guiInteractions;
-  private final ObjectMapper mapper = ProtocolMapper.create();
+  private final ObjectMapper mapper = new ObjectMapper()
+      .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
+      .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+  private volatile File workingDir;
 
   private Process process;
   private Socket socket;
@@ -67,10 +72,15 @@ public class RuntimeProcessRunner implements Closeable {
   private final Object procLock = new Object();
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions) {
+    this(runtime, classPathEntries, console, guiInteractions, null);
+  }
+
+  public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions, File workingDir) {
     this.runtime = runtime;
     this.classPathEntries = classPathEntries;
     this.console = console;
     this.guiInteractions = guiInteractions;
+    this.workingDir = workingDir;
     if (log.isDebugEnabled()) {
       log.debug("Runner classpath entries ({}): {}", classPathEntries.size(), classPathEntries);
     }
@@ -108,6 +118,9 @@ public class RuntimeProcessRunner implements Closeable {
       cmd.add(String.valueOf(runnerPort));
       ProcessBuilder pb = new ProcessBuilder(cmd);
       pb.redirectErrorStream(false);
+      if (workingDir != null && workingDir.isDirectory()) {
+        pb.directory(workingDir);
+      }
       if (log.isDebugEnabled()) {
         log.debug("Runner command line: {}", String.join(" ", cmd));
       } else {
@@ -171,6 +184,21 @@ public class RuntimeProcessRunner implements Closeable {
       }
       return Collections.emptyMap();
     });
+  }
+
+  public void setWorkingDir(File dir) {
+    this.workingDir = dir;
+    if (dir == null) {
+      return;
+    }
+    try {
+      if (process != null && process.isAlive() && socket != null && !socket.isClosed()) {
+        send(Map.of("cmd", "setWorkingDir", "id", UUID.randomUUID().toString(),
+            "dir", dir.getAbsolutePath()));
+      }
+    } catch (IOException e) {
+      log.debug("Failed to send setWorkingDir to runner", e);
+    }
   }
 
   public void interrupt() throws IOException {

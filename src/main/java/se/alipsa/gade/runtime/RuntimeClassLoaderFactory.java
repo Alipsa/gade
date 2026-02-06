@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
@@ -54,23 +53,103 @@ public class RuntimeClassLoaderFactory {
       case MAVEN -> createMavenClassLoader(config, testContext, console);
       case CUSTOM -> createCustomClassLoader(runtime, config, console);
     };
-    // Only GADE runtime uses GroovyEngine directly in Gade's JVM.
-    // Gradle/Maven runtimes run scripts in a separate process that now uses GroovyShell (core Groovy).
-    // Only check/warn for GADE and CUSTOM runtimes.
-    if (runtime.getType() == RuntimeType.GADE || runtime.getType() == RuntimeType.CUSTOM) {
-      ensureGroovyScriptEngine(loader, runtime, console);
-    }
     return loader;
   }
 
   private GroovyClassLoader createGadeClassLoader(CompilerConfiguration config, ConsoleTextArea console) throws Exception {
-    GroovyClassLoader loader = new GroovyClassLoader(gui.dynamicClassLoader, config);
+    GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
+    addGroovyAndIvyJars(loader);
 
     File wd = gui.getInoutComponent() == null ? null : gui.getInoutComponent().projectDir();
     if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true) && wd != null && wd.exists()) {
       addBuildDirs(loader, wd);
     }
     return loader;
+  }
+
+  /**
+   * Adds Groovy runtime jars and Ivy (for @Grab support) to the classloader.
+   * <p>
+   * In a distribution, Groovy/Ivy jars are in lib/groovy/. In development (./gradlew run),
+   * jars are in separate Gradle cache dirs, so we fall back to resolving key classes.
+   */
+  private void addGroovyAndIvyJars(GroovyClassLoader loader) {
+    URL groovyLocation = GroovySystem.class.getProtectionDomain().getCodeSource().getLocation();
+    if (groovyLocation == null) {
+      log.warn("Cannot determine Groovy jar location");
+      return;
+    }
+    try {
+      File groovyJar = new File(groovyLocation.toURI());
+      File libDir = groovyJar.getParentFile();
+      // In distribution: look for lib/groovy/ directory first
+      if (libDir != null && libDir.isDirectory()) {
+        File groovyDir = new File(libDir, "groovy");
+        if (!groovyDir.isDirectory()) {
+          // GroovySystem jar is already in lib/groovy/, so libDir IS the groovy dir
+          if (libDir.getName().equals("groovy")) {
+            groovyDir = libDir;
+          }
+        }
+        if (groovyDir.isDirectory()) {
+          File[] jars = groovyDir.listFiles((dir, name) -> name.endsWith(".jar"));
+          if (jars != null && jars.length > 0) {
+            for (File jar : jars) {
+              loader.addURL(jar.toURI().toURL());
+            }
+            log.debug("Added {} Groovy/Ivy jars from {}", jars.length, groovyDir);
+            return;
+          }
+        }
+        // Fallback: scan lib/ with name filters (backward compatibility)
+        File[] groovyJars = libDir.listFiles((dir, name) ->
+            (name.startsWith("groovy-") || name.equals("groovy.jar")) && name.endsWith(".jar"));
+        File[] ivyJars = libDir.listFiles((dir, name) ->
+            name.startsWith("ivy-") && name.endsWith(".jar"));
+        boolean foundSiblings = groovyJars != null && groovyJars.length > 0;
+        if (foundSiblings) {
+          for (File jar : groovyJars) {
+            loader.addURL(jar.toURI().toURL());
+          }
+          if (ivyJars != null) {
+            for (File jar : ivyJars) {
+              loader.addURL(jar.toURI().toURL());
+            }
+          }
+          log.debug("Added {} Groovy jars and {} Ivy jars from {} (fallback)",
+              groovyJars.length, ivyJars == null ? 0 : ivyJars.length, libDir);
+          return;
+        }
+      }
+    } catch (Exception e) {
+      log.debug("Failed to scan lib dir for Groovy/Ivy jars, trying class-based resolution", e);
+    }
+
+    // Fallback for development mode: resolve key classes and extract their code source locations
+    loader.addURL(groovyLocation);
+    addCodeSourceByClassName(loader, "groovy.json.JsonSlurper");          // groovy-json
+    addCodeSourceByClassName(loader, "groovy.xml.XmlSlurper");            // groovy-xml
+    addCodeSourceByClassName(loader, "groovy.sql.Sql");                   // groovy-sql
+    addCodeSourceByClassName(loader, "groovy.console.ui.Console");        // groovy-console
+    addCodeSourceByClassName(loader, "groovy.text.markup.MarkupTemplateEngine"); // groovy-templates
+    addCodeSourceByClassName(loader, "groovy.yaml.YamlSlurper");          // groovy-yaml
+    addCodeSourceByClassName(loader, "groovy.ant.AntBuilder");            // groovy-ant
+    addCodeSourceByClassName(loader, "groovy.swing.SwingBuilder");        // groovy-swing
+    addCodeSourceByClassName(loader, "groovy.transform.ThreadInterrupt"); // groovy-groovydoc or groovy-all
+    addCodeSourceByClassName(loader, "org.apache.ivy.Ivy");               // ivy
+    log.debug("Added Groovy/Ivy jars via class-based resolution (development mode)");
+  }
+
+  private void addCodeSourceByClassName(GroovyClassLoader loader, String className) {
+    try {
+      Class<?> cls = Class.forName(className);
+      URL location = cls.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        loader.addURL(location);
+      }
+    } catch (ClassNotFoundException | NullPointerException e) {
+      log.debug("Class {} not found, skipping", className);
+    }
   }
 
   private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
@@ -225,29 +304,5 @@ public class RuntimeClassLoaderFactory {
         log.warn("Failed adding output dir {}", f, e);
       }
     });
-  }
-
-  private void ensureGroovyScriptEngine(GroovyClassLoader loader, RuntimeConfig runtime, ConsoleTextArea console) {
-    try {
-      loader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
-    } catch (ClassNotFoundException e) {
-      String runtimeName = runtime == null ? "runtime" : runtime.getName();
-      console.appendWarningFx("Runtime '" + runtimeName
-          + "' is missing groovy-jsr223; using bundled engine. Add groovy-jsr223 to Groovy home or Dependencies to avoid fallback.");
-      log.warn("groovy-jsr223 not found for runtime {}", runtimeName);
-      try {
-        URL engineLocation = GroovyScriptEngineImpl.class.getProtectionDomain().getCodeSource().getLocation();
-        if (engineLocation == null) {
-          throw new IllegalStateException("No location found for bundled groovy-jsr223");
-        }
-        loader.addURL(engineLocation);
-        loader.loadClass("org.codehaus.groovy.jsr223.GroovyScriptEngineImpl");
-      } catch (Exception ex) {
-        String message = "groovy-jsr223 is missing for runtime " + runtimeName
-            + "; add org.apache.groovy:groovy-jsr223 to the runtime configuration";
-        log.error(message, ex);
-        throw new RuntimeException(message, ex);
-      }
-    }
   }
 }

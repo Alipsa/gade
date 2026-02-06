@@ -81,7 +81,7 @@ if [[ "${OS}" == "win" ]]; then
   if [[ -z "$JAVA_CMD" ]]; then
 	  JAVA_CMD="javaw"
 	fi
-	CLASSPATH="$(winpath "${LIB_DIR}")/*"
+	CLASSPATH="$(winpath "${LIB_DIR}")\app\*;$(winpath "${LIB_DIR}")\groovy\*"
 	LD_PATH=$(winpath "${LIB_DIR}")
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
@@ -91,7 +91,7 @@ if [[ "${OS}" == "win" ]]; then
 		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
 		-Djava.library.path="${LD_PATH}" \
 		--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
-		-cp "${LIB_DIR}/*" se.alipsa.gade.splash.SplashScreen
+		-cp "${LIB_DIR}/app/*;${LIB_DIR}/groovy/*" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
 	start "${BIN_DIR}\${JAVA_CMD}" \
 		$JAVA_OPTS \
@@ -112,7 +112,7 @@ else
 	--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
 	-Djava.library.path="${LD_PATH}" \
 	--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
-	-cp "${LIB_DIR}/*" \
+	-cp "${LIB_DIR}/app/*:${LIB_DIR}/groovy/*" \
 	se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
 	"${BIN_DIR}/${JAVA_CMD}" \
@@ -124,6 +124,6 @@ else
 		--add-opens=java.base/java.net=ALL-UNNAMED \
 		-Djava.library.path="${LD_PATH}" \
 		--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
-		-cp "${LIB_DIR}/*" \
+		-cp "${LIB_DIR}/app/*:${LIB_DIR}/groovy/*" \
 	se.alipsa.gade.Gade &
 fi

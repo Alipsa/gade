@@ -3,7 +3,6 @@ package se.alipsa.gade.utils;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import se.alipsa.gade.console.GroovyEngineException;
 
 public final class InvocationUtils {
 

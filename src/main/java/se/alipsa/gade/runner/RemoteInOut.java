@@ -1,6 +1,6 @@
 package se.alipsa.gade.runner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import groovy.json.JsonOutput;
 import groovy.lang.GroovyObjectSupport;
 
 import java.io.BufferedWriter;
@@ -21,7 +21,6 @@ import java.util.concurrent.*;
  */
 public class RemoteInOut extends GroovyObjectSupport {
 
-  private static final ObjectMapper mapper = ProtocolMapper.create();
   private static final long TIMEOUT_MS = 60000; // 60 seconds
 
   private final BufferedWriter writer;
@@ -83,7 +82,7 @@ public class RemoteInOut extends GroovyObjectSupport {
 
       // Send request
       synchronized (writer) {
-        mapper.writeValue(writer, request);
+        writer.write(JsonOutput.toJson(request));
         writer.write("\n");
         writer.flush();
       }

@@ -20,6 +20,9 @@
 @Grab("tech.tablesaw:tablesaw-excel:0.44.1")
 @Grab("tech.tablesaw:tablesaw-html:0.44.1")
 @Grab("tech.tablesaw:tablesaw-aggregate:0.44.1")
+//@GrabConfig(useSystemClassLoader=true)
+@Grab(group='org.apache.logging.log4j', module='log4j-slf4j2-impl', version='2.25.3')
+@Grab(group='org.apache.logging.log4j', module='log4j-core', version='2.25.3')
 import tech.tablesaw.api.*
 import tech.tablesaw.io.xlsx.XlsxReader
 import tech.tablesaw.plotly.components.*
@@ -34,6 +37,15 @@ import static java.time.Month.JANUARY
 import static tech.tablesaw.aggregate.AggregateFunctions.mean
 import static tech.tablesaw.api.QuerySupport.and
 import static tech.tablesaw.io.xlsx.XlsxReadOptions.builder
+import org.apache.logging.log4j.core.config.Configurator
+import org.apache.logging.log4j.Level
+import org.slf4j.LoggerFactory
+
+Configurator.setRootLevel(Level.INFO)
+
+def log = LoggerFactory.getLogger(this.class)
+
+log.info("hello")
 
 javaFXPlatform = {
   def os = System.getProperty('os.name').toLowerCase()
@@ -90,7 +102,7 @@ void display(Figure figure, String... titleOpt) {
   String title = titleOpt.length > 0 ? titleOpt[0] : ''
   Page page = Page.pageBuilder(figure, "target").build()
   String output = page.asJavascript()
-  io.view(output, title)
+  io.viewHtml(output, title)
 }
   
 Layout layout(String variant) {
@@ -108,12 +120,12 @@ line = ScatterTrace.builder(reported.dateTimeColumn('Date'), reported.nCol('Val'
         .line(Line.builder().width(2).dash(Line.Dash.DOT).color('red').build())
         .build()
 
-url = io.projectFile('../data/Scented_all.xlsx').toURL()
+url = io.projectFile('data/Scented_all.xlsx').toURL()
 (sAverage, sScatter) = traces(url, 'seablue', 'lightskyblue')
 
-url = io.projectFile('../data/Unscented_all.xlsx').toURL()
+url = io.projectFile('data/Unscented_all.xlsx').toURL()
 (uAverage, uScatter) = traces(url, 'seagreen', 'lightgreen')
 
-display(new Figure(layout(''), sAverage, sScatter, uAverage, uScatter, line))
+display(new Figure(layout(''), sAverage, sScatter, uAverage, uScatter, line), 'Overview')
 display(new Figure(layout('scented'), sAverage, sScatter, line), 'ScentedRatings')
 display(new Figure(layout('unscented'), uAverage, uScatter, line), 'UnscentedRatings')

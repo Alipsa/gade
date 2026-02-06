@@ -7,7 +7,7 @@ set "PATH=%PATH%;%LIB_DIR%"
 
 setlocal
 set "jars=gade-*.jar"
-pushd %LIB_DIR%
+pushd %LIB_DIR%\app
 for %%a in (%jars%) do set JAR_NAME=%%a
 popd
 endlocal
@@ -33,7 +33,7 @@ start %BIN_DIR%\%JAVA_CMD% ^
 %JAVA_OPTS% ^
 --enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
 --module-path %LIB_DIR%/win --add-modules %MODULES% ^
--cp %LIB_DIR%\* se.alipsa.gade.splash.SplashScreen
+-cp %LIB_DIR%\app\*;%LIB_DIR%\groovy\* se.alipsa.gade.splash.SplashScreen
 
 start %BIN_DIR%\%JAVA_CMD% ^
 %JAVA_OPTS% ^
@@ -44,5 +44,5 @@ start %BIN_DIR%\%JAVA_CMD% ^
 --add-opens=java.base/java.net=ALL-UNNAMED ^
 -Djava.library.path="%LIB_DIR%" ^
 --module-path %LIB_DIR%/win --add-modules %MODULES% ^
--cp %LIB_DIR%\* ^
+-cp %LIB_DIR%\app\*;%LIB_DIR%\groovy\* ^
 se.alipsa.gade.Gade

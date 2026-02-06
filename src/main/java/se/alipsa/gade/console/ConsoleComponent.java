@@ -1,7 +1,6 @@
 package se.alipsa.gade.console;
 
 import static se.alipsa.gade.Constants.*;
-import static se.alipsa.gade.menu.GlobalOptions.*;
 
 import groovy.lang.GroovyClassLoader;
 import javafx.application.Platform;
@@ -17,15 +16,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
-import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.jetbrains.annotations.Nullable;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.runtime.RuntimeConfig;
-import se.alipsa.gade.runtime.RuntimeIsolation;
 import se.alipsa.gade.runtime.RuntimeType;
 import se.alipsa.gade.environment.EnvironmentComponent;
 import se.alipsa.gade.utils.Alerts;
@@ -107,9 +103,12 @@ public class ConsoleComponent extends BorderPane {
     };
     initTask.setOnSucceeded(e -> {
       printVersionInfoToConsole();
-      runtimeManager.autoRunScripts(console, this::runScriptSilent);
       updateEnvironment();
       waiting();
+      Thread autoRunThread = new Thread(() ->
+          runtimeManager.autoRunScripts(console, this::runScriptSilent));
+      autoRunThread.setDaemon(true);
+      autoRunThread.start();
     });
     initTask.setOnFailed(e -> {
       Throwable throwable = initTask.getException();
@@ -161,17 +160,11 @@ public class ConsoleComponent extends BorderPane {
   }
 
   /**
-   * Interrupts the running process.
-   * <p>
-   * KNOWN LIMITATION: For GADE runtime (in-process execution), we can stop the timeline but cannot interrupt
-   * the GroovyShell's eval() method. The Groovy scripting engine does not support interruption once evaluation
-   * has started. For Gradle/Maven/Custom runtimes, this works correctly by killing the subprocess.
+   * Interrupts the running process by sending an interrupt command to the subprocess.
    */
   public void interruptProcess() {
     log.info("Interrupting running process");
-    RuntimeConfig activeRuntime = runtimeManager.getActiveRuntime();
-    if (runtimeManager.getProcessRunner() != null && activeRuntime != null
-        && RuntimeType.GADE != activeRuntime.getType()) {
+    if (runtimeManager.getProcessRunner() != null) {
       try {
         runtimeManager.getProcessRunner().interrupt();
       } catch (IOException e) {
@@ -221,24 +214,6 @@ public class ConsoleComponent extends BorderPane {
       Alerts.infoFx("Runtime not ready", "No runtime is active yet, please wait a few seconds");
       return null;
     }
-    GroovyEngine engine = runtimeManager.getEngine();
-    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
-      if (engine == null) {
-        Alerts.infoFx("Scriptengine not ready", "Groovy is still starting up, please wait a few seconds");
-        return null;
-      }
-      gui.guiInteractions.forEach(this::addVariableToSession);
-    }
-    if (additionalParams != null) {
-      if (RuntimeType.GADE.equals(activeRuntime.getType())) {
-        for (Map.Entry<String, Object> entry : additionalParams.entrySet()) {
-          addVariableToSession(entry.getKey(), entry.getValue());
-        }
-      }
-    }
-    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
-      return RuntimeIsolation.run(runtimeManager.getClassLoader(), activeRuntime.getType(), () -> engine.eval(script));
-    }
     if (runtimeManager.getProcessRunner() == null) {
       Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
       return null;
@@ -260,22 +235,6 @@ public class ConsoleComponent extends BorderPane {
     if (activeRuntime == null) {
       Alerts.infoFx("Runtime not ready", "No runtime is active yet, please wait a few seconds");
       return null;
-    }
-    GroovyEngine engine = runtimeManager.getEngine();
-    if (RuntimeType.GADE.equals(activeRuntime.getType())) {
-      try (PrintWriter out = new PrintWriter(System.out);
-           PrintWriter err = new PrintWriter(System.err)) {
-        running();
-        engine.setOutputWriters(out, err);
-        log.debug("Running script: {}", script);
-        var result = RuntimeIsolation.run(runtimeManager.getClassLoader(), activeRuntime.getType(), () -> engine.eval(script));
-        waiting();
-        return result;
-      } catch (Exception e) {
-        log.warn("Failed to run script: {}", script, e);
-        waiting();
-        throw e;
-      }
     }
     if (runtimeManager.getProcessRunner() == null) {
       Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
@@ -334,8 +293,8 @@ public class ConsoleComponent extends BorderPane {
       if (ex == null) {
         ex = throwable;
       }
-      if (ex.getCause() != null && ex.getCause() instanceof InterruptedException) {
-        log.info("Groovy script execution was interrupted");
+      if (isUserInitiatedStop(ex)) {
+        log.info("Script execution was interrupted or runner was stopped");
       } else {
         String msg = ScriptExecutionHelper.createMessageFromEvalException(ex);
         log.warn("Error running script {}", script);
@@ -347,64 +306,26 @@ public class ConsoleComponent extends BorderPane {
   }
 
   private void executeScriptAndReport(String script, String title) throws Exception {
-    PrintStream sysOut = System.out;
-    PrintStream sysErr = System.err;
     EnvironmentComponent env = gui.getEnvironmentComponent();
     RuntimeConfig activeRuntime = runtimeManager.getActiveRuntime();
     if (activeRuntime == null) {
       Alerts.warnFx("Runtime not ready", "No runtime is active yet, cannot execute scripts");
       return;
     }
-    if (!RuntimeType.GADE.equals(activeRuntime.getType())) {
-      if (runtimeManager.getProcessRunner() == null) {
-        Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
-        return;
-      }
-      Platform.runLater(() -> {
-        console.append(title, true);
-        env.addInputHistory(script);
-      });
-      try {
-        runtimeManager.getProcessRunner().eval(script,
-            ScriptExecutionHelper.prepareRunnerBindings(null, gui.guiInteractions)).get();
-        Platform.runLater(() -> env.addOutputHistory(""));
-      } catch (Exception e) {
-        throw new Exception(e.getMessage(), e);
-      }
+    if (runtimeManager.getProcessRunner() == null) {
+      Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
       return;
     }
-    GroovyEngine engine = runtimeManager.getEngine();
-    try (
-        AppenderWriter out = new AppenderWriter(console, true);
-        WarningAppenderWriter err = new WarningAppenderWriter(console);
-        PrintWriter outputWriter = new PrintWriter(out);
-        PrintWriter errWriter = new PrintWriter(err);
-        PrintStream outStream = new PrintStream(WriterOutputStream.builder().setWriter(outputWriter).get());
-        PrintStream errStream = new PrintStream(WriterOutputStream.builder().setWriter(errWriter).get());
-    ) {
-      if (engine == null) {
-        Alerts.warnFx("Engine has not started yet", "There seems to be some issue with initialization");
-        return;
-      }
-      gui.guiInteractions.forEach(this::addVariableToSession);
-
-      Platform.runLater(() -> {
-        console.append(title, true);
-        env.addInputHistory(script);
-      });
-      engine.setOutputWriters(outputWriter, errWriter);
-      System.setOut(outStream);
-      System.setErr(errStream);
-      var result = RuntimeIsolation.run(runtimeManager.getClassLoader(), activeRuntime.getType(), () -> engine.eval(script));
-      if (result != null && gui.getPrefs().getBoolean(PRINT_EVAL_RESULT, true)) {
-        gui.getConsoleComponent().getConsole().appendFx(result.toString(), true);
-      }
-      Platform.runLater(() -> env.addOutputHistory(out.getCachedText()));
-    } catch (RuntimeException re) {
-      throw new Exception(re.getMessage(), re);
-    } finally {
-      System.setOut(sysOut);
-      System.setErr(sysErr);
+    Platform.runLater(() -> {
+      console.append(title, true);
+      env.addInputHistory(script);
+    });
+    try {
+      runtimeManager.getProcessRunner().eval(script,
+          ScriptExecutionHelper.prepareRunnerBindings(null, gui.guiInteractions)).get();
+      Platform.runLater(() -> env.addOutputHistory(""));
+    } catch (Exception e) {
+      throw new Exception(e.getMessage(), e);
     }
   }
 
@@ -556,7 +477,9 @@ public class ConsoleComponent extends BorderPane {
     if (dir == null) {
       return;
     }
-    // Working directory is set via System.setProperty("user.dir") in FileTree.setWorkingDir().
+    if (runtimeManager.getProcessRunner() != null) {
+      runtimeManager.getProcessRunner().setWorkingDir(dir);
+    }
   }
 
   /**
@@ -565,10 +488,6 @@ public class ConsoleComponent extends BorderPane {
    * @return a reference to the current scripting classloader
    */
   public ClassLoader getSessionClassloader() {
-    GroovyEngine engine = runtimeManager.getEngine();
-    if (engine != null) {
-      return engine.getClass().getClassLoader();
-    }
     GroovyClassLoader cl = runtimeManager.getClassLoader();
     return cl == null ? getClass().getClassLoader() : cl;
   }
@@ -596,16 +515,9 @@ public class ConsoleComponent extends BorderPane {
       log.debug("Starting thread {}", context);
       thread.start();
     } else if (runningThread.getState() == Thread.State.WAITING || runningThread.getState() == Thread.State.TIMED_WAITING) {
-      log.debug("Waiting for thread {} to finish", threadMap.get(runningThread));
-      try {
-        task.countDownLatch.await();
-        thread.start();
-      } catch (InterruptedException e) {
-        task.cancel(true);
-        log.warn("Thread was interrupted", e);
-        log.info("Running thread {}", context);
-        thread.start();
-      }
+      log.info("Previous thread {} is in {} state, starting new thread",
+          threadMap.get(runningThread), runningThread.getState());
+      thread.start();
     } else if (runningThread.isAlive() && runningThread.getState() != Thread.State.TERMINATED) {
       log.warn("There is already a process running: {} in state {}, Overriding existing running thread",
           threadMap.get(runningThread), runningThread.getState());
@@ -700,5 +612,18 @@ public class ConsoleComponent extends BorderPane {
    */
   public String createMessageFromEvalException(Throwable ex) {
     return ScriptExecutionHelper.createMessageFromEvalException(ex);
+  }
+
+  /**
+   * Walks the cause chain to check if the exception was triggered by a user-initiated
+   * interrupt or session restart (as opposed to a genuine script error).
+   */
+  private static boolean isUserInitiatedStop(Throwable t) {
+    while (t != null) {
+      if (t instanceof InterruptedException) return true;
+      if (t instanceof IllegalStateException && "Runner stopped".equals(t.getMessage())) return true;
+      t = t.getCause();
+    }
+    return false;
   }
 }

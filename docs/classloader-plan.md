@@ -2,7 +2,7 @@
 
 ## Current Status (February 2026)
 
-**PARTIAL IMPLEMENTATION**: Gradle/Maven runtimes use subprocess execution with proper isolation. GADE runtime (in-process) has known limitations with `@Grab` that require subprocess execution to fix properly.
+**FULLY IMPLEMENTED**: All runtimes (GADE, Gradle, Maven, Custom) now use subprocess execution via `RuntimeProcessRunner`. The GADE runtime no longer runs scripts in-process — it launches a subprocess with a clean classloader (bootstrap parent + Groovy/Ivy jars only), which gives `@Grab` full isolation from GADE's classpath.
 
 ## Issue: Groovy scripts inherit the IDE/application classpath, leading to version conflicts and loader pollution
 
@@ -94,60 +94,40 @@ Created `ChildFirstGroovyClassLoader` that checks child URLs before delegating t
 #### ❌ Attempt 3: Set groovy.grape.enable.system.classloader in RuntimeIsolation
 **Why it failed:** Property was set too late - after GroovyShell was already created and configured.
 
-### Current Workaround (Temporary)
+### Implemented Solution: Subprocess Execution for All Runtimes
 
-**Solution:** Add `tablesaw-html` to GADE's dependencies
-```gradle
-implementation 'tech.tablesaw:tablesaw-html:0.44.4'
-```
+The GADE runtime now uses subprocess execution, the same approach that was already working for Gradle/Maven/Custom runtimes:
 
-**Why this works:**
-- Now both `tablesaw-core` and `tablesaw-html` are in GADE's parent classpath
-- The `Table` class static initializer can find `HtmlWriter`
-- No more `ClassNotFoundException`
+- `RuntimeClassLoaderFactory.createGadeClassLoader()` builds a clean classloader with `ClassUtils.getBootstrapClassLoader()` as parent, adding only Groovy runtime and Ivy jars
+- `GroovyRuntimeManager.resetClassloaderAndGroovy()` always creates a `RuntimeProcessRunner` (no more in-process `GroovyShellEngine` for GADE)
+- `ConsoleComponent` uniformly delegates all script execution to `processRunner.eval()`
+- `GroovyShellEngine` and `GroovyEngine` are deprecated but kept for reference
 
-**Why this is not ideal:**
-- ❌ GADE's classpath grows with every script dependency
-- ❌ Scripts can't use different versions than GADE (e.g., tablesaw 0.44.1 vs 0.44.4)
-- ❌ Defeats the purpose of `@Grab` for dependency isolation
-- ❌ Not scalable - can't add every possible `@Grab` dependency to GADE
-
-**Tracking:** See `TODO` comment in `build.gradle:195-197`
-
-### Proper Solution: Subprocess Execution
-
-**The Right Architecture (from original plan):**
-Execute scripts with `@Grab` in an isolated subprocess, similar to how Gradle/Maven runtimes work.
-
-**Benefits:**
+**Benefits achieved:**
 - ✅ True dependency isolation - script classpath is completely separate from GADE
 - ✅ `@Grab` works correctly without parent classloader interference
 - ✅ Scripts can use any dependency version
 - ✅ `@GrabConfig(systemClassLoader=true)` works without polluting GADE's JVM
 - ✅ No need to add script dependencies to GADE's classpath
+- ✅ GUI interactions (`io.view()`, `io.prompt()`, etc.) work across process boundary
 
-**Reference Implementation:**
+**Key files:**
 - `src/main/java/se/alipsa/gade/runtime/RuntimeProcessRunner.java` - Subprocess execution
 - `src/main/java/se/alipsa/gade/runner/GadeRunnerMain.java` - Subprocess entry point
-- Already working for Gradle/Maven runtimes
+- `src/main/java/se/alipsa/gade/runtime/RuntimeClassLoaderFactory.java` - Classloader setup
 
 ### Implementation Roadmap
 
-**Phase 1: Detection** ✅ (Can be done now)
-- Add detection for `@Grab` annotations in script text
-- Prompt user: "This script uses @Grab. Run in subprocess for proper isolation?"
-- User can choose in-process (current behavior) or subprocess
+**Phase 1: Detection** ✅ Complete
+- No longer needed — all scripts run in subprocess automatically
 
-**Phase 2: Subprocess @Grab Runtime** (Future work)
-- Create new `RuntimeType.GADE_SUBPROCESS`
-- Reuse `RuntimeProcessRunner` infrastructure from Gradle/Maven runtimes
-- Ensure GUI interactions (`io.view()`, `io.prompt()`, etc.) work across process boundary
-- This is already proven to work - just needs GADE runtime variant
+**Phase 2: Subprocess @Grab Runtime** ✅ Complete
+- GADE runtime now uses `RuntimeProcessRunner` (same as Gradle/Maven/Custom)
+- GUI interactions (`io.view()`, `io.prompt()`, etc.) work across process boundary
+- No separate `RuntimeType.GADE_SUBPROCESS` needed — the existing GADE type now always uses subprocess
 
-**Phase 3: Auto-Detection** (Future enhancement)
-- Automatically use subprocess when `@Grab` detected
-- Make it seamless for users
-- Add preference to always/never use subprocess
+**Phase 3: Auto-Detection** ✅ Complete (superseded)
+- All scripts run in subprocess by default — no detection needed
 
 ### ChildFirstGroovyClassLoader - Preserved for Future Use
 
