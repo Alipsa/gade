@@ -13,6 +13,8 @@ import se.alipsa.matrix.core.Matrix;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import se.alipsa.groovy.datautil.ConnectionInfo;
+
 import java.io.File;
 import java.util.*;
 
@@ -347,5 +349,76 @@ class ArgumentSerializerTest {
         "Should throw when path field is missing"
     );
     assertTrue(ex.getMessage().contains("path"), "Error message should mention missing path");
+  }
+
+  // === ConnectionInfo Serialization Tests ===
+
+  @Test
+  void serializeConnectionInfoRoundTrip() {
+    ConnectionInfo ci = new ConnectionInfo(
+        "testDb", "com.h2database:h2:2.1.214", "org.h2.Driver",
+        "jdbc:h2:mem:test", "sa", "secret");
+
+    // Serialize
+    Object serialized = ArgumentSerializer.serialize(ci);
+    assertNotNull(serialized, "Serialized ConnectionInfo should not be null");
+    assertTrue(serialized instanceof Map, "Serialized ConnectionInfo should be a Map");
+
+    Map<String, Object> map = (Map<String, Object>) serialized;
+    assertEquals("se.alipsa.groovy.datautil.ConnectionInfo", map.get("_type"),
+        "Type should be ConnectionInfo");
+    assertTrue(map.containsKey("json"), "Should contain json data");
+
+    String json = (String) map.get("json");
+    assertNotNull(json, "JSON should not be null");
+    assertTrue(json.contains("testDb"), "JSON should contain connection name");
+    assertTrue(json.contains("org.h2.Driver"), "JSON should contain driver");
+
+    // Deserialize
+    Object deserialized = ArgumentSerializer.deserialize(serialized);
+    assertNotNull(deserialized, "Deserialized object should not be null");
+    assertTrue(deserialized instanceof ConnectionInfo,
+        "Deserialized object should be ConnectionInfo");
+
+    ConnectionInfo result = (ConnectionInfo) deserialized;
+    assertEquals("testDb", result.getName(), "Name should match");
+    assertEquals("com.h2database:h2:2.1.214", result.getDependency(), "Dependency should match");
+    assertEquals("org.h2.Driver", result.getDriver(), "Driver should match");
+    assertEquals("jdbc:h2:mem:test", result.getUrl(), "URL should match");
+    assertEquals("sa", result.getUser(), "User should match");
+    assertEquals("secret", result.getPassword(), "Password should match");
+  }
+
+  @Test
+  void serializeConnectionInfoWithNullPassword() {
+    ConnectionInfo ci = new ConnectionInfo(
+        "noPwd", "", "org.h2.Driver",
+        "jdbc:h2:mem:test", "sa", null);
+
+    // Serialize
+    Object serialized = ArgumentSerializer.serialize(ci);
+    assertNotNull(serialized);
+
+    // Deserialize
+    Object deserialized = ArgumentSerializer.deserialize(serialized);
+    assertTrue(deserialized instanceof ConnectionInfo);
+
+    ConnectionInfo result = (ConnectionInfo) deserialized;
+    assertEquals("noPwd", result.getName(), "Name should match");
+    assertNull(result.getPassword(), "Password should be null");
+  }
+
+  @Test
+  void deserializeConnectionInfoMissingJsonField() {
+    Map<String, Object> map = new HashMap<>();
+    map.put("_type", "se.alipsa.groovy.datautil.ConnectionInfo");
+    // Missing "json" field
+
+    IllegalArgumentException ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> ArgumentSerializer.deserialize(map),
+        "Should throw when json field is missing"
+    );
+    assertTrue(ex.getMessage().contains("json"), "Error message should mention missing json");
   }
 }

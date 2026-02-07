@@ -143,9 +143,10 @@ public class GadeRunnerEngine {
     }
     Thread t = new Thread(() -> {
       currentEvalThread.set(Thread.currentThread());
+      Thread.currentThread().setContextClassLoader(shell.getClassLoader());
       try {
         if (bindings != null) {
-          ensureRemoteGuiInteractions(binding, bindings.get(GUI_INTERACTION_KEYS), writer, guiPending);
+          ensureRemoteGuiInteractions(binding, bindings.get(GUI_INTERACTION_KEYS), writer, guiPending, shell);
           bindings.forEach((k, v) -> {
             if (!GUI_INTERACTION_KEYS.equals(k)) {
               binding.setVariable(k, v);
@@ -165,7 +166,8 @@ public class GadeRunnerEngine {
 
   private static void ensureRemoteGuiInteractions(
       Binding binding, Object keys, BufferedWriter writer,
-      ConcurrentHashMap<String, CompletableFuture<Object>> guiPending) {
+      ConcurrentHashMap<String, CompletableFuture<Object>> guiPending,
+      GroovyShell shell) {
     if (keys == null) {
       return;
     }
@@ -181,7 +183,9 @@ public class GadeRunnerEngine {
       if (variables.containsKey(name)) {
         continue;
       }
-      binding.setVariable(name, new RemoteInOut(writer, guiPending));
+      RemoteInOut remoteInOut = new RemoteInOut(writer, guiPending);
+      remoteInOut.setScriptClassLoader((GroovyClassLoader) shell.getClassLoader());
+      binding.setVariable(name, remoteInOut);
     }
   }
 

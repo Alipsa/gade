@@ -331,6 +331,8 @@ final class GroovyRuntimeManager {
         addGroovyJarsByClassResolution(entries);
       }
 
+      addDataUtilsJar(entries);
+
       // For Custom runtime, include additional jars from classloader
       if (classLoader != null && RuntimeType.CUSTOM.equals(runtime.getType())) {
         for (URL url : classLoader.getURLs()) {
@@ -397,6 +399,7 @@ final class GroovyRuntimeManager {
     if (!hasIvy) {
       addIvyFallback(entries);
     }
+    addDataUtilsJar(entries);
     if (!entries.isEmpty()) {
       log.debug("Groovy bootstrap entries ({}):\n{}", entries.size(), String.join("\n", entries));
     } else {
@@ -494,6 +497,45 @@ final class GroovyRuntimeManager {
   private boolean isIvyJar(String fileName) {
     String name = fileName.toLowerCase(Locale.ROOT);
     return name.startsWith("ivy-") || name.startsWith("ivy.");
+  }
+
+  /**
+   * Adds the data-utils jar to the classpath entries so that {@code ConnectionInfo}
+   * is available in the subprocess.
+   * <p>
+   * In distribution: scans {@code lib/groovy/} for {@code data-utils-*.jar}.
+   * In development: resolves via {@code ConnectionInfo} class code source.
+   */
+  private void addDataUtilsJar(Set<String> entries) {
+    // Try lib/groovy/ directory (distribution mode)
+    File libDir = resolveLibDir();
+    if (libDir != null) {
+      File groovyDir = new File(libDir, "groovy");
+      if (groovyDir.isDirectory()) {
+        File[] jars = groovyDir.listFiles((dir, name) ->
+            name.startsWith("data-utils-") && name.endsWith(".jar"));
+        if (jars != null && jars.length > 0) {
+          for (File jar : jars) {
+            entries.add(jar.getAbsolutePath());
+          }
+          log.debug("Added {} data-utils jar(s) from {}", jars.length, groovyDir);
+          return;
+        }
+      }
+    }
+    // Try class resolution (development mode)
+    try {
+      Class<?> ciClass = Class.forName("se.alipsa.groovy.datautil.ConnectionInfo");
+      URL location = ciClass.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+        log.debug("Added data-utils jar via class resolution (development mode)");
+      }
+    } catch (ClassNotFoundException e) {
+      log.debug("ConnectionInfo not available on host classpath");
+    } catch (Exception e) {
+      log.debug("Failed to resolve data-utils code source", e);
+    }
   }
 
   /**

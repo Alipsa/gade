@@ -316,6 +316,51 @@ class RuntimeProcessRunnerProtocolTest {
     assertNotNull(runner);
   }
 
+  // ========== resolveDependency Routing Tests ==========
+
+  @Test
+  void testResolveDependencyNotOnFxThread() throws Exception {
+    ConsoleTextArea console = mock(ConsoleTextArea.class);
+    RuntimeProcessRunner runner = createRunner(console);
+
+    // Build a gui_request message with method=resolveDependency
+    Map<String, Object> msg = new HashMap<>();
+    msg.put("type", "gui_request");
+    msg.put("id", "resolve-test-1");
+    msg.put("method", "resolveDependency");
+    msg.put("args", List.of("com.h2database:h2:2.1.214"));
+
+    // Invoke handleMessage — should NOT throw even without a running Gade instance.
+    // The resolveDependency handler runs on a background thread and will fail
+    // gracefully (sends gui_error) since Gade.instance() is null in tests.
+    invokeHandleMessage(runner, msg);
+
+    // Give the async handler a moment to execute
+    Thread.sleep(200);
+
+    // The key assertion is that we got here without hanging on the FX thread.
+    // In a real scenario the FX thread would be free while resolution runs.
+  }
+
+  @Test
+  void testResolveDependencyWithMissingArgs() throws Exception {
+    ConsoleTextArea console = mock(ConsoleTextArea.class);
+    RuntimeProcessRunner runner = createRunner(console);
+
+    Map<String, Object> msg = new HashMap<>();
+    msg.put("type", "gui_request");
+    msg.put("id", "resolve-test-2");
+    msg.put("method", "resolveDependency");
+    msg.put("args", List.of());
+
+    invokeHandleMessage(runner, msg);
+
+    // Give async handler time to execute
+    Thread.sleep(200);
+
+    // Should handle gracefully — sends gui_error for missing dependency string
+  }
+
   // ========== Helper Methods ==========
 
   private RuntimeProcessRunner createRunner(ConsoleTextArea console) {

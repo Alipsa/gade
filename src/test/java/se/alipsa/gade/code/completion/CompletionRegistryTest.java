@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -274,22 +276,32 @@ class CompletionRegistryTest {
 
   @Test
   void testInvalidateAllHandlesEngineExceptions() {
-    MockCompletionEngine goodEngine = new MockCompletionEngine("good");
-    MockCompletionEngine badEngine = new MockCompletionEngine("bad");
-    badEngine.setThrowOnInvalidate(true);
-    MockCompletionEngine anotherGoodEngine = new MockCompletionEngine("another");
+    PrintStream orgOut = System.out;
+    PrintStream orgErr = System.err;
 
-    registry.register(goodEngine);
-    registry.register(badEngine);
-    registry.register(anotherGoodEngine);
+    try {
+      System.setOut(new PrintStream(OutputStream.nullOutputStream())); // Suppress expected error output
+      System.setErr(new PrintStream(OutputStream.nullOutputStream())); // Suppress expected error output
+      MockCompletionEngine goodEngine = new MockCompletionEngine("good");
+      MockCompletionEngine badEngine = new MockCompletionEngine("bad");
+      badEngine.setThrowOnInvalidate(true);
+      MockCompletionEngine anotherGoodEngine = new MockCompletionEngine("another");
 
-    // Should not throw, even though one engine throws
-    registry.invalidateAll();
+      registry.register(goodEngine);
+      registry.register(badEngine);
+      registry.register(anotherGoodEngine);
 
-    assertTrue(goodEngine.wasInvalidateCalled(),
-        "Should still invalidate good engines");
-    assertTrue(anotherGoodEngine.wasInvalidateCalled(),
-        "Should continue after exception");
+      // Should not throw, even though one engine throws
+      registry.invalidateAll();
+
+      assertTrue(goodEngine.wasInvalidateCalled(),
+          "Should still invalidate good engines");
+      assertTrue(anotherGoodEngine.wasInvalidateCalled(),
+          "Should continue after exception");
+    } finally {
+      System.setOut(orgOut);
+      System.setErr(orgErr);
+    }
   }
 
   @Test

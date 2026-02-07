@@ -15,21 +15,21 @@ class ImportCompletionTest {
     Map<String, List<String>> index = ClasspathScanner.getInstance().scan(
         getClass().getClassLoader());
 
-    System.out.println("Total classes indexed: " + index.size());
+    //System.out.println("Total classes indexed: " + index.size());
 
     // Look for groovy.transform classes
     boolean foundTransform = false;
     for (List<String> fqcns : index.values()) {
       for (String fqcn : fqcns) {
         if (fqcn.startsWith("groovy.transform.")) {
-          System.out.println("Found: " + fqcn);
+          //System.out.println("Found: " + fqcn);
           foundTransform = true;
         }
       }
     }
 
     // Also check what packages we have
-    System.out.println("\nPackages starting with 'groovy':");
+    //System.out.println("\nPackages starting with 'groovy':");
     java.util.Set<String> packages = new java.util.TreeSet<>();
     for (List<String> fqcns : index.values()) {
       for (String fqcn : fqcns) {
@@ -41,7 +41,7 @@ class ImportCompletionTest {
         }
       }
     }
-    packages.forEach(p -> System.out.println("  " + p));
+    //packages.forEach(p -> System.out.println("  " + p));
 
     assertTrue(foundTransform, "Should find groovy.transform classes");
   }

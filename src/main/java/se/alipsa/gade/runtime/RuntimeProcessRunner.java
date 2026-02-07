@@ -3,11 +3,13 @@ package se.alipsa.gade.runtime;
 import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.runner.ArgumentSerializer;
 import se.alipsa.gade.runner.GadeRunnerMain;
-
+import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.gi.GuiInteraction;
+import se.alipsa.groovy.resolver.Dependency;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -445,6 +447,12 @@ public class RuntimeProcessRunner implements Closeable {
 
     log.debug("Handling GUI request: method={}, id={}", method, id);
 
+    // resolveDependency runs on a background thread, not the FX thread
+    if ("resolveDependency".equals(method)) {
+      handleResolveDependency(id, argsList);
+      return;
+    }
+
     // Run on JavaFX thread since GUI operations require it
     Platform.runLater(() -> {
       try {
@@ -618,6 +626,56 @@ public class RuntimeProcessRunner implements Closeable {
     } catch (IOException e) {
       log.error("Failed to send GUI error response for id={}", id, e);
     }
+  }
+
+  /**
+   * Handle resolveDependency request on a background thread.
+   * Resolves a Maven dependency and returns the jar paths to the subprocess.
+   */
+  private void handleResolveDependency(String id, List<?> argsList) {
+    CompletableFuture.runAsync(() -> {
+      try {
+        String depString = argsList != null && !argsList.isEmpty()
+            ? String.valueOf(ArgumentSerializer.deserialize(argsList.get(0)))
+            : null;
+        if (depString == null || depString.isBlank()) {
+          sendGuiError(id, "resolveDependency requires a dependency string argument");
+          return;
+        }
+
+        Dependency dep = new Dependency(depString);
+        GradleUtils.addDependencies(dep);
+
+        // Collect resolved jar paths from the dynamic classloader
+        List<String> jarPaths = new ArrayList<>();
+        java.net.URL[] urls = Gade.instance().dynamicClassLoader.getURLs();
+        for (java.net.URL url : urls) {
+          try {
+            jarPaths.add(java.nio.file.Paths.get(url.toURI()).toFile().getAbsolutePath());
+          } catch (Exception e) {
+            log.debug("Failed to convert resolved URL {}", url, e);
+          }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("type", "gui_response");
+        response.put("id", id);
+        response.put("result", jarPaths);
+        send(response);
+
+        log.debug("resolveDependency completed: dep={}, jars={}", depString, jarPaths.size());
+
+      } catch (Exception e) {
+        log.error("resolveDependency failed: id={}", id, e);
+        sendGuiError(id, e.getMessage());
+      }
+    }).orTimeout(60, TimeUnit.SECONDS)
+      .exceptionally(ex -> {
+        if (ex instanceof java.util.concurrent.TimeoutException) {
+          sendGuiError(id, "resolveDependency timed out after 60 seconds");
+        }
+        return null;
+      });
   }
 
   private String resolveJavaExecutable() {

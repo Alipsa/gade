@@ -27,6 +27,8 @@ public class ArgumentSerializer {
   private static final boolean MATRIX_AVAILABLE = isClassAvailable("se.alipsa.matrix.core.Matrix");
   private static final boolean JAVAFX_AVAILABLE = isClassAvailable("javafx.scene.Node");
   private static final boolean AWT_AVAILABLE = isClassAvailable("java.awt.image.BufferedImage");
+  private static final boolean CONNECTION_INFO_AVAILABLE =
+      isClassAvailable("se.alipsa.groovy.datautil.ConnectionInfo");
 
   private static boolean isClassAvailable(String className) {
     try {
@@ -69,6 +71,12 @@ public class ArgumentSerializer {
     // Matrix - use existing typed CSV
     if (MATRIX_AVAILABLE && className.equals("se.alipsa.matrix.core.Matrix")) {
       return MatrixSerializer.serialize(arg);
+    }
+
+    // ConnectionInfo - use JSON serialization
+    if (CONNECTION_INFO_AVAILABLE
+        && className.equals("se.alipsa.groovy.datautil.ConnectionInfo")) {
+      return ConnectionInfoSerializer.serialize(arg);
     }
 
     // JavaFX Node - render as PNG
@@ -132,6 +140,11 @@ public class ArgumentSerializer {
               return MatrixSerializer.deserialize(map);
             }
             break;
+          case "se.alipsa.groovy.datautil.ConnectionInfo":
+            if (CONNECTION_INFO_AVAILABLE) {
+              return ConnectionInfoSerializer.deserialize(map);
+            }
+            break;
           case "image":
             if (JAVAFX_AVAILABLE) {
               return JavaFXSerializer.deserializeImage(map);
@@ -183,6 +196,36 @@ public class ArgumentSerializer {
         throw new IllegalArgumentException("Matrix map missing 'csv' field");
       }
       return se.alipsa.matrix.core.Matrix.builder().csvString(csv).build();
+    }
+  }
+
+  // === ConnectionInfo Serialization (lazy-loaded) ===
+
+  static class ConnectionInfoSerializer {
+    static Object serialize(Object ciObj) {
+      se.alipsa.groovy.datautil.ConnectionInfo ci =
+          (se.alipsa.groovy.datautil.ConnectionInfo) ciObj;
+      Map<String, Object> map = new HashMap<>();
+      map.put("_type", "se.alipsa.groovy.datautil.ConnectionInfo");
+      map.put("json", ci.asJson(false));
+      return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    static Object deserialize(Map<String, Object> map) {
+      String json = (String) map.get("json");
+      if (json == null) {
+        throw new IllegalArgumentException("ConnectionInfo map missing 'json' field");
+      }
+      Map<String, Object> parsed = (Map<String, Object>) new groovy.json.JsonSlurper().parseText(json);
+      return new se.alipsa.groovy.datautil.ConnectionInfo(
+          (String) parsed.get("name"),
+          (String) parsed.get("dependency"),
+          (String) parsed.get("driver"),
+          (String) parsed.get("url"),
+          (String) parsed.get("user"),
+          (String) parsed.get("password")
+      );
     }
   }
 
