@@ -12,6 +12,7 @@ import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.ExecutableTab;
 import se.alipsa.gade.code.xmltab.XmlTextArea;
+import se.alipsa.gade.runtime.RuntimeConfig;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.maven.MavenBuildUtils;
 
@@ -87,8 +88,10 @@ public class MavenTab extends ExecutableTab {
     gui.getPrefs().put(PREF_LAST_GOALS_PREFIX + MavenBuildUtils.projectKey(projectDir), args.trim());
     gui.getConsoleComponent().addOutput("\n>Running 'mvn " + args.trim() + "'", "", false, true);
 
-    String javaHome = gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome();
-    MavenBuildUtils build = new MavenBuildUtils(projectDir, javaHome);
+    RuntimeConfig selectedRuntime = gui.getRuntimeManager().getSelectedRuntime(projectDir);
+    String javaHome = selectedRuntime.getJavaHome();
+    String mavenHome = selectedRuntime.getBuildToolHome();
+    MavenBuildUtils build = new MavenBuildUtils(projectDir, javaHome, mavenHome);
     try {
       build.buildProject(args, gui.getConsoleComponent(), this);
     } catch (Exception e) {
@@ -114,4 +117,3 @@ public class MavenTab extends ExecutableTab {
     }
   }
 }
-

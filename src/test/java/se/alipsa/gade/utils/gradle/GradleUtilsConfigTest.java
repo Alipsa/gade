@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import se.alipsa.gade.utils.FileUtils;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class GradleUtilsConfigTest {
   @AfterEach
   void restoreSystemProperties() {
     System.clearProperty(USER_HOME_PROP);
+    System.clearProperty(GradleDistributionManager.EMBEDDED_GRADLE_HOME_PROP);
   }
 
   @Test
@@ -66,6 +68,20 @@ public class GradleUtilsConfigTest {
         ),
         gradleUtils.getDistributionOrder(),
         "Expected wrapper to be preferred before configured installation when wrapper is available"
+    );
+  }
+
+  @Test
+  void embeddedDistributionCanBeResolvedFromOverrideProperty(@TempDir Path tempDir) throws Exception {
+    Path gradleHome = tempDir.resolve("bundled-gradle");
+    Files.createDirectories(gradleHome.resolve("bin"));
+    Files.writeString(gradleHome.resolve("bin").resolve("gradle"), "#!/bin/sh\necho Gradle\n");
+    System.setProperty(GradleDistributionManager.EMBEDDED_GRADLE_HOME_PROP, gradleHome.toString());
+
+    assertEquals(
+        gradleHome.toFile().getAbsolutePath(),
+        GradleDistributionManager.resolveBundledGradleHome().getAbsolutePath(),
+        "Expected bundled Gradle home to be resolved from override property"
     );
   }
 }

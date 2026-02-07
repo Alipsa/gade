@@ -6,6 +6,8 @@ import org.gradle.tooling.GradleConnector;
 import org.gradle.util.GradleVersion;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +28,7 @@ import java.util.List;
 final class GradleDistributionManager {
 
   private static final Logger log = LogManager.getLogger(GradleDistributionManager.class);
+  static final String EMBEDDED_GRADLE_HOME_PROP = "gade.gradle.embedded.home";
 
   /**
    * Enum representing the different Gradle distribution modes.
@@ -44,6 +47,7 @@ final class GradleDistributionManager {
   private final boolean wrapperAvailable;
   private final List<DistributionMode> distributionOrder = new ArrayList<>();
   private final GradleConfigurationManager configManager;
+  private final File bundledGradleHome;
 
   private int currentDistributionIndex = 0;
   private GradleConnector connector;
@@ -62,6 +66,7 @@ final class GradleDistributionManager {
     this.gradleInstallationDir = gradleInstallationDir;
     this.wrapperAvailable = wrapperAvailable;
     this.configManager = configManager;
+    this.bundledGradleHome = resolveBundledGradleHome();
     configureDistribution();
   }
 
@@ -127,9 +132,14 @@ final class GradleDistributionManager {
         log.info("Using Gradle wrapper distribution for {}", projectDir);
       }
       case EMBEDDED -> {
-        String version = GradleVersion.current().getVersion();
-        connector.useGradleVersion(version);
-        log.info("Using embedded/tooling API Gradle version {} for {}", version, projectDir);
+        if (bundledGradleHome != null) {
+          connector.useInstallation(bundledGradleHome);
+          log.info("Using bundled Gradle distribution at {} for {}", bundledGradleHome, projectDir);
+        } else {
+          String version = GradleVersion.current().getVersion();
+          connector.useGradleVersion(version);
+          log.info("Using embedded/tooling API Gradle version {} for {}", version, projectDir);
+        }
       }
     }
   }
@@ -200,5 +210,43 @@ final class GradleDistributionManager {
    */
   List<DistributionMode> getDistributionOrder() {
     return List.copyOf(distributionOrder);
+  }
+
+  File getBundledGradleHome() {
+    return bundledGradleHome;
+  }
+
+  static File resolveBundledGradleHome() {
+    String override = System.getProperty(EMBEDDED_GRADLE_HOME_PROP);
+    if (override != null && !override.isBlank()) {
+      File overrideDir = new File(override);
+      if (isGradleHome(overrideDir)) {
+        return overrideDir;
+      }
+      log.warn("Ignoring invalid {} path: {}", EMBEDDED_GRADLE_HOME_PROP, overrideDir);
+    }
+    try {
+      URI location = GradleDistributionManager.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+      File anchor = new File(location);
+      File cursor = anchor.isFile() ? anchor.getParentFile() : anchor;
+      for (int i = 0; i < 10 && cursor != null; i++) {
+        File candidate = new File(cursor, "lib/gradle");
+        if (isGradleHome(candidate)) {
+          return candidate;
+        }
+        cursor = cursor.getParentFile();
+      }
+    } catch (URISyntaxException e) {
+      log.debug("Failed to resolve bundled Gradle home from code source", e);
+    }
+    return null;
+  }
+
+  private static boolean isGradleHome(File candidate) {
+    if (candidate == null || !candidate.isDirectory()) {
+      return false;
+    }
+    return new File(candidate, "bin/gradle").isFile()
+        || new File(candidate, "bin/gradle.bat").isFile();
   }
 }

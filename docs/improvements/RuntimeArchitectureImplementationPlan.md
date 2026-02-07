@@ -332,22 +332,24 @@ This phase is independent of Phase 1 — it can be done before or in parallel.
 
 #### Step 4.5: Wire buildToolHome Through to MavenClasspathUtils
 
-This step depends on the `se.alipsa.mavenutils` library being enhanced to accept an optional Maven home and Maven wrapper. Until the library supports this:
+This step depended on the `se.alipsa.mavenutils` library being enhanced to accept an optional Maven home and Maven wrapper.
 
-**Files to modify (once MavenUtils supports it):**
+**Files modified:**
 - `src/main/java/se/alipsa/gade/utils/maven/MavenClasspathUtils.java`:
-  - Update `addPomDependenciesTo()` signature to accept an optional `mavenHome` parameter (or create an overload)
-  - Pass Maven home to `MavenUtils` constructor (once the library provides a constructor or setter for this)
-  - Add wrapper detection: check for `mvnw`/`mvnw.cmd` + `.mvn/wrapper/maven-wrapper.properties` in the project directory; pass to `MavenUtils` if supported
+  - Updated `addPomDependenciesTo()` overload to accept optional `mavenHome`
+  - Passes `MavenExecutionOptions(projectDir, configuredOrBundledHome, preferWrapper=true)` into MavenUtils dependency resolution
+  - Wrapper/home/default selection is now delegated to MavenUtils and logged through selected distribution metadata
 - `src/main/java/se/alipsa/gade/runtime/RuntimeClassLoaderFactory.java` — In `createMavenClassLoader()`, pass `runtime.getBuildToolHome()` to `MavenClasspathUtils`
+- `src/main/java/se/alipsa/gade/utils/maven/MavenBuildUtils.java`:
+  - Uses the same `MavenExecutionOptions` for `runMaven(...)`
+- `src/main/java/se/alipsa/gade/code/maven/MavenTab.java`:
+  - Passes selected runtime `buildToolHome` to `MavenBuildUtils`
 
-**Interim approach:** If the MavenUtils library enhancement is not ready, implement Steps 4.1-4.2 (data model + UI) for both Maven and Gradle, but only wire the Gradle path (Steps 4.3-4.4). The Maven Build Tool Home field will be visible in the UI but have no effect until MavenUtils is enhanced. Add a tooltip or info label: "Maven home configuration requires MavenUtils library enhancement — currently uses built-in resolution."
-
-**Status:** Implemented using the interim approach. `buildToolHome` is persisted and wired through the Maven call path, and the UI clearly indicates that Maven home is not active until MavenUtils adds wrapper/home support.
+**Status:** Fully implemented. Maven runtime now uses wrapper-first distribution selection, honors configured Maven home, and falls back to bundled/default Maven.
 
 ---
 
-## Phase 3: Distribution & Validation (Priorities 5-6)
+## Phase 3: Distribution & Validation (Priorities 5-6) ✅ COMPLETE
 
 These are lower priority and depend on decisions about distribution size and Gradle/Maven version bundling.
 
@@ -374,8 +376,10 @@ These are lower priority and depend on decisions about distribution size and Gra
   - Maven binary is ~10MB (much smaller than Gradle)
   - Add to the `runtime` task's `doLast` block
 
-**Files to modify (once bundled):**
-- `src/main/java/se/alipsa/gade/utils/maven/MavenClasspathUtils.java` — Update built-in mode to use `lib/maven/` distribution for resolution when no wrapper or configured home is available. This depends on MavenUtils supporting an explicit Maven home.
+**Files modified:**
+- `src/main/java/se/alipsa/gade/utils/maven/MavenClasspathUtils.java` — Built-in mode now uses `lib/maven/` as fallback when no wrapper or configured home is available (via MavenUtils execution options).
+
+**Status:** Runtime distributions now bundle Maven under `lib/maven/`, and Maven runtime resolution/build now uses wrapper → configured home → bundled/default via MavenUtils execution options.
 
 #### Design Consideration: Distribution Size
 
@@ -437,11 +441,11 @@ Phase 1 (Subprocess Classloader Infrastructure) ✅ COMPLETE
   └── Priority 2: Parent-Last Delegation      ← DONE
 
 Phase 2 (Build Tool Home Configuration) ✅ COMPLETE
-  └── Priority 4: Maven/Gradle Home Config    ← Implemented with interim MavenUtils limitation documented
+  └── Priority 4: Maven/Gradle Home Config    ← Fully implemented (wrapper/configured/bundled flow active)
 
-Phase 3 (Distribution & Validation)
-  ├── Priority 5: Bundled Distributions       ← Depends on Phase 2 wiring
-  └── Priority 6: Tooling API Validation      ← Depends on Priority 4 UI
+Phase 3 (Distribution & Validation) ✅ COMPLETE
+  ├── Priority 5: Bundled Distributions       ← Implemented in runtime packaging
+  └── Priority 6: Tooling API Validation      ← Implemented in RuntimeEditorDialog + GradleCompatibility
 ```
 
 **Recommended start:** Priority 0 (ConnectionInfo fix) should be done first as it is a regression. After that, Priority 3 (ProcessRootLoader) and Priority 4 (Build Tool Home Config) can be done in parallel since they touch different parts of the system.
@@ -452,9 +456,7 @@ Phase 3 (Distribution & Validation)
 
 | Dependency | What's Needed | Blocks |
 |-----------|---------------|--------|
-| `se.alipsa.mavenutils` | Wrapper support, configurable Maven home | Priority 4 Step 4.5, Priority 5 Step 5.2 |
-
-The MavenUtils library enhancement is the primary external blocker. Gradle-side changes (Steps 4.3-4.4) can proceed independently.
+| `se.alipsa.mavenutils` | Wrapper/home selection APIs (`MavenExecutionOptions`) | No longer blocking (implemented) |
 
 ---
 

@@ -36,6 +36,8 @@ ext.openHtmlToPdfVersion = '1.1.37'
 //def jdkVersion = "25+37" // Does not work with hadoop and hence not with matrix parquet
 int javaLanguageVersion = 21
 def jdkVersion = "${javaLanguageVersion}.0.10+10"
+ext.embeddedGradleVersion = '9.3.1'
+ext.embeddedMavenVersion = '3.9.12'
 
 application {
   mainClass = 'se.alipsa.gade.Gade'
@@ -136,7 +138,7 @@ dependencies {
   implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
   implementation 'org.openjdk.nashorn:nashorn-core:15.7'
-  implementation 'org.gradle:gradle-tooling-api:9.3.1'
+  implementation "org.gradle:gradle-tooling-api:${embeddedGradleVersion}"
   implementation 'org.jetbrains:annotations:26.0.2'
   implementation 'io.github.classgraph:classgraph:4.8.184'
   implementation 'com.github.spotbugs:spotbugs-annotations:4.9.8'
@@ -164,9 +166,9 @@ dependencies {
   implementation("se.alipsa.matrix:matrix-bigquery")
   implementation("se.alipsa.matrix:matrix-sql")
   // Used by se.alipsa.gade.utils.SemanticVersion
-  implementation 'org.apache.maven:maven-artifact:3.9.11'
-  implementation 'org.apache.maven:maven-model:3.9.11'
-  implementation 'se.alipsa:maven-3.9.11-utils:1.2.0'
+  implementation "org.apache.maven:maven-artifact:${embeddedMavenVersion}"
+  implementation "org.apache.maven:maven-model:${embeddedMavenVersion}"
+  implementation "se.alipsa:maven-utils:1.3.0-SNAPSHOT"
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
@@ -470,6 +472,44 @@ runtime {
 }
 
 tasks.runtime.doLast {
+  def embeddedToolsDir = project.layout.buildDirectory.dir("embedded-tools").get().asFile
+  embeddedToolsDir.mkdirs()
+
+  def prepareBundledDistribution = { String toolName, String version, String downloadUrl, String extractedDirName ->
+    File toolDir = new File(embeddedToolsDir, toolName)
+    toolDir.mkdirs()
+    File archive = new File(toolDir, downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1))
+    File extracted = new File(toolDir, extractedDirName)
+    if (!extracted.exists()) {
+      if (!archive.exists()) {
+        logger.lifecycle("Downloading bundled ${toolName} ${version} from ${downloadUrl}")
+        ant.get(src: downloadUrl, dest: archive, usetimestamp: true)
+      }
+      logger.lifecycle("Extracting bundled ${toolName} ${version}")
+      copy {
+        from zipTree(archive)
+        into toolDir
+      }
+      if (!extracted.exists()) {
+        throw new GradleException("Failed to extract bundled ${toolName} distribution from ${archive}")
+      }
+    }
+    return extracted
+  }
+
+  File bundledGradleHome = prepareBundledDistribution(
+      "gradle",
+      embeddedGradleVersion,
+      "https://services.gradle.org/distributions/gradle-${embeddedGradleVersion}-bin.zip",
+      "gradle-${embeddedGradleVersion}"
+  )
+  File bundledMavenHome = prepareBundledDistribution(
+      "maven",
+      embeddedMavenVersion,
+      "https://archive.apache.org/dist/maven/maven-3/${embeddedMavenVersion}/binaries/apache-maven-${embeddedMavenVersion}-bin.zip",
+      "apache-maven-${embeddedMavenVersion}"
+  )
+
   // Reorganize jars into subdirectories for clean classpath isolation
   // lib/groovy/   - Groovy + Ivy jars (subprocess + Gade app)
   // lib/app/      - Gade application dependencies (Gade app only)
@@ -480,9 +520,13 @@ tasks.runtime.doLast {
     // Create subdirectories
     def groovyDir = new File(libDir, 'groovy')
     def appDir = new File(libDir, 'app')
+    def gradleDir = new File(libDir, 'gradle')
+    def mavenDir = new File(libDir, 'maven')
     def runtimesDir = new File(libDir, 'runtimes')
     groovyDir.mkdirs()
     appDir.mkdirs()
+    gradleDir.mkdirs()
+    mavenDir.mkdirs()
     runtimesDir.mkdirs()
 
     // Move groovy, ivy, and data-utils jars to lib/groovy/
@@ -502,6 +546,18 @@ tasks.runtime.doLast {
     copy {
       from runnerJar.archiveFile
       into runtimesDir
+    }
+
+    // Copy bundled build tool distributions for offline runtime dependency resolution.
+    delete gradleDir
+    delete mavenDir
+    copy {
+      from bundledGradleHome
+      into gradleDir
+    }
+    copy {
+      from bundledMavenHome
+      into mavenDir
     }
 
     // Move remaining jars to lib/app/

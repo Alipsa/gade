@@ -25,10 +25,16 @@ public class MavenBuildUtils {
 
   private final File projectDir;
   private final String javaHomeOverride;
+  private final String mavenHomeOverride;
 
   public MavenBuildUtils(File projectDir, String javaHomeOverride) {
+    this(projectDir, javaHomeOverride, null);
+  }
+
+  public MavenBuildUtils(File projectDir, String javaHomeOverride, String mavenHomeOverride) {
     this.projectDir = projectDir;
     this.javaHomeOverride = javaHomeOverride;
+    this.mavenHomeOverride = mavenHomeOverride;
   }
 
   public void buildProject(String rawArgs, ConsoleComponent consoleComponent, TaskListener taskListener) {
@@ -69,10 +75,11 @@ public class MavenBuildUtils {
           }
         }
 
-        // Use maven-utils 1.2.0 API with Consumer-based output handling
+        // Use MavenExecutionOptions so wrapper/home/default selection is consistent with runtime config.
         java.util.function.Consumer<String> outConsumer = line -> console.appendFx(line, true);
         java.util.function.Consumer<String> errConsumer = line -> console.appendWarningFx(line);
-        int exitCode = MavenUtils.runMaven(pom, mvnArgs, javaHome, outConsumer, errConsumer);
+        MavenUtils.MavenExecutionOptions options = MavenClasspathUtils.createExecutionOptions(projectDir, mavenHomeOverride);
+        int exitCode = MavenUtils.runMaven(pom, mvnArgs, javaHome, options, outConsumer, errConsumer);
 
         if (exitCode != 0) {
           throw new MavenInvocationException("Maven build failed with exit code " + exitCode);
@@ -128,4 +135,3 @@ public class MavenBuildUtils {
     }
   }
 }
-

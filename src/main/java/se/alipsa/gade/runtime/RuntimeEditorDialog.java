@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -20,6 +21,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.StageStyle;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.runtime.RuntimeType;
+import se.alipsa.gade.utils.gradle.GradleCompatibility;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.GuiUtils;
 
@@ -40,8 +42,9 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
 
   private final Label buildToolHomeLabel = new Label("Build tool home");
   private final Node buildToolHomeNode = createBrowseField(buildToolHomeField, true);
+  private final Label gradleCompatibilityWarningLabel = new Label();
   private final Label mavenBuildToolNoteLabel = new Label(
-      "Maven build tool home is not active yet. Gade currently uses built-in Maven dependency resolution.");
+      "Maven wrapper takes precedence over configured home. Leave empty to use bundled/default Maven.");
   private final Label groovyHomeLabel = new Label("Groovy home");
   private final Label additionalJarsLabel = new Label("Additional JARs");
   private final Label dependenciesLabel = new Label("Dependencies");
@@ -51,11 +54,14 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
 
   private List<RuntimeConfig> customRuntimes;
   private final List<RuntimeConfig> builtIns;
+  private final File projectDir;
+  private long gradleValidationRequestSeq = 0;
 
   public RuntimeEditorDialog(Gade gui, RuntimeConfig initialSelection, boolean newRuntime) {
     setTitle("Edit runtimes");
     initStyle(StageStyle.DECORATED);
     GuiUtils.addStyle(gui, this);
+    projectDir = gui.getInoutComponent().projectDir();
     builtIns = gui.getRuntimeManager().getBuiltInRuntimes();
     customRuntimes = new ArrayList<>(gui.getRuntimeManager().getCustomRuntimes());
 
@@ -110,15 +116,18 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     form.add(createBrowseField(javaHomeField, true), 1, 2);
     form.add(buildToolHomeLabel, 0, 3);
     form.add(buildToolHomeNode, 1, 3);
-    form.add(mavenBuildToolNoteLabel, 1, 4);
-    form.add(groovyHomeLabel, 0, 5);
-    form.add(groovyHomeNode, 1, 5);
-    form.add(additionalJarsLabel, 0, 6);
-    form.add(additionalJarsNode, 1, 6);
-    form.add(dependenciesLabel, 0, 7);
-    form.add(dependenciesNode, 1, 7);
+    form.add(gradleCompatibilityWarningLabel, 1, 4);
+    form.add(mavenBuildToolNoteLabel, 1, 5);
+    form.add(groovyHomeLabel, 0, 6);
+    form.add(groovyHomeNode, 1, 6);
+    form.add(additionalJarsLabel, 0, 7);
+    form.add(additionalJarsNode, 1, 7);
+    form.add(dependenciesLabel, 0, 8);
+    form.add(dependenciesNode, 1, 8);
 
     buildToolHomeField.setPromptText("Leave empty for built-in / wrapper");
+    gradleCompatibilityWarningLabel.setWrapText(true);
+    gradleCompatibilityWarningLabel.getStyleClass().add("text-warning");
     mavenBuildToolNoteLabel.setWrapText(true);
 
     BorderPane pane = new BorderPane();
@@ -133,7 +142,11 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     getDialogPane().setPrefSize(800, 500);
 
     runtimeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> populateFields(newVal));
-    typeBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> applyTypeVisibility(newVal));
+    typeBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+      applyTypeVisibility(newVal);
+      validateGradleCompatibility();
+    });
+    buildToolHomeField.textProperty().addListener((obs, oldVal, newVal) -> validateGradleCompatibility());
 
     if (newRuntime) {
       addRuntime();
@@ -257,6 +270,7 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
       groovyHomeField.clear();
       jarList.getItems().clear();
       dependencyList.getItems().clear();
+      setGradleCompatibilityWarning(null, null);
       applyTypeVisibility(null);
       return;
     }
@@ -268,16 +282,20 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     jarList.setItems(FXCollections.observableArrayList(runtime.getAdditionalJars()));
     dependencyList.setItems(FXCollections.observableArrayList(runtime.getDependencies()));
     applyTypeVisibility(runtime.getType());
+    validateGradleCompatibility();
   }
 
   private void applyTypeVisibility(RuntimeType type) {
     RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
     boolean editable = selected != null && !RuntimeType.GADE.equals(selected.getType());
     boolean showBuildToolHome = editable && (RuntimeType.MAVEN.equals(type) || RuntimeType.GRADLE.equals(type));
+    boolean showGradleWarning = editable && RuntimeType.GRADLE.equals(type)
+        && !gradleCompatibilityWarningLabel.getText().isBlank();
     boolean showMavenBuildToolNote = editable && RuntimeType.MAVEN.equals(type);
     boolean showCustomFields = editable && RuntimeType.CUSTOM.equals(type);
 
     setVisibleAndManaged(showBuildToolHome, buildToolHomeLabel, buildToolHomeNode);
+    setVisibleAndManaged(showGradleWarning, gradleCompatibilityWarningLabel);
     setVisibleAndManaged(showMavenBuildToolNote, mavenBuildToolNoteLabel);
     setVisibleAndManaged(showCustomFields, groovyHomeLabel, groovyHomeNode, additionalJarsLabel, additionalJarsNode,
         dependenciesLabel, dependenciesNode);
@@ -415,5 +433,56 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     replaceCustom(selected, updated);
     refreshRuntimeList(updated);
     return true;
+  }
+
+  private void validateGradleCompatibility() {
+    RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
+    RuntimeType type = typeBox.getSelectionModel().getSelectedItem();
+    if (selected == null || type == null || !RuntimeType.GRADLE.equals(type) || RuntimeType.GADE.equals(selected.getType())) {
+      gradleValidationRequestSeq++;
+      setGradleCompatibilityWarning(null, null);
+      return;
+    }
+    String buildToolHome = buildToolHomeField.getText() == null ? "" : buildToolHomeField.getText().trim();
+    if (buildToolHome.isBlank()) {
+      gradleValidationRequestSeq++;
+      File wrapperProperties = findGradleWrapperProperties();
+      String wrapperVersion = GradleCompatibility.extractVersionFromWrapper(wrapperProperties);
+      setGradleCompatibilityWarning(wrapperVersion, "wrapper");
+      return;
+    }
+    File gradleHome = new File(buildToolHome);
+    if (!gradleHome.isDirectory()) {
+      gradleValidationRequestSeq++;
+      setGradleCompatibilityWarning(null, null);
+      return;
+    }
+    long requestId = ++gradleValidationRequestSeq;
+    GradleCompatibility.extractVersion(gradleHome).thenAccept(version ->
+        Platform.runLater(() -> {
+          if (requestId != gradleValidationRequestSeq) {
+            return;
+          }
+          setGradleCompatibilityWarning(version, "configured home");
+        }));
+  }
+
+  private void setGradleCompatibilityWarning(String version, String source) {
+    String warning = "";
+    if (version != null && !version.isBlank() && !GradleCompatibility.isSupported(version)) {
+      warning = "Warning: Gradle " + version + " from " + source
+          + " may not be compatible with the bundled Tooling API "
+          + "(supported: " + GradleCompatibility.MIN_SUPPORTED_GRADLE + "-9.x).";
+    }
+    gradleCompatibilityWarningLabel.setText(warning);
+    applyTypeVisibility(typeBox.getSelectionModel().getSelectedItem());
+  }
+
+  private File findGradleWrapperProperties() {
+    if (projectDir == null) {
+      return null;
+    }
+    File wrapperProperties = new File(projectDir, "gradle/wrapper/gradle-wrapper.properties");
+    return wrapperProperties.isFile() ? wrapperProperties : null;
   }
 }

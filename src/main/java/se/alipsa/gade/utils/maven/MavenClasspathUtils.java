@@ -76,18 +76,21 @@ public final class MavenClasspathUtils {
   private static List<File> resolveDependencies(
       File projectDir, File pom, boolean testContext, ConsoleTextArea console, String mavenHome)
       throws IOException, DependenciesResolveException {
-    String fingerprint = fingerprintProject(projectDir, testContext);
+    String fingerprint = fingerprintProject(projectDir, testContext, mavenHome);
     File cacheFile = cacheFile(projectDir, testContext);
     List<File> cached = load(cacheFile, fingerprint);
     if (cached != null) {
       console.appendFx("  Using cached Maven classpath", true);
       return cached;
     }
-    // TODO: Wire mavenHome once MavenUtils supports configurable Maven installations.
     MavenUtils maven = new MavenUtils();
     Set<File> resolved;
     try {
-      resolved = maven.resolveDependencies(pom, testContext);
+      MavenUtils.MavenExecutionOptions options = createExecutionOptions(projectDir, mavenHome);
+      MavenUtils.DependenciesResolutionResult resolution = maven.resolveDependenciesWithSelection(pom, options, testContext);
+      resolved = resolution.getDependencies();
+      log.debug("Resolved Maven dependencies via distribution mode {} for {}",
+          resolution.getDistributionSelection().getMode(), projectDir);
     } catch (Exception e) {
       if (e instanceof DependenciesResolveException dre) {
         throw dre;
@@ -120,7 +123,7 @@ public final class MavenClasspathUtils {
     return new File(dir, testContext ? "classpath-test.properties" : "classpath-main.properties");
   }
 
-  private static String fingerprintProject(File projectDir, boolean testContext) throws IOException {
+  private static String fingerprintProject(File projectDir, boolean testContext, String mavenHome) throws IOException {
     List<Path> tracked = new ArrayList<>();
     tracked.add(projectDir.toPath().resolve("pom.xml"));
     tracked.add(projectDir.toPath().resolve(".mvn").resolve("maven.config"));
@@ -130,6 +133,20 @@ public final class MavenClasspathUtils {
     long dotMvnLatest = ClasspathCacheManager.latestModified(projectDir.toPath().resolve(".mvn"));
     Map<String, String> extra = new LinkedHashMap<>();
     extra.put("dotMvnLatest", String.valueOf(dotMvnLatest));
+    File configuredMavenHome = resolveConfiguredMavenHome(mavenHome);
+    extra.put("mavenHome", configuredMavenHome == null ? "" : configuredMavenHome.getAbsolutePath());
+    extra.put("embeddedMavenProp", System.getProperty(MavenDistributionLocator.EMBEDDED_MAVEN_HOME_PROP, ""));
     return ClasspathCacheManager.computeFingerprint(projectDir, testContext, tracked, extra);
+  }
+
+  static MavenUtils.MavenExecutionOptions createExecutionOptions(File projectDir, String mavenHome) {
+    return new MavenUtils.MavenExecutionOptions(projectDir, resolveConfiguredMavenHome(mavenHome), true);
+  }
+
+  private static File resolveConfiguredMavenHome(String mavenHome) {
+    if (mavenHome != null && !mavenHome.isBlank()) {
+      return new File(mavenHome.trim());
+    }
+    return MavenDistributionLocator.resolveBundledMavenHome();
   }
 }
