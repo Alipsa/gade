@@ -2,9 +2,11 @@ package se.alipsa.gade.utils.gradle;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import se.alipsa.gade.utils.FileUtils;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,5 +50,22 @@ public class GradleUtilsConfigTest {
         "Expected GradleUtils to use project-local Gradle user home when configured"
     );
   }
-}
 
+  @Test
+  void wrapperTakesPrecedenceOverConfiguredInstallationWhenBothExist(@TempDir Path tempDir) throws Exception {
+    File gradleProjectDir = FileUtils.getResource("utils/gradle/package");
+    File installDir = tempDir.resolve("gradle-home").toFile();
+    installDir.mkdirs();
+
+    GradleUtils gradleUtils = new GradleUtils(installDir, gradleProjectDir, System.getProperty("java.home"));
+    assertEquals(
+        List.of(
+            GradleUtils.DistributionMode.WRAPPER,
+            GradleUtils.DistributionMode.INSTALLATION,
+            GradleUtils.DistributionMode.EMBEDDED
+        ),
+        gradleUtils.getDistributionOrder(),
+        "Expected wrapper to be preferred before configured installation when wrapper is available"
+    );
+  }
+}

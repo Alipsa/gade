@@ -90,8 +90,13 @@ public class LibraryUtils {
 
   static void addGradleDependencies(Gade gui, Map<String, Library> libraries) {
     File projectDir = gui.getInoutComponent().projectDir();
-    String javaHome = gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome();
-    GradleUtils gradleUtils = new GradleUtils(null, projectDir, javaHome);
+    RuntimeConfig selectedRuntime = gui.getRuntimeManager().getSelectedRuntime(projectDir);
+    String javaHome = selectedRuntime.getJavaHome();
+    File gradleInstallationDir = null;
+    if (selectedRuntime.getBuildToolHome() != null && !selectedRuntime.getBuildToolHome().isBlank()) {
+      gradleInstallationDir = new File(selectedRuntime.getBuildToolHome());
+    }
+    GradleUtils gradleUtils = new GradleUtils(gradleInstallationDir, projectDir, javaHome);
     gradleUtils.getProjectDependencies().forEach(file -> addLibraryFromFile(file, libraries));
   }
 

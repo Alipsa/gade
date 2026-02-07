@@ -33,10 +33,15 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
   private final TextField nameField = new TextField();
   private final ComboBox<RuntimeType> typeBox = new ComboBox<>();
   private final TextField javaHomeField = new TextField();
+  private final TextField buildToolHomeField = new TextField();
   private final TextField groovyHomeField = new TextField();
   private final ListView<String> jarList = new ListView<>();
   private final ListView<String> dependencyList = new ListView<>();
 
+  private final Label buildToolHomeLabel = new Label("Build tool home");
+  private final Node buildToolHomeNode = createBrowseField(buildToolHomeField, true);
+  private final Label mavenBuildToolNoteLabel = new Label(
+      "Maven build tool home is not active yet. Gade currently uses built-in Maven dependency resolution.");
   private final Label groovyHomeLabel = new Label("Groovy home");
   private final Label additionalJarsLabel = new Label("Additional JARs");
   private final Label dependenciesLabel = new Label("Dependencies");
@@ -103,12 +108,18 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     form.add(typeBox, 1, 1);
     form.add(new Label("JVM home"), 0, 2);
     form.add(createBrowseField(javaHomeField, true), 1, 2);
-    form.add(groovyHomeLabel, 0, 3);
-    form.add(groovyHomeNode, 1, 3);
-    form.add(additionalJarsLabel, 0, 4);
-    form.add(additionalJarsNode, 1, 4);
-    form.add(dependenciesLabel, 0, 5);
-    form.add(dependenciesNode, 1, 5);
+    form.add(buildToolHomeLabel, 0, 3);
+    form.add(buildToolHomeNode, 1, 3);
+    form.add(mavenBuildToolNoteLabel, 1, 4);
+    form.add(groovyHomeLabel, 0, 5);
+    form.add(groovyHomeNode, 1, 5);
+    form.add(additionalJarsLabel, 0, 6);
+    form.add(additionalJarsNode, 1, 6);
+    form.add(dependenciesLabel, 0, 7);
+    form.add(dependenciesNode, 1, 7);
+
+    buildToolHomeField.setPromptText("Leave empty for built-in / wrapper");
+    mavenBuildToolNoteLabel.setWrapText(true);
 
     BorderPane pane = new BorderPane();
     pane.setLeft(runtimeListView);
@@ -234,6 +245,7 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     nameField.setDisable(!editable);
     typeBox.setDisable(!editable);
     javaHomeField.setDisable(!editable);
+    buildToolHomeField.setDisable(!editable);
     groovyHomeField.setDisable(!editable);
     jarList.setDisable(!editable);
     dependencyList.setDisable(!editable);
@@ -241,6 +253,7 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
       nameField.clear();
       typeBox.getSelectionModel().clearSelection();
       javaHomeField.clear();
+      buildToolHomeField.clear();
       groovyHomeField.clear();
       jarList.getItems().clear();
       dependencyList.getItems().clear();
@@ -250,6 +263,7 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
     nameField.setText(runtime.getName());
     typeBox.getSelectionModel().select(runtime.getType());
     javaHomeField.setText(runtime.getJavaHome() == null ? "" : runtime.getJavaHome());
+    buildToolHomeField.setText(runtime.getBuildToolHome() == null ? "" : runtime.getBuildToolHome());
     groovyHomeField.setText(runtime.getGroovyHome() == null ? "" : runtime.getGroovyHome());
     jarList.setItems(FXCollections.observableArrayList(runtime.getAdditionalJars()));
     dependencyList.setItems(FXCollections.observableArrayList(runtime.getDependencies()));
@@ -259,10 +273,15 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
   private void applyTypeVisibility(RuntimeType type) {
     RuntimeConfig selected = runtimeListView.getSelectionModel().getSelectedItem();
     boolean editable = selected != null && !RuntimeType.GADE.equals(selected.getType());
+    boolean showBuildToolHome = editable && (RuntimeType.MAVEN.equals(type) || RuntimeType.GRADLE.equals(type));
+    boolean showMavenBuildToolNote = editable && RuntimeType.MAVEN.equals(type);
     boolean showCustomFields = editable && RuntimeType.CUSTOM.equals(type);
 
+    setVisibleAndManaged(showBuildToolHome, buildToolHomeLabel, buildToolHomeNode);
+    setVisibleAndManaged(showMavenBuildToolNote, mavenBuildToolNoteLabel);
     setVisibleAndManaged(showCustomFields, groovyHomeLabel, groovyHomeNode, additionalJarsLabel, additionalJarsNode,
         dependenciesLabel, dependenciesNode);
+    buildToolHomeField.setDisable(!showBuildToolHome);
     groovyHomeField.setDisable(!showCustomFields);
     jarList.setDisable(!showCustomFields);
     dependencyList.setDisable(!showCustomFields);
@@ -366,13 +385,18 @@ public class RuntimeEditorDialog extends Dialog<RuntimeEditorResult> {
       return null;
     }
     String javaHome = javaHomeField.getText().trim();
+    String buildToolHome = buildToolHomeField.getText().trim();
+    if (buildToolHome.isBlank()) {
+      buildToolHome = null;
+    }
     if (!RuntimeType.CUSTOM.equals(type)) {
-      return new RuntimeConfig(name, type, javaHome, "", List.of(), List.of());
+      return new RuntimeConfig(name, type, javaHome, buildToolHome, "", List.of(), List.of());
     }
     return new RuntimeConfig(
         name,
         type,
         javaHome,
+        null,
         groovyHomeField.getText().trim(),
         new ArrayList<>(jarList.getItems()),
         new ArrayList<>(dependencyList.getItems())

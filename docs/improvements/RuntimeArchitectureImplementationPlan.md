@@ -279,7 +279,7 @@ ProcessRootLoader (system CL, starts empty)
 
 ---
 
-## Phase 2: Build Tool Home Configuration (Priority 4)
+## Phase 2: Build Tool Home Configuration (Priority 4) ✅ COMPLETE
 
 This phase is independent of Phase 1 — it can be done before or in parallel.
 
@@ -342,6 +342,8 @@ This step depends on the `se.alipsa.mavenutils` library being enhanced to accept
 - `src/main/java/se/alipsa/gade/runtime/RuntimeClassLoaderFactory.java` — In `createMavenClassLoader()`, pass `runtime.getBuildToolHome()` to `MavenClasspathUtils`
 
 **Interim approach:** If the MavenUtils library enhancement is not ready, implement Steps 4.1-4.2 (data model + UI) for both Maven and Gradle, but only wire the Gradle path (Steps 4.3-4.4). The Maven Build Tool Home field will be visible in the UI but have no effect until MavenUtils is enhanced. Add a tooltip or info label: "Maven home configuration requires MavenUtils library enhancement — currently uses built-in resolution."
+
+**Status:** Implemented using the interim approach. `buildToolHome` is persisted and wired through the Maven call path, and the UI clearly indicates that Maven home is not active until MavenUtils adds wrapper/home support.
 
 ---
 
@@ -434,8 +436,8 @@ Phase 1 (Subprocess Classloader Infrastructure) ✅ COMPLETE
   ├── Priority 1: Main/Test Loader Separation ← DONE
   └── Priority 2: Parent-Last Delegation      ← DONE
 
-Phase 2 (Build Tool Home Configuration)
-  └── Priority 4: Maven/Gradle Home Config    ← Independent of Phase 1
+Phase 2 (Build Tool Home Configuration) ✅ COMPLETE
+  └── Priority 4: Maven/Gradle Home Config    ← Implemented with interim MavenUtils limitation documented
 
 Phase 3 (Distribution & Validation)
   ├── Priority 5: Bundled Distributions       ← Depends on Phase 2 wiring

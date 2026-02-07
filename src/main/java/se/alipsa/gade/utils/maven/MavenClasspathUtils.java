@@ -27,6 +27,12 @@ public final class MavenClasspathUtils {
   private MavenClasspathUtils() {}
 
   public static void addPomDependenciesTo(GroovyClassLoader loader, File projectDir, boolean testContext, ConsoleTextArea console) {
+    addPomDependenciesTo(loader, projectDir, testContext, console, null);
+  }
+
+  public static void addPomDependenciesTo(
+      GroovyClassLoader loader, File projectDir, boolean testContext,
+      ConsoleTextArea console, String mavenHome) {
     if (projectDir == null) {
       return;
     }
@@ -36,7 +42,7 @@ public final class MavenClasspathUtils {
     }
     long start = System.currentTimeMillis();
     try {
-      List<File> deps = resolveDependencies(projectDir, pom, testContext, console);
+      List<File> deps = resolveDependencies(projectDir, pom, testContext, console, mavenHome);
       for (File f : deps) {
         if (!f.exists()) {
           console.appendWarningFx("Dependency file does not exist: " + f);
@@ -67,7 +73,8 @@ public final class MavenClasspathUtils {
     }
   }
 
-  private static List<File> resolveDependencies(File projectDir, File pom, boolean testContext, ConsoleTextArea console)
+  private static List<File> resolveDependencies(
+      File projectDir, File pom, boolean testContext, ConsoleTextArea console, String mavenHome)
       throws IOException, DependenciesResolveException {
     String fingerprint = fingerprintProject(projectDir, testContext);
     File cacheFile = cacheFile(projectDir, testContext);
@@ -76,6 +83,7 @@ public final class MavenClasspathUtils {
       console.appendFx("  Using cached Maven classpath", true);
       return cached;
     }
+    // TODO: Wire mavenHome once MavenUtils supports configurable Maven installations.
     MavenUtils maven = new MavenUtils();
     Set<File> resolved;
     try {

@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.TaskListener;
 import se.alipsa.gade.code.groovytab.GroovyTab;
+import se.alipsa.gade.runtime.RuntimeConfig;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.gradle.GradleUtils;
 
@@ -57,8 +58,13 @@ public class GradleTab extends GroovyTab implements TaskListener {
     if (projectDir == null || !projectDir.exists()) {
       projectDir = getFile().getParentFile();
     }
-    String javaHome = gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome();
-    GradleUtils gutil = new GradleUtils(null, projectDir, javaHome);
+    RuntimeConfig selectedRuntime = gui.getRuntimeManager().getSelectedRuntime(projectDir);
+    String javaHome = selectedRuntime.getJavaHome();
+    File gradleInstallationDir = null;
+    if (selectedRuntime.getBuildToolHome() != null && !selectedRuntime.getBuildToolHome().isBlank()) {
+      gradleInstallationDir = new File(selectedRuntime.getBuildToolHome());
+    }
+    GradleUtils gutil = new GradleUtils(gradleInstallationDir, projectDir, javaHome);
     gutil.buildProject(gradleArgs);
   }
 

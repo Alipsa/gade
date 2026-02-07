@@ -70,19 +70,19 @@ final class GradleDistributionManager {
    * <p>
    * The order of preference is:
    * <ol>
-   *   <li>Explicit installation (if provided and exists)</li>
    *   <li>Gradle wrapper (if available)</li>
+   *   <li>Explicit installation (if provided and exists)</li>
    *   <li>Embedded/tooling API version</li>
    * </ol>
    */
   void configureDistribution() {
     distributionOrder.clear();
-    // Prefer provided installation if explicitly given, then wrapper, then embedded/tooling API.
-    if (gradleInstallationDir != null && gradleInstallationDir.exists()) {
-      distributionOrder.add(DistributionMode.INSTALLATION);
-    }
+    // Wrapper takes precedence over configured installation for reproducible builds.
     if (wrapperAvailable) {
       distributionOrder.add(DistributionMode.WRAPPER);
+    }
+    if (gradleInstallationDir != null && gradleInstallationDir.exists()) {
+      distributionOrder.add(DistributionMode.INSTALLATION);
     }
     distributionOrder.add(DistributionMode.EMBEDDED);
     currentDistributionIndex = 0;

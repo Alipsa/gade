@@ -52,8 +52,8 @@ public class RuntimeClassLoaderFactory {
 
     GroovyClassLoader loader = switch (runtime.getType()) {
       case GADE -> createGadeClassLoader(config, console);
-      case GRADLE -> createGradleClassLoader(config, testContext, console);
-      case MAVEN -> createMavenClassLoader(config, testContext, console);
+      case GRADLE -> createGradleClassLoader(runtime, config, testContext, console);
+      case MAVEN -> createMavenClassLoader(runtime, config, testContext, console);
       case CUSTOM -> createCustomClassLoader(runtime, config, console);
     };
     return loader;
@@ -155,17 +155,22 @@ public class RuntimeClassLoaderFactory {
     }
   }
 
-  private GroovyClassLoader createGradleClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
+  private GroovyClassLoader createGradleClassLoader(RuntimeConfig runtime, CompilerConfiguration config,
+                                                    boolean testContext, ConsoleTextArea console) {
     File projectDir = gui.getProjectDir();
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
     if (projectDir == null) {
       addDefaultGroovyRuntime(loader);
       return loader;
     }
+    File gradleInstallationDir = null;
+    if (runtime.getBuildToolHome() != null && !runtime.getBuildToolHome().isBlank()) {
+      gradleInstallationDir = new File(runtime.getBuildToolHome());
+    }
     var gradleUtils = new GradleUtils(
-        null,
+        gradleInstallationDir,
         projectDir,
-        gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome()
+        runtime.getJavaHome()
     );
     gradleUtils.addGradleDependencies(loader, console, testContext);
     // Add default Groovy runtime AFTER project dependencies so project version takes precedence
@@ -173,14 +178,15 @@ public class RuntimeClassLoaderFactory {
     return loader;
   }
 
-  private GroovyClassLoader createMavenClassLoader(CompilerConfiguration config, boolean testContext, ConsoleTextArea console) {
+  private GroovyClassLoader createMavenClassLoader(RuntimeConfig runtime, CompilerConfiguration config,
+                                                   boolean testContext, ConsoleTextArea console) {
     GroovyClassLoader loader = new GroovyClassLoader(ClassUtils.getBootstrapClassLoader(), config);
     File projectDir = gui.getProjectDir();
     if (projectDir == null) {
       addDefaultGroovyRuntime(loader);
       return loader;
     }
-    MavenClasspathUtils.addPomDependenciesTo(loader, projectDir, testContext, console);
+    MavenClasspathUtils.addPomDependenciesTo(loader, projectDir, testContext, console, runtime.getBuildToolHome());
     if (gui.getPrefs().getBoolean(ADD_BUILDDIR_TO_CLASSPATH, true)) {
       addMavenOutputs(loader, projectDir, testContext);
     }

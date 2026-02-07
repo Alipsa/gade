@@ -762,7 +762,11 @@ final class GroovyRuntimeManager {
     }
     if (RuntimeType.GRADLE.equals(runtime.getType())) {
       try {
-        GradleUtils gradleUtils = new GradleUtils(null, projectDir, runtime.getJavaHome());
+        File gradleInstallationDir = null;
+        if (runtime.getBuildToolHome() != null && !runtime.getBuildToolHome().isBlank()) {
+          gradleInstallationDir = new File(runtime.getBuildToolHome());
+        }
+        GradleUtils gradleUtils = new GradleUtils(gradleInstallationDir, projectDir, runtime.getJavaHome());
         Set<Path> testDirs = gradleUtils.getTestSourceDirectories().stream()
             .filter(Objects::nonNull)
             .map(File::toPath)
