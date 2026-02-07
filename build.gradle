@@ -145,7 +145,7 @@ dependencies {
   implementation "org.commonmark:commonmark-ext-gfm-tables:0.27.1"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
   implementation 'se.alipsa.groovy:data-utils:2.0.4'
-  implementation('se.alipsa.gmd:gmd-core:3.0.2-SNAPSHOT') {
+  implementation('se.alipsa.gmd:gmd-core:3.0.2') {
     exclude group: 'se.alipsa.matrix', module: 'matrix-core'
     exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
     exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'

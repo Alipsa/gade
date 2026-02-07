@@ -372,11 +372,15 @@ public class GradleUtils {
     return dependencyResolver.getOutputDir(module);
   }
 
-  public void addGradleDependencies(GroovyClassLoader classLoader, PrintWriter console, boolean testContext) {
+  public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console) {
+    addGradleDependencies(classLoader, console, false);
+  }
+
+  public void addGradleDependencies(GroovyClassLoader classLoader, ConsoleTextArea console, boolean testContext) {
     long start = System.currentTimeMillis();
     GradleDependencyResolver.ClasspathModel model = resolveClasspathModel(testContext);
     if (model.fromCache()) {
-      console.println("  Using cached Gradle classpath");
+      console.appendFx("  Using cached Gradle classpath", true);
     }
     for (File f : model.dependencies()) {
       try {
@@ -384,11 +388,11 @@ public class GradleUtils {
           classLoader.addURL(f.toURI().toURL());
         } else {
           log.warn("Dependency file {} does not exist", f);
-          console.println("Dependency file " + f + " does not exist");
+          console.appendWarningFx("Dependency file " + f + " does not exist");
         }
       } catch (MalformedURLException e) {
         log.warn("Error adding gradle dependency {} to classpath", f);
-        console.println("Error adding gradle dependency " + f + " to classpath");
+        console.appendWarningFx("Error adding gradle dependency " + f + " to classpath");
       }
     }
     for (File outputDir : model.outputDirs()) {
@@ -396,12 +400,12 @@ public class GradleUtils {
         classLoader.addURL(outputDir.toURI().toURL());
       } catch (MalformedURLException e) {
         log.warn("Error adding gradle output dir {} to classpath", outputDir);
-        console.println("Error adding gradle output dir {} " + outputDir + " to classpath");
+        console.appendWarningFx("Error adding gradle output dir {} " + outputDir + " to classpath");
       }
     }
     long ms = System.currentTimeMillis() - start;
     if (!model.fromCache() && ms > 2_000) {
-      console.println("  Gradle classpath resolved in " + (ms / 1000) + "s");
+      console.appendFx("  Gradle classpath resolved in " + (ms / 1000) + "s", true);
     }
   }
 

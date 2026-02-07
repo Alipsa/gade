@@ -167,11 +167,7 @@ public class RuntimeClassLoaderFactory {
         projectDir,
         gui.getRuntimeManager().getSelectedRuntime(projectDir).getJavaHome()
     );
-    // FIXME: ugly quick hack: should be changed to forward each println to the console.appendFx()
-    StringWriter sw = new StringWriter();
-    PrintWriter pw = new PrintWriter(sw);
-    gradleUtils.addGradleDependencies(loader, pw, testContext);
-    console.appendFx(sw.toString(), true);
+    gradleUtils.addGradleDependencies(loader, console, testContext);
     // Add default Groovy runtime AFTER project dependencies so project version takes precedence
     addDefaultGroovyRuntimeIfMissing(loader);
     return loader;
