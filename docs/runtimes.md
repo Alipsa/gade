@@ -35,3 +35,18 @@ The Gradle, Maven and custom runtimes should be completely isolated from the IDE
   with isolated systemClassLoader so grabs don’t leak into IDE; allow overriding library versions (e.g., Matrix/Parquet) per runtime; ensure Gade runtime retains current behavior but uses
   isolated classloader.
 - ensure lifecycle management, serialization constraints, and that proxies work with the isolated classloaders.
+
+---
+
+## Groovy Version Selection
+
+The Groovy version used for script execution is determined by the runtime type. This is by design — each runtime type has a different mechanism for specifying the Groovy version, matching how that runtime type manages dependencies in general.
+
+| Runtime Type | Groovy Version Source | How to Change It |
+|--------------|----------------------|------------------|
+| **Gade** | Fixed to Gade's bundled Groovy/Ivy jars (`lib/groovy/`) | Cannot be changed — the Gade runtime always uses the bundled version. Switch to a Custom, Maven, or Gradle runtime to use a different Groovy version. |
+| **Maven** | Implicit — resolved from `pom.xml` project dependencies. If the project's dependencies include a Groovy runtime, that version is used. | Add or change the Groovy dependency version in `pom.xml`. If no Groovy dependency is declared, Gade's bundled version is used as a fallback. |
+| **Gradle** | Implicit — resolved from `build.gradle` project dependencies via the Gradle Tooling API. If the project's dependencies include a Groovy runtime, that version is used. | Add or change the Groovy dependency version in `build.gradle`. If no Groovy dependency is declared, Gade's bundled version is used as a fallback. |
+| **Custom** | Explicit — loaded from the Groovy Home directory configured in the runtime settings (all jars in `<groovyHome>/lib/`). | Change the Groovy Home path in the Edit Runtimes dialog. If no Groovy Home is configured, Gade's bundled version is used as a fallback. |
+
+**Bundled Groovy Fallback:** For Maven and Gradle runtimes, Gade checks whether the resolved project dependencies include Groovy jars. If they do, those are used (project version takes precedence). If they don't, Gade adds its own bundled Groovy/Ivy jars so that the runtime always has a working Groovy environment. This ensures scripts can always execute, even in projects that don't explicitly declare a Groovy dependency.
