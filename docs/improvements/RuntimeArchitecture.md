@@ -224,13 +224,13 @@ Asynchronous protocol messages (not direct command/response pairs):
 
 ### Protocol Versioning
 
-The `hello` message includes a protocol version number (`ProtocolVersion`). The main process validates that the Runner's version is compatible before proceeding. If the protocol changes (e.g. new message types are added), the version must be incremented. Backward-incompatible changes require a major version bump; the main process should refuse to connect to a Runner with an incompatible version and prompt the user to update.
+The `hello` message includes a protocol version number (`ProtocolVersion`). The main process validates that the Runner's version matches before proceeding. Since Gade has not yet been released, there is no external backward-compatibility requirement — the Runner JAR is always built and shipped together with the main process, so the versions always match.
 
 ### Startup Handshake Sequence
 
 ```
 1. Subprocess starts → sends "hello" with protocol version
-2. Main process validates version compatibility
+2. Main process validates version matches
 3. Main process sends "addClasspath" with groovyEntries + projectEntries
 4. Subprocess builds classloader hierarchy
 5. Subprocess sends "classpathAdded" acknowledgment
@@ -400,6 +400,8 @@ When the user changes runtime configuration (JVM, build tool home, Groovy versio
 | Environment reset strategy           | Subprocess killed and restarted                        | Subprocess killed and restarted (adequate for all config change scenarios) | Done |
 | ProcessRootLoader with public addURL | URLClassLoader with PlatformCL parent                  | Custom ProcessRootLoader for addURL support | **TODO**   |
 | GUI proxy                            | RemoteInOut                                            | RemoteInOut                                 | Done       |
+| ConnectionInfo serialization         | Falls through to `toString()` (returns name only); `ConnectionInfo` methods like `.withPassword()` fail in subprocess | `ArgumentSerializer` round-trips `ConnectionInfo` as a typed map with all fields (name, dependency, driver, url, user, password) | **TODO** (regression) |
+| `dbConnect()` Connection return      | `java.sql.Connection` serialized as `toString()` — unusable in subprocess | `RemoteInOut` intercepts `dbConnect`, proxies `dbConnection()` to get `ConnectionInfo`, creates JDBC connection locally in subprocess | **TODO** (regression) |
 | @GrabConfig(systemClassLoader=true)  | Not verified                                           | Process Classloader supports addURL         | **Verify** |
 | Gradle Home configuration in UI      | Not configurable; `gradleInstallationDir` always null  | Configurable via RuntimeEditorDialog; wrapper→configured→built-in | **TODO** |
 | Maven Home configuration in UI       | Not configurable; always uses built-in `MavenUtils`    | Configurable via RuntimeEditorDialog; wrapper→configured→built-in | **TODO** |
@@ -414,6 +416,21 @@ When the user changes runtime configuration (JVM, build tool home, Groovy versio
 ---
 
 ## 11. Implementation Priorities
+
+### 0. ConnectionInfo Serialization (Regression Fix)
+
+The subprocess isolation model broke the ability to use `ConnectionInfo` objects returned by `io.dbConnection()`. `ArgumentSerializer` has no support for `ConnectionInfo` — it falls through to `toString()`, which returns just the connection name. This breaks the idiomatic pattern `io.dbConnection("name").withPassword("pwd")` used in all example scripts. Additionally, `io.dbConnect()` returns a `java.sql.Connection` which cannot be serialized across process boundaries.
+
+**Acceptance criteria:**
+- `ArgumentSerializer` serializes `ConnectionInfo` as a typed map with all fields and deserializes it back
+- `io.dbConnection("name")` returns a usable `ConnectionInfo` in subprocess scripts
+- `io.dbConnection("name").withPassword("pwd")` works in subprocess mode
+- `io.dbConnect()` works transparently in subprocess mode by creating the JDBC connection locally (requires JDBC driver on subprocess classpath)
+- Example scripts (`examples/database/`, `examples/exportData/`, `examples/importData/`) work in all runtime types
+
+**Test gates:**
+- Unit test: `ConnectionInfo` round-trips through `ArgumentSerializer.serialize()` / `deserialize()`
+- Integration test: subprocess script calls `io.dbConnection("name")`, modifies password, passes result to `io.dbSelect(ci, "sql")`
 
 ### 1. Main/Test Loader Separation
 
