@@ -146,7 +146,7 @@ dependencies {
   implementation "org.commonmark:commonmark:0.27.1"
   implementation "org.commonmark:commonmark-ext-gfm-tables:0.27.1"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
-  implementation 'se.alipsa.groovy:data-utils:2.0.6-SNAPSHOT'
+  implementation 'se.alipsa.groovy:data-utils:2.0.6'
   implementation('se.alipsa.gmd:gmd-core:3.0.2') {
     exclude group: 'se.alipsa.matrix', module: 'matrix-core'
     exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
@@ -168,7 +168,7 @@ dependencies {
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation "org.apache.maven:maven-artifact:${embeddedMavenVersion}"
   implementation "org.apache.maven:maven-model:${embeddedMavenVersion}"
-  implementation "se.alipsa:maven-utils:1.3.0-SNAPSHOT"
+  implementation "se.alipsa:maven-utils:1.3.0"
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
@@ -333,9 +333,6 @@ processResources.doLast {
 }
 
 test {
-  // Note: JavaFX module args (--add-exports, --add-opens, --enable-native-access) are not needed
-  // because JavaFX is on the classpath (via testImplementation), not the module path
-
   // Headless mode is enabled by default using Monocle
   // Usage: ./gradlew test (headless, no windows)
   //        ./gradlew test -Dheadless=false (with windows)
@@ -365,6 +362,16 @@ test {
   boolean shouldSkipTestFx = System.getProperty('skipTestFx') != null
       ? System.getProperty('skipTestFx') == 'true'
       : System.getProperty('os.name').toLowerCase().contains('mac')
+
+  if (!shouldSkipTestFx) {
+    // TestFX Monocle accesses internal JavaFX packages reflectively.
+    jvmArgs += [
+        '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+        '--add-exports=javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED',
+        '--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+        '--add-opens=javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED'
+    ]
+  }
 
   if (shouldSkipTestFx) {
     if (System.getProperty('os.name').toLowerCase().contains('mac')) {
