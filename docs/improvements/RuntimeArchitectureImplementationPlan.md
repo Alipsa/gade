@@ -351,7 +351,7 @@ This step depended on the `se.alipsa.mavenutils` library being enhanced to accep
 
 ## Phase 3: Distribution & Validation (Priorities 5-6) ✅ COMPLETE
 
-These are lower priority and depend on decisions about distribution size and Gradle/Maven version bundling.
+This phase is complete. Remaining notes in this section are operational considerations for distribution size and upgrade strategy.
 
 ### Priority 5: Bundled Build Tool Distributions
 
@@ -359,25 +359,15 @@ These are lower priority and depend on decisions about distribution size and Gra
 
 #### Step 5.1: Gradle Distribution Bundling
 
-**Files to modify:**
-- `build.gradle` — Add a task to download and include a Gradle distribution:
-  - Option A: Download a Gradle binary distribution (zip) from `services.gradle.org` during build and extract to `lib/gradle/`
-  - Option B: Use the Gradle wrapper's distribution URL to determine the version and bundle it
-  - Add to the `runtime` task's `doLast` block: copy/extract the Gradle distribution into `build/image/gade-*/lib/gradle/`
-  - Consider distribution size impact (Gradle binary is ~120MB; minimal distribution may suffice)
-
-**Files to modify (once bundled):**
-- `src/main/java/se/alipsa/gade/utils/gradle/GradleDistributionManager.java` — Update `EMBEDDED` mode: instead of `connector.useGradleVersion(current)`, use `connector.useInstallation(libGradleDir)` pointing to `lib/gradle/`. Detect the `lib/gradle/` path relative to the application installation directory.
+**Implemented in:**
+- `build.gradle` — `tasks.runtime.doLast` downloads/extracts `gradle-${embeddedGradleVersion}-bin.zip` and copies the extracted home into each runtime image under `lib/gradle/`.
+- `src/main/java/se/alipsa/gade/utils/gradle/GradleDistributionManager.java` — `EMBEDDED` mode now resolves `lib/gradle/` from the app installation and uses `connector.useInstallation(...)` instead of version-based provisioning.
 
 #### Step 5.2: Maven Distribution Bundling
 
-**Files to modify:**
-- `build.gradle` — Similar to Gradle: download a Maven binary distribution and extract to `lib/maven/`
-  - Maven binary is ~10MB (much smaller than Gradle)
-  - Add to the `runtime` task's `doLast` block
-
-**Files modified:**
-- `src/main/java/se/alipsa/gade/utils/maven/MavenClasspathUtils.java` — Built-in mode now uses `lib/maven/` as fallback when no wrapper or configured home is available (via MavenUtils execution options).
+**Implemented in:**
+- `build.gradle` — `tasks.runtime.doLast` downloads/extracts `apache-maven-${embeddedMavenVersion}-bin.zip` and copies the extracted home into each runtime image under `lib/maven/`.
+- `src/main/java/se/alipsa/gade/utils/maven/MavenClasspathUtils.java` — built-in mode uses bundled `lib/maven/` as fallback when wrapper/configured home is unavailable (through MavenUtils execution options).
 
 **Status:** Runtime distributions now bundle Maven under `lib/maven/`, and Maven runtime resolution/build now uses wrapper → configured home → bundled/default via MavenUtils execution options.
 
@@ -394,38 +384,19 @@ Bundling both Gradle (~120MB) and Maven (~10MB) significantly increases distribu
 
 #### Step 6.1: Add Version Constants
 
-**Files to create or modify:**
+**Implemented in:**
 - `src/main/java/se/alipsa/gade/utils/gradle/GradleCompatibility.java` (new class):
-  ```java
-  public class GradleCompatibility {
-      public static final String MIN_SUPPORTED_GRADLE = "5.0";
-      public static final String MAX_SUPPORTED_GRADLE = "9.99";
-
-      public static boolean isSupported(String version) { ... }
-
-      /**
-       * Extract Gradle version from an installation directory.
-       * Tries lib/gradle-core-*.jar filename first, then falls
-       * back to running bin/gradle --version (async, 5s timeout).
-       */
-      public static CompletableFuture<String> extractVersion(File gradleHome) { ... }
-
-      /**
-       * Extract Gradle version from wrapper properties distributionUrl.
-       */
-      public static String extractVersionFromWrapper(File wrapperProperties) { ... }
-  }
-  ```
+  - Defines supported Gradle version bounds
+  - Implements version compatibility checks
+  - Extracts version from installation directories and wrapper properties
 
 #### Step 6.2: Add Validation to RuntimeEditorDialog
 
-**Files to modify:**
+**Implemented in:**
 - `src/main/java/se/alipsa/gade/runtime/RuntimeEditorDialog.java`:
-  - When the user selects a directory via the Build Tool Home chooser and the runtime type is `GRADLE`:
-    1. Call `GradleCompatibility.extractVersion()` asynchronously
-    2. When the result arrives, check `GradleCompatibility.isSupported()`
-    3. If outside range, show a non-blocking warning label below the field (e.g. "Warning: Gradle X.Y may not be compatible with the bundled Tooling API (supported: 5.0-9.x)")
-  - For wrapper detection: when the dialog loads and the project has a wrapper, extract the version from `gradle-wrapper.properties` and validate similarly
+  - Validates selected Gradle home asynchronously via `GradleCompatibility`
+  - Shows non-blocking compatibility warnings in the dialog
+  - Validates wrapper version when wrapper metadata is available
 
 ---
 
@@ -448,7 +419,7 @@ Phase 3 (Distribution & Validation) ✅ COMPLETE
   └── Priority 6: Tooling API Validation      ← Implemented in RuntimeEditorDialog + GradleCompatibility
 ```
 
-**Recommended start:** Priority 0 (ConnectionInfo fix) should be done first as it is a regression. After that, Priority 3 (ProcessRootLoader) and Priority 4 (Build Tool Home Config) can be done in parallel since they touch different parts of the system.
+All priorities in this plan are implemented. This section is now a historical execution summary.
 
 ---
 
@@ -468,7 +439,7 @@ Phase 3 (Distribution & Validation) ✅ COMPLETE
 | Child-first classloader breaks Groovy internals (e.g. MOP, category handling) | Medium | High | Extensive testing with real Groovy features; exclude `groovy.*` from child-first override |
 | ProcessRootLoader conflicts with Groovy's own RootLoader detection | Low | Medium | Test `@Grab` and `@GrabConfig` thoroughly; Groovy checks `instanceof RootLoader` in some code paths |
 | Bundled Gradle distribution too large for distribution | High | Low | Ship bin-only distribution; or download-on-first-use |
-| MavenUtils library enhancement delayed | Medium | Low | Gradle-side works without it; Maven Build Tool Home field deferred but visible in UI |
+| MavenUtils API changes/regressions across releases | Low | Medium | Pin and validate MavenUtils version in CI; keep fallback behavior tests for wrapper/configured/bundled selection |
 
 ---
 
