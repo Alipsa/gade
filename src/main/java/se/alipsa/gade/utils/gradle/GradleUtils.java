@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -366,6 +367,26 @@ public class GradleUtils {
       urls.add(out.toURI().toURL());
     }
     return urls;
+  }
+
+  public List<File> getTestSourceDirectories() {
+    return withConnection(connection -> {
+      IdeaProject project = connection.model(IdeaProject.class)
+          .setJvmArguments(configManager.gradleJvmArgs())
+          .setEnvironmentVariables(configManager.gradleEnv())
+          .get();
+      LinkedHashSet<File> directories = new LinkedHashSet<>();
+      for (IdeaModule module : project.getModules()) {
+        module.getContentRoots().forEach(contentRoot ->
+            contentRoot.getTestDirectories().forEach(sourceDir -> {
+              File dir = sourceDir.getDirectory();
+              if (dir != null) {
+                directories.add(dir.getAbsoluteFile());
+              }
+            }));
+      }
+      return new ArrayList<>(directories);
+    });
   }
 
   public File getOutputDir(IdeaModule module) {

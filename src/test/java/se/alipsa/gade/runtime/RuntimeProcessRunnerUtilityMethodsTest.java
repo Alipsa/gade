@@ -6,8 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -292,6 +296,41 @@ class RuntimeProcessRunnerUtilityMethodsTest {
 
     // Stream should be closed, trying to read should fail or return -1
     assertEquals(-1, stream.read(), "Stream should be closed");
+  }
+
+  @Test
+  void testSendAddClasspathIncludesRuntimeTypeMainAndTestEntries() throws Exception {
+    ConsoleTextArea console = mock(ConsoleTextArea.class);
+    RuntimeConfig runtime = new RuntimeConfig("Gradle", RuntimeType.GRADLE);
+    RuntimeProcessRunner runner = new RuntimeProcessRunner(
+        runtime,
+        List.of("dummy"),
+        List.of("/cp/groovy.jar"),
+        List.of("/cp/main.jar"),
+        List.of("/cp/test.jar"),
+        console,
+        Map.of(),
+        null
+    );
+
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    Field socketWriterField = RuntimeProcessRunner.class.getDeclaredField("socketWriter");
+    socketWriterField.setAccessible(true);
+    socketWriterField.set(runner, new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
+
+    Method method = RuntimeProcessRunner.class.getDeclaredMethod("sendAddClasspath");
+    method.setAccessible(true);
+    method.invoke(runner);
+
+    String[] lines = out.toString(StandardCharsets.UTF_8).split("\\R");
+    String xml = lines[0];
+    Map<String, Object> payload = ProtocolXml.fromXml(xml);
+
+    assertEquals("addClasspath", payload.get("cmd"));
+    assertEquals("GRADLE", payload.get("runtimeType"));
+    assertEquals(List.of("/cp/groovy.jar"), payload.get("groovyEntries"));
+    assertEquals(List.of("/cp/main.jar"), payload.get("mainEntries"));
+    assertEquals(List.of("/cp/test.jar"), payload.get("testEntries"));
   }
 
   // ========== Helper Methods ==========

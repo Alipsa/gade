@@ -24,13 +24,11 @@ import java.util.Map;
  *   <li>Redirects {@code System.out}/{@code System.err} to {@link EventOutputStream}</li>
  *   <li>Sends a {@code hello} handshake</li>
  *   <li>Waits for an {@code addClasspath} command with Groovy and project dependency entries</li>
- *   <li>For Gradle/Maven: creates a bootstrap {@link URLClassLoader} with Groovy jars
- *       (parent = platform classloader), then creates a {@code GroovyClassLoader} via reflection
- *       and adds project dependencies + runner jar via {@code addURL()}</li>
+ *   <li>Adds Groovy bootstrap jars to {@link ProcessRootLoader} (installed as system classloader)</li>
  *   <li>For GADE/Custom: Groovy is already on the system classpath, so the engine is loaded
  *       directly from the system classloader</li>
  *   <li>Loads {@link GadeRunnerEngine} and invokes its
- *       {@code run(BufferedReader, BufferedWriter)} method</li>
+ *       {@code run(BufferedReader, BufferedWriter, String, String[], String[])} method</li>
  * </ol>
  */
 public class GadeRunnerMain {
@@ -68,33 +66,41 @@ public class GadeRunnerMain {
 
           // Wait for addClasspath command (blocking read before engine starts)
           Map<String, Object> cpCmd = waitForClasspath(reader, writer);
+          String runtimeType = cpCmd.get("runtimeType") == null ? "GADE" : String.valueOf(cpCmd.get("runtimeType"));
           List<String> groovyEntries = toStringList(cpCmd.get("groovyEntries"));
-          List<String> projectEntries = toStringList(cpCmd.get("projectEntries"));
+          List<String> mainEntries = toStringList(cpCmd.get("mainEntries"));
+          List<String> testEntries = toStringList(cpCmd.get("testEntries"));
           emitRaw("received " + groovyEntries.size() + " groovy entries, "
-              + projectEntries.size() + " project entries");
+              + mainEntries.size() + " main entries and "
+              + testEntries.size() + " test entries for runtime " + runtimeType);
 
           // Build classloader for the engine.
           // Project deps are NOT loaded here — they are passed to GadeRunnerEngine
-          // which adds them to the shell's GroovyClassLoader via addURL(), matching
-          // how @Grab works in GADE mode. This ensures SLF4J/Log4j and all deps
-          // live on the same GroovyClassLoader as scripts.
+          // which builds main/test GroovyClassLoaders and adds dependencies via addURL().
           ClassLoader engineCL;
-          URL runnerJarUrl = GadeRunnerMain.class.getProtectionDomain().getCodeSource().getLocation();
 
           if (!groovyEntries.isEmpty()) {
-            // Gradle/Maven mode: Groovy is NOT on -cp
-            // Bootstrap URLClassLoader with Groovy/Ivy jars + runner jar
-            // (parent = platform CL for isolation from system CL)
-            List<URL> bootstrapUrls = new ArrayList<>();
-            for (URL u : toUrls(groovyEntries)) {
-              bootstrapUrls.add(u);
+            // Gradle/Maven mode: add Groovy/Ivy jars dynamically to ProcessRootLoader.
+            ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+            if (systemClassLoader instanceof ProcessRootLoader processRootLoader) {
+              for (URL u : toUrls(groovyEntries)) {
+                processRootLoader.addURL(u);
+              }
+              engineCL = processRootLoader;
+            } else {
+              // Fallback for environments where custom system classloader is unavailable.
+              List<URL> bootstrapUrls = new ArrayList<>();
+              for (URL u : toUrls(groovyEntries)) {
+                bootstrapUrls.add(u);
+              }
+              URL runnerJarUrl = GadeRunnerMain.class.getProtectionDomain().getCodeSource().getLocation();
+              bootstrapUrls.add(runnerJarUrl);
+              engineCL = new URLClassLoader(bootstrapUrls.toArray(new URL[0]),
+                  ClassLoader.getPlatformClassLoader());
             }
-            bootstrapUrls.add(runnerJarUrl);
-            engineCL = new URLClassLoader(bootstrapUrls.toArray(new URL[0]),
-                ClassLoader.getPlatformClassLoader());
           } else {
             // GADE/Custom mode: Groovy is already on the system classpath
-            engineCL = GadeRunnerMain.class.getClassLoader();
+            engineCL = ClassLoader.getSystemClassLoader();
           }
 
           Thread.currentThread().setContextClassLoader(engineCL);
@@ -103,12 +109,13 @@ public class GadeRunnerMain {
           emit(Map.of("type", "classpathAdded"), writer);
 
           // Load and invoke GadeRunnerEngine via reflection (no Groovy import needed here).
-          // Project dep paths are passed so the engine can add them to the shell's
-          // GroovyClassLoader — keeping deps on the same CL as scripts.
+          // Main/test dependency paths are passed so the engine can create
+          // a classloader hierarchy and route each eval by testContext.
           Class<?> engineClass = engineCL.loadClass("se.alipsa.gade.runner.GadeRunnerEngine");
           Method runMethod = engineClass.getMethod("run",
-              BufferedReader.class, BufferedWriter.class, String[].class);
-          runMethod.invoke(null, reader, writer, projectEntries.toArray(new String[0]));
+              BufferedReader.class, BufferedWriter.class, String.class, String[].class, String[].class);
+          runMethod.invoke(null, reader, writer, runtimeType,
+              mainEntries.toArray(new String[0]), testEntries.toArray(new String[0]));
 
         } finally {
           System.setOut(previousOut);
@@ -130,7 +137,7 @@ public class GadeRunnerMain {
 
   /**
    * Reads lines from the socket until an {@code addClasspath} command is received.
-   * Returns the parsed command map containing {@code groovyEntries} and {@code projectEntries}.
+   * Returns the parsed command map containing classpath and runtime metadata.
    * Any non-addClasspath messages received during this phase are logged and skipped.
    */
   private static Map<String, Object> waitForClasspath(BufferedReader reader, BufferedWriter writer) throws IOException {

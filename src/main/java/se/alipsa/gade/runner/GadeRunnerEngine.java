@@ -23,8 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * parent bootstrap classloader. For GADE/Custom runtimes, it is loaded from the
  * system classloader which already has Groovy on {@code -cp}.
  * <p>
- * Entry point: {@link #run(BufferedReader, BufferedWriter)} — creates a
- * {@link GroovyClassLoader}, {@link GroovyShell}, and enters the main read loop
+ * Entry point: {@link #run(BufferedReader, BufferedWriter, String, String[], String[])} — creates a
+ * main/test {@link GroovyClassLoader} hierarchy, {@link GroovyShell} instances,
+ * and enters the main read loop
  * handling eval, bindings, interrupt, setWorkingDir, shutdown, gui_response, gui_error.
  */
 public class GadeRunnerEngine {
@@ -46,24 +47,27 @@ public class GadeRunnerEngine {
    *
    * @param reader          socket input
    * @param writer          socket output
-   * @param projectDepPaths project dependency paths to add to the GroovyClassLoader
-   *                        (empty for GADE/Custom runtimes)
+   * @param runtimeType     runtime type name (GADE, GRADLE, MAVEN, CUSTOM)
+   * @param mainDepPaths    main-scope dependency paths
+   * @param testDepPaths    test-scope dependency paths (test-only delta)
    */
-  public static void run(BufferedReader reader, BufferedWriter writer, String[] projectDepPaths) {
+  public static void run(BufferedReader reader, BufferedWriter writer, String runtimeType,
+                         String[] mainDepPaths, String[] testDepPaths) {
     Binding binding;
-    GroovyShell shell;
+    GroovyShell mainShell;
+    GroovyShell testShell;
     try {
-      GroovyClassLoader gcl = new GroovyClassLoader(Thread.currentThread().getContextClassLoader());
-      // Add project deps to the shell's GroovyClassLoader (like @Grab does)
-      for (String path : projectDepPaths) {
-        try {
-          gcl.addURL(new java.io.File(path).toURI().toURL());
-        } catch (Exception e) {
-          emitRaw("skipping bad project dep: " + path + " (" + e + ")");
-        }
+      ClassLoader rootLoader = Thread.currentThread().getContextClassLoader();
+      GroovyClassLoader mainLoader = createScriptLoader(runtimeType, rootLoader);
+      addDependencyPaths(mainLoader, mainDepPaths);
+      GroovyClassLoader testLoader = null;
+      if (supportsTestLoader(runtimeType)) {
+        testLoader = createScriptLoader(runtimeType, mainLoader);
+        addDependencyPaths(testLoader, testDepPaths);
       }
       binding = new Binding();
-      shell = new GroovyShell(gcl, binding);
+      mainShell = new GroovyShell(mainLoader, binding);
+      testShell = testLoader == null ? mainShell : new GroovyShell(testLoader, binding);
     } catch (Throwable t) {
       emitRaw("shell init failed: " + t);
       emitRaw(getStackTrace(t));
@@ -102,7 +106,11 @@ public class GadeRunnerEngine {
             @SuppressWarnings("unchecked")
             Map<String, Object> bindings = (Map<String, Object>) cmd.get("bindings");
             switch (action) {
-              case "eval" -> handleEval(binding, shell, id, (String) cmd.get("script"), bindings, writer, guiPending);
+              case "eval" -> {
+                boolean testContext = toBoolean(cmd.get("testContext"));
+                GroovyShell shell = testContext ? testShell : mainShell;
+                handleEval(binding, shell, id, (String) cmd.get("script"), bindings, writer, guiPending);
+              }
               case "bindings" -> handleBindings(binding, id, writer);
               case "interrupt" -> handleInterrupt(id, writer);
               case "setWorkingDir" -> handleSetWorkingDir(id, (String) cmd.get("dir"), writer);
@@ -128,6 +136,44 @@ public class GadeRunnerEngine {
       emitRaw("engine read loop exception: " + loopEx);
       emitRaw(getStackTrace(loopEx));
     }
+  }
+
+  private static GroovyClassLoader createScriptLoader(String runtimeType, ClassLoader parent) {
+    if (supportsChildFirst(runtimeType)) {
+      return new ChildFirstGroovyClassLoader(parent);
+    }
+    return new GroovyClassLoader(parent);
+  }
+
+  private static void addDependencyPaths(GroovyClassLoader loader, String[] depPaths) {
+    if (depPaths == null) {
+      return;
+    }
+    for (String path : depPaths) {
+      try {
+        loader.addURL(new File(path).toURI().toURL());
+      } catch (Exception e) {
+        emitRaw("skipping bad dependency path: " + path + " (" + e + ")");
+      }
+    }
+  }
+
+  private static boolean supportsChildFirst(String runtimeType) {
+    return "GRADLE".equals(runtimeType) || "MAVEN".equals(runtimeType);
+  }
+
+  private static boolean supportsTestLoader(String runtimeType) {
+    return "GRADLE".equals(runtimeType) || "MAVEN".equals(runtimeType);
+  }
+
+  private static boolean toBoolean(Object value) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Boolean bool) {
+      return bool;
+    }
+    return Boolean.parseBoolean(String.valueOf(value));
   }
 
   private static void handleEval(Binding binding, GroovyShell shell, String id, String script,

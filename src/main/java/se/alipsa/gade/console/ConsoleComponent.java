@@ -221,7 +221,7 @@ public class ConsoleComponent extends BorderPane {
     running();
     try {
       Map<String, Object> bindings = ScriptExecutionHelper.prepareRunnerBindings(additionalParams, gui.guiInteractions);
-      String result = runtimeManager.getProcessRunner().eval(script, bindings).get();
+      String result = runtimeManager.getProcessRunner().eval(script, bindings, false).get();
       waiting();
       return result;
     } catch (Exception e) {
@@ -243,7 +243,7 @@ public class ConsoleComponent extends BorderPane {
     running();
     try {
       String result = runtimeManager.getProcessRunner().eval(script,
-          ScriptExecutionHelper.prepareRunnerBindings(null, gui.guiInteractions)).get();
+          ScriptExecutionHelper.prepareRunnerBindings(null, gui.guiInteractions), false).get();
       waiting();
       return result;
     } catch (Exception e) {
@@ -263,13 +263,13 @@ public class ConsoleComponent extends BorderPane {
 
   public void runScriptAsync(String script, String title, TaskListener taskListener, File sourceFile) {
     running();
+    boolean testContext = runtimeManager.resolveTestContextForSource(sourceFile);
 
     GroovyTask task = new GroovyTask(taskListener) {
       @Override
       public Void execute() throws Exception {
         try {
-          runtimeManager.ensureRuntimeContextForSource(sourceFile, console);
-          executeScriptAndReport(script, title);
+          executeScriptAndReport(script, title, testContext);
         } catch (RuntimeException e) {
           log.debug("Exception caught, rethrowing as wrapped Exception");
           throw new Exception(e);
@@ -305,7 +305,7 @@ public class ConsoleComponent extends BorderPane {
     startTaskWhenOthersAreFinished(task, "runScriptAsync: " + title);
   }
 
-  private void executeScriptAndReport(String script, String title) throws Exception {
+  private void executeScriptAndReport(String script, String title, boolean testContext) throws Exception {
     EnvironmentComponent env = gui.getEnvironmentComponent();
     RuntimeConfig activeRuntime = runtimeManager.getActiveRuntime();
     if (activeRuntime == null) {
@@ -322,7 +322,7 @@ public class ConsoleComponent extends BorderPane {
     });
     try {
       runtimeManager.getProcessRunner().eval(script,
-          ScriptExecutionHelper.prepareRunnerBindings(null, gui.guiInteractions)).get();
+          ScriptExecutionHelper.prepareRunnerBindings(null, gui.guiInteractions), testContext).get();
       Platform.runLater(() -> env.addOutputHistory(""));
     } catch (Exception e) {
       throw new Exception(e.getMessage(), e);

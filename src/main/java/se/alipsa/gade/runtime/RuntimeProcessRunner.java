@@ -54,7 +54,8 @@ public class RuntimeProcessRunner implements Closeable {
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
   private final List<String> groovyEntries;
-  private final List<String> projectDepEntries;
+  private final List<String> mainDepEntries;
+  private final List<String> testDepEntries;
   private final ConsoleTextArea console;
   private final Map<String, GuiInteraction> guiInteractions;
   private volatile File workingDir;
@@ -70,20 +71,27 @@ public class RuntimeProcessRunner implements Closeable {
   private final Object procLock = new Object();
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions) {
-    this(runtime, classPathEntries, List.of(), List.of(), console, guiInteractions, null);
+    this(runtime, classPathEntries, List.of(), List.of(), List.of(), console, guiInteractions, null);
   }
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries, ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions, File workingDir) {
-    this(runtime, classPathEntries, List.of(), List.of(), console, guiInteractions, workingDir);
+    this(runtime, classPathEntries, List.of(), List.of(), List.of(), console, guiInteractions, workingDir);
   }
 
   public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries,
                                List<String> groovyEntries, List<String> projectDepEntries,
                                ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions, File workingDir) {
+    this(runtime, classPathEntries, groovyEntries, projectDepEntries, List.of(), console, guiInteractions, workingDir);
+  }
+
+  public RuntimeProcessRunner(RuntimeConfig runtime, List<String> classPathEntries,
+                               List<String> groovyEntries, List<String> mainDepEntries, List<String> testDepEntries,
+                               ConsoleTextArea console, Map<String, GuiInteraction> guiInteractions, File workingDir) {
     this.runtime = runtime;
     this.classPathEntries = classPathEntries;
     this.groovyEntries = groovyEntries;
-    this.projectDepEntries = projectDepEntries;
+    this.mainDepEntries = mainDepEntries;
+    this.testDepEntries = testDepEntries;
     this.console = console;
     this.guiInteractions = guiInteractions;
     this.workingDir = workingDir;
@@ -92,8 +100,11 @@ public class RuntimeProcessRunner implements Closeable {
       if (!groovyEntries.isEmpty()) {
         log.debug("Runner groovy bootstrap entries ({}): {}", groovyEntries.size(), groovyEntries);
       }
-      if (!projectDepEntries.isEmpty()) {
-        log.debug("Runner project dep entries ({}): {}", projectDepEntries.size(), projectDepEntries);
+      if (!mainDepEntries.isEmpty()) {
+        log.debug("Runner main dep entries ({}): {}", mainDepEntries.size(), mainDepEntries);
+      }
+      if (!testDepEntries.isEmpty()) {
+        log.debug("Runner test dep entries ({}): {}", testDepEntries.size(), testDepEntries);
       }
     }
   }
@@ -123,6 +134,9 @@ public class RuntimeProcessRunner implements Closeable {
       runnerPort = pickPort();
       List<String> cmd = new ArrayList<>();
       cmd.add(resolveJavaExecutable());
+      if (hasProcessRootLoaderOnClasspath(cpOrdered)) {
+        cmd.add("-Djava.system.class.loader=se.alipsa.gade.runner.ProcessRootLoader");
+      }
       cmd.add("-cp");
       cmd.add(String.join(File.pathSeparator, cpOrdered));
       cmd.add(GadeRunnerMain.class.getName());
@@ -165,12 +179,17 @@ public class RuntimeProcessRunner implements Closeable {
   }
 
   public CompletableFuture<String> eval(String script, Map<String, Object> bindings) throws IOException {
+    return eval(script, bindings, false);
+  }
+
+  public CompletableFuture<String> eval(String script, Map<String, Object> bindings, boolean testContext) throws IOException {
     ensureStarted();
     String id = UUID.randomUUID().toString();
     Map<String, Object> payload = new HashMap<>();
     payload.put("cmd", "eval");
     payload.put("id", id);
     payload.put("script", script);
+    payload.put("testContext", testContext);
     if (bindings != null && !bindings.isEmpty()) {
       payload.put("bindings", bindings);
     }
@@ -815,25 +834,28 @@ public class RuntimeProcessRunner implements Closeable {
   }
 
   /**
-   * Sends an addClasspath command with the Groovy bootstrap entries and project
-   * dependency entries to the runner subprocess. The runner uses these to build
-   * its classloader hierarchy:
+   * Sends an addClasspath command with Groovy bootstrap entries and split project
+   * dependency entries to the runner subprocess.
+   * The runner uses these to build its classloader hierarchy:
    * <ul>
    *   <li>{@code groovyEntries} → bootstrap URLClassLoader (Groovy/Ivy jars)</li>
-   *   <li>{@code projectEntries} → GroovyClassLoader via addURL (project deps)</li>
+   *   <li>{@code mainEntries} → main script classloader (compile/runtime deps)</li>
+   *   <li>{@code testEntries} → test script classloader (test-only deps)</li>
    * </ul>
-   * For GADE/Custom runtimes both lists are empty (Groovy is on {@code -cp}).
+   * For GADE/Custom runtimes main/test entries are empty.
    */
   private void sendAddClasspath() throws IOException {
     Map<String, Object> payload = new HashMap<>();
     payload.put("cmd", "addClasspath");
+    payload.put("runtimeType", runtime.getType() == null ? RuntimeType.GADE.name() : runtime.getType().name());
     payload.put("groovyEntries", groovyEntries);
-    payload.put("projectEntries", projectDepEntries);
+    payload.put("mainEntries", mainDepEntries);
+    payload.put("testEntries", testDepEntries);
     socketWriter.write(ProtocolXml.toXml(payload));
     socketWriter.write("\n");
     socketWriter.flush();
-    log.debug("Sent addClasspath with {} groovy + {} project entries to runner {}",
-        groovyEntries.size(), projectDepEntries.size(), runtime.getName());
+    log.debug("Sent addClasspath to runner {} type={} with {} groovy + {} main + {} test entries",
+        runtime.getName(), runtime.getType(), groovyEntries.size(), mainDepEntries.size(), testDepEntries.size());
   }
 
   /**
@@ -909,6 +931,29 @@ public class RuntimeProcessRunner implements Closeable {
     }
     String p = path.toLowerCase(Locale.ROOT);
     return p.contains("gade") || p.contains("build/classes/java/main") || p.contains("build/resources/main");
+  }
+
+  private boolean hasProcessRootLoaderOnClasspath(List<String> classpathEntries) {
+    for (String entry : classpathEntries) {
+      if (entry == null || entry.isBlank()) {
+        continue;
+      }
+      File file = new File(entry);
+      if (file.isFile()) {
+        String name = file.getName().toLowerCase(Locale.ROOT);
+        if (name.startsWith("gade-runner") && name.endsWith(".jar")) {
+          return true;
+        }
+      } else if (file.isDirectory()) {
+        File cls = new File(file, "se/alipsa/gade/runner/ProcessRootLoader.class");
+        if (cls.exists()) {
+          return true;
+        }
+      } else if (isRunnerPath(entry)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

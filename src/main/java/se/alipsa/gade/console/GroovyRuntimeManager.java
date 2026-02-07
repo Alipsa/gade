@@ -18,6 +18,7 @@ import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.gradle.GradleDaemonRecovery;
+import se.alipsa.gade.utils.gradle.GradleUtils;
 import se.alipsa.gi.GuiInteraction;
 
 import java.io.File;
@@ -53,7 +54,7 @@ final class GroovyRuntimeManager {
 
   private GroovyClassLoader classLoader;
   private RuntimeConfig activeRuntime;
-  private boolean runtimeTestContext;
+  private Set<Path> testSourceDirectories = Set.of();
   private String cachedGroovyVersion;
   private RuntimeProcessRunner processRunner;
 
@@ -121,14 +122,15 @@ final class GroovyRuntimeManager {
         }
 
         classLoader = runtimeClassLoaderFactory.create(targetRuntime, testContext, console);
+        ProjectDependencyEntries dependencyEntries = buildProjectDepEntries(targetRuntime, console);
         File projectDir = gui.getInoutComponent() != null ? gui.getInoutComponent().projectDir() : null;
         processRunner = new RuntimeProcessRunner(targetRuntime, buildClassPathEntries(targetRuntime),
-            buildGroovyBootstrapEntries(targetRuntime), buildProjectDepEntries(targetRuntime),
+            buildGroovyBootstrapEntries(targetRuntime),
+            dependencyEntries.mainEntries(), dependencyEntries.testEntries(),
             console, gui.guiInteractions, projectDir);
 
         activeRuntime = targetRuntime;
-        runtimeTestContext = (RuntimeType.GRADLE.equals(targetRuntime.getType())
-            || RuntimeType.MAVEN.equals(targetRuntime.getType())) && testContext;
+        testSourceDirectories = resolveTestSourceDirectories(targetRuntime);
         cachedGroovyVersion = null; // clear cached value since the runtime just changed
         return null;
 
@@ -307,7 +309,7 @@ final class GroovyRuntimeManager {
    * For <b>Gradle/Maven</b> runtimes, only the runner JAR is included on
    * {@code -cp}. Groovy and project dependencies are loaded dynamically —
    * see {@link #buildGroovyBootstrapEntries(RuntimeConfig)} and
-   * {@link #buildProjectDepEntries(RuntimeConfig)}.
+   * {@link #buildProjectDepEntries(RuntimeConfig, ConsoleTextArea)}.
    * <p>
    * For <b>GADE</b> runtime, Groovy/Ivy jars + runner JAR are on {@code -cp}.
    * Users add their own dependencies via {@code @Grab}.
@@ -444,28 +446,47 @@ final class GroovyRuntimeManager {
   }
 
   /**
-   * Builds the project dependency entries (excluding Groovy/Ivy) for the subprocess.
+   * Builds project dependency entries split into main and test-scope paths for the subprocess.
    * <p>
-   * For <b>Gradle/Maven</b> runtimes, returns all non-Groovy/Ivy dependency paths
-   * from the project's resolved dependencies. These are added to the
-   * {@code GroovyClassLoader} in the subprocess via {@code addURL()}.
+   * For <b>Gradle/Maven</b> runtimes, this returns:
+   * <ul>
+   *   <li>Main entries: non-Groovy/Ivy dependencies resolved with {@code testContext=false}</li>
+   *   <li>Test entries: test-only delta ({@code testContext=true} minus main entries)</li>
+   * </ul>
+   * These are used by the subprocess to create a main/test classloader hierarchy.
    * <p>
-   * For <b>GADE/Custom</b> runtimes, returns an empty list — users add deps via
-   * {@code @Grab} or additional jars.
+   * For <b>GADE/Custom</b> runtimes, both lists are empty.
    *
    * @param runtime the runtime configuration
-   * @return list of project dependency paths
+   * @param console the console for any dependency resolution warnings
+   * @return main and test dependency path lists
    */
-  List<String> buildProjectDepEntries(RuntimeConfig runtime) {
+  private ProjectDependencyEntries buildProjectDepEntries(RuntimeConfig runtime, ConsoleTextArea console) throws Exception {
     if (!RuntimeType.GRADLE.equals(runtime.getType()) && !RuntimeType.MAVEN.equals(runtime.getType())) {
-      return List.of();
+      return ProjectDependencyEntries.EMPTY;
     }
     if (classLoader == null) {
       log.warn("No classloader available for building project dependency entries");
-      return List.of();
+      return ProjectDependencyEntries.EMPTY;
     }
-    List<String> entries = new ArrayList<>();
-    for (URL url : classLoader.getURLs()) {
+    LinkedHashSet<String> mainEntries = collectNonGroovyDependencyEntries(classLoader.getURLs());
+    LinkedHashSet<String> testEntries = new LinkedHashSet<>();
+    try (GroovyClassLoader testLoader = runtimeClassLoaderFactory.create(runtime, true, console)) {
+      testEntries.addAll(collectNonGroovyDependencyEntries(testLoader.getURLs()));
+    }
+    testEntries.removeAll(mainEntries);
+    if (!mainEntries.isEmpty()) {
+      log.debug("Main dependency entries ({}):\n{}", mainEntries.size(), String.join("\n", mainEntries));
+    }
+    if (!testEntries.isEmpty()) {
+      log.debug("Test dependency entries ({}):\n{}", testEntries.size(), String.join("\n", testEntries));
+    }
+    return new ProjectDependencyEntries(new ArrayList<>(mainEntries), new ArrayList<>(testEntries));
+  }
+
+  private LinkedHashSet<String> collectNonGroovyDependencyEntries(URL[] urls) {
+    LinkedHashSet<String> entries = new LinkedHashSet<>();
+    for (URL url : urls) {
       try {
         String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
         if (!isGroovyOrIvyJar(new File(path).getName())) {
@@ -474,9 +495,6 @@ final class GroovyRuntimeManager {
       } catch (Exception e) {
         log.debug("Failed to convert dependency url {}", url, e);
       }
-    }
-    if (!entries.isEmpty()) {
-      log.debug("Project dependency entries ({}):\n{}", entries.size(), String.join("\n", entries));
     }
     return entries;
   }
@@ -683,33 +701,29 @@ final class GroovyRuntimeManager {
   }
 
   /**
-   * Ensures the runtime context matches the source file location (main vs test).
-   *
-   * @param sourceFile the source file being executed
-   * @param console the console for output
-   * @throws Exception if context switch fails
+   * Determines whether the given source file should run in test context.
+   * This only applies to Maven/Gradle runtimes and never restarts the subprocess.
    */
-  void ensureRuntimeContextForSource(File sourceFile, ConsoleTextArea console) throws Exception {
+  boolean resolveTestContextForSource(File sourceFile) {
     if (activeRuntime == null || activeRuntime.getType() == null) {
-      return;
+      return false;
     }
     if (!(RuntimeType.GRADLE.equals(activeRuntime.getType())
         || RuntimeType.MAVEN.equals(activeRuntime.getType()))) {
-      return;
+      return false;
     }
     File projectDir = gui.getProjectDir();
-    boolean wantsTestContext = isTestSource(projectDir, sourceFile);
-    if (runtimeTestContext == wantsTestContext) {
-      return;
-    }
-    log.debug("Switching runtime context (testContext={}) for {}", wantsTestContext, sourceFile);
-    resetClassloaderAndGroovy(activeRuntime, wantsTestContext, console);
+    return isTestSource(projectDir, sourceFile, testSourceDirectories);
   }
 
   /**
    * Checks if the source file is in a test directory.
    */
   static boolean isTestSource(File projectDir, File sourceFile) {
+    return isTestSource(projectDir, sourceFile, Set.of());
+  }
+
+  static boolean isTestSource(File projectDir, File sourceFile, Collection<Path> configuredTestSourceDirs) {
     if (projectDir == null || sourceFile == null) {
       return false;
     }
@@ -724,7 +738,56 @@ final class GroovyRuntimeManager {
     } catch (IllegalArgumentException e) {
       return false;
     }
+    if (configuredTestSourceDirs != null) {
+      for (Path configured : configuredTestSourceDirs) {
+        if (configured == null) {
+          continue;
+        }
+        Path testPath = configured.normalize();
+        if (!testPath.isAbsolute()) {
+          testPath = projectPath.resolve(testPath).normalize();
+        }
+        if (sourcePath.startsWith(testPath)) {
+          return true;
+        }
+      }
+    }
     return rel.startsWith(Path.of("src", "test")) || rel.startsWith(Path.of("test"));
+  }
+
+  private Set<Path> resolveTestSourceDirectories(RuntimeConfig runtime) {
+    File projectDir = gui.getProjectDir();
+    if (projectDir == null || runtime == null || runtime.getType() == null) {
+      return Set.of();
+    }
+    if (RuntimeType.GRADLE.equals(runtime.getType())) {
+      try {
+        GradleUtils gradleUtils = new GradleUtils(null, projectDir, runtime.getJavaHome());
+        Set<Path> testDirs = gradleUtils.getTestSourceDirectories().stream()
+            .filter(Objects::nonNull)
+            .map(File::toPath)
+            .map(path -> path.toAbsolutePath().normalize())
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (!testDirs.isEmpty()) {
+          return testDirs;
+        }
+      } catch (Exception e) {
+        log.debug("Unable to resolve Gradle test source directories, using defaults", e);
+      }
+      return defaultTestSourceDirectories(projectDir);
+    }
+    if (RuntimeType.MAVEN.equals(runtime.getType())) {
+      return defaultTestSourceDirectories(projectDir);
+    }
+    return Set.of();
+  }
+
+  private Set<Path> defaultTestSourceDirectories(File projectDir) {
+    Path projectPath = projectDir.toPath().toAbsolutePath().normalize();
+    LinkedHashSet<Path> dirs = new LinkedHashSet<>();
+    dirs.add(projectPath.resolve(Path.of("src", "test")).normalize());
+    dirs.add(projectPath.resolve(Path.of("test")).normalize());
+    return dirs;
   }
 
   // Accessors for ConsoleComponent
@@ -735,10 +798,6 @@ final class GroovyRuntimeManager {
 
   RuntimeConfig getActiveRuntime() {
     return activeRuntime;
-  }
-
-  boolean isRuntimeTestContext() {
-    return runtimeTestContext;
   }
 
   RuntimeProcessRunner getProcessRunner() {
@@ -794,5 +853,9 @@ final class GroovyRuntimeManager {
   @FunctionalInterface
   interface ScriptExecutor {
     Object runScriptSilent(String script) throws Exception;
+  }
+
+  private record ProjectDependencyEntries(List<String> mainEntries, List<String> testEntries) {
+    private static final ProjectDependencyEntries EMPTY = new ProjectDependencyEntries(List.of(), List.of());
   }
 }

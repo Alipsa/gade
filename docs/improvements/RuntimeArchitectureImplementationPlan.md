@@ -6,7 +6,7 @@ This plan implements the target architecture described in [RuntimeArchitecture.m
 
 ---
 
-## Phase 0: ConnectionInfo Serialization Fix (Priority 0)
+## Phase 0: ConnectionInfo Serialization Fix (Priority 0) ✅ COMPLETE
 
 This is a **regression fix** that should be addressed before the other priorities. The subprocess isolation model broke the ability to use `ConnectionInfo` objects returned by `io.dbConnection()` in user scripts.
 
@@ -131,7 +131,7 @@ Verify these examples work after the fix. If `ConnectionInfo` round-trips correc
 
 ---
 
-## Phase 1: Subprocess Classloader Infrastructure (Priorities 1-3)
+## Phase 1: Subprocess Classloader Infrastructure (Priorities 1-3) ✅ COMPLETE
 
 These three priorities are tightly coupled — they all modify the subprocess classloader setup in `GadeRunnerEngine` and `GadeRunnerMain`. Implementing them together avoids reworking the same code multiple times.
 
@@ -426,13 +426,13 @@ Bundling both Gradle (~120MB) and Maven (~10MB) significantly increases distribu
 ## Implementation Order Summary
 
 ```
-Phase 0 (Regression Fix)
-  └── Priority 0: ConnectionInfo Serialization ← Fix first; restores broken functionality
+Phase 0 (Regression Fix) ✅ COMPLETE
+  └── Priority 0: ConnectionInfo Serialization ← DONE
 
-Phase 1 (Subprocess Classloader Infrastructure)
-  ├── Priority 3: ProcessRootLoader          ← Start here; foundation for the hierarchy
-  ├── Priority 1: Main/Test Loader Separation ← Builds on ProcessRootLoader
-  └── Priority 2: Parent-Last Delegation      ← Overlay on the new hierarchy
+Phase 1 (Subprocess Classloader Infrastructure) ✅ COMPLETE
+  ├── Priority 3: ProcessRootLoader          ← DONE
+  ├── Priority 1: Main/Test Loader Separation ← DONE
+  └── Priority 2: Parent-Last Delegation      ← DONE
 
 Phase 2 (Build Tool Home Configuration)
   └── Priority 4: Maven/Gradle Home Config    ← Independent of Phase 1
