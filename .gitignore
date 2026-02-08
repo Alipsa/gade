@@ -12,6 +12,7 @@
 /platform
 /examples/candles/.gradle/
 /examples/candles/build/
+/examples/candles/target/
 /examples/xcharts/.gradle/
 /examples/**/*.png
 .DS_Store
