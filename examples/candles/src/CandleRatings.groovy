@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory
 
 Configurator.setRootLevel(Level.INFO)
 
-def log = LoggerFactory.getLogger(this.class)
+def log = LoggerFactory.getLogger('CandleRatings')
 
 log.info("hello")
 

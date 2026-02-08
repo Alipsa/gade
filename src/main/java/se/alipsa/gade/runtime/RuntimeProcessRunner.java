@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Manages a long-lived external Groovy runner process for non-GADE runtimes.
@@ -60,6 +61,10 @@ public class RuntimeProcessRunner implements Closeable {
       "socksProxyPort",
       "java.net.useSystemProxies"
   );
+  private static final List<String> INHERITED_RUNNER_SYSTEM_PROPERTIES = List.of(
+      "gade.runner.diagnostics",
+      "gade.runner.verbose"
+  );
 
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
@@ -76,6 +81,7 @@ public class RuntimeProcessRunner implements Closeable {
   private BufferedReader socketReader;
   private int runnerPort;
   private ExecutorService readerService;
+  private final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
   private final Map<String, CompletableFuture<Map<String, Object>>> pending = new ConcurrentHashMap<>();
   private final LinkedBlockingDeque<String> stderrBuffer = new LinkedBlockingDeque<>(STDERR_BUFFER_SIZE);
   private final Object procLock = new Object();
@@ -124,6 +130,7 @@ public class RuntimeProcessRunner implements Closeable {
       if (process != null && process.isAlive() && socket != null && socket.isConnected() && !socket.isClosed()) {
         return;
       }
+      shutdownRequested.set(false);
       log.info("Starting runner for runtime {}", runtime.getName());
       if (classPathEntries.isEmpty()) {
         console.appendWarningFx("Cannot start runtime process: no classpath entries were found");
@@ -145,6 +152,7 @@ public class RuntimeProcessRunner implements Closeable {
       List<String> cmd = new ArrayList<>();
       cmd.add(resolveJavaExecutable());
       addInheritedNetworkSystemProperties(cmd);
+      addInheritedRunnerSystemProperties(cmd);
       if (hasProcessRootLoaderOnClasspath(cpOrdered)) {
         cmd.add("-Djava.system.class.loader=se.alipsa.gade.runner.ProcessRootLoader");
       }
@@ -165,7 +173,7 @@ public class RuntimeProcessRunner implements Closeable {
       }
       try {
         process = pb.start();
-        process.onExit().thenAccept(p -> log.warn("Runner for {} exited (async) with code {}", runtime.getName(), p.exitValue()));
+        process.onExit().thenAccept(p -> logAsyncExit(p.exitValue()));
         readerService = Executors.newFixedThreadPool(2, r -> {
           Thread t = new Thread(r, "gade-runner-reader");
           t.setDaemon(true);
@@ -191,6 +199,15 @@ public class RuntimeProcessRunner implements Closeable {
 
   private void addInheritedNetworkSystemProperties(List<String> cmd) {
     for (String key : INHERITED_NETWORK_SYSTEM_PROPERTIES) {
+      String value = System.getProperty(key);
+      if (value != null && !value.isBlank()) {
+        cmd.add("-D" + key + "=" + value);
+      }
+    }
+  }
+
+  private void addInheritedRunnerSystemProperties(List<String> cmd) {
+    for (String key : INHERITED_RUNNER_SYSTEM_PROPERTIES) {
       String value = System.getProperty(key);
       if (value != null && !value.isBlank()) {
         cmd.add("-D" + key + "=" + value);
@@ -259,6 +276,7 @@ public class RuntimeProcessRunner implements Closeable {
   }
 
   public synchronized void stop() {
+    shutdownRequested.set(true);
     try {
       if (process != null && process.isAlive()) {
         send(Map.of("cmd", "shutdown", "id", UUID.randomUUID().toString()));
@@ -348,7 +366,11 @@ public class RuntimeProcessRunner implements Closeable {
       }
       log.info("Socket read loop ended (EOF) for runtime {}", runtime.getName());
     } catch (IOException e) {
-      log.warn("Runner socketReadLoop ended with exception: {}", e.toString());
+      if (shutdownRequested.get() && isExpectedSocketClose(e)) {
+        log.debug("Runner socketReadLoop ended during shutdown: {}", e.toString());
+      } else {
+        log.warn("Runner socketReadLoop ended with exception: {}", e.toString());
+      }
     } finally {
       pending.values().forEach(f -> f.completeExceptionally(new IllegalStateException("Runner stopped")));
       pending.clear();
@@ -436,12 +458,16 @@ public class RuntimeProcessRunner implements Closeable {
       }
       case "out" -> {
         String text = (String) msg.getOrDefault("text", "");
-        log.info("Runner {} out: {}", runtime.getName(), text.replace("\n", "\\n"));
+        if (log.isDebugEnabled()) {
+          log.debug("Runner {} out: {}", runtime.getName(), text.replace("\n", "\\n"));
+        }
         console.appendFx(text, false);
       }
       case "err" -> {
         String text = (String) msg.getOrDefault("text", "");
-        log.info("Runner {} err: {}", runtime.getName(), text.replace("\n", "\\n"));
+        if (log.isDebugEnabled()) {
+          log.debug("Runner {} err: {}", runtime.getName(), text.replace("\n", "\\n"));
+        }
         console.appendWarningFx(text);
       }
       case "result", "bindings", "interrupted", "shutdown" -> complete(msg);
@@ -746,6 +772,27 @@ public class RuntimeProcessRunner implements Closeable {
       socketReader = null;
       socketWriter = null;
     }
+  }
+
+  private void logAsyncExit(int exitCode) {
+    if (shutdownRequested.get()) {
+      log.debug("Runner for {} exited (async, expected) with code {}", runtime.getName(), exitCode);
+      return;
+    }
+    if (exitCode == 0) {
+      log.info("Runner for {} exited (async) with code {}", runtime.getName(), exitCode);
+    } else {
+      log.warn("Runner for {} exited (async) with code {}", runtime.getName(), exitCode);
+    }
+  }
+
+  private boolean isExpectedSocketClose(IOException e) {
+    String msg = e.getMessage();
+    if (msg == null) {
+      return false;
+    }
+    String lower = msg.toLowerCase(Locale.ROOT);
+    return lower.contains("stream closed") || lower.contains("socket closed");
   }
 
   private void closeQuietly(Closeable c) {

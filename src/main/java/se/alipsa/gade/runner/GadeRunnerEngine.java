@@ -43,6 +43,7 @@ public class GadeRunnerEngine {
 
   private static final OutputStream ROOT_ERR = new FileOutputStream(FileDescriptor.err);
   private static final boolean VERBOSE = Boolean.getBoolean("gade.runner.verbose");
+  private static final boolean DIAGNOSTICS = Boolean.getBoolean("gade.runner.diagnostics");
   private static final String RUNNER_DIAG_PREFIX = "[RUNNER_DIAG] ";
   public static final String GUI_INTERACTION_KEYS = "__gadeGuiInteractionKeys";
   private static final AtomicReference<Thread> currentEvalThread = new AtomicReference<>();
@@ -81,7 +82,9 @@ public class GadeRunnerEngine {
       binding = new Binding();
       mainShell = new GroovyShell(mainLoader, binding);
       testShell = testLoader == null ? mainShell : new GroovyShell(testLoader, binding);
-      emitRuntimeDiagnostics(runtimeType, mainLoader, testLoader, mainDepPaths, testDepPaths);
+      if (DIAGNOSTICS) {
+        emitRuntimeDiagnostics(runtimeType, mainLoader, testLoader, mainDepPaths, testDepPaths);
+      }
     } catch (Throwable t) {
       emitRaw("shell init failed: " + t);
       emitRaw(getStackTrace(t));
@@ -123,7 +126,9 @@ public class GadeRunnerEngine {
               case "eval" -> {
                 boolean testContext = toBoolean(cmd.get("testContext"));
                 GroovyShell shell = testContext ? testShell : mainShell;
-                emitScriptDiagnosticsIfLoggingRelated((String) cmd.get("script"), shell.getClassLoader(), testContext);
+                if (DIAGNOSTICS) {
+                  emitScriptDiagnosticsIfLoggingRelated((String) cmd.get("script"), shell.getClassLoader(), testContext);
+                }
                 handleEval(binding, shell, id, (String) cmd.get("script"), bindings, writer, guiPending);
               }
               case "bindings" -> handleBindings(binding, id, writer);
@@ -353,6 +358,9 @@ public class GadeRunnerEngine {
   }
 
   private static void emitGrabDiagnosticsIfRelevant(Throwable error) {
+    if (!DIAGNOSTICS) {
+      return;
+    }
     if (!isGrabFailure(error)) {
       return;
     }
@@ -502,6 +510,9 @@ public class GadeRunnerEngine {
   }
 
   private static void emitGrabDiag(String message) {
+    if (!DIAGNOSTICS) {
+      return;
+    }
     System.err.println("[GRAB_DIAG] " + message);
   }
 
@@ -689,6 +700,9 @@ public class GadeRunnerEngine {
   }
 
   private static void emitRunnerDiag(String message) {
+    if (!DIAGNOSTICS) {
+      return;
+    }
     System.out.println(RUNNER_DIAG_PREFIX + message);
   }
 }

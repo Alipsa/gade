@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -133,7 +134,7 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
 
     verify(console, atLeastOnce()).appendFx(anyString(), any(boolean[].class));
     verify(console, org.mockito.Mockito.never()).appendFx(
-        argThat(line -> line != null && line.contains("DefaultConsole") && !line.contains("[RUNNER_DIAG]")),
+        argThat(line -> line != null && line.contains("DefaultConsole")),
         any(boolean[].class));
   }
 
@@ -282,27 +283,44 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
 
     RuntimeConfig runtime = new RuntimeConfig("GADERuntime", RuntimeType.GADE);
     ConsoleTextArea console = mock(ConsoleTextArea.class);
-    try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
-        runtime,
-        new ArrayList<>(classPathEntries),
-        new ArrayList<>(groovyEntries),
-        List.of(),
-        List.of(),
-        console,
-        Map.of(),
-        tempDir.toFile()
-    )) {
-      runner.start();
-      Exception error = null;
-      try {
-        runner.eval(FORCED_GRAB_FAILURE_SCRIPT, Map.of()).get(45, TimeUnit.SECONDS);
-      } catch (Exception e) {
-        error = e;
+    List<String> warningLines = new ArrayList<>();
+    doAnswer(invocation -> {
+      String line = invocation.getArgument(0, String.class);
+      warningLines.add(line == null ? "" : line);
+      return null;
+    }).when(console).appendWarningFx(anyString());
+    String oldDiagnostics = System.getProperty("gade.runner.diagnostics");
+    System.setProperty("gade.runner.diagnostics", "true");
+    try {
+      try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
+          runtime,
+          new ArrayList<>(classPathEntries),
+          new ArrayList<>(groovyEntries),
+          List.of(),
+          List.of(),
+          console,
+          Map.of(),
+          tempDir.toFile()
+      )) {
+        runner.start();
+        Exception error = null;
+        try {
+          runner.eval(FORCED_GRAB_FAILURE_SCRIPT, Map.of()).get(45, TimeUnit.SECONDS);
+        } catch (Exception e) {
+          error = e;
+        }
+        assertTrue(error != null, "Forced @Grab failure script should fail");
       }
-      assertTrue(error != null, "Forced @Grab failure script should fail");
+    } finally {
+      restoreSystemProperty("gade.runner.diagnostics", oldDiagnostics);
     }
 
-    verify(console, atLeastOnce()).appendWarningFx(contains("[GRAB_DIAG]"));
+    assertTrue(warningLines.stream().anyMatch(line -> line.contains("[GRAB_DIAG] Detected @Grab resolution failure")),
+        "Expected GRAB diagnostics banner in console warnings");
+    assertTrue(warningLines.stream().anyMatch(line -> line.contains("[GRAB_DIAG] cacheHints=")),
+        "Expected GRAB diagnostics cache hints in console warnings");
+    assertTrue(warningLines.stream().anyMatch(line -> line.contains("Error grabbing Grapes")),
+        "Expected runner error details for failing @Grab script");
   }
 
   private void assertRuntimeScenario(RuntimeType runtimeType, Path tempDir) throws Exception {
