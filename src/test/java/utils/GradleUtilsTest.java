@@ -12,10 +12,13 @@ import se.alipsa.gade.utils.gradle.GradleUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class GradleUtilsTest {
 
@@ -41,6 +44,7 @@ public class GradleUtilsTest {
 
   @Test
   public void testDownloadArtifact() throws IOException, URISyntaxException {
+    assumeTrue(canReachMavenCentral(), "Skipping remote artifact download test: Maven Central is unreachable");
     Dependency dependency = new Dependency("org.slf4j:slf4j-api:1.7.36");
     File artifactDir = GradleUtils.cachedFile(dependency);
     if (artifactDir.exists()) {
@@ -52,6 +56,16 @@ public class GradleUtilsTest {
     File file = GradleUtils.downloadArtifact(dependency);
     assertTrue(file.exists(), "File does not exist");
     assertEquals("slf4j-api-1.7.36.jar", file.getName(), "File name is wrong");
+  }
+
+  private boolean canReachMavenCentral() {
+    try (Socket socket = new Socket()) {
+      socket.connect(new InetSocketAddress("repo1.maven.org", 443), 2000);
+      return true;
+    } catch (IOException e) {
+      log.info("Maven Central connectivity check failed: {}", e.getMessage());
+      return false;
+    }
   }
 
   @Test

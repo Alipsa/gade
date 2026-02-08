@@ -54,18 +54,19 @@ Gade executes Groovy scripts in a **subprocess** (`RuntimeProcessRunner`) that c
 - `GadeRunnerMain` (`runner/GadeRunnerMain.java`) - Entry point for the subprocess JVM. Receives scripts over the socket and evaluates them in a `GroovyShell`.
 
 **Classpath construction (`buildClassPathEntries`):**
-- **GADE runtime**: Only Groovy/Ivy jars + runner JAR. Users add dependencies via `@Grab`.
-- **Gradle runtime**: All classloader URLs (project dependencies resolved via Gradle Tooling API by `GradleUtils.addGradleDependencies()`) + runner JAR.
-- **Maven runtime**: All classloader URLs (project dependencies resolved from pom.xml by `MavenClasspathUtils.addPomDependenciesTo()`) + runner JAR.
-- **Custom runtime**: All classloader URLs (Groovy home jars + configured additional jars + resolved dependencies) + runner JAR.
+- **GADE runtime**: Only boot JAR on `-cp`. Groovy/Ivy + engine JAR loaded into ProcessRootLoader. Users add dependencies via `@Grab`.
+- **Gradle runtime**: Only boot JAR on `-cp`. Groovy/Ivy from deps + engine JAR loaded into ProcessRootLoader. Project dependencies resolved via Gradle Tooling API.
+- **Maven runtime**: Only boot JAR on `-cp`. Groovy/Ivy from deps + engine JAR loaded into ProcessRootLoader. Project dependencies resolved from pom.xml.
+- **Custom runtime**: Boot JAR + engine JAR + Groovy home jars + configured additional jars + classloader URLs on `-cp`.
 
 **Dependency resolution helpers:**
 - `GradleUtils` / `GradleDependencyResolver` (`utils/gradle/`) - Resolves classpath via Gradle Tooling API.
 - `MavenClasspathUtils` (`utils/maven/`) - Resolves classpath from pom.xml via `MavenUtils`.
+- **Upstream dependency policy**: If a bug involves a dependency with `groupId` starting with `se.alipsa`, do not add a local workaround in Gade as the primary fix. Fix it in the related `se.alipsa*` project and report it there (preferably as a GitHub issue) before or alongside any temporary mitigation.
 
 **Distribution layout** (after `./gradlew runtimeZip`):
 - `lib/groovy/` - Groovy and Ivy jars for the subprocess classpath.
-- `lib/runtimes/` - `gade-runner.jar` (the subprocess entry point).
+- `lib/runtimes/` - `gade-runner-boot.jar` (JDK-only bootstrap, on subprocess `-cp`) and `gade-runner-engine.jar` (Groovy-dependent engine, loaded into ProcessRootLoader).
 - `lib/app/` - Gade application jars (never included in subprocess classpath).
 
 ## Coding Style & Naming Conventions
@@ -78,6 +79,7 @@ Gade executes Groovy scripts in a **subprocess** (`RuntimeProcessRunner`) that c
 - UI-light logic belongs in `src/test/java` with naming `ClassNameTest` or behavior-oriented `FeatureXTest`. 
 - Groovy scripts under test can mirror their runtime location inside `src/test/groovy`. 
 - Use JUnit Jupiter APIs and keep tests deterministic—mock filesystem or Gradle calls where feasible. 
+- When a bug is reported and no test currently fails for it, add a regression test that reproduces and guards against the issue whenever feasible.
 - Run `./gradlew test` (or `./gradlew test --tests "se.alipsa.gade.utils.*"` for a subset) before opening a PR and attach new fixtures to `src/test/resources` rather than embedding literals.
 
 ## Commit & Pull Request Guidelines

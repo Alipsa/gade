@@ -50,6 +50,16 @@ public class RuntimeProcessRunner implements Closeable {
   private static final long CONNECT_RETRY_SLEEP_MS = 50;
   private static final int CONNECT_HANDSHAKE_TIMEOUT_MS = 2000;
   private static final long STARTUP_EXIT_CHECK_TIMEOUT_MS = 200;
+  private static final List<String> INHERITED_NETWORK_SYSTEM_PROPERTIES = List.of(
+      "http.proxyHost",
+      "http.proxyPort",
+      "https.proxyHost",
+      "https.proxyPort",
+      "http.nonProxyHosts",
+      "socksProxyHost",
+      "socksProxyPort",
+      "java.net.useSystemProxies"
+  );
 
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
@@ -134,6 +144,7 @@ public class RuntimeProcessRunner implements Closeable {
       runnerPort = pickPort();
       List<String> cmd = new ArrayList<>();
       cmd.add(resolveJavaExecutable());
+      addInheritedNetworkSystemProperties(cmd);
       if (hasProcessRootLoaderOnClasspath(cpOrdered)) {
         cmd.add("-Djava.system.class.loader=se.alipsa.gade.runner.ProcessRootLoader");
       }
@@ -174,6 +185,15 @@ public class RuntimeProcessRunner implements Closeable {
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
         throw new IOException("Interrupted while starting runtime process", ie);
+      }
+    }
+  }
+
+  private void addInheritedNetworkSystemProperties(List<String> cmd) {
+    for (String key : INHERITED_NETWORK_SYSTEM_PROPERTIES) {
+      String value = System.getProperty(key);
+      if (value != null && !value.isBlank()) {
+        cmd.add("-D" + key + "=" + value);
       }
     }
   }
@@ -941,7 +961,7 @@ public class RuntimeProcessRunner implements Closeable {
       File file = new File(entry);
       if (file.isFile()) {
         String name = file.getName().toLowerCase(Locale.ROOT);
-        if (name.startsWith("gade-runner") && name.endsWith(".jar")) {
+        if (name.startsWith("gade-runner-boot") && name.endsWith(".jar")) {
           return true;
         }
       } else if (file.isDirectory()) {

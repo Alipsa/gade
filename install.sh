@@ -101,7 +101,8 @@ cd "${SCRIPT_DIR}"
 
 echo "- Building Gade"
 ./gradlew clean build $GRADLE_OPTS
-./gradlew runtime -g ./.gradle-user
+# Beryx runtime/jre tasks are not configuration-cache compatible yet.
+./gradlew runtime -g ./.gradle-user --no-configuration-cache
 
 PROPERTY_FILE=version.properties
 

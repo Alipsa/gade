@@ -25,7 +25,7 @@ import java.util.Map;
  *   <li>Sends a {@code hello} handshake</li>
  *   <li>Waits for an {@code addClasspath} command with Groovy and project dependency entries</li>
  *   <li>Adds Groovy bootstrap jars to {@link ProcessRootLoader} (installed as system classloader)</li>
- *   <li>For GADE/Custom: Groovy is already on the system classpath, so the engine is loaded
+ *   <li>For Custom: Groovy is already on the system classpath, so the engine is loaded
  *       directly from the system classloader</li>
  *   <li>Loads {@link GadeRunnerEngine} and invokes its
  *       {@code run(BufferedReader, BufferedWriter, String, String[], String[])} method</li>
@@ -80,7 +80,10 @@ public class GadeRunnerMain {
           ClassLoader engineCL;
 
           if (!groovyEntries.isEmpty()) {
-            // Gradle/Maven mode: add Groovy/Ivy jars dynamically to ProcessRootLoader.
+            // Add Groovy/Ivy jars + engine JAR to ProcessRootLoader.
+            // The engine JAR is already in groovyEntries (added by GroovyRuntimeManager).
+            // Boot JAR classes (GadeRunnerMain, ProcessRootLoader, ProtocolXml) stay
+            // on the App classloader via -cp; engine classes + Groovy are found here.
             ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
             if (systemClassLoader instanceof ProcessRootLoader processRootLoader) {
               for (URL u : toUrls(groovyEntries)) {
@@ -93,13 +96,11 @@ public class GadeRunnerMain {
               for (URL u : toUrls(groovyEntries)) {
                 bootstrapUrls.add(u);
               }
-              URL runnerJarUrl = GadeRunnerMain.class.getProtectionDomain().getCodeSource().getLocation();
-              bootstrapUrls.add(runnerJarUrl);
               engineCL = new URLClassLoader(bootstrapUrls.toArray(new URL[0]),
                   ClassLoader.getPlatformClassLoader());
             }
           } else {
-            // GADE/Custom mode: Groovy is already on the system classpath
+            // Custom mode: Groovy is already on the system classpath
             engineCL = ClassLoader.getSystemClassLoader();
           }
 

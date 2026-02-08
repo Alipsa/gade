@@ -168,7 +168,7 @@ dependencies {
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation "org.apache.maven:maven-artifact:${embeddedMavenVersion}"
   implementation "org.apache.maven:maven-model:${embeddedMavenVersion}"
-  implementation "se.alipsa:maven-utils:1.3.0"
+  implementation "se.alipsa:maven-utils:1.3.1-SNAPSHOT"
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
@@ -262,74 +262,71 @@ clean {
   deleteIfDiff(jdkVersion, "$projectDir/platform/mac")
 }
 
-processResources.doLast {
+def runtimeClasspathFileNames = configurations.runtimeClasspath.elements.map { elements ->
+  elements.collect { it.asFile.name }
+}
+def appVersion = version.toString()
+def appJarName = jarName.toString()
+def appReleaseTag = releaseTag.toString()
+def versionPropertiesFile = layout.projectDirectory.file("version.properties")
 
-  def extractVersionNumber = { artifactName, fileName ->
-    fileName.substring("${artifactName}-".length(), fileName.indexOf(".jar"))
-  }
+def writeVersionProperties = tasks.register("writeVersionProperties") {
+  inputs.property("appVersion", appVersion)
+  inputs.property("jarName", appJarName)
+  inputs.property("releaseTag", appReleaseTag)
+  inputs.property("runtimeClasspathFileNames", runtimeClasspathFileNames)
+  outputs.file(versionPropertiesFile)
 
-  configurations.getByName('runtimeClasspath').files.each { file ->
-    def fileName = file.name
-    if (fileName.contains('matrix-core')) {
-      ext.matrixCoreVersion = extractVersionNumber('matrix-core', fileName)
-    } else if (fileName.contains('matrix-charts')) {
-      ext.matrixChartsVersion = extractVersionNumber('matrix-charts', fileName)
-    } else if (fileName.contains('matrix-stats')) {
-      ext.matrixStatsVersion = extractVersionNumber('matrix-stats', fileName)
-    } else if (fileName.contains('matrix-xchart')) {
-      ext.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
-    } else if (fileName.contains('matrix-bigquery')) {
-      ext.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
-    } else if (fileName.contains('matrix-sql')) {
-      ext.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
+  doLast {
+    def extractVersionNumber = { String artifactName, String fileName ->
+      int start = "${artifactName}-".length()
+      int end = fileName.lastIndexOf(".jar")
+      if (end <= start) {
+        return ""
+      }
+      fileName.substring(start, end)
     }
-    /*else if (fileName.contains('matrix-datasets')) {
-      ext.matrixDatasetsVersion = extractVersionNumber('matrix-datasets', fileName)
-    } else if (fileName.contains('matrix-spreadsheet')) {
-      ext.matrixSpreadsheetVersion = extractVersionNumber('matrix-spreadsheet', fileName)
-    } else if (fileName.contains('matrix-json')) {
-      ext.matrixJsonVersion = extractVersionNumber('matrix-json', fileName)
-    } else if (fileName.contains('matrix-csv')) {
-      ext.matrixCsvVersion = extractVersionNumber('matrix-csv', fileName)
-    } else if (fileName.contains('matrix-parquet')) {
-      ext.matrixParquetVersion = extractVersionNumber('matrix-parquet', fileName)
-    } else if (fileName.contains('matrix-tablesaw')) {
-      ext.matrixTablesawVersion = extractVersionNumber('matrix-tablesaw', fileName)
-    } else if (fileName.contains('matrix-gsheets')) {
-      ext.matrixGsheetsVersion = extractVersionNumber('matrix-gsheets', fileName)
-    } else if (fileName.contains('matrix-avro')) {
-      ext.matrixAvroVersion = extractVersionNumber('matrix-avro', fileName)
-    }*/ else if (fileName.contains('gmd-core')) {
-      ext.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
+    List<String> fileNames = inputs.properties.runtimeClasspathFileNames as List<String>
+    Map<String, String> versions = [:]
+    (fileNames ?: []).each { fileName ->
+      if (fileName.contains('matrix-core')) {
+        versions.matrixCoreVersion = extractVersionNumber('matrix-core', fileName)
+      } else if (fileName.contains('matrix-charts')) {
+        versions.matrixChartsVersion = extractVersionNumber('matrix-charts', fileName)
+      } else if (fileName.contains('matrix-stats')) {
+        versions.matrixStatsVersion = extractVersionNumber('matrix-stats', fileName)
+      } else if (fileName.contains('matrix-xchart')) {
+        versions.matrixXchartVersion = extractVersionNumber('matrix-xchart', fileName)
+      } else if (fileName.contains('matrix-bigquery')) {
+        versions.matrixBigQueryVersion = extractVersionNumber('matrix-bigquery', fileName)
+      } else if (fileName.contains('matrix-sql')) {
+        versions.matrixSqlVersion = extractVersionNumber('matrix-sql', fileName)
+      } else if (fileName.contains('gmd-core')) {
+        versions.gmdCoreVersion = extractVersionNumber('gmd-core', fileName)
+      }
+    }
+    Properties props = new Properties()
+    props.setProperty("version", inputs.properties.appVersion.toString())
+    props.setProperty("jarName", inputs.properties.jarName.toString())
+    props.setProperty("releaseTag", inputs.properties.releaseTag.toString())
+    props.setProperty("buildDate", new Date().format('yyyy-MMM-dd_HH.mm.ss'))
+    props.setProperty("matrixCoreVersion", versions.getOrDefault("matrixCoreVersion", ""))
+    props.setProperty("matrixChartsVersion", versions.getOrDefault("matrixChartsVersion", ""))
+    props.setProperty("matrixStatsVersion", versions.getOrDefault("matrixStatsVersion", ""))
+    props.setProperty("matrixSqlVersion", versions.getOrDefault("matrixSqlVersion", ""))
+    props.setProperty("matrixBigQueryVersion", versions.getOrDefault("matrixBigQueryVersion", ""))
+    props.setProperty("matrixXchartVersion", versions.getOrDefault("matrixXchartVersion", ""))
+    props.setProperty("gmdCoreVersion", versions.getOrDefault("gmdCoreVersion", ""))
+    def versionFile = outputs.files.singleFile
+    versionFile.withOutputStream { out ->
+      props.store(out, "Generated by Gradle")
     }
   }
+}
 
-  ant.propertyfile(file: "${projectDir}/version.properties") {
-    ant.entry(key: "version", value: "${version}")
-    ant.entry(key: "jarName", value: "${jarName}")
-    ant.entry(key: "releaseTag", value: "${releaseTag}")
-    ant.entry(key: "buildDate", value: "${getDate()}")
-    ant.entry(key: "matrixCoreVersion", value: "${matrixCoreVersion}")
-    ant.entry(key: "matrixChartsVersion", value: "${matrixChartsVersion}")
-    ant.entry(key: "matrixStatsVersion", value: "${matrixStatsVersion}")
-    //ant.entry(key: "matrixDatasetsVersion", value: "${matrixDatasetsVersion}")
-    //ant.entry(key: "matrixSpreadsheetVersion", value: "${matrixSpreadsheetVersion}")
-    //ant.entry(key: "matrixJsonVersion", value: "${matrixJsonVersion}")
-    //ant.entry(key: "matrixCsvVersion", value: "${matrixCsvVersion}")
-    ant.entry(key: "matrixSqlVersion", value: "${matrixSqlVersion}")
-    //ant.entry(key: "matrixParquetVersion", value: "${matrixParquetVersion}")
-    ant.entry(key: "matrixBigQueryVersion", value: "${matrixBigQueryVersion}")
-    ant.entry(key: "matrixXchartVersion", value: "${matrixXchartVersion}")
-    //ant.entry(key: "matrixTablesawVersion", value: "${matrixTablesawVersion}")
-    //ant.entry(key: "matrixAvroVersion", value: "${matrixAvroVersion}")
-    ant.entry(key: "gmdCoreVersion", value: "${gmdCoreVersion}")
-    //ant.entry(key: "matrixGsheetsVersion", value: "${matrixGsheetsVersion}")
-  }
-  ant.copy(
-      file: "${projectDir}/version.properties",
-      //todir: "${buildDir}/resources/main"
-      todir: layout.buildDirectory.dir("resources/main").get().asFile
-  )
+tasks.named("processResources") {
+  dependsOn(writeVersionProperties)
+  from(versionPropertiesFile)
 }
 
 test {
@@ -488,14 +485,28 @@ tasks.runtime.doLast {
     File archive = new File(toolDir, downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1))
     File extracted = new File(toolDir, extractedDirName)
     if (!extracted.exists()) {
-      if (!archive.exists()) {
+      def downloadArchive = {
         logger.lifecycle("Downloading bundled ${toolName} ${version} from ${downloadUrl}")
         ant.get(src: downloadUrl, dest: archive, usetimestamp: true)
       }
-      logger.lifecycle("Extracting bundled ${toolName} ${version}")
-      copy {
-        from zipTree(archive)
-        into toolDir
+      def extractArchive = {
+        logger.lifecycle("Extracting bundled ${toolName} ${version}")
+        copy {
+          from zipTree(archive)
+          into toolDir
+        }
+      }
+      if (!archive.exists()) {
+        downloadArchive()
+      }
+      try {
+        extractArchive()
+      } catch (Exception ex) {
+        logger.warn("Failed to extract bundled ${toolName} from ${archive}, re-downloading once", ex)
+        delete extracted
+        delete archive
+        downloadArchive()
+        extractArchive()
       }
       if (!extracted.exists()) {
         throw new GradleException("Failed to extract bundled ${toolName} distribution from ${archive}")
@@ -520,7 +531,7 @@ tasks.runtime.doLast {
   // Reorganize jars into subdirectories for clean classpath isolation
   // lib/groovy/   - Groovy + Ivy jars (subprocess + Gade app)
   // lib/app/      - Gade application dependencies (Gade app only)
-  // lib/runtimes/ - gade-runner.jar (subprocess only)
+  // lib/runtimes/ - gade-runner-boot.jar + gade-runner-engine.jar (subprocess only)
   ['linux', 'mac', 'win'].each { platform ->
     def libDir = project.layout.buildDirectory.dir("image/gade-${platform}/lib").get().asFile
 
@@ -549,9 +560,10 @@ tasks.runtime.doLast {
       (f.name.startsWith('groovy-'))
     } as FileFilter)?.each { it.renameTo(new File(groovyDir, it.name)) }
 
-    // Copy gade-runner.jar to lib/runtimes/
+    // Copy runner boot + engine JARs to lib/runtimes/
     copy {
-      from runnerJar.archiveFile
+      from runnerBootJar.archiveFile
+      from runnerEngineJar.archiveFile
       into runtimesDir
     }
 
@@ -687,19 +699,38 @@ task sourcesJar(type: Jar, dependsOn: classes) {
   archiveClassifier.set('sources')
 }
 
-// Separate JAR for the subprocess runner — contains only the classes needed
-// by GadeRunnerMain. No Jackson, no Log4j, no Gade application classes.
-task runnerJar(type: Jar, dependsOn: classes) {
-  archiveBaseName = 'gade-runner'
+// Boot JAR — JDK-only classes that go on the subprocess -cp.
+// Contains the bootstrap entry point and the custom system classloader.
+task runnerBootJar(type: Jar, dependsOn: classes) {
+  archiveBaseName = 'gade-runner-boot'
   from sourceSets.main.output
-  include 'se/alipsa/gade/runner/**'
-  include 'se/alipsa/gade/runtime/ProtocolVersion**'
-  include 'se/alipsa/gade/runtime/ProtocolXml**'
+  include 'se/alipsa/gade/runner/GadeRunnerMain.class'
+  include 'se/alipsa/gade/runner/GadeRunnerMain$*.class'
+  include 'se/alipsa/gade/runner/ProcessRootLoader.class'
+  include 'se/alipsa/gade/runtime/ProtocolVersion.class'
+  include 'se/alipsa/gade/runtime/ProtocolVersion$*.class'
+  include 'se/alipsa/gade/runtime/ProtocolXml.class'
+  include 'se/alipsa/gade/runtime/ProtocolXml$*.class'
 }
 
-// Ensure runnerJar is built before run and runtime tasks
-tasks.named('run').configure { dependsOn runnerJar }
-tasks.named('runtime').configure { dependsOn runnerJar }
+// Engine JAR — Groovy-dependent classes added to ProcessRootLoader after handshake.
+task runnerEngineJar(type: Jar, dependsOn: classes) {
+  archiveBaseName = 'gade-runner-engine'
+  from sourceSets.main.output
+  include 'se/alipsa/gade/runner/**'
+  exclude 'se/alipsa/gade/runner/GadeRunnerMain.class'
+  exclude 'se/alipsa/gade/runner/GadeRunnerMain$*.class'
+  exclude 'se/alipsa/gade/runner/ProcessRootLoader.class'
+}
+
+// Ensure both runner JARs are built as part of the build lifecycle and before run/runtime
+tasks.named('assemble').configure { dependsOn runnerBootJar, runnerEngineJar }
+tasks.named('run').configure { dependsOn runnerBootJar, runnerEngineJar }
+tasks.named('runtime').configure { dependsOn runnerBootJar, runnerEngineJar }
+tasks.named('test').configure { dependsOn runnerBootJar, runnerEngineJar }
+tasks.matching { it.name in ['jre', 'runtime', 'runtimeZip', 'jpackage'] }.configureEach {
+  notCompatibleWithConfigurationCache('Beryx runtime tasks currently access Project at execution time')
+}
 
 publishing {
   publications {

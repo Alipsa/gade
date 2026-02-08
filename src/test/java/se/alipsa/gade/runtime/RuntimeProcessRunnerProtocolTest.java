@@ -9,7 +9,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.io.BufferedWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -322,17 +325,20 @@ class RuntimeProcessRunnerProtocolTest {
   void testResolveDependencyNotOnFxThread() throws Exception {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeProcessRunner runner = createRunner(console);
+    prepareConnectedRunner(runner);
 
     // Build a gui_request message with method=resolveDependency
     Map<String, Object> msg = new HashMap<>();
     msg.put("type", "gui_request");
     msg.put("id", "resolve-test-1");
     msg.put("method", "resolveDependency");
-    msg.put("args", List.of("com.h2database:h2:2.1.214"));
+    // Blank dependency still executes the async resolveDependency path, but
+    // avoids real dependency resolution/network in this protocol-only test.
+    msg.put("args", List.of(" "));
 
-    // Invoke handleMessage — should NOT throw even without a running Gade instance.
-    // The resolveDependency handler runs on a background thread and will fail
-    // gracefully (sends gui_error) since Gade.instance() is null in tests.
+    // Invoke handleMessage — should NOT throw.
+    // The resolveDependency handler runs on a background thread and should
+    // return a gui_error for blank dependency input.
     invokeHandleMessage(runner, msg);
 
     // Give the async handler a moment to execute
@@ -346,6 +352,7 @@ class RuntimeProcessRunnerProtocolTest {
   void testResolveDependencyWithMissingArgs() throws Exception {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     RuntimeProcessRunner runner = createRunner(console);
+    prepareConnectedRunner(runner);
 
     Map<String, Object> msg = new HashMap<>();
     msg.put("type", "gui_request");
@@ -366,6 +373,31 @@ class RuntimeProcessRunnerProtocolTest {
   private RuntimeProcessRunner createRunner(ConsoleTextArea console) {
     RuntimeConfig runtime = new RuntimeConfig("Test", RuntimeType.CUSTOM);
     return new RuntimeProcessRunner(runtime, List.of("dummy"), console, Map.of());
+  }
+
+  /**
+   * Simulates a connected runner so async gui_error responses don't try to start
+   * a real subprocess during protocol-only tests.
+   */
+  private void prepareConnectedRunner(RuntimeProcessRunner runner) throws Exception {
+    Process process = mock(Process.class);
+    when(process.isAlive()).thenReturn(true);
+
+    java.net.Socket socket = mock(java.net.Socket.class);
+    when(socket.isConnected()).thenReturn(true);
+    when(socket.isClosed()).thenReturn(false);
+
+    Field processField = RuntimeProcessRunner.class.getDeclaredField("process");
+    processField.setAccessible(true);
+    processField.set(runner, process);
+
+    Field socketField = RuntimeProcessRunner.class.getDeclaredField("socket");
+    socketField.setAccessible(true);
+    socketField.set(runner, socket);
+
+    Field socketWriterField = RuntimeProcessRunner.class.getDeclaredField("socketWriter");
+    socketWriterField.setAccessible(true);
+    socketWriterField.set(runner, new BufferedWriter(new StringWriter()));
   }
 
   @SuppressWarnings("unchecked")

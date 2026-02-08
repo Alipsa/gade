@@ -7,11 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -276,12 +277,11 @@ class CompletionRegistryTest {
 
   @Test
   void testInvalidateAllHandlesEngineExceptions() {
-    PrintStream orgOut = System.out;
-    PrintStream orgErr = System.err;
-
+    // Suppress the expected WARN log (Log4j bypasses System.out/err redirection)
+    String loggerName = "se.alipsa.gade.code.completion.CompletionRegistry";
+    Level previousLevel = LogManager.getLogger(loggerName).getLevel();
+    Configurator.setLevel(loggerName, Level.ERROR);
     try {
-      System.setOut(new PrintStream(OutputStream.nullOutputStream())); // Suppress expected error output
-      System.setErr(new PrintStream(OutputStream.nullOutputStream())); // Suppress expected error output
       MockCompletionEngine goodEngine = new MockCompletionEngine("good");
       MockCompletionEngine badEngine = new MockCompletionEngine("bad");
       badEngine.setThrowOnInvalidate(true);
@@ -299,8 +299,7 @@ class CompletionRegistryTest {
       assertTrue(anotherGoodEngine.wasInvalidateCalled(),
           "Should continue after exception");
     } finally {
-      System.setOut(orgOut);
-      System.setErr(orgErr);
+      Configurator.setLevel(loggerName, previousLevel);
     }
   }
 

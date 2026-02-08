@@ -26,8 +26,10 @@ import se.alipsa.groovy.resolver.MavenRepoLookup;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.ArrayList;
@@ -58,6 +60,61 @@ import java.util.Objects;
 public class GradleUtils {
 
   private static final Logger log = LogManager.getLogger(GradleUtils.class);
+  private static final String CLASSPATH_PROBE_TASK = "gadeResolveToolingClasspath";
+  private static final String CLASSPATH_DEP_MARKER = "__GADE_DEP__";
+  private static final String CLASSPATH_OUT_MARKER = "__GADE_OUT__";
+  private static final String CLASSPATH_CONFIG_PROP = "gade.classpath.configuration";
+  private static final String CLASSPATH_INCLUDE_TESTS_PROP = "gade.classpath.includeTests";
+  private static final String CLASSPATH_PROBE_INIT_SCRIPT = """
+      def depMarker = '%s'
+      def outMarker = '%s'
+      def confName = System.getProperty('%s', 'runtimeClasspath')
+      def includeTests = Boolean.parseBoolean(System.getProperty('%s', 'false'))
+      gradle.rootProject {
+        tasks.register('%s') {
+          doLast {
+            allprojects.each { p ->
+              def conf = p.configurations.findByName(confName)
+              if (conf != null) {
+                conf.incoming.artifactView { lenient true }.files.files.each { f ->
+                  if (f != null) {
+                    println(depMarker + new File(f.toString()).absolutePath)
+                  }
+                }
+              }
+              def sourceSets = p.extensions.findByName('sourceSets')
+              if (sourceSets != null) {
+                def main = sourceSets.findByName('main')
+                if (main != null) {
+                  main.output.classesDirs.files.each { d ->
+                    if (d != null) {
+                      println(outMarker + d.absolutePath)
+                    }
+                  }
+                  if (main.output.resourcesDir != null) {
+                    println(outMarker + main.output.resourcesDir.absolutePath)
+                  }
+                }
+                if (includeTests) {
+                  def test = sourceSets.findByName('test')
+                  if (test != null) {
+                    test.output.classesDirs.files.each { d ->
+                      if (d != null) {
+                        println(outMarker + d.absolutePath)
+                      }
+                    }
+                    if (test.output.resourcesDir != null) {
+                      println(outMarker + test.output.resourcesDir.absolutePath)
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      """.formatted(CLASSPATH_DEP_MARKER, CLASSPATH_OUT_MARKER, CLASSPATH_CONFIG_PROP,
+      CLASSPATH_INCLUDE_TESTS_PROP, CLASSPATH_PROBE_TASK);
 
   private final File projectDir;
   private final File projectLocalGradleUserHome;
@@ -134,14 +191,7 @@ public class GradleUtils {
                 .collect(Collectors.joining(", "));
             log.warn("Found stale lock files for {}: {}", staleLocks.get().distributionName(), lockFileList);
 
-            boolean userConfirmed = Alerts.confirmFx(
-                "Stale Lock Files Detected",
-                "Found stale lock files blocking Gradle distribution '" + staleLocks.get().distributionName() + "':\n\n" +
-                lockFileList + "\n\n" +
-                "These lock files may be left over from an interrupted download.\n" +
-                "Would you like to delete them and retry?\n\n" +
-                "(The distribution itself appears to be complete and intact)"
-            );
+            boolean userConfirmed = confirmStaleLockDeletion(staleLocks.get().distributionName(), lockFileList);
 
             if (userConfirmed) {
               boolean deleted = GradleDaemonRecovery.deleteStaleLockFiles(staleLocks.get());
@@ -213,6 +263,21 @@ public class GradleUtils {
     configManager.switchToDefaultGradleUserHome();
     distributionManager.applyCurrentDistribution();
     return true;
+  }
+
+  private boolean confirmStaleLockDeletion(String distributionName, String lockFileList) {
+    String message = "Found stale lock files blocking Gradle distribution '" + distributionName + "':\n\n" +
+        lockFileList + "\n\n" +
+        "These lock files may be left over from an interrupted download.\n" +
+        "Would you like to delete them and retry?\n\n" +
+        "(The distribution itself appears to be complete and intact)";
+    try {
+      return Alerts.confirmFx("Stale Lock Files Detected", message);
+    } catch (IllegalStateException e) {
+      // Headless/test runs don't initialize JavaFX toolkit.
+      log.warn("JavaFX toolkit is not initialized; deleting stale Gradle lock files automatically");
+      return true;
+    }
   }
 
   public String getGradleVersion() {
@@ -497,13 +562,72 @@ public class GradleUtils {
   }
 
   private GradleDependencyResolver.ClasspathModel resolveClasspathViaToolingApi(boolean testContext) {
-    return withConnection(connection -> {
-      IdeaProject project = connection.model(IdeaProject.class)
+    return withConnection(connection -> resolveClasspathViaRuntimeConfigurations(connection, testContext));
+  }
+
+  private GradleDependencyResolver.ClasspathModel resolveClasspathViaRuntimeConfigurations(ProjectConnection connection,
+                                                                                           boolean testContext) {
+    File initScript = writeClasspathProbeInitScript();
+    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+    try {
+      BuildLauncher launcher = connection.newBuild()
           .setJvmArguments(configManager.gradleJvmArgs())
           .setEnvironmentVariables(configManager.gradleEnv())
-          .get();
-      return dependencyResolver.resolveFromIdeaProject(project, testContext);
-    });
+          .withArguments(
+              "--quiet",
+              "--no-configuration-cache",
+              "-I", initScript.getAbsolutePath(),
+              "-D" + CLASSPATH_CONFIG_PROP + "=" + (testContext ? "testRuntimeClasspath" : "runtimeClasspath"),
+              "-D" + CLASSPATH_INCLUDE_TESTS_PROP + "=" + testContext
+          )
+          .forTasks(CLASSPATH_PROBE_TASK);
+      launcher.setStandardOutput(stdout);
+      launcher.run();
+      return parseClasspathProbeOutput(stdout.toString(StandardCharsets.UTF_8));
+    } finally {
+      if (!initScript.delete()) {
+        initScript.deleteOnExit();
+      }
+    }
+  }
+
+  private File writeClasspathProbeInitScript() {
+    try {
+      File dir = projectLocalGradleUserHome;
+      if (!dir.exists() && !dir.mkdirs()) {
+        throw new IOException("Failed to create classpath probe script dir " + dir);
+      }
+      File script = File.createTempFile("gade-classpath-probe-", ".gradle", dir);
+      Files.writeString(script.toPath(), CLASSPATH_PROBE_INIT_SCRIPT, StandardCharsets.UTF_8);
+      return script;
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to create classpath probe init script", e);
+    }
+  }
+
+  private GradleDependencyResolver.ClasspathModel parseClasspathProbeOutput(String output) {
+    LinkedHashSet<File> dependencies = new LinkedHashSet<>();
+    LinkedHashSet<File> outputDirs = new LinkedHashSet<>();
+    String[] lines = output.split("\\R");
+    for (String line : lines) {
+      if (line.startsWith(CLASSPATH_DEP_MARKER)) {
+        addProbePath(dependencies, line.substring(CLASSPATH_DEP_MARKER.length()));
+      } else if (line.startsWith(CLASSPATH_OUT_MARKER)) {
+        addProbePath(outputDirs, line.substring(CLASSPATH_OUT_MARKER.length()));
+      }
+    }
+    List<File> normalizedDeps = GradleDependencyResolver.normalizeResolvedDependencies(dependencies);
+    return new GradleDependencyResolver.ClasspathModel(normalizedDeps, List.copyOf(outputDirs), false);
+  }
+
+  private void addProbePath(LinkedHashSet<File> sink, String rawPath) {
+    if (rawPath == null || rawPath.isBlank()) {
+      return;
+    }
+    File file = new File(rawPath).getAbsoluteFile();
+    if (file.exists()) {
+      sink.add(file);
+    }
   }
 
   private String fingerprintProject(boolean testContext) {
@@ -519,6 +643,8 @@ public class GradleUtils {
     long buildSrcLatest = ClasspathCacheManager.latestModified(projectDir.toPath().resolve("buildSrc"));
     Map<String, String> extra = new LinkedHashMap<>();
     extra.put("buildSrcLatest", String.valueOf(buildSrcLatest));
+    // Bump cache fingerprint when classpath extraction strategy changes.
+    extra.put("classpathModelVersion", "3");
     return ClasspathCacheManager.computeFingerprint(projectDir, testContext, tracked, extra);
   }
 
@@ -542,7 +668,8 @@ public class GradleUtils {
     if (cached == null) {
       return null;
     }
-    return new GradleDependencyResolver.ClasspathModel(cached.dependencies(), cached.outputDirs(), true);
+    List<File> normalizedDeps = GradleDependencyResolver.normalizeResolvedDependencies(cached.dependencies());
+    return new GradleDependencyResolver.ClasspathModel(normalizedDeps, cached.outputDirs(), true);
   }
 
 

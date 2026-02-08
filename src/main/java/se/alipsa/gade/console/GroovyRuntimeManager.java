@@ -306,16 +306,15 @@ final class GroovyRuntimeManager {
   /**
    * Builds the JVM {@code -cp} entries for subprocess execution.
    * <p>
-   * For <b>Gradle/Maven</b> runtimes, only the runner JAR is included on
-   * {@code -cp}. Groovy and project dependencies are loaded dynamically —
-   * see {@link #buildGroovyBootstrapEntries(RuntimeConfig)} and
-   * {@link #buildProjectDepEntries(RuntimeConfig, ConsoleTextArea)}.
+   * For <b>GADE/Gradle/Maven</b> runtimes, only the boot JAR is included
+   * on {@code -cp}. The engine JAR, Groovy/Ivy jars are loaded dynamically
+   * into {@link se.alipsa.gade.runner.ProcessRootLoader} after the handshake —
+   * see {@link #buildGroovyBootstrapEntries(RuntimeConfig)}. Project
+   * dependencies are handled per runtime type (GADE: {@code @Grab};
+   * Gradle/Maven: {@link #buildProjectDepEntries(RuntimeConfig, ConsoleTextArea)}).
    * <p>
-   * For <b>GADE</b> runtime, Groovy/Ivy jars + runner JAR are on {@code -cp}.
-   * Users add their own dependencies via {@code @Grab}.
-   * <p>
-   * For <b>Custom</b> runtime, Groovy/Ivy jars + additional configured jars +
-   * classloader URLs + runner JAR are on {@code -cp}.
+   * For <b>Custom</b> runtime, boot JAR + engine JAR + Groovy/Ivy jars +
+   * additional configured jars + classloader URLs are on {@code -cp}.
    *
    * @param runtime the runtime configuration to build classpath for
    * @return list of classpath entry paths
@@ -323,30 +322,49 @@ final class GroovyRuntimeManager {
   List<String> buildClassPathEntries(RuntimeConfig runtime) {
     Set<String> entries = new LinkedHashSet<>();
 
-    if (RuntimeType.GRADLE.equals(runtime.getType()) || RuntimeType.MAVEN.equals(runtime.getType())) {
-      // Gradle/Maven: runner jar only on -cp; deps loaded dynamically
-      addRunnerJar(entries);
-    } else {
-      // GADE/Custom: Groovy/Ivy + classloader URLs (if Custom) + runner jar on -cp
-      addGroovyJarsFromDir(entries);
-      if (entries.isEmpty()) {
-        addGroovyJarsByClassResolution(entries);
-      }
-
-      addDataUtilsJar(entries);
+    if (RuntimeType.CUSTOM.equals(runtime.getType())) {
+      // Custom: boot JAR + engine JAR + custom classloader URLs on -cp.
+      // Do not inject bundled host Groovy jars here; that can mix versions
+      // with GROOVY_HOME and trigger module conflicts (e.g. groovy-swing).
+      addBootstrapJar(entries);
+      addEngineJar(entries);
+      Path groovyHomeLib = resolveGroovyHomeLib(runtime);
 
       // For Custom runtime, include additional jars from classloader
-      if (classLoader != null && RuntimeType.CUSTOM.equals(runtime.getType())) {
+      if (classLoader != null) {
         for (URL url : classLoader.getURLs()) {
           try {
-            entries.add(Paths.get(url.toURI()).toFile().getAbsolutePath());
+            String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
+            String name = new File(path).getName();
+            // When GROOVY_HOME is configured, ignore Groovy/Ivy jars outside
+            // GROOVY_HOME/lib to prevent host runtime contamination.
+            if (groovyHomeLib != null && isGroovyOrIvyJar(name) && !isUnderDirectory(path, groovyHomeLib)) {
+              log.debug("Skipping Groovy/Ivy jar outside configured GROOVY_HOME/lib: {}", path);
+              continue;
+            }
+            entries.add(path);
           } catch (Exception e) {
             log.debug("Failed to add classpath url {}", url, e);
           }
         }
       }
 
-      addRunnerJar(entries);
+      // Fallback for partially configured custom runtimes:
+      // if no Groovy/Ivy jar made it to the classpath, prefer GROOVY_HOME/lib.
+      if (!containsGroovyOrIvy(entries) && groovyHomeLib != null) {
+        addGroovyJarsFromDirectory(entries, groovyHomeLib.toFile());
+      }
+      // Last resort fallback for development edge-cases.
+      if (!containsGroovyOrIvy(entries)) {
+        addGroovyJarsByClassResolution(entries);
+      }
+
+      // Needed by RemoteInOut for dbConnect / ConnectionInfo support.
+      addDataUtilsJar(entries);
+    } else {
+      // GADE/Gradle/Maven: boot JAR only on -cp; engine JAR + Groovy/Ivy
+      // loaded dynamically into ProcessRootLoader after handshake
+      addBootstrapJar(entries);
     }
 
     if (entries.isEmpty()) {
@@ -360,21 +378,46 @@ final class GroovyRuntimeManager {
   /**
    * Builds the Groovy/Ivy bootstrap entries for the subprocess.
    * <p>
-   * For <b>Gradle/Maven</b> runtimes, returns Groovy and Ivy jar paths extracted
-   * from the project's resolved dependencies. These are used to create a bootstrap
-   * {@link java.net.URLClassLoader} in the subprocess so that a
-   * {@code GroovyClassLoader} can be instantiated via reflection.
+   * These entries are sent to the subprocess after the handshake and added to
+   * {@link se.alipsa.gade.runner.ProcessRootLoader} via {@code addURL()}.
+   * This ensures ProcessRootLoader — the effective system classloader —
+   * holds the Groovy/Ivy runtime and the engine JAR, which is required for
+   * {@code @Grab} and {@code @GrabConfig(systemClassLoader=true)} to work correctly.
    * <p>
-   * For <b>GADE/Custom</b> runtimes, returns an empty list — Groovy is already
-   * on the JVM {@code -cp}.
+   * For <b>GADE</b> runtime, returns Groovy/Ivy jars from the bundled
+   * {@code lib/groovy/} directory (or class resolution fallback in development)
+   * plus the engine JAR.
+   * <p>
+   * For <b>Gradle/Maven</b> runtimes, returns Groovy/Ivy jars extracted from
+   * the project's resolved dependencies (with a bundled Ivy fallback) plus the
+   * engine JAR.
+   * <p>
+   * For <b>Custom</b> runtime, returns an empty list — everything is on {@code -cp}.
    *
    * @param runtime the runtime configuration
    * @return list of Groovy/Ivy jar paths for the bootstrap classloader
    */
   List<String> buildGroovyBootstrapEntries(RuntimeConfig runtime) {
-    if (!RuntimeType.GRADLE.equals(runtime.getType()) && !RuntimeType.MAVEN.equals(runtime.getType())) {
+    if (RuntimeType.GADE.equals(runtime.getType())) {
+      // GADE: Groovy/Ivy from bundled lib/groovy/ or class resolution fallback + engine JAR
+      Set<String> entries = new LinkedHashSet<>();
+      addGroovyJarsFromDir(entries);
+      if (entries.isEmpty()) {
+        addGroovyJarsByClassResolution(entries);
+      }
+      addDataUtilsJar(entries);
+      addEngineJar(entries);
+      if (!entries.isEmpty()) {
+        log.debug("Groovy bootstrap entries for GADE ({}):\n{}", entries.size(), String.join("\n", entries));
+      } else {
+        log.warn("No Groovy/Ivy jars found for GADE runtime bootstrap");
+      }
+      return new ArrayList<>(entries);
+    }
+    if (RuntimeType.CUSTOM.equals(runtime.getType())) {
       return List.of();
     }
+    // Gradle/Maven: extract Groovy/Ivy from project's resolved dependencies + engine JAR
     if (classLoader == null) {
       log.warn("No classloader available for building Groovy bootstrap entries");
       return List.of();
@@ -402,6 +445,7 @@ final class GroovyRuntimeManager {
       addIvyFallback(entries);
     }
     addDataUtilsJar(entries);
+    addEngineJar(entries);
     if (!entries.isEmpty()) {
       log.debug("Groovy bootstrap entries ({}):\n{}", entries.size(), String.join("\n", entries));
     } else {
@@ -627,38 +671,76 @@ final class GroovyRuntimeManager {
       return;
     }
     File groovyDir = new File(libDir, "groovy");
-    if (groovyDir.isDirectory()) {
-      File[] jars = groovyDir.listFiles((dir, name) -> name.endsWith(".jar"));
-      if (jars != null) {
-        for (File jar : jars) {
-          entries.add(jar.getAbsolutePath());
-        }
-        log.debug("Added {} Groovy/Ivy jars from {}", jars.length, groovyDir);
+    addGroovyJarsFromDirectory(entries, groovyDir);
+  }
+
+  private void addGroovyJarsFromDirectory(Set<String> entries, File groovyDir) {
+    if (!groovyDir.isDirectory()) {
+      return;
+    }
+    File[] jars = groovyDir.listFiles((dir, name) -> name.endsWith(".jar"));
+    if (jars != null) {
+      for (File jar : jars) {
+        entries.add(jar.getAbsolutePath());
       }
+      log.debug("Added {} Groovy/Ivy jars from {}", jars.length, groovyDir);
+    }
+  }
+
+  private boolean containsGroovyOrIvy(Set<String> entries) {
+    for (String entry : entries) {
+      if (isGroovyOrIvyJar(new File(entry).getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private Path resolveGroovyHomeLib(RuntimeConfig runtime) {
+    if (runtime == null || runtime.getGroovyHome() == null || runtime.getGroovyHome().isBlank()) {
+      return null;
+    }
+    try {
+      Path lib = Paths.get(runtime.getGroovyHome(), "lib").toAbsolutePath().normalize();
+      if (lib.toFile().isDirectory()) {
+        return lib;
+      }
+      log.warn("Configured GROOVY_HOME does not contain a lib directory: {}", lib);
+    } catch (Exception e) {
+      log.warn("Failed to resolve GROOVY_HOME/lib for '{}'", runtime.getGroovyHome(), e);
+    }
+    return null;
+  }
+
+  private boolean isUnderDirectory(String filePath, Path directory) {
+    try {
+      return Paths.get(filePath).toAbsolutePath().normalize().startsWith(directory);
+    } catch (Exception e) {
+      return false;
     }
   }
 
   /**
-   * Locates gade-runner.jar and adds it to the classpath entries.
+   * Locates gade-runner-boot.jar and adds it to the classpath entries.
    * <p>
-   * In distribution: scans lib/runtimes/ for gade-runner*.jar.
-   * In development: looks in build/libs/ for gade-runner*.jar.
+   * In distribution: scans lib/runtimes/ for gade-runner-boot*.jar.
+   * In development: looks in build/libs/ for gade-runner-boot*.jar.
    * Fallback: resolves via GadeRunnerMain code source (for test compatibility).
    */
-  private void addRunnerJar(Set<String> entries) {
+  private void addBootstrapJar(Set<String> entries) {
     // Try distribution lib/runtimes/ directory first
     File libDir = resolveLibDir();
     if (libDir != null) {
       File runtimesDir = new File(libDir, "runtimes");
       if (runtimesDir.isDirectory()) {
-        File found = findRunnerJar(runtimesDir);
+        File found = findBootstrapJar(runtimesDir);
         if (found != null) {
           entries.add(found.getAbsolutePath());
           return;
         }
       }
       // Also check lib/ directly (backward compatibility)
-      File found = findRunnerJar(libDir);
+      File found = findBootstrapJar(libDir);
       if (found != null) {
         entries.add(found.getAbsolutePath());
         return;
@@ -668,7 +750,7 @@ final class GroovyRuntimeManager {
     // Try build/libs/ directory (development mode: ./gradlew run)
     File buildLibs = new File("build/libs");
     if (buildLibs.isDirectory()) {
-      File found = findRunnerJar(buildLibs);
+      File found = findBootstrapJar(buildLibs);
       if (found != null) {
         entries.add(found.getAbsolutePath());
         return;
@@ -683,18 +765,81 @@ final class GroovyRuntimeManager {
         log.debug("Added runner classes via GadeRunnerMain code source (fallback)");
       }
     } catch (Exception e) {
-      log.warn("Failed to locate runner jar or classes", e);
+      log.warn("Failed to locate boot jar or classes", e);
     }
   }
 
-  private File findRunnerJar(File dir) {
+  /**
+   * Locates gade-runner-engine.jar and adds it to the classpath entries.
+   * <p>
+   * In distribution: scans lib/runtimes/ for gade-runner-engine*.jar.
+   * In development: looks in build/libs/ for gade-runner-engine*.jar.
+   * Fallback: resolves via GadeRunnerEngine code source (for test compatibility).
+   */
+  private void addEngineJar(Set<String> entries) {
+    // Try distribution lib/runtimes/ directory first
+    File libDir = resolveLibDir();
+    if (libDir != null) {
+      File runtimesDir = new File(libDir, "runtimes");
+      if (runtimesDir.isDirectory()) {
+        File found = findEngineJar(runtimesDir);
+        if (found != null) {
+          entries.add(found.getAbsolutePath());
+          return;
+        }
+      }
+      // Also check lib/ directly (backward compatibility)
+      File found = findEngineJar(libDir);
+      if (found != null) {
+        entries.add(found.getAbsolutePath());
+        return;
+      }
+    }
+
+    // Try build/libs/ directory (development mode: ./gradlew run)
+    File buildLibs = new File("build/libs");
+    if (buildLibs.isDirectory()) {
+      File found = findEngineJar(buildLibs);
+      if (found != null) {
+        entries.add(found.getAbsolutePath());
+        return;
+      }
+    }
+
+    // Fallback: resolve via GadeRunnerEngine code source (for test compatibility)
+    try {
+      Class<?> engineClass = Class.forName("se.alipsa.gade.runner.GadeRunnerEngine");
+      URL location = engineClass.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+        log.debug("Added engine classes via GadeRunnerEngine code source (fallback)");
+      }
+    } catch (Exception e) {
+      log.warn("Failed to locate engine jar or classes", e);
+    }
+  }
+
+  private File findBootstrapJar(File dir) {
     if (dir == null || !dir.isDirectory()) {
       return null;
     }
     File[] matches = dir.listFiles((d, name) ->
-        name.startsWith("gade-runner") && name.endsWith(".jar"));
+        name.startsWith("gade-runner-boot") && name.endsWith(".jar"));
     if (matches != null && matches.length > 0) {
-      log.debug("Found runner jar: {}", matches[0]);
+      log.debug("Found boot jar: {}", matches[0]);
+      return matches[0];
+    }
+    return null;
+  }
+
+  private File findEngineJar(File dir) {
+    if (dir == null || !dir.isDirectory()) {
+      return null;
+    }
+    File[] matches = dir.listFiles((d, name) ->
+        name.startsWith("gade-runner-engine") && name.endsWith(".jar"));
+    if (matches != null && matches.length > 0) {
+      log.debug("Found engine jar: {}", matches[0]);
       return matches[0];
     }
     return null;
