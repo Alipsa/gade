@@ -168,7 +168,7 @@ dependencies {
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation "org.apache.maven:maven-artifact:${embeddedMavenVersion}"
   implementation "org.apache.maven:maven-model:${embeddedMavenVersion}"
-  implementation "se.alipsa:maven-utils:1.3.1-SNAPSHOT"
+  implementation "se.alipsa:maven-utils:1.3.1"
 
   implementation 'se.alipsa.groovy:dependency-resolver:1.0.1'
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
