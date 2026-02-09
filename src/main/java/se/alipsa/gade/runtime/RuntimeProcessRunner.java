@@ -154,7 +154,7 @@ public class RuntimeProcessRunner implements Closeable {
       addInheritedNetworkSystemProperties(cmd);
       addInheritedRunnerSystemProperties(cmd);
       if (hasProcessRootLoaderOnClasspath(cpOrdered)) {
-        cmd.add("-Djava.system.class.loader=se.alipsa.gade.runner.ProcessRootLoader");
+        cmd.add("-Djava.system.class.loader=se.alipsa.gade.runner.GroovyProcessRootLoader");
       }
       cmd.add("-cp");
       cmd.add(String.join(File.pathSeparator, cpOrdered));

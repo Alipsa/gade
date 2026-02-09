@@ -322,7 +322,18 @@ final class GroovyRuntimeManager {
   List<String> buildClassPathEntries(RuntimeConfig runtime) {
     Set<String> entries = new LinkedHashSet<>();
 
-    if (RuntimeType.CUSTOM.equals(runtime.getType())) {
+    if (RuntimeType.GADE.equals(runtime.getType())) {
+      // GADE: boot JAR + engine JAR + bundled Groovy/Ivy on -cp so that
+      // GroovyProcessRootLoader can be the system classloader at JVM startup,
+      // which is required for @GrabConfig(systemClassLoader=true) support.
+      addBootstrapJar(entries);
+      addEngineJar(entries);
+      addGroovyJarsFromDir(entries);
+      if (!containsGroovyOrIvy(entries)) {
+        addGroovyJarsByClassResolution(entries);
+      }
+      addDataUtilsJar(entries);
+    } else if (RuntimeType.CUSTOM.equals(runtime.getType())) {
       // Custom: boot JAR + engine JAR + custom classloader URLs on -cp.
       // Do not inject bundled host Groovy jars here; that can mix versions
       // with GROOVY_HOME and trigger module conflicts (e.g. groovy-swing).
@@ -362,9 +373,43 @@ final class GroovyRuntimeManager {
       // Needed by RemoteInOut for dbConnect / ConnectionInfo support.
       addDataUtilsJar(entries);
     } else {
-      // GADE/Gradle/Maven: boot JAR only on -cp; engine JAR + Groovy/Ivy
-      // loaded dynamically into ProcessRootLoader after handshake
+      // Gradle/Maven: boot JAR + engine JAR + Groovy/Ivy from resolved
+      // project dependencies on -cp so that GroovyProcessRootLoader can be
+      // the system classloader (required for @GrabConfig(systemClassLoader=true)).
       addBootstrapJar(entries);
+      addEngineJar(entries);
+      if (classLoader != null) {
+        boolean hasIvy = false;
+        for (URL url : classLoader.getURLs()) {
+          try {
+            String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
+            String name = new File(path).getName();
+            if (isGroovyOrIvyJar(name)) {
+              entries.add(path);
+              if (isIvyJar(name)) {
+                hasIvy = true;
+              }
+            }
+          } catch (Exception e) {
+            log.debug("Failed to convert dependency url {}", url, e);
+          }
+        }
+        if (!hasIvy) {
+          addIvyFallback(entries);
+        }
+      } else {
+        log.warn("No classloader available for resolving Groovy/Ivy jars for {} runtime", runtime.getType());
+      }
+      addDataUtilsJar(entries);
+    }
+
+    // Safety net for GADE/Custom: Groovy itself depends on slf4j-api.
+    // If no slf4j-api jar is on -cp, Groovy classes will throw
+    // NoClassDefFoundError when they attempt to use logging. We add it
+    // here so that users are not forced to always @Grab a logging stack.
+    // For Gradle/Maven, the build script determines the classpath.
+    if (RuntimeType.GADE.equals(runtime.getType()) || RuntimeType.CUSTOM.equals(runtime.getType())) {
+      ensureSlf4jApi(entries);
     }
 
     if (entries.isEmpty()) {
@@ -378,80 +423,16 @@ final class GroovyRuntimeManager {
   /**
    * Builds the Groovy/Ivy bootstrap entries for the subprocess.
    * <p>
-   * These entries are sent to the subprocess after the handshake and added to
-   * {@link se.alipsa.gade.runner.ProcessRootLoader} via {@code addURL()}.
-   * This ensures ProcessRootLoader — the effective system classloader —
-   * holds the Groovy/Ivy runtime and the engine JAR, which is required for
-   * {@code @Grab} and {@code @GrabConfig(systemClassLoader=true)} to work correctly.
-   * <p>
-   * For <b>GADE</b> runtime, returns Groovy/Ivy jars from the bundled
-   * {@code lib/groovy/} directory (or class resolution fallback in development)
-   * plus the engine JAR.
-   * <p>
-   * For <b>Gradle/Maven</b> runtimes, returns Groovy/Ivy jars extracted from
-   * the project's resolved dependencies (with a bundled Ivy fallback) plus the
-   * engine JAR.
-   * <p>
-   * For <b>Custom</b> runtime, returns an empty list — everything is on {@code -cp}.
+   * Returns an empty list for all runtime types. Groovy/Ivy jars and the
+   * engine JAR are now placed on {@code -cp} by {@link #buildClassPathEntries}
+   * so that {@code GroovyProcessRootLoader} can serve as the system classloader
+   * at JVM startup (required for {@code @GrabConfig(systemClassLoader=true)}).
    *
    * @param runtime the runtime configuration
-   * @return list of Groovy/Ivy jar paths for the bootstrap classloader
+   * @return empty list — all bootstrap entries are on {@code -cp}
    */
   List<String> buildGroovyBootstrapEntries(RuntimeConfig runtime) {
-    if (RuntimeType.GADE.equals(runtime.getType())) {
-      // GADE: Groovy/Ivy from bundled lib/groovy/ or class resolution fallback + engine JAR
-      Set<String> entries = new LinkedHashSet<>();
-      addGroovyJarsFromDir(entries);
-      if (entries.isEmpty()) {
-        addGroovyJarsByClassResolution(entries);
-      }
-      addDataUtilsJar(entries);
-      addEngineJar(entries);
-      if (!entries.isEmpty()) {
-        log.debug("Groovy bootstrap entries for GADE ({}):\n{}", entries.size(), String.join("\n", entries));
-      } else {
-        log.warn("No Groovy/Ivy jars found for GADE runtime bootstrap");
-      }
-      return new ArrayList<>(entries);
-    }
-    if (RuntimeType.CUSTOM.equals(runtime.getType())) {
-      return List.of();
-    }
-    // Gradle/Maven: extract Groovy/Ivy from project's resolved dependencies + engine JAR
-    if (classLoader == null) {
-      log.warn("No classloader available for building Groovy bootstrap entries");
-      return List.of();
-    }
-    Set<String> entries = new LinkedHashSet<>();
-    boolean hasIvy = false;
-    for (URL url : classLoader.getURLs()) {
-      try {
-        String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
-        String name = new File(path).getName();
-        if (isGroovyOrIvyJar(name)) {
-          entries.add(path);
-          if (isIvyJar(name)) {
-            hasIvy = true;
-          }
-        }
-      } catch (Exception e) {
-        log.debug("Failed to convert dependency url {}", url, e);
-      }
-    }
-    // Ivy is needed for @Grab support. If the project's resolved deps don't
-    // include Ivy (common in Groovy 4+ where Ivy is optional), fall back to
-    // Gade's bundled Ivy jar so @Grab still works in Gradle/Maven mode.
-    if (!hasIvy) {
-      addIvyFallback(entries);
-    }
-    addDataUtilsJar(entries);
-    addEngineJar(entries);
-    if (!entries.isEmpty()) {
-      log.debug("Groovy bootstrap entries ({}):\n{}", entries.size(), String.join("\n", entries));
-    } else {
-      log.warn("No Groovy/Ivy jars found in resolved dependencies for {} runtime", runtime.getType());
-    }
-    return new ArrayList<>(entries);
+    return List.of();
   }
 
   /**
@@ -487,6 +468,73 @@ final class GroovyRuntimeManager {
     } catch (Exception e) {
       log.debug("Failed to resolve Ivy code source", e);
     }
+  }
+
+  /**
+   * Ensures that {@code slf4j-api} is on the classpath. Groovy depends on it,
+   * so without it any logging call from Groovy would throw {@code NoClassDefFoundError}.
+   * <p>
+   * Checks whether the entries already contain an {@code slf4j-api-*.jar}. If not,
+   * tries to locate one from: (1) the classloader URLs, (2) {@code lib/groovy/},
+   * or (3) class resolution.
+   */
+  private void ensureSlf4jApi(Set<String> entries) {
+    if (containsSlf4jApi(entries)) {
+      return;
+    }
+    // Try classloader URLs (matches correct version for Gradle/Maven projects)
+    if (classLoader != null) {
+      for (URL url : classLoader.getURLs()) {
+        try {
+          String path = Paths.get(url.toURI()).toFile().getAbsolutePath();
+          String name = new File(path).getName().toLowerCase(Locale.ROOT);
+          if (name.startsWith("slf4j-api") && name.endsWith(".jar")) {
+            entries.add(path);
+            log.debug("Added slf4j-api from classloader URLs: {}", path);
+            return;
+          }
+        } catch (Exception e) {
+          log.debug("Failed to check classloader url for slf4j-api {}", url, e);
+        }
+      }
+    }
+    // Try lib/groovy/ directory (distribution mode)
+    File libDir = resolveLibDir();
+    if (libDir != null) {
+      File groovyDir = new File(libDir, "groovy");
+      if (groovyDir.isDirectory()) {
+        File[] jars = groovyDir.listFiles((dir, name) ->
+            name.toLowerCase(Locale.ROOT).startsWith("slf4j-api") && name.endsWith(".jar"));
+        if (jars != null && jars.length > 0) {
+          entries.add(jars[0].getAbsolutePath());
+          log.debug("Added slf4j-api from lib/groovy/: {}", jars[0]);
+          return;
+        }
+      }
+    }
+    // Try class resolution (development mode)
+    try {
+      Class<?> cls = Class.forName("org.slf4j.LoggerFactory");
+      URL location = cls.getProtectionDomain().getCodeSource().getLocation();
+      if (location != null) {
+        entries.add(Paths.get(location.toURI()).toFile().getAbsolutePath());
+        log.debug("Added slf4j-api via class resolution (fallback)");
+      }
+    } catch (ClassNotFoundException e) {
+      log.warn("slf4j-api not available — Groovy logging may fail in subprocess");
+    } catch (Exception e) {
+      log.debug("Failed to resolve slf4j-api code source", e);
+    }
+  }
+
+  private boolean containsSlf4jApi(Set<String> entries) {
+    for (String entry : entries) {
+      String name = new File(entry).getName().toLowerCase(Locale.ROOT);
+      if (name.startsWith("slf4j-api") && name.endsWith(".jar")) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -662,8 +710,10 @@ final class GroovyRuntimeManager {
   }
 
   /**
-   * Scans lib/groovy/ for all jar files and adds them to the classpath entries.
-   * In distribution mode, all Groovy and Ivy jars live in this directory.
+   * Scans lib/groovy/ for jar files and adds them to the classpath entries,
+   * excluding SLF4J providers and logging implementations. Users should
+   * {@code @Grab} their own logging stack with
+   * {@code @GrabConfig(systemClassLoader=true)} to avoid version conflicts.
    */
   private void addGroovyJarsFromDir(Set<String> entries) {
     File libDir = resolveLibDir();
@@ -671,7 +721,34 @@ final class GroovyRuntimeManager {
       return;
     }
     File groovyDir = new File(libDir, "groovy");
-    addGroovyJarsFromDirectory(entries, groovyDir);
+    if (!groovyDir.isDirectory()) {
+      return;
+    }
+    File[] jars = groovyDir.listFiles((dir, name) ->
+        name.endsWith(".jar") && !isSlf4jProviderOrLoggingImpl(name));
+    if (jars != null) {
+      for (File jar : jars) {
+        entries.add(jar.getAbsolutePath());
+      }
+      log.debug("Added {} jars from {} (excluding SLF4J providers/logging impls)", jars.length, groovyDir);
+    }
+  }
+
+  /**
+   * Returns true if the jar is an SLF4J provider or logging implementation
+   * that should not be pre-loaded. These should be {@code @Grab}bed by the user
+   * to allow version control via {@code @GrabConfig(systemClassLoader=true)}.
+   */
+  private boolean isSlf4jProviderOrLoggingImpl(String fileName) {
+    String name = fileName.toLowerCase(Locale.ROOT);
+    return name.startsWith("log4j-slf4j")
+        || name.startsWith("slf4j-simple")
+        || name.startsWith("slf4j-nop")
+        || name.startsWith("slf4j-jdk")
+        || name.startsWith("slf4j-reload4j")
+        || name.startsWith("logback-classic")
+        || name.startsWith("log4j-core")
+        || name.startsWith("logback-core");
   }
 
   private void addGroovyJarsFromDirectory(Set<String> entries, File groovyDir) {

@@ -2,8 +2,11 @@ package se.alipsa.gade.runtime;
 
 import groovy.lang.GroovyClassLoader;
 import org.junit.jupiter.api.Test;
+import se.alipsa.gade.utils.FileUtils;
+import se.alipsa.gade.utils.gradle.GradleUtils;
 
 import java.io.File;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,23 +18,11 @@ public class RuntimeGroovyVersionTest {
 
   @Test
   public void testGradleRuntimeUsesProjectGroovyVersion() throws Exception {
-    File projectDir = new File("/Users/pernyf/project/groovier-junit5");
-    if (!projectDir.exists()) {
-      System.out.println("Skipping test - project directory does not exist");
-      return;
-    }
+    File projectDir = FileUtils.getResource("utils/gradle/package");
 
-    // The groovier-junit5 project uses Groovy 5.0.4
-    // We want to verify that when we create a Gradle classloader for it,
-    // it loads Groovy 5.0.4, not Gade's bundled 5.0.x
+    GradleUtils utils = new GradleUtils(null, projectDir, System.getProperty("java.home"));
 
-    // Note: This test can't fully verify the version without a Gade instance,
-    // but we can at least verify the classloader structure is correct
-
-    se.alipsa.gade.utils.gradle.GradleUtils utils =
-        new se.alipsa.gade.utils.gradle.GradleUtils(null, projectDir, null);
-
-    var deps = utils.getProjectDependencies();
+    List<File> deps = utils.getProjectDependencies();
     System.out.println("Project has " + deps.size() + " dependencies");
 
     // Check if Groovy is in the dependencies
@@ -44,7 +35,6 @@ public class RuntimeGroovyVersionTest {
           .filter(f -> f.getName().contains("groovy"))
           .forEach(f -> System.out.println("  - " + f.getName()));
     } else {
-      // groovier-junit5 uses compileOnly for Groovy, so it might not be in runtime deps
       System.out.println("Note: Groovy not in runtime dependencies (may be compileOnly)");
     }
 
@@ -72,26 +62,13 @@ public class RuntimeGroovyVersionTest {
   }
 
   @Test
-  public void testGroovierJunit5BuildGradle() throws Exception {
-    File buildGradle = new File("/Users/pernyf/project/groovier-junit5/build.gradle");
-    if (!buildGradle.exists()) {
-      System.out.println("Skipping test - build.gradle not found");
-      return;
-    }
+  public void testGradleProjectBuildGradleHasGroovy() throws Exception {
+    File projectDir = FileUtils.getResource("utils/gradle/package");
+    File buildGradle = new File(projectDir, "lib/build.gradle");
 
     String content = java.nio.file.Files.readString(buildGradle.toPath());
 
-    // Verify the project specifies Groovy version
-    assertTrue(content.contains("groovyVersion"), "build.gradle should define groovyVersion");
-
-    // Extract the version
-    String[] lines = content.split("\n");
-    for (String line : lines) {
-      if (line.trim().startsWith("def groovyVersion")) {
-        System.out.println("Found in build.gradle: " + line.trim());
-        assertTrue(line.contains("5.0."), "Should specify Groovy 5.0.x");
-        break;
-      }
-    }
+    // Verify the project specifies Groovy as a dependency
+    assertTrue(content.contains("groovy"), "build.gradle should include a Groovy dependency");
   }
 }

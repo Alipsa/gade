@@ -24,8 +24,8 @@ import java.util.Map;
  *   <li>Redirects {@code System.out}/{@code System.err} to {@link EventOutputStream}</li>
  *   <li>Sends a {@code hello} handshake</li>
  *   <li>Waits for an {@code addClasspath} command with Groovy and project dependency entries</li>
- *   <li>Adds Groovy bootstrap jars to {@link ProcessRootLoader} (installed as system classloader)</li>
- *   <li>For Custom: Groovy is already on the system classpath, so the engine is loaded
+ *   <li>Adds Groovy bootstrap jars to {@link ProcessRootLoader} (Gradle/Maven runtimes)</li>
+ *   <li>For GADE/Custom: Groovy is already on the system classpath, so the engine is loaded
  *       directly from the system classloader</li>
  *   <li>Loads {@link GadeRunnerEngine} and invokes its
  *       {@code run(BufferedReader, BufferedWriter, String, String[], String[])} method</li>
@@ -100,7 +100,7 @@ public class GadeRunnerMain {
                   ClassLoader.getPlatformClassLoader());
             }
           } else {
-            // Custom mode: Groovy is already on the system classpath
+            // GADE/Custom mode: Groovy is already on the system classpath
             engineCL = ClassLoader.getSystemClassLoader();
           }
 

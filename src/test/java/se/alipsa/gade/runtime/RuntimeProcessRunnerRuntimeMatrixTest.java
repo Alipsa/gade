@@ -111,16 +111,15 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
 
     LinkedHashSet<String> classPathEntries = new LinkedHashSet<>();
     classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-
-    LinkedHashSet<String> groovyEntries = new LinkedHashSet<>(groovyAndSupportEntries);
-    groovyEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.addAll(groovyAndSupportEntries);
 
     RuntimeConfig runtime = new RuntimeConfig("GradleRuntime", RuntimeType.GRADLE);
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
         runtime,
         new ArrayList<>(classPathEntries),
-        new ArrayList<>(groovyEntries),
+        List.of(),
         loggingEntries,
         List.of(),
         console,
@@ -155,15 +154,15 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
 
     LinkedHashSet<String> classPathEntries = new LinkedHashSet<>();
     classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-    LinkedHashSet<String> groovyEntries = new LinkedHashSet<>(groovyAndSupportEntries);
-    groovyEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.addAll(groovyAndSupportEntries);
 
     RuntimeConfig runtime = new RuntimeConfig("GradleRuntime", RuntimeType.GRADLE);
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
         runtime,
         new ArrayList<>(classPathEntries),
-        new ArrayList<>(groovyEntries),
+        List.of(),
         List.of(artifact.jarPath()),
         List.of(),
         console,
@@ -186,11 +185,11 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     List<String> groovyAndSupportEntries = collectGroovyAndSupportEntries();
     assertFalse(groovyAndSupportEntries.isEmpty(), "No Groovy/Ivy/support jars available for runtime bootstrap");
 
+    // GADE: everything on -cp (GroovyProcessRootLoader as system classloader)
     LinkedHashSet<String> classPathEntries = new LinkedHashSet<>();
     classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-
-    LinkedHashSet<String> groovyEntries = new LinkedHashSet<>(groovyAndSupportEntries);
-    groovyEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.addAll(groovyAndSupportEntries);
 
     RuntimeConfig runtime = new RuntimeConfig("GADERuntime", RuntimeType.GADE);
     ConsoleTextArea console = mock(ConsoleTextArea.class);
@@ -202,7 +201,7 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
         runtime,
         new ArrayList<>(classPathEntries),
-        new ArrayList<>(groovyEntries),
+        List.of(),
         List.of(),
         List.of(),
         console,
@@ -236,11 +235,11 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     List<String> groovyAndSupportEntries = collectGroovyAndSupportEntries();
     assertFalse(groovyAndSupportEntries.isEmpty(), "No Groovy/Ivy/support jars available for runtime bootstrap");
 
+    // GADE: everything on -cp (GroovyProcessRootLoader as system classloader)
     LinkedHashSet<String> classPathEntries = new LinkedHashSet<>();
     classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-
-    LinkedHashSet<String> groovyEntries = new LinkedHashSet<>(groovyAndSupportEntries);
-    groovyEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.addAll(groovyAndSupportEntries);
 
     RuntimeConfig runtime = new RuntimeConfig("GADERuntime", RuntimeType.GADE);
     ConsoleTextArea console = mock(ConsoleTextArea.class);
@@ -250,7 +249,7 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
         runtime,
         new ArrayList<>(classPathEntries),
-        new ArrayList<>(groovyEntries),
+        List.of(),
         List.of(),
         List.of(),
         console,
@@ -275,11 +274,11 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     List<String> groovyAndSupportEntries = collectGroovyAndSupportEntries();
     assertFalse(groovyAndSupportEntries.isEmpty(), "No Groovy/Ivy/support jars available for runtime bootstrap");
 
+    // GADE: everything on -cp (GroovyProcessRootLoader as system classloader)
     LinkedHashSet<String> classPathEntries = new LinkedHashSet<>();
     classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-
-    LinkedHashSet<String> groovyEntries = new LinkedHashSet<>(groovyAndSupportEntries);
-    groovyEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.addAll(groovyAndSupportEntries);
 
     RuntimeConfig runtime = new RuntimeConfig("GADERuntime", RuntimeType.GADE);
     ConsoleTextArea console = mock(ConsoleTextArea.class);
@@ -295,7 +294,7 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
       try (RuntimeProcessRunner runner = new RuntimeProcessRunner(
           runtime,
           new ArrayList<>(classPathEntries),
-          new ArrayList<>(groovyEntries),
+          List.of(),
           List.of(),
           List.of(),
           console,
@@ -333,18 +332,12 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
 
     GrabArtifact grabArtifact = createLocalGrabArtifact(tempDir.resolve("grab-repo-" + runtimeType.name().toLowerCase(Locale.ROOT)), runtimeType);
 
+    // All runtimes: boot JAR + engine JAR + Groovy/Ivy on -cp so
+    // GroovyProcessRootLoader can serve as system classloader
     LinkedHashSet<String> classPathEntries = new LinkedHashSet<>();
-    LinkedHashSet<String> groovyEntries = new LinkedHashSet<>();
-
-    if (RuntimeType.CUSTOM.equals(runtimeType)) {
-      classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-      classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
-      classPathEntries.addAll(groovyAndSupportEntries);
-    } else {
-      classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
-      groovyEntries.addAll(groovyAndSupportEntries);
-      groovyEntries.add(engineJar.toAbsolutePath().normalize().toString());
-    }
+    classPathEntries.add(bootJar.toAbsolutePath().normalize().toString());
+    classPathEntries.add(engineJar.toAbsolutePath().normalize().toString());
+    classPathEntries.addAll(groovyAndSupportEntries);
 
     RuntimeConfig runtime = RuntimeType.CUSTOM.equals(runtimeType)
         ? new RuntimeConfig("CustomRuntime", runtimeType, System.getProperty("java.home"), null, List.of(), List.of())
@@ -358,7 +351,7 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     RuntimeProcessRunner runner = new RuntimeProcessRunner(
         runtime,
         new ArrayList<>(classPathEntries),
-        new ArrayList<>(groovyEntries),
+        List.of(),
         List.of(),
         List.of(),
         console,
