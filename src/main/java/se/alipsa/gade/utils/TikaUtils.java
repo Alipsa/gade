@@ -9,6 +9,8 @@ import org.apache.tika.parser.txt.CharsetMatch;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * We need to initialize config when using Tika otherwise we get warnings about optional dependencies not being available, e.g:
@@ -39,7 +41,12 @@ public class TikaUtils {
   public Charset detectCharset(byte[] content, String context) {
     CharsetMatch match = new CharsetDetector().setText(content).detect();
     log.debug("Charset for {} detected as {} with {}% confidence", context, match.getName(), match.getConfidence());
-    return Charset.forName(match.getName());
+    try {
+      return Charset.forName(match.getName());
+    } catch (UnsupportedCharsetException e) {
+      log.warn("Detected charset '{}' for {} is not supported by the JVM, falling back to UTF-8", match.getName(), context);
+      return StandardCharsets.UTF_8;
+    }
   }
 
   public Charset detectCharset(File file) throws IOException {

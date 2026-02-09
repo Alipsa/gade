@@ -280,6 +280,10 @@ public class FileTree extends TreeView<FileItem> {
     return fileOpener.openFile(file);
   }
 
+  public TextAreaTab editFileTab(File file) {
+    return fileOpener.editFile(file);
+  }
+
   public void expandAllChildren(TreeItem<?> item){
     if(item != null && !item.isLeaf()){
       item.setExpanded(true);

@@ -16,15 +16,17 @@
  * Original code is here: https://github.com/paulk-asert/groovy-data-science/blob/master/subprojects/Candles/src/main/groovy/CandleRatings.groovy
  * Slightly modified to behave nicely in Gade
  */
-/*
+
+
+import groovy.grape.Grape
 @Grab("tech.tablesaw:tablesaw-core:0.44.1")
 @Grab("tech.tablesaw:tablesaw-excel:0.44.1")
 @Grab("tech.tablesaw:tablesaw-html:0.44.1")
 @Grab("tech.tablesaw:tablesaw-aggregate:0.44.1")
-@GrabConfig(systemClassLoader=true)
-@Grab(group='org.apache.logging.log4j', module='log4j-slf4j2-impl', version='2.25.3')
-@Grab(group='org.apache.logging.log4j', module='log4j-core', version='2.25.3')
-*/
+@GrabConfig(systemClassLoader = true)
+@Grab(group = 'org.apache.logging.log4j', module = 'log4j-slf4j2-impl', version = '2.25.3')
+@Grab(group = 'org.apache.logging.log4j', module = 'log4j-core', version = '2.25.3')
+
 import tech.tablesaw.api.*
 import tech.tablesaw.io.xlsx.XlsxReader
 import tech.tablesaw.plotly.components.*
@@ -49,27 +51,29 @@ def log = LoggerFactory.getLogger('CandleRatings')
 
 log.info("hello")
 
-javaFXPlatform = {
-  def os = System.getProperty('os.name').toLowerCase()
-  if (os.contains('mac')) {
-    def arch = System.getProperty('os.arch').toLowerCase()
-    return arch.contains('aarch64') || arch.contains('arm') ? 'mac-aarch64' : 'mac'
-  } else if (os.contains('linux')) {
-    return 'linux'
-  } else if (os.contains('win')) {
-    return 'win'
-  }
-  throw new Exception("Unsupported OS: ${os}")
-}.call()
-
 if (! binding.hasVariable('io')) {
-  groovy.grape.Grape.grab(group:"se.alipsa.gi", module: "gi-fx", version:"0.3.0")
-  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-web", version:"23.0.2", classifier: javaFXPlatform)
-  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-base", version:"23.0.2", classifier: javaFXPlatform)
-  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-controls", version:"23.0.2", classifier: javaFXPlatform)
-  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-graphics", version:"23.0.2", classifier: javaFXPlatform)
-  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-media", version:"23.0.2", classifier: javaFXPlatform)
-  groovy.grape.Grape.grab(group:"org.openjfx", module: "javafx-swing", version:"23.0.2", classifier: javaFXPlatform)
+  javaFXPlatform = {
+    def os = System.getProperty('os.name').toLowerCase()
+    def arch = System.getProperty('os.arch').toLowerCase()
+
+    switch (os) {
+      case { it.contains('mac') }:
+        return (arch =~ /aarch64|arm/) ? 'mac-aarch64' : 'mac'
+      case { it.contains('linux') }:
+        return 'linux'
+      case { it.contains('win') }:
+        return 'win'
+      default:
+        throw new Exception("Unsupported OS: ${os}")
+    }
+  }.call()
+  Grape.grab(group:"se.alipsa.gi", module: "gi-fx", version:"0.3.0")
+  Grape.grab(group:"org.openjfx", module: "javafx-web", version:"23.0.2", classifier: javaFXPlatform)
+  Grape.grab(group:"org.openjfx", module: "javafx-base", version:"23.0.2", classifier: javaFXPlatform)
+  Grape.grab(group:"org.openjfx", module: "javafx-controls", version:"23.0.2", classifier: javaFXPlatform)
+  Grape.grab(group:"org.openjfx", module: "javafx-graphics", version:"23.0.2", classifier: javaFXPlatform)
+  Grape.grab(group:"org.openjfx", module: "javafx-media", version:"23.0.2", classifier: javaFXPlatform)
+  Grape.grab(group:"org.openjfx", module: "javafx-swing", version:"23.0.2", classifier: javaFXPlatform)
   binding.setVariable('io', this.class.classLoader.loadClass("se.alipsa.gi.fx.InOut").getDeclaredConstructor().newInstance())
 }
 // helper function

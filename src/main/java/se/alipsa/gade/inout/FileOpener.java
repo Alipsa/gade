@@ -1,8 +1,13 @@
 package se.alipsa.gade.inout;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.scene.control.SingleSelectionModel;
+import javafx.scene.control.Tab;
+import javafx.scene.web.WebView;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.code.CodeType;
 import se.alipsa.gade.code.TextAreaTab;
@@ -15,6 +20,7 @@ import se.alipsa.gade.utils.TikaUtils;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 public class FileOpener {
 
@@ -72,6 +78,10 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".r", ".s") || strEquals(type, "text/x-rsrc")) {
         return codeComponent.addTab(file, CodeType.R);
       }
+      if (strEndsWith(fileNameLower, ".svg") || strEquals(type, "image/svg+xml")) {
+        displaySvgInPlots(file);
+        return null;
+      }
       if ( strEquals(type, "application/xml", "text/xml", "text/html")
           || strEndsWith(type, "+xml")
           // in case an xml declaration was omitted or empty file:
@@ -96,6 +106,22 @@ public class FileOpener {
       }
     }
     return null;
+  }
+
+  private void displaySvgInPlots(File file) {
+    Platform.runLater(() -> {
+      try {
+        WebView browser = new WebView();
+        browser.getEngine().load(file.toURI().toURL().toExternalForm());
+        var gui = Gade.instance();
+        var plotsTab = gui.getInoutComponent().getPlotsTab();
+        plotsTab.showPlot(browser, new String[]{file.getName()});
+        SingleSelectionModel<Tab> selectionModel = gui.getInoutComponent().getSelectionModel();
+        selectionModel.select(plotsTab);
+      } catch (MalformedURLException e) {
+        ExceptionAlert.showAlert("Failed to load SVG file", e);
+      }
+    });
   }
 
   private boolean isDesktopSupported() {
@@ -138,6 +164,29 @@ public class FileOpener {
     task.setOnFailed(e -> ExceptionAlert.showAlert("Failed to open " + file, task.getException()));
     Thread appthread = new Thread(task);
     appthread.start();
+  }
+
+  public TextAreaTab editFile(File file) {
+    CodeType codeType = guessCodeTypeByExtension(file);
+    return codeComponent.addTab(file, codeType);
+  }
+
+  private CodeType guessCodeTypeByExtension(File file) {
+    String name = file.getName().toLowerCase();
+    if ("pom.xml".equals(name)) return CodeType.MAVEN;
+    if (name.endsWith(".java")) return CodeType.JAVA;
+    if (name.endsWith(".groovy") || name.endsWith(".gvy") || name.endsWith(".gy") || name.endsWith(".gsh")) return CodeType.GROOVY;
+    if (name.endsWith(".gradle")) return CodeType.GRADLE;
+    if (name.endsWith(".sql")) return CodeType.SQL;
+    if (name.endsWith(".js") || name.endsWith(".json")) return CodeType.JAVA_SCRIPT;
+    if (name.endsWith(".gmd")) return CodeType.GMD;
+    if (name.endsWith(".md") || name.endsWith(".rmd")) return CodeType.MD;
+    if (name.endsWith(".sas")) return CodeType.SAS;
+    if (name.endsWith(".r") || name.endsWith(".s")) return CodeType.R;
+    if (name.endsWith(".svg") || name.endsWith(".xml") || name.endsWith(".xsl") || name.endsWith(".xslt")
+        || name.endsWith(".xsd") || name.endsWith(".fxml") || name.endsWith(".html") || name.endsWith(".htm")
+        || name.endsWith(".xhtml")) return CodeType.XML;
+    return CodeType.TXT;
   }
 
   private boolean strStartsWith(String fileNameLower, String... strOpt) {

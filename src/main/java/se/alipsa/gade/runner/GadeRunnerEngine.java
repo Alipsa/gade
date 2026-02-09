@@ -80,6 +80,7 @@ public class GadeRunnerEngine {
         addDependencyPaths(testLoader, testDepPaths);
       }
       binding = new Binding();
+      binding.setVariable("gadeRuntime", runtimeType);
       mainShell = new GroovyShell(mainLoader, binding);
       testShell = testLoader == null ? mainShell : new GroovyShell(testLoader, binding);
       if (DIAGNOSTICS) {

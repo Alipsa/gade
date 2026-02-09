@@ -42,6 +42,7 @@ import se.alipsa.gade.inout.git.ConfigResult;
 import se.alipsa.gade.inout.git.CredentialsDialog;
 import se.alipsa.gade.inout.git.GitConfigureDialog;
 import se.alipsa.gade.inout.git.GitStatusDialog;
+import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.utils.*;
 import se.alipsa.gade.utils.git.GitUtils;
 
@@ -73,6 +74,8 @@ public class DynamicContextMenu extends ContextMenu {
    private File currentFile;
    private final Map<String, CredentialsProvider> credentialsProviders;
 
+   private final MenuItem openMI;
+   private final MenuItem editMI;
    private final MenuItem createDirMI;
    private final MenuItem createFileMI;
    private final MenuItem expandAllMI;
@@ -92,6 +95,32 @@ public class DynamicContextMenu extends ContextMenu {
       MenuItem copyMI = new MenuItem("copy name");
       copyMI.setOnAction(e -> fileTree.copySelectionToClipboard());
       getItems().add(copyMI);
+
+      openMI = new MenuItem("open");
+      openMI.setOnAction(e -> {
+         TextAreaTab tab = gui.getCodeComponent().getTab(currentFile);
+         if (tab == null) {
+            tab = fileTree.openFileTab(currentFile);
+            if (tab != null) {
+               tab.setTreeItem(currentNode);
+            }
+         }
+         gui.getCodeComponent().activateTab(tab);
+      });
+      getItems().add(openMI);
+
+      editMI = new MenuItem("edit");
+      editMI.setOnAction(e -> {
+         TextAreaTab tab = gui.getCodeComponent().getTab(currentFile);
+         if (tab == null) {
+            tab = fileTree.editFileTab(currentFile);
+            if (tab != null) {
+               tab.setTreeItem(currentNode);
+            }
+         }
+         gui.getCodeComponent().activateTab(tab);
+      });
+      getItems().add(editMI);
 
       createDirMI = new MenuItem("create dir");
       createDirMI.setOnAction(e -> {
@@ -1019,10 +1048,14 @@ public class DynamicContextMenu extends ContextMenu {
          createDirMI.setDisable(true);
          createFileMI.setDisable(true);
          expandAllMI.setDisable(true);
+         openMI.setDisable(false);
+         editMI.setDisable(false);
       } else {
          createDirMI.setDisable(false);
          createFileMI.setDisable(false);
          expandAllMI.setDisable(false);
+         openMI.setDisable(true);
+         editMI.setDisable(true);
       }
    }
 
@@ -1031,6 +1064,8 @@ public class DynamicContextMenu extends ContextMenu {
       createFileMI.setVisible(true);
       expandAllMI.setVisible(true);
       gitInitMI.setVisible(true);
+      openMI.setVisible(false);
+      editMI.setVisible(false);
    }
 
    public void hideDirItems() {
@@ -1038,5 +1073,7 @@ public class DynamicContextMenu extends ContextMenu {
       createFileMI.setVisible(false);
       expandAllMI.setVisible(false);
       gitInitMI.setVisible(false);
+      openMI.setVisible(true);
+      editMI.setVisible(true);
    }
 }
