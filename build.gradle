@@ -264,6 +264,18 @@ clean {
   deleteIfDiff(jdkVersion, "$projectDir/platform/linux")
   deleteIfDiff(jdkVersion, "$projectDir/platform/win")
   deleteIfDiff(jdkVersion, "$projectDir/platform/mac")
+
+  // invalidate cached embedded tools if version changed
+  def gradleToolDir = file("$projectDir/platform/embedded-tools/gradle")
+  if (gradleToolDir.exists() && !new File(gradleToolDir, "gradle-${embeddedGradleVersion}").exists()) {
+    logger.info("Cached Gradle version does not match ${embeddedGradleVersion}, deleting ${gradleToolDir}")
+    delete gradleToolDir
+  }
+  def mavenToolDir = file("$projectDir/platform/embedded-tools/maven")
+  if (mavenToolDir.exists() && !new File(mavenToolDir, "apache-maven-${embeddedMavenVersion}").exists()) {
+    logger.info("Cached Maven version does not match ${embeddedMavenVersion}, deleting ${mavenToolDir}")
+    delete mavenToolDir
+  }
 }
 
 def runtimeClasspathFileNames = configurations.runtimeClasspath.elements.map { elements ->
@@ -480,7 +492,7 @@ runtime {
 }
 
 tasks.runtime.doLast {
-  def embeddedToolsDir = project.layout.buildDirectory.dir("embedded-tools").get().asFile
+  def embeddedToolsDir = new File(projectDir, "platform/embedded-tools")
   embeddedToolsDir.mkdirs()
 
   def prepareBundledDistribution = { String toolName, String version, String downloadUrl, String extractedDirName ->

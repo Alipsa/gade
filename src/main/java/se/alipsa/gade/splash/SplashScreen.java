@@ -1,67 +1,93 @@
 package se.alipsa.gade.splash;
 
-import java.util.List;
-import javafx.animation.PauseTransition;
-import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.stage.Stage;
-import javafx.util.Duration;
-import se.alipsa.gade.utils.FileUtils;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import javax.imageio.ImageIO;
 
 /**
- * Shows a "splash" screen while the main Application is starting up.
- * The duration of the display time can be modified by passing the number of seconds as an argument
- * to the main method
+ * AWT-based splash screen that can be shown before JavaFX initializes.
+ * Create an instance in {@code main()} to show the splash immediately,
+ * then call {@link #close(Runnable)} from any thread once the main stage
+ * is ready. The splash will remain visible for at least
+ * {@code minDisplaySeconds} before closing. The {@code onClosed} callback
+ * is always invoked on the JavaFX Application Thread.
  */
-public class SplashScreen extends Application {
+public class SplashScreen {
 
-  public static void main(String[] args) {
-    launch(args);
+  private final JWindow window;
+  private final long shownAtMillis;
+  private final double minDisplaySeconds;
+
+  public SplashScreen(double minDisplaySeconds) {
+    this.minDisplaySeconds = minDisplaySeconds;
+
+    // Build and show the window entirely on the EDT
+    JWindow[] holder = new JWindow[1];
+    try {
+      SwingUtilities.invokeAndWait(() -> {
+        JWindow w = new JWindow();
+
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+
+        JLabel label = new JLabel(" Loading Gade, please wait...");
+        label.setFont(label.getFont().deriveFont(Font.PLAIN, 14f));
+        content.add(label, BorderLayout.NORTH);
+
+        try (InputStream is = Objects.requireNonNull(
+            SplashScreen.class.getResourceAsStream("/image/logo.png"))) {
+          BufferedImage logo = ImageIO.read(is);
+          JLabel imageLabel = new JLabel(new ImageIcon(logo));
+          content.add(imageLabel, BorderLayout.CENTER);
+        } catch (IOException e) {
+          // If the image can't be loaded, just show the text
+        }
+
+        w.setContentPane(content);
+        w.pack();
+        w.setLocationRelativeTo(null);
+        w.setAlwaysOnTop(true);
+        w.setVisible(true);
+        holder[0] = w;
+      });
+    } catch (InterruptedException | InvocationTargetException e) {
+      // If EDT setup fails, leave window null — close() will just run the callback
+    }
+    this.window = holder[0];
+    this.shownAtMillis = System.currentTimeMillis();
   }
 
-  @Override
-  public void start(Stage primaryStage) {
-    List<String> args = getParameters().getRaw();
-    double timeout = 4;
-    if (!args.isEmpty()) {
-      timeout = Double.parseDouble(args.getFirst());
+  public void close(Runnable onClosed) {
+    long elapsed = System.currentTimeMillis() - shownAtMillis;
+    long minMillis = (long) (minDisplaySeconds * 1000);
+    long remaining = minMillis - elapsed;
+
+    Runnable dispose = () -> {
+      if (window != null) {
+        SwingUtilities.invokeLater(() -> {
+          window.setVisible(false);
+          window.dispose();
+        });
+      }
+      // Always run the callback on the JavaFX Application Thread
+      Platform.runLater(onClosed);
+    };
+
+    if (remaining <= 0) {
+      dispose.run();
+    } else {
+      // Swing Timer fires on the EDT; dispose handles thread-safety for both toolkits
+      Timer timer = new Timer((int) remaining, e -> dispose.run());
+      timer.setRepeats(false);
+      timer.start();
     }
-    BorderPane root = new BorderPane();
-    Label altToImage = new Label(" Loading Gade, please wait...");
-    root.setTop(altToImage);
-
-    Image logo = new Image(Objects.requireNonNull(FileUtils.getResourceUrl("image/logo.png")).toExternalForm());
-    ImageView imageView = new ImageView(logo);
-    root.setCenter(imageView);
-
-    primaryStage.setTitle("Gade, a Groovy analytics IDE");
-    primaryStage.getIcons().add(new Image(Objects.requireNonNull(FileUtils.getResourceUrl("image/logo.png")).toExternalForm()));
-    Scene scene = new Scene(root);
-    primaryStage.setScene(scene);
-    primaryStage.show();
-
-    PauseTransition delay = new PauseTransition(Duration.seconds(timeout));
-    delay.setOnFinished( event -> {
-      primaryStage.close();
-      Platform.exit();
-      // Allow some time before calling system exist so stop() can be used to do stuff if neeed
-      Timer timer = new Timer();
-      TimerTask task = new TimerTask() {
-        public void run() {
-          System.exit(0);
-        }
-      };
-      timer.schedule(task, 250);
-    } );
-    delay.play();
   }
 }

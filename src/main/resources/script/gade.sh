@@ -73,39 +73,30 @@ if [[ "${OS}" == "mac" ]]; then
 fi
 echo "JAVA_OPTS=$JAVA_OPTS" >> "$LOG"
 
-SPLASHTIME="${SPLASH_TIME:-5}"
+SPLASHTIME="${SPLASH_TIME:-2}"
 if [[ "${OS}" == "win" ]]; then
 	CLASSPATH="${JAR_NAME};$(winpath "${LIB_DIR}")/*"
 	LD_PATH=$(winpath "${LIB_DIR}")
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
-	if [[ SPLASHTIME -gt 0 ]]; then
-    start "${JAVA_CMD}" --enable-native-access=javafx.graphics,javafx.media,javafx.web \
-    --module-path ${LIB_DIR}/jfx --add-modules ${MODULES} \
-    -cp "${LIB_DIR}/${JAR_NAME}" se.alipsa.gade.splash.SplashScreen "$SPLASHTIME"
-	fi
 	# shellcheck disable=SC2068
 	start "${JAVA_CMD}" --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	-Dsplash.minSeconds=$SPLASHTIME \
 	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  -Djava.library.path="${LD_PATH}" \
 	-cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade
 else
 	CLASSPATH="${LIB_DIR}/*"
 	LD_PATH="${LIB_DIR}"
 	echo "JAVA_CMD in env.sh is ${JAVA_CMD}" >> "$LOG"
-	# shellcheck disable=SC2154
-	if [[ SPLASHTIME -gt 0 ]]; then
-    echo "Display splash" >> "$LOG"
-    ${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
-    --module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  \
-    -cp "${LIB_DIR}/${JAR_NAME}" $JAVA_OPTS se.alipsa.gade.splash.SplashScreen "$SPLASHTIME" &
-  fi
 	echo 'Start Gade' >> "$LOG"
 	echo "${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+  -Dsplash.minSeconds=$SPLASHTIME \
   --module-path ${LIB_DIR}/jfx --add-modules ${MODULES} \
   -Djava.library.path=\"${LD_PATH}\" -cp \"${CLASSPATH}\" $JAVA_OPTS se.alipsa.gade.Gade" >> "$LOG"
 	# shellcheck disable=SC2068
 	${JAVA_CMD} --enable-native-access=javafx.graphics,javafx.media,javafx.web \
+	-Dsplash.minSeconds=$SPLASHTIME \
 	--module-path ${LIB_DIR}/jfx --add-modules ${MODULES}  \
 	-Djava.library.path="${LD_PATH}" -cp "${CLASSPATH}" $JAVA_OPTS se.alipsa.gade.Gade >> "$LOG" 2>&1 &
 fi

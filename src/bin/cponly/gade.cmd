@@ -26,17 +26,16 @@ if not defined JAVA_CMD (
 	set JAVA_CMD=javaw
 )
 
+if not defined SPLASHTIME (
+	set SPLASHTIME=2
+)
+
 set MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 set JAVA_OPTS="%JAVA_OPTS% -Djava.security.auth.login.config=$DIR\conf\jaas.conf"
 
 start %BIN_DIR%\%JAVA_CMD% ^
 %JAVA_OPTS% ^
---enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
---module-path %LIB_DIR%/win --add-modules %MODULES% ^
--cp %LIB_DIR%\app\*;%LIB_DIR%\groovy\* se.alipsa.gade.splash.SplashScreen
-
-start %BIN_DIR%\%JAVA_CMD% ^
-%JAVA_OPTS% ^
+-Dsplash.minSeconds=%SPLASHTIME% ^
 --enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED ^
 --add-opens=java.base/java.lang=ALL-UNNAMED ^
 --add-opens=java.base/java.util=ALL-UNNAMED ^

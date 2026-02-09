@@ -77,6 +77,8 @@ fi
 
 MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 
+SPLASHTIME="${SPLASH_TIME:-2}"
+
 if [[ "${OS}" == "win" ]]; then
   if [[ -z "$JAVA_CMD" ]]; then
 	  JAVA_CMD="javaw"
@@ -86,15 +88,10 @@ if [[ "${OS}" == "win" ]]; then
 
 	# Fixes bug  Unable to get Charset 'cp65001' for property 'sun.stdout.encoding'
 	JAVA_OPTS="${JAVA_OPTS} -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8"
-	start "${BIN_DIR}\${JAVA_CMD}" \
-		$JAVA_OPTS \
-		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
-		-Djava.library.path="${LD_PATH}" \
-		--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
-		-cp "${LIB_DIR}/app/*;${LIB_DIR}/groovy/*" se.alipsa.gade.splash.SplashScreen
 	# shellcheck disable=SC2068
 	start "${BIN_DIR}\${JAVA_CMD}" \
 		$JAVA_OPTS \
+		-Dsplash.minSeconds=$SPLASHTIME \
 		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
 		--add-opens=java.base/java.lang=ALL-UNNAMED \
 		--add-opens=java.base/java.util=ALL-UNNAMED \
@@ -107,16 +104,10 @@ if [[ "${OS}" == "win" ]]; then
 else
 	JAVA_CMD="java"
 	LD_PATH="${LIB_DIR}"
-	"${BIN_DIR}/${JAVA_CMD}" \
-	$JAVA_OPTS \
-	--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
-	-Djava.library.path="${LD_PATH}" \
-	--module-path ${LIB_DIR}/$OS --add-modules ${MODULES} \
-	-cp "${LIB_DIR}/app/*:${LIB_DIR}/groovy/*" \
-	se.alipsa.gade.splash.SplashScreen &
 	# shellcheck disable=SC2068
 	"${BIN_DIR}/${JAVA_CMD}" \
 		$JAVA_OPTS \
+		-Dsplash.minSeconds=$SPLASHTIME \
 		--enable-native-access=javafx.graphics,javafx.media,javafx.web,ALL-UNNAMED \
 		--add-opens=java.base/java.lang=ALL-UNNAMED \
 		--add-opens=java.base/java.util=ALL-UNNAMED \

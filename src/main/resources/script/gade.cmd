@@ -29,15 +29,16 @@ if not defined JAVA_CMD (
 	)
 )
 
-set MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
+if not defined SPLASHTIME (
+	set SPLASHTIME=2
+)
 
-start %JAVA_CMD% --enable-native-access=javafx.graphics,javafx.media,javafx.web ^
---module-path %LIB_DIR%\jfx --add-modules %MODULES% -cp %LIB_DIR%\%JAR_NAME% %JAVA_OPTS% ^
-se.alipsa.gade.splash.SplashScreen %SPLASHTIME%
+set MODULES=javafx.controls,javafx.media,javafx.web,javafx.swing
 
 :: if you dont want the console to remain, do start javaw instead of java
 
 start %JAVA_CMD% --enable-native-access=javafx.graphics,javafx.media,javafx.web ^
+-Dsplash.minSeconds=%SPLASHTIME% ^
 --module-path %LIB_DIR%\jfx --add-modules %MODULES% ^
 -Djava.library.path="%LIB_DIR%" -cp %LIB_DIR%\* %JAVA_OPTS% ^
 se.alipsa.gade.Gade

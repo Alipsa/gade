@@ -36,6 +36,7 @@ import se.alipsa.gade.environment.EnvironmentComponent;
 import se.alipsa.gade.inout.FileOpener;
 import se.alipsa.gade.inout.InoutComponent;
 import se.alipsa.gade.menu.MainMenu;
+import se.alipsa.gade.splash.SplashScreen;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.FileUtils;
 
@@ -67,7 +68,20 @@ public class Gade extends Application {
 
   public Map<String, GuiInteraction> guiInteractions;
 
+  private static SplashScreen splash;
+
   public static void main(String[] args) {
+    double splashMinSeconds = 2;
+    String splashProp = System.getProperty("splash.minSeconds");
+    if (splashProp != null) {
+      try {
+        splashMinSeconds = Double.parseDouble(splashProp);
+      } catch (NumberFormatException ignored) {
+      }
+    }
+    if (splashMinSeconds > 0) {
+      splash = new SplashScreen(splashMinSeconds);
+    }
     launch(args);
   }
 
@@ -82,6 +96,7 @@ public class Gade extends Application {
   @Override
   public void start(Stage primaryStage) {
     log.info("Starting Gade...");
+
     //System.setProperty("groovy.grape.report.downloads","true");
     //System.setProperty("ivy.message.logger.level","4");
     instance = this;
@@ -178,7 +193,11 @@ public class Gade extends Application {
     consoleComponent.initGroovy(getActiveRuntime());
     // Ensure the runtime menu reflects the actually loaded runtime on startup
     mainMenu.refreshRuntimesMenu();
-    primaryStage.show();
+    if (splash != null) {
+      splash.close(() -> primaryStage.show());
+    } else {
+      primaryStage.show();
+    }
   }
 
   /**
