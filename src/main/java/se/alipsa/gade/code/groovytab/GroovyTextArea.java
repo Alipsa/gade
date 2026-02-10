@@ -114,6 +114,10 @@ public class GroovyTextArea extends CodeTextArea {
           "(?s)\\$/[\\s\\S]*?/\\$";
   public static final String COMMENT_PATTERN = "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/";
 
+  private static final Pattern COMMENT_OR_STRING = Pattern.compile(
+      "(?<CMT>" + COMMENT_PATTERN + ")|(?<STR>" + STRING_PATTERN + ")"
+  );
+
   public static final Pattern PATTERN = Pattern.compile(
       "(?<COMMENT>" + COMMENT_PATTERN + ")"
           + "|(?<STRING>" + STRING_PATTERN + ")"
@@ -698,13 +702,14 @@ public class GroovyTextArea extends CodeTextArea {
 
   private static BitSet stringRanges(String code) {
     BitSet bs = new BitSet(code.length());
-    // Order matters a bit; triple before single to avoid early closing
-    List<Pattern> ps = List.of(TRIPLE_DQ, TRIPLE_SQ, DQ_STRING, SQ_STRING, DOLLAR_SLASHY, SLASHY);
-    for (Pattern p : ps) {
-      Matcher m = p.matcher(code);
-      while (m.find()) {
+    Matcher m = COMMENT_OR_STRING.matcher(code);
+    while (m.find()) {
+      if (m.group("STR") != null) {
         bs.set(m.start(), m.end());
       }
+      // Comments are matched but not added to stringRanges —
+      // this prevents string patterns from matching inside comments
+      // (e.g., SLASHY matching URLs in block comments).
     }
     return bs;
   }
