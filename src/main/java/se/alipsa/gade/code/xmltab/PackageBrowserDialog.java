@@ -136,7 +136,7 @@ public class PackageBrowserDialog extends Dialog<Void> {
 
          textArea.setText(sb);
 
-      } catch (IOException | ParserConfigurationException | SAXException e) {
+      } catch (RuntimeException e) {
          log.info("Failed to get metadata from {}, opening search browser", metaDataUrl(group, artifact, baseUrl));
          openMavenSearchBrowser();
       }
