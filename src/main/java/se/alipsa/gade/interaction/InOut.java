@@ -465,6 +465,41 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     });
   }
 
+  /**
+   * Reflective display for plotly Figure objects (e.g. from Tablesaw).
+   * Converts the figure to JavaScript via {@code Page.pageBuilder(figure, "target").build().asJavascript()}
+   * and renders it in a WebView. No compile-time dependency on Tablesaw is required.
+   *
+   * @param figure a Tablesaw {@code Figure} (or compatible) object
+   * @param titleOpt optional title for the plot tab
+   */
+  public void display(Object figure, String... titleOpt) {
+    if (figure == null) {
+      Alerts.warnFx("Cannot display figure", "Figure argument is null");
+      return;
+    }
+    String className = figure.getClass().getName();
+    if (!"tech.tablesaw.plotly.components.Figure".equals(className)) {
+      Alerts.warnFx("Cannot display object",
+          "display(Object) only supports tech.tablesaw.plotly.components.Figure, got: " + className);
+      return;
+    }
+    try {
+      ClassLoader cl = figure.getClass().getClassLoader();
+      Class<?> pageClass = cl.loadClass("tech.tablesaw.plotly.components.Page");
+      Method pageBuilder = pageClass.getMethod("pageBuilder", figure.getClass(), String.class);
+      Object builder = pageBuilder.invoke(null, figure, "target");
+      Method buildMethod = builder.getClass().getMethod("build");
+      Object page = buildMethod.invoke(builder);
+      Method asJavascript = page.getClass().getMethod("asJavascript");
+      String output = (String) asJavascript.invoke(page);
+      String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
+      viewHtml(output, title);
+    } catch (Exception e) {
+      ExceptionAlert.showAlert("Failed to display figure via reflection", e);
+    }
+  }
+
   public void view(Integer o, String... title) {
     view(Matrix.builder()
             .rows(List.of(List.of("Update count", o)))

@@ -1,5 +1,7 @@
 package se.alipsa.gade.code.completion;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine;
 
@@ -9,6 +11,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ImportCompletionTest {
+
+  private static final Logger log = LogManager.getLogger(ImportCompletionTest.class);
 
   @Test
   void testClasspathScannerFindsGroovyTransform() {
@@ -59,9 +63,9 @@ class ImportCompletionTest {
 
     List<CompletionItem> items = GroovyCompletionEngine.getInstance().complete(ctx);
 
-    System.out.println("Completions for 'import groovy.tr':");
+    log.info("Completions for 'import groovy.tr':");
     for (CompletionItem item : items) {
-      System.out.println("  completion='" + item.completion() + "' insertText='" + item.insertText() + "' (" + item.kind() + ")");
+      log.info("  completion='{}' insertText='{}' ({})", item.completion(), item.insertText(), item.kind());
     }
 
     assertFalse(items.isEmpty(), "Should have completion suggestions");
@@ -95,9 +99,9 @@ class ImportCompletionTest {
 
     List<CompletionItem> items = GroovyCompletionEngine.getInstance().complete(ctx);
 
-    System.out.println("Completions for 'import groovy.transform.Fi':");
+    log.info("Completions for 'import groovy.transform.Fi':");
     for (CompletionItem item : items) {
-      System.out.println("  completion='" + item.completion() + "' insertText='" + item.insertText() + "'");
+      log.info("  completion='{}' insertText='{}'", item.completion(), item.insertText());
     }
 
     // Should suggest Field class

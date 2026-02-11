@@ -10,6 +10,8 @@ import javafx.scene.control.TreeItem.TreeModificationEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -17,6 +19,8 @@ import java.util.List;
 
 /* works by itself but does not work with color themes*/
 public class StyleClassTree extends Application {
+
+   private static final Logger log = LogManager.getLogger(StyleClassTree.class);
 
    private TreeView<StyleClassFileItem> treeView;
    private final TreeItem<StyleClassFileItem> rootNode = new TreeItem<>(new StyleClassFileItem(new File(".")));
@@ -45,7 +49,7 @@ public class StyleClassTree extends Application {
             protected void updateItem(StyleClassFileItem item, boolean empty) {
                if (item != null && !empty) {
                   setText(item.getText());
-                  System.out.println("updateItem: Adding style class " + item.getStyleClass() + " to " + item.getText());
+                  log.info("updateItem: Adding style class {} to {}", item.getStyleClass(), item.getText());
                   getStyleClass().addAll(item.getStyleClass());
                }
                super.updateItem(item, empty);

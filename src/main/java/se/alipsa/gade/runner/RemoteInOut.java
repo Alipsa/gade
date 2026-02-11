@@ -54,6 +54,10 @@ public class RemoteInOut extends GroovyObjectSupport {
       return handleDbConnect(argsArray);
     }
 
+    if ("display".equals(name) && argsArray.length >= 1 && isFigure(argsArray[0])) {
+      return handleDisplayFigure(argsArray);
+    }
+
     // Send GUI request and wait for response
     return sendGuiRequest(name, argsArray);
   }
@@ -147,6 +151,54 @@ public class RemoteInOut extends GroovyObjectSupport {
     return (lc.contains("user") && lc.contains("pass"))
         || (lc.contains("@") && !url.contains("jdbc:oracle"))
         || lc.contains("integratedsecurity=true");
+  }
+
+  private static boolean isFigure(Object obj) {
+    return obj != null && "tech.tablesaw.plotly.components.Figure".equals(obj.getClass().getName());
+  }
+
+  /**
+   * Convert a Tablesaw Figure to JavaScript/HTML locally (where the Figure object is live)
+   * and forward as a viewHtml call to the main process.
+   */
+  private Object handleDisplayFigure(Object[] args) {
+    Object figure = args[0];
+    try {
+      ClassLoader cl = figure.getClass().getClassLoader();
+      Class<?> pageClass = cl.loadClass("tech.tablesaw.plotly.components.Page");
+      java.lang.reflect.Method pageBuilder = pageClass.getMethod("pageBuilder", figure.getClass(), String.class);
+      Object builder = pageBuilder.invoke(null, figure, "target");
+      java.lang.reflect.Method buildMethod = builder.getClass().getMethod("build");
+      Object page = buildMethod.invoke(builder);
+      java.lang.reflect.Method asJavascript = page.getClass().getMethod("asJavascript");
+      String output = (String) asJavascript.invoke(page);
+
+      // Extract optional title from remaining args
+      String[] titleArgs = extractTrailingStrings(args);
+      if (titleArgs.length > 0) {
+        return sendGuiRequest("viewHtml", output, titleArgs[0]);
+      }
+      return sendGuiRequest("viewHtml", output);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to convert Figure to HTML: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Extract trailing String/String[] arguments (the optional title parameter).
+   */
+  private static String[] extractTrailingStrings(Object[] args) {
+    if (args.length < 2) {
+      return new String[0];
+    }
+    Object tail = args[args.length - 1];
+    if (tail instanceof String[] sa) {
+      return sa;
+    }
+    if (tail instanceof String s) {
+      return new String[]{s};
+    }
+    return new String[0];
   }
 
   /**

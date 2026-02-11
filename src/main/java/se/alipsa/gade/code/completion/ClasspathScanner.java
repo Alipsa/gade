@@ -94,6 +94,24 @@ public final class ClasspathScanner {
     }
 
     Map<String, List<String>> index = doScan(classLoader, CORE_PACKAGES);
+
+    // Additionally scan classloader URLs without package filtering
+    // to include third-party dependency classes
+    Set<URL> urls = new LinkedHashSet<>();
+    collectUrls(classLoader, urls);
+    if (!urls.isEmpty()) {
+      List<File> jars = new ArrayList<>();
+      for (URL url : urls) {
+        try {
+          File f = new File(url.toURI());
+          if (f.exists()) jars.add(f);
+        } catch (Exception ignore) {}
+      }
+      if (!jars.isEmpty()) {
+        mergeJarScan(index, jars);
+      }
+    }
+
     cache.put(key, new CachedIndex(index, classLoader));
 
     return index;
@@ -122,13 +140,34 @@ public final class ClasspathScanner {
   public void addJars(ClassLoader classLoader, Collection<File> jars) {
     if (jars == null || jars.isEmpty()) return;
 
+    List<File> existing = new ArrayList<>();
+    for (File jar : jars) {
+      if (jar.exists()) existing.add(jar);
+    }
+    if (existing.isEmpty()) return;
+
+    int key = System.identityHashCode(classLoader);
+    CachedIndex cached = cache.get(key);
+    Map<String, List<String>> index = cached != null
+        ? new HashMap<>(cached.index)
+        : new HashMap<>();
+
+    mergeJarScan(index, existing);
+    cache.put(key, new CachedIndex(index, classLoader));
+  }
+
+  /**
+   * Scans jars without package filtering and merges the results into the given index.
+   */
+  private void mergeJarScan(Map<String, List<String>> index, List<File> jars) {
     List<String> paths = new ArrayList<>();
     for (File jar : jars) {
-      if (jar.exists() && jar.getName().endsWith(".jar")) {
+      if (jar.getName().endsWith(".jar")) {
+        paths.add(jar.getAbsolutePath());
+      } else if (jar.isDirectory()) {
         paths.add(jar.getAbsolutePath());
       }
     }
-
     if (paths.isEmpty()) return;
 
     try (ScanResult sr = new ClassGraph()
@@ -136,27 +175,19 @@ public final class ClasspathScanner {
         .enableClassInfo()
         .scan()) {
 
-      int key = System.identityHashCode(classLoader);
-      CachedIndex cached = cache.get(key);
-      Map<String, List<String>> index = cached != null
-          ? new HashMap<>(cached.index)
-          : new HashMap<>();
-
       for (ClassInfo ci : sr.getAllClasses()) {
         String simple = ci.getSimpleName();
         if (simple == null || simple.isEmpty()) continue;
+        if (ci.getName().contains("$")) continue;
         index.computeIfAbsent(simple, k -> new ArrayList<>()).add(ci.getName());
       }
 
-      // Re-sort all lists
       Comparator<String> byPriority = packagePriorityComparator();
       for (List<String> list : index.values()) {
         list.sort(byPriority);
       }
-
-      cache.put(key, new CachedIndex(index, classLoader));
     } catch (Exception e) {
-      LOG.warn("Failed to scan additional jars", e);
+      LOG.warn("Failed to scan dependency jars", e);
     }
   }
 

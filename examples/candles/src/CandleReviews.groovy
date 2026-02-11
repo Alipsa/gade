@@ -16,7 +16,15 @@
  * Original code here: https://github.com/paulk-asert/groovy-data-science/blob/master/subprojects/Candles/src/main/groovy/CandleReviews.groovy
  * Slightly modified to behave nicely in Gade
  */
-
+ /*
+@Grab("tech.tablesaw:tablesaw-core:0.44.1")
+@Grab("tech.tablesaw:tablesaw-excel:0.44.1")
+@Grab("tech.tablesaw:tablesaw-html:0.44.1")
+@Grab("tech.tablesaw:tablesaw-aggregate:0.44.1")
+@GrabConfig(systemClassLoader = true)
+@Grab(group = 'org.apache.logging.log4j', module = 'log4j-slf4j2-impl', version = '2.25.3')
+@Grab(group = 'org.apache.logging.log4j', module = 'log4j-core', version = '2.25.3')
+*/
 import tech.tablesaw.io.xlsx.XlsxReader
 import tech.tablesaw.plotly.components.Figure
 import tech.tablesaw.plotly.components.Layout
@@ -62,4 +70,5 @@ trace = BarTrace.builder(byMonth2020.categoricalColumn('Month'), byMonth2020.nCo
 errors = ScatterTrace.builder(byMonth2020.categoricalColumn('Month'), byMonth2020.nCol('barLower'),
         byMonth2020.nCol('barHigher'), byMonth2020.nCol('barLower'), byMonth2020.nCol('barHigher'))
         .type("candlestick").opacity(0.5).build()
+       
 io.display(new Figure(layout, trace, errors), 'ReviewBarchart')

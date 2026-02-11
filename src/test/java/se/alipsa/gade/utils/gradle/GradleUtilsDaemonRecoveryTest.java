@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class GradleUtilsDaemonRecoveryTest {
 
-  private static final Logger log = LogManager.getLogger(GradleUtilsDaemonRecoveryTest.class);
+  static Logger log = LogManager.getLogger(GradleUtilsDaemonRecoveryTest.class);
 
   @Test
   public void testFindGradleCommand() throws Exception {

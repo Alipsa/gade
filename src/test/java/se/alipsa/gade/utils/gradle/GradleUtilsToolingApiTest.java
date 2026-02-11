@@ -1,5 +1,7 @@
 package se.alipsa.gade.utils.gradle;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.model.idea.IdeaProject;
@@ -16,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test to reproduce the Gradle Tooling API issue with Gradle 9.0+
  */
 public class GradleUtilsToolingApiTest {
+
+  private static final Logger log = LogManager.getLogger(GradleUtilsToolingApiTest.class);
 
   @Test
   public void testToolingApiWithGradle900(@TempDir Path tempDir) throws Exception {
@@ -51,7 +55,7 @@ public class GradleUtilsToolingApiTest {
           .get();
 
       assertNotNull(project, "Should be able to fetch IdeaProject model");
-      System.out.println("Successfully fetched IdeaProject: " + project.getName());
+      log.info("Successfully fetched IdeaProject: {}", project.getName());
     }
   }
 
@@ -83,7 +87,7 @@ public class GradleUtilsToolingApiTest {
       IdeaProject project = connection.model(IdeaProject.class).get();
 
       assertNotNull(project, "Should be able to fetch IdeaProject model without java.home arg");
-      System.out.println("Successfully fetched IdeaProject: " + project.getName());
+      log.info("Successfully fetched IdeaProject: {}", project.getName());
     }
   }
 }

@@ -12,6 +12,8 @@ import javafx.scene.control.TreeItem.TreeModificationEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ import java.util.Map;
 
 /* works by itself but does not work with color themes*/
 public class PseudoClassTree extends Application {
+
+   private static final Logger log = LogManager.getLogger(PseudoClassTree.class);
 
    private TreeView<PseudoClassFileItem> treeView;
    private final TreeItem<PseudoClassFileItem> rootNode = new TreeItem<>(new PseudoClassFileItem(new File(".")));
@@ -49,26 +53,26 @@ public class PseudoClassTree extends Application {
             protected void updateItem(PseudoClassFileItem item, boolean empty) {
                if (item != null) {
                   setText(item.getText());
-                  System.out.println("updateItem: Updating pseudoclasses for " + item.getText() + " setting "
-                     + item.getActivePseudoClass() + " to active");
+                  log.info("updateItem: Updating pseudoclasses for {} setting {} to active",
+                     item.getText(), item.getActivePseudoClass());
                   item.getPseudoClasses().forEach(pc -> {
                      if (pc.equals(item.getActivePseudoClass())) {
-                        System.out.println("Activating " + pc);
+                        log.info("Activating {}", pc);
                         pseudoClassStateChanged(pc, true);
                      } else {
-                        System.out.println("Inactivating " + pc);
+                        log.info("Inactivating {}", pc);
                         pseudoClassStateChanged(pc, false);
                      }
                   });
-                  System.out.println("--- Pseudo classes for cell are ---");
-                  getPseudoClassStates().forEach(c -> System.out.println(c.toString()));
-                  System.out.println("-----------------------------------");
-                  System.out.println("--- style classes ---");
-                  getStyleClass().forEach(m -> System.out.println(m.toString()));
-                  System.out.println("---------------------");
-                  System.out.println("--- Css class metadata ---");
-                  getClassCssMetaData().forEach(m -> System.out.println(m.toString()));
-                  System.out.println("--------------------------");
+                  log.info("--- Pseudo classes for cell are ---");
+                  getPseudoClassStates().forEach(c -> log.info("{}", c));
+                  log.info("-----------------------------------");
+                  log.info("--- style classes ---");
+                  getStyleClass().forEach(m -> log.info("{}", m));
+                  log.info("---------------------");
+                  log.info("--- Css class metadata ---");
+                  getClassCssMetaData().forEach(m -> log.info("{}", m));
+                  log.info("--------------------------");
                }
                super.updateItem(item, empty);
             }
@@ -121,7 +125,7 @@ public class PseudoClassTree extends Application {
    private TreeItem<PseudoClassFileItem> createTreeItem(PseudoClassFileItem fileItem) {
       TreeItem<PseudoClassFileItem> treeItem = new TreeItem<>(fileItem);
       SetChangeListener<PseudoClass> fillListener = styleClass-> {
-         System.out.println("PseudoClass change detected");
+         log.info("PseudoClass change detected");
          TreeModificationEvent<PseudoClassFileItem> event = new TreeModificationEvent<>(TreeItem.valueChangedEvent(), treeItem);
          Event.fireEvent(treeItem, event);
       };

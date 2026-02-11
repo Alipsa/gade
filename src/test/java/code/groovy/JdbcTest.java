@@ -7,6 +7,8 @@ import groovy.lang.GroovyShell;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SuppressFBWarnings()
 public class JdbcTest {
+
+  private static final Logger log = LogManager.getLogger(JdbcTest.class);
 
   private static final String dbDriver = "org.h2.Driver";
   private static final String dbUrl = "jdbc:h2:file:"+ new File(".").getAbsolutePath() + "/build/testdb";
@@ -51,20 +55,20 @@ public class JdbcTest {
 
   @Test
   public void testSqlManual() throws IOException, ScriptException, ResourceException, URISyntaxException, javax.script.ScriptException {
-    System.out.println("\nSqlManual");
-    System.out.println("---------");
+    log.info("SqlManual");
+    log.info("---------");
     var scriptPath = "/groovy/SqlManual.groovy";
     URL url = getClass().getResource(scriptPath);
     String groovyCode = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A").next();
-    System.out.println("***** runWithShell");
+    log.info("***** runWithShell");
     var idList = (List<?>)runWithShell(groovyCode, variables);
     assertEquals(2, idList.size());
 
-    System.out.println("***** runWithGroovyScriptEngine");
+    log.info("***** runWithGroovyScriptEngine");
     idList = (List<?>)runWithGroovyScriptEngine(url, variables);
     assertEquals(2, idList.size());
 
-    System.out.println("***** runWithScriptEngine");
+    log.info("***** runWithScriptEngine");
     idList = (List<?>)runWithScriptEngine(groovyCode, variables);
     assertEquals(2, idList.size());
   }
@@ -72,8 +76,8 @@ public class JdbcTest {
   @Test
   public void testSqlNewInstance() throws IOException, javax.script.ScriptException, ScriptException, ResourceException, URISyntaxException {
     Thread.currentThread().setContextClassLoader(new GroovyClassLoader());
-    System.out.println("\nSqlNewInstance");
-    System.out.println("--------------");
+    log.info("SqlNewInstance");
+    log.info("--------------");
     var scriptPath = "/groovy/SqlNewInstance.groovy";
     URL url = getClass().getResource(scriptPath);
     assertNotNull(url, "failed to find " + scriptPath);
@@ -81,16 +85,15 @@ public class JdbcTest {
     try (InputStream is = url.openStream()) {
       groovyCode = new Scanner(is, "UTF-8").useDelimiter("\\A").next();
     }
-    System.out.println("***** runWithShell");
-    //System.out.println(groovyCode);
+    log.info("***** runWithShell");
     var idList = (List<?>)runWithShell(groovyCode, variables);
     assertEquals(2, idList.size());
 
-    System.out.println("***** runWithGroovyScriptEngine");
+    log.info("***** runWithGroovyScriptEngine");
     idList = (List<?>)runWithGroovyScriptEngine(url, variables);
     assertEquals(2, idList.size());
 
-    System.out.println("***** runWithScriptEngine");
+    log.info("***** runWithScriptEngine");
     idList = (List<?>)runWithScriptEngine(groovyCode, variables);
     assertEquals(2, idList.size());
   }
@@ -98,8 +101,8 @@ public class JdbcTest {
   @Test
   public void testSqlWithInstance() throws IOException, javax.script.ScriptException, ScriptException, ResourceException, URISyntaxException {
     Thread.currentThread().setContextClassLoader(new GroovyClassLoader());
-    System.out.println("\nSqlWithInstance");
-    System.out.println("--------------");
+    log.info("SqlWithInstance");
+    log.info("--------------");
     var scriptPath = "/groovy/SqlWithInstance.groovy";
     URL url = getClass().getResource(scriptPath);
     assertNotNull(url, "failed to find " + scriptPath);
@@ -107,15 +110,15 @@ public class JdbcTest {
     try (InputStream is = url.openStream()) {
       groovyCode = new Scanner(is, "UTF-8").useDelimiter("\\A").next();
     }
-    System.out.println("***** runWithShell");
+    log.info("***** runWithShell");
     var idList = (List<?>)runWithShell(groovyCode, variables);
     assertEquals(2, idList.size());
 
-    System.out.println("***** runWithGroovyScriptEngine");
+    log.info("***** runWithGroovyScriptEngine");
     idList = (List<?>)runWithGroovyScriptEngine(url, variables);
     assertEquals(2, idList.size());
 
-    System.out.println("***** runWithScriptEngine");
+    log.info("***** runWithScriptEngine");
     idList = (List<?>)runWithScriptEngine(groovyCode, variables);
     assertEquals(2, idList.size());
   }

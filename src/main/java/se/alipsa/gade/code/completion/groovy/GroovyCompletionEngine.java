@@ -193,8 +193,19 @@ public final class GroovyCompletionEngine implements CompletionEngine {
    * Returns the simple name to FQCN index for external use (e.g., import suggestions).
    */
   public static Map<String, List<String>> simpleNameIndex() {
-    return ClasspathScanner.getInstance().scan(
-        Thread.currentThread().getContextClassLoader());
+    return simpleNameIndex(null);
+  }
+
+  /**
+   * Returns the simple name to FQCN index using the given classloader.
+   *
+   * @param cl the classloader to scan; if null, falls back to the context classloader
+   */
+  public static Map<String, List<String>> simpleNameIndex(ClassLoader cl) {
+    if (cl == null) {
+      cl = Thread.currentThread().getContextClassLoader();
+    }
+    return ClasspathScanner.getInstance().scan(cl);
   }
 
   private void completeMemberAccess(Class<?> cls, String target, String memberPrefix,

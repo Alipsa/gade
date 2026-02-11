@@ -3,6 +3,8 @@ package tree;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.css.PseudoClass;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.inout.FileItem;
 
 import java.io.File;
@@ -10,6 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PseudoClassFileItem extends FileItem {
+
+   private static final Logger log = LogManager.getLogger(PseudoClassFileItem.class);
 
    public static final PseudoClass GIT_ADDED = PseudoClass.getPseudoClass("git-added");
    public static final PseudoClass GIT_UNTRACKED = PseudoClass.getPseudoClass("git-untracked");
@@ -34,14 +38,14 @@ public class PseudoClassFileItem extends FileItem {
    }
 
    public void enablePseudoClass(PseudoClass pseudoClass) {
-      System.out.println("setting active pseudoClass to " + pseudoClass);
+      log.info("setting active pseudoClass to {}", pseudoClass);
       activePseudoClass = pseudoClass;
       for (PseudoClass pc : pseudoClasses) {
          if (pc.equals(pseudoClass)) {
-            System.out.println("enabling " + pc);
+            log.info("enabling {}", pc);
             caption.pseudoClassStateChanged(pc, true);
          } else {
-            System.out.println("disabling " + pc);
+            log.info("disabling {}", pc);
             caption.pseudoClassStateChanged(pc, false);
          }
       }

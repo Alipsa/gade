@@ -2,6 +2,8 @@ package utils;
 
 // --- IMPORTANT: Package imports changed from javax.* to jakarta.* ---
 import jakarta.servlet.Servlet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
@@ -20,6 +22,8 @@ import java.io.IOException;
  * can be used for testing.
  */
 public class GitServer {
+
+    private static final Logger log = LogManager.getLogger(GitServer.class);
 
     File localPath;
     Server server;
@@ -63,7 +67,7 @@ public class GitServer {
             }
 
             git.add().addFilepattern("testfile").call();
-            System.out.println("Added file " + myfile + " to repository at " + repository.getDirectory());
+            log.info("Added file {} to repository at {}", myfile, repository.getDirectory());
             git.commit().setMessage("Test-Checkin").call();
         }
     }
@@ -71,7 +75,7 @@ public class GitServer {
     private Repository createNewRepository() throws IOException {
         // prepare a new folder
         localPath = File.createTempFile("TestGitRepository", "");
-        System.out.println("Creating git temp repo in " + localPath);
+        log.info("Creating git temp repo in {}", localPath);
         if(!localPath.delete()) {
             throw new IOException("Could not delete temporary file " + localPath);
         }

@@ -22,6 +22,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -39,6 +41,8 @@ import se.alipsa.gade.runtime.RuntimeType;
  * derived from JAVA_HOME and GROOVY_HOME.
  */
 class GroovyTabRunGroovyTest {
+
+  private static final Logger log = LogManager.getLogger(GroovyTabRunGroovyTest.class);
 
   @BeforeAll
   static void initFx() throws Exception {
@@ -115,7 +119,7 @@ class GroovyTabRunGroovyTest {
     assertTrue(completed, "Script execution did not complete");
     String output = out.toString();
     if (output.isBlank()) {
-      System.err.println("No output captured from script; skipping env-specific check");
+      log.warn("No output captured from script; skipping env-specific check");
       return;
     }
     assertTrue(output.contains(expectedGroovyVersion),
@@ -188,7 +192,7 @@ class GroovyTabRunGroovyTest {
     assertTrue(completed, "Script execution did not complete");
     String output = out.toString();
     if (output.isBlank()) {
-      System.err.println("No output captured from script; skipping env-specific check");
+      log.warn("No output captured from script; skipping env-specific check");
       return;
     }
     assertTrue(output.contains(expectedGroovyVersion),
@@ -260,7 +264,7 @@ class GroovyTabRunGroovyTest {
       try {
         runner.start();
       } catch (Exception startEx) {
-        System.err.println("Skipping runner test; failed to start runner: " + startEx);
+        log.warn("Skipping runner test; failed to start runner: {}", startEx.getMessage(), startEx);
         assumeTrue(false, "Skipping runner test; failed to start runner: " + startEx.getMessage());
       }
       String script = """
@@ -272,7 +276,7 @@ class GroovyTabRunGroovyTest {
       } catch (Exception evalEx) {
         Throwable cause = evalEx.getCause() == null ? evalEx : evalEx.getCause();
         if (cause instanceof java.io.IOException || (cause.getMessage() != null && cause.getMessage().toLowerCase().contains("stream closed"))) {
-          System.err.println("Skipping runner test; socket write failed: " + cause);
+          log.warn("Skipping runner test; socket write failed: {}", cause.getMessage(), cause);
           assumeTrue(false, "Skipping runner test; socket write failed: " + cause.getMessage());
         }
         throw evalEx;

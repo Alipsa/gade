@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,8 @@ import java.lang.reflect.Method;
 import javax.script.ScriptException;
 
 public class GroovyTest {
+
+    private static final Logger log = LogManager.getLogger(GroovyTest.class);
 
     @Test
     public void testGroovy() {
@@ -52,7 +56,7 @@ public class GroovyTest {
             def httpResponse = httpClient.execute(httpGet)    
             """;
         result = engine.eval(script);
-        System.out.println(result);
+        log.info("{}", result);
     }
 
     @Test

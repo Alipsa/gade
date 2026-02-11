@@ -21,7 +21,7 @@ public class BarChartTest {
 
     @Test
     public void testJsTransform() {
-        System.out.println("TODO: Convert this to a Matrix test");
+        log.info("TODO: Convert this to a Matrix test");
         /*
         Table table = Table.read().csv(getClass().getResource("/data/tornadoes_1950-2014.csv"));
         NumericColumn<?> logNInjuries = table.numberColumn("injuries").add(1).logN();
