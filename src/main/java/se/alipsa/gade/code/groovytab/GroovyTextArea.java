@@ -17,8 +17,10 @@ import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.code.completion.CompletionContext;
 import se.alipsa.gade.code.completion.CompletionItem;
 import se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine;
+import se.alipsa.gade.code.completion.ClasspathScanner;
 import se.alipsa.gade.model.GroovyCodeHeader;
 import se.alipsa.gade.utils.Alerts;
+import se.alipsa.groovy.resolver.DependencyResolver;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -59,12 +61,31 @@ public class GroovyTextArea extends CodeTextArea {
   private static final Pattern DQ_STRING = Pattern.compile("\"(?:\\\\.|[^\"\\\\])*\"");
   private static final Pattern SQ_STRING = Pattern.compile("'(?:\\\\.|[^'\\\\])*'");
 
-  // Groovy slashy & dollar-slashy strings (conservative)
-  private static final Pattern SLASHY = Pattern.compile("/(?:\\\\/|[^/])+/");
+  // Groovy slashy & dollar-slashy strings (conservative).
+  // Negative lookbehind prevents matching division as a regex start.
+  // Slashy is restricted to single lines to avoid runaway matches.
+  private static final Pattern SLASHY = Pattern.compile("(?<![)\\]}\\w'\".])(?:/(?:\\\\/|[^/\\n])+/)");
   private static final Pattern DOLLAR_SLASHY = Pattern.compile("(?s)\\$/[\\s\\S]*?/\\$");
 
   // add this cache field in the class
   private static final ConcurrentMap<String, Boolean> DEFAULT_PKG_LOADABLE = new ConcurrentHashMap<>();
+
+  // Cache of already-resolved @Grab coordinates per classloader (keyed by identity hash)
+  private static final ConcurrentMap<Integer, Set<String>> RESOLVED_GRABS = new ConcurrentHashMap<>();
+
+  // Patterns for parsing @Grab coordinates
+  // @Grab('group:module:version') or @Grab("group:module:version")
+  private static final Pattern GRAB_SHORTHAND =
+      Pattern.compile("@Grab\\s*\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)");
+  // @Grab(value='group:module:version') or @Grab(value="group:module:version")
+  private static final Pattern GRAB_VALUE =
+      Pattern.compile("@Grab\\s*\\([^)]*value\\s*=\\s*['\"]([^'\"]+)['\"][^)]*\\)");
+  // @Grab(group='g', module='m', version='v') — named parameters
+  private static final Pattern GRAB_NAMED =
+      Pattern.compile("@Grab\\s*\\(([^)]+)\\)");
+  // io.addDependency("group:artifact:version") or io.addDependency('group:artifact:version')
+  private static final Pattern IO_ADD_DEP =
+      Pattern.compile("io\\.addDependency\\s*\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)");
 
 
   ContextMenu suggestionsPopup = new ContextMenu();
@@ -107,8 +128,8 @@ public class GroovyTextArea extends CodeTextArea {
           // normal single w/ escapes
           "'(?:\\\\.|[^'\\\\])*'" +
           "|" +
-          // slashy
-          "/(?:\\\\/|[^/])+/"  +
+          // slashy (lookbehind prevents division being treated as regex start)
+          "(?<![)\\]}\\w'\".])(?:/(?:\\\\/|[^/\\n])+/)"  +
           "|" +
           // dollar-slashy
           "(?s)\\$/[\\s\\S]*?/\\$";
@@ -169,8 +190,12 @@ public class GroovyTextArea extends CodeTextArea {
       // Only for capitalized simple names (type-ish)
       if (!token.matches("[A-Z][A-Za-z0-9_]*")) return;
 
+      // Resolve @Grab dependencies so their classes appear in the index
+      ClassLoader cl = effectiveClassLoader();
+      resolveGrabDependencies(getAllTextContent(), cl);
+
       // If already resolvable, nothing to do
-      var idx = se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine.simpleNameIndex();
+      var idx = se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine.simpleNameIndex(cl);
       var candidates = idx.getOrDefault(token, java.util.List.of());
       if (candidates.isEmpty()) return;
 
@@ -317,7 +342,7 @@ public class GroovyTextArea extends CodeTextArea {
 
   private void markUnresolvedTypes() {
     String text = getText();
-    var unresolved = findUnresolvedSimpleTypes(text);
+    var unresolved = findUnresolvedSimpleTypes(text, effectiveClassLoader());
 
     // Apply underline only to those ranges. These tokens don’t overlap keywords,
     // so overriding the style for just that range is OK.
@@ -398,7 +423,10 @@ public class GroovyTextArea extends CodeTextArea {
 
   private static final class Range { final int start, end; Range(int s, int e){start=s; end=e;} }
 
-  private static List<Range> findUnresolvedSimpleTypes(String code) {
+  private static List<Range> findUnresolvedSimpleTypes(String code, ClassLoader cl) {
+    // Resolve @Grab dependencies so their classes are available for resolution
+    resolveGrabDependencies(code, cl);
+
     // 1) Collect current imports and wildcard imports
     var explicitImports = new java.util.HashSet<String>();  // fqcn
     var wildcardPkgs    = new java.util.HashSet<String>();  // e.g. "java.time"
@@ -426,7 +454,7 @@ public class GroovyTextArea extends CodeTextArea {
     }
 
     // Build quick lookups
-    var simpleToFqns = se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine.simpleNameIndex();
+    var simpleToFqns = se.alipsa.gade.code.completion.groovy.GroovyCompletionEngine.simpleNameIndex(cl);
     var explicitSimple = new java.util.HashSet<String>();
     for (String fq : explicitImports) {
       String simple = fq.substring(fq.lastIndexOf('.') + 1);
@@ -531,6 +559,113 @@ public class GroovyTextArea extends CodeTextArea {
       }
       return false;
     });
+  }
+
+  /**
+   * Parses @Grab and io.addDependency coordinates from code and resolves any
+   * new ones on the given classloader via DependencyResolver. Invalidates
+   * the ClasspathScanner cache when new dependencies are added so the next
+   * scan picks up the new jars.
+   */
+  static void resolveGrabDependencies(String code, ClassLoader cl) {
+    if (!(cl instanceof java.net.URLClassLoader ucl)) {
+      log.debug("Classloader is not a URLClassLoader ({}), cannot resolve @Grab dependencies",
+          cl == null ? "null" : cl.getClass().getName());
+      return;
+    }
+
+    Set<String> coords = parseGrabCoordinates(code);
+    if (coords.isEmpty()) return;
+
+    int clKey = System.identityHashCode(ucl);
+    Set<String> alreadyResolved = RESOLVED_GRABS.computeIfAbsent(clKey, k -> ConcurrentHashMap.newKeySet());
+
+    Set<String> newCoords = new LinkedHashSet<>();
+    for (String coord : coords) {
+      if (!alreadyResolved.contains(coord)) {
+        newCoords.add(coord);
+      }
+    }
+    if (newCoords.isEmpty()) return;
+
+    DependencyResolver resolver = new DependencyResolver(ucl);
+    boolean anyResolved = false;
+    for (String coord : newCoords) {
+      try {
+        resolver.addDependency(coord);
+        alreadyResolved.add(coord);
+        anyResolved = true;
+        log.debug("Resolved @Grab dependency: {}", coord);
+      } catch (Exception e) {
+        log.debug("Failed to resolve @Grab dependency: {}", coord, e);
+        // Don't add to alreadyResolved so it's retried next time
+      }
+    }
+
+    if (anyResolved) {
+      ClasspathScanner.getInstance().invalidate(ucl);
+    }
+  }
+
+  /**
+   * Extracts dependency coordinates from @Grab annotations and io.addDependency calls.
+   */
+  static Set<String> parseGrabCoordinates(String code) {
+    Set<String> coords = new LinkedHashSet<>();
+
+    // @Grab('group:module:version') shorthand
+    Matcher m = GRAB_SHORTHAND.matcher(code);
+    while (m.find()) {
+      String val = m.group(1).trim();
+      if (val.contains(":")) {
+        coords.add(val);
+      }
+    }
+
+    // @Grab(value='group:module:version')
+    m = GRAB_VALUE.matcher(code);
+    while (m.find()) {
+      String val = m.group(1).trim();
+      if (val.contains(":")) {
+        coords.add(val);
+      }
+    }
+
+    // @Grab(group='g', module='m', version='v') named parameters
+    m = GRAB_NAMED.matcher(code);
+    while (m.find()) {
+      String inner = m.group(1);
+      // Only process if it has named params (not already matched by shorthand)
+      if (inner.contains("group") && inner.contains("module") && inner.contains("version")) {
+        String group = extractNamedParam(inner, "group");
+        String module = extractNamedParam(inner, "module");
+        String version = extractNamedParam(inner, "version");
+        if (group != null && module != null && version != null) {
+          coords.add(group + ":" + module + ":" + version);
+        }
+      }
+    }
+
+    // io.addDependency("group:artifact:version")
+    m = IO_ADD_DEP.matcher(code);
+    while (m.find()) {
+      String val = m.group(1).trim();
+      if (val.contains(":")) {
+        coords.add(val);
+      }
+    }
+
+    return coords;
+  }
+
+  /**
+   * Extracts the value of a named parameter from a @Grab annotation's inner text.
+   * E.g., extractNamedParam("group='org.foo', module='bar'", "group") returns "org.foo".
+   */
+  private static String extractNamedParam(String inner, String paramName) {
+    Pattern p = Pattern.compile(paramName + "\\s*=\\s*['\"]([^'\"]+)['\"]");
+    Matcher m = p.matcher(inner);
+    return m.find() ? m.group(1).trim() : null;
   }
 
   private static ClassLoader effectiveClassLoader() {
@@ -715,7 +850,7 @@ public class GroovyTextArea extends CodeTextArea {
   }
 
   public static java.util.Set<String> getUnresolvedSimpleTypeTokens(String code) {
-    var ranges = findUnresolvedSimpleTypes(code); // see next snippet
+    var ranges = findUnresolvedSimpleTypes(code, effectiveClassLoader());
     var out = new java.util.LinkedHashSet<String>();
     for (var r : ranges) out.add(code.substring(r.start, r.end));
     return out;

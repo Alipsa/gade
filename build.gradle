@@ -172,7 +172,7 @@ dependencies {
   implementation "org.apache.maven:maven-model:${embeddedMavenVersion}"
   implementation "se.alipsa:maven-utils:1.4.0"
 
-  implementation('se.alipsa.groovy:dependency-resolver:1.0.2') {
+  implementation('se.alipsa.groovy:dependency-resolver:1.0.3-SNAPSHOT') {
     exclude group: 'se.alipsa', module: 'maven-utils'
   }
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
