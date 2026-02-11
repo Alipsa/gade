@@ -275,7 +275,7 @@ Create `env.sh` (Linux/macOS) or `env.cmd` (Windows) in Gade's installation dire
 JAVA_OPTS="-Xmx16G"
 
 # Hi-DPI scaling (200%)
-JAVA_OPTS="$JAVA_OPTS -Dglass.gtk.uiScale=200%"
+JAVA_OPTS="$JAVA_OPTS -Dglass.gtk.uiScale=200% -Dsun.java2d.uiScale=2"
 
 # Use Marlin rendering engine (better performance)
 JAVA_OPTS="$JAVA_OPTS -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine"
@@ -289,7 +289,7 @@ SPLASH_TIME=5
 @echo off
 
 REM Increase memory for large datasets
-set "JAVA_OPTS=-Xmx16G -Dglass.gtk.uiScale=200%"
+set "JAVA_OPTS=-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.uiScale=2"
 
 REM Show console output (use java instead of javaw)
 SET JAVA_CMD=C:\Program Files\Java\jdk-21\bin\java.exe
@@ -300,11 +300,11 @@ SET SPLASH_TIME=5
 
 ### Available Environment Variables
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `JAVA_OPTS` | JVM options and system properties | `-Xmx16G -Dprop=value` |
-| `JAVA_CMD` | Path to Java executable (override default) | `/opt/jdk-21/bin/java` |
-| `SPLASH_TIME` | Splash screen duration in seconds | `5` |
+| Variable      | Purpose                                    | Example                |
+|---------------|--------------------------------------------|------------------------|
+| `JAVA_OPTS`   | JVM options and system properties          | `-Xmx16G -Dprop=value` |
+| `JAVA_CMD`    | Path to Java executable (override default) | `/opt/jdk-21/bin/java` |
+| `SPLASH_TIME` | Splash screen duration in seconds          | `5`                    |
 
 ### Common JVM Options
 
@@ -317,9 +317,10 @@ SET SPLASH_TIME=5
 
 **Display Settings:**
 ```bash
--Dglass.gtk.uiScale=200%           # Hi-DPI scaling (Linux/macOS)
--Dsun.java2d.renderer=...          # Rendering engine
--Dprism.order=sw                   # Software rendering (for remote desktop)
+-Dglass.gtk.uiScale=200%       # Hi-DPI scaling for JavaFx (main app) (Linux/macOS)
+-Dsun.java2d.uiScale=2         # Hi-DPI scaling for awt/swing (plash screen) (Linux/macOS)
+-Dsun.java2d.renderer=...      # Rendering engine
+-Dprism.order=sw               # Software rendering (for remote desktop)
 ```
 
 **Performance:**
@@ -538,13 +539,13 @@ SET SPLASH_TIME=5
 1. **Linux/macOS:**
    ```bash
    # In env.sh - scale UI 200%
-   JAVA_OPTS="-Dglass.gtk.uiScale=200%"
+   JAVA_OPTS="-Dglass.gtk.uiScale=200% -Dsun.java2d.uiScale=2"
    ```
 
 2. **Windows:**
    ```batch
    REM In env.cmd
-   set "JAVA_OPTS=-Dglass.win.uiScale=200%"
+   set "JAVA_OPTS=-Dglass.win.uiScale=200% -Dsun.java2d.uiScale=2"
    ```
 
 3. **Font size adjustment:**
