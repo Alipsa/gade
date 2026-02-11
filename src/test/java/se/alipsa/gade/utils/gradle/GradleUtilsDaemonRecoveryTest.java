@@ -1,5 +1,7 @@
 package se.alipsa.gade.utils.gradle;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -11,11 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class GradleUtilsDaemonRecoveryTest {
 
+  private static final Logger log = LogManager.getLogger(GradleUtilsDaemonRecoveryTest.class);
+
   @Test
   public void testFindGradleCommand() throws Exception {
     File projectDir = new File("/Users/pernyf/project/groovier-junit5");
     if (!projectDir.exists()) {
-      System.out.println("Skipping test - project directory does not exist");
+      log.info("Skipping test - project directory does not exist");
       return;
     }
 
@@ -36,7 +40,7 @@ public class GradleUtilsDaemonRecoveryTest {
     method.setAccessible(true);
     String gradleCommand = (String) method.invoke(daemonRecovery);
 
-    System.out.println("Found Gradle command: " + gradleCommand);
+    log.info("Found Gradle command: {}", gradleCommand);
     assertNotNull(gradleCommand, "Should find a Gradle command");
     assertTrue(new File(gradleCommand).exists(), "Gradle command should exist");
   }
@@ -48,26 +52,24 @@ public class GradleUtilsDaemonRecoveryTest {
     File daemonDir = new File(gradleHome, "daemon");
 
     if (daemonDir.exists()) {
-      System.out.println("Gradle daemon directory exists at: " + daemonDir);
-      System.out.println("Contents:");
+      log.info("Gradle daemon directory exists at: {}", daemonDir);
       File[] contents = daemonDir.listFiles();
       if (contents != null) {
         for (File f : contents) {
-          System.out.println("  - " + f.getName() + (f.isDirectory() ? " (dir)" : ""));
+          log.info("  - {}{}", f.getName(), f.isDirectory() ? " (dir)" : "");
         }
       }
     } else {
-      System.out.println("Gradle daemon directory does not exist (this is normal if no daemons have run)");
+      log.info("Gradle daemon directory does not exist (this is normal if no daemons have run)");
     }
 
     File cachesDir = new File(gradleHome, "caches");
     if (cachesDir.exists()) {
-      System.out.println("\nGradle caches directory exists at: " + cachesDir);
+      log.info("Gradle caches directory exists at: {}", cachesDir);
       File[] versionDirs = cachesDir.listFiles(f -> f.isDirectory() && f.getName().matches("\\d+\\.\\d+.*"));
       if (versionDirs != null && versionDirs.length > 0) {
-        System.out.println("Version-specific caches:");
         for (File versionDir : versionDirs) {
-          System.out.println("  - " + versionDir.getName());
+          log.info("  Version-specific cache: {}", versionDir.getName());
         }
       }
     }
@@ -107,7 +109,6 @@ public class GradleUtilsDaemonRecoveryTest {
     assertFalse(GradleDaemonRecovery.isDaemonOrCacheCorruption(normalException),
         "Should not detect normal exceptions as corruption");
 
-    System.out.println("Error detection working correctly");
   }
 
   @Test
@@ -117,7 +118,7 @@ public class GradleUtilsDaemonRecoveryTest {
     Exception zipException = new Exception("ZipException: invalid CEN header (bad signature)");
     String errorType = GradleDaemonRecovery.extractErrorType(zipException);
 
-    System.out.println("Extracted error type: " + errorType);
+    log.info("Extracted error type: {}", errorType);
     // extractErrorType is used for actual corruption errors, not Tooling API issues
     assertTrue(errorType != null && !errorType.isEmpty(), "Should extract error type from zip corruption");
   }
@@ -155,6 +156,5 @@ public class GradleUtilsDaemonRecoveryTest {
     // The method should complete without error
     assertNotNull(staleLocks, "findStaleLockFiles should return an Optional");
 
-    System.out.println("Stale lock file detection test completed successfully");
   }
 }

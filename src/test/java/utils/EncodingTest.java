@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.junit.jupiter.api.TestInstance;
 import se.alipsa.gade.utils.TikaUtils;
+import se.alipsa.matrix.core.util.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EncodingTest {
 
+  static Logger log = Logger.getLogger(EncodingTest.class);
   private TikaUtils tikaUtils;
 
   @BeforeAll
@@ -58,7 +60,7 @@ public class EncodingTest {
     byte[] textBytes = FileUtils.readFileToByteArray(file);
     CharsetDetector detector = new CharsetDetector().setText(textBytes);
     CharsetMatch match = detector.detect();
-    System.out.println("Detected file " + file.getName() + " as " + match.getName() + " with " + match.getConfidence() + "% certainty");
+    log.debug("Detected file " + file.getName() + " as " + match.getName() + " with " + match.getConfidence() + "% certainty");
     if (match.getConfidence() < 100) {
       StringBuilder sb = new StringBuilder();
       for (CharsetMatch m : detector.detectAll()) {
@@ -67,7 +69,7 @@ public class EncodingTest {
               .append(" (").append(m.getConfidence()).append("%)");
         }
       }
-      System.out.println("\tOther possible matches are: " + sb);
+      log.debug("\tOther possible matches are: " + sb);
     }
     return Charset.forName(match.getName());
   }

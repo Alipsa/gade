@@ -28,6 +28,14 @@ public class SplashScreen {
   public SplashScreen(double minDisplaySeconds) {
     this.minDisplaySeconds = minDisplaySeconds;
 
+    // Use the native L&F so the JLabel font matches the platform system font
+    // (the same font family JavaFX uses for its UI text)
+    try {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (Exception ignored) {
+      // Fall back to default L&F
+    }
+
     // Build and show the window entirely on the EDT
     JWindow[] holder = new JWindow[1];
     try {
@@ -35,11 +43,13 @@ public class SplashScreen {
         JWindow w = new JWindow();
 
         JPanel content = new JPanel(new BorderLayout());
-        content.setBackground(Color.WHITE);
+        content.setBackground(Color.GRAY);
         content.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 
         JLabel label = new JLabel(" Loading Gade, please wait...");
-        label.setFont(label.getFont().deriveFont(Font.PLAIN, 14f));
+        label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
+        label.setForeground(Color.WHITE);
+        label.setBorder(BorderFactory.createEmptyBorder(2, 1, 5, 1));
         content.add(label, BorderLayout.NORTH);
 
         try (InputStream is = Objects.requireNonNull(
