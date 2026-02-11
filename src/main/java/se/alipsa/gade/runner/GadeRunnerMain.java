@@ -28,7 +28,7 @@ import java.util.Map;
  *   <li>For GADE/Custom: Groovy is already on the system classpath, so the engine is loaded
  *       directly from the system classloader</li>
  *   <li>Loads {@link GadeRunnerEngine} and invokes its
- *       {@code run(BufferedReader, BufferedWriter, String, String[], String[])} method</li>
+ *       {@code run(BufferedReader, BufferedWriter, String, String[], String[], String[])} method</li>
  * </ol>
  */
 public class GadeRunnerMain {
@@ -70,6 +70,7 @@ public class GadeRunnerMain {
           List<String> groovyEntries = toStringList(cpCmd.get("groovyEntries"));
           List<String> mainEntries = toStringList(cpCmd.get("mainEntries"));
           List<String> testEntries = toStringList(cpCmd.get("testEntries"));
+          List<String> guiInteractionKeys = toStringList(cpCmd.get("guiInteractionKeys"));
           emitRaw("received " + groovyEntries.size() + " groovy entries, "
               + mainEntries.size() + " main entries and "
               + testEntries.size() + " test entries for runtime " + runtimeType);
@@ -114,9 +115,11 @@ public class GadeRunnerMain {
           // a classloader hierarchy and route each eval by testContext.
           Class<?> engineClass = engineCL.loadClass("se.alipsa.gade.runner.GadeRunnerEngine");
           Method runMethod = engineClass.getMethod("run",
-              BufferedReader.class, BufferedWriter.class, String.class, String[].class, String[].class);
+              BufferedReader.class, BufferedWriter.class, String.class,
+              String[].class, String[].class, String[].class);
           runMethod.invoke(null, reader, writer, runtimeType,
-              mainEntries.toArray(new String[0]), testEntries.toArray(new String[0]));
+              mainEntries.toArray(new String[0]), testEntries.toArray(new String[0]),
+              guiInteractionKeys.toArray(new String[0]));
 
         } finally {
           System.setOut(previousOut);

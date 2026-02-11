@@ -919,6 +919,9 @@ public class RuntimeProcessRunner implements Closeable {
     payload.put("groovyEntries", groovyEntries);
     payload.put("mainEntries", mainDepEntries);
     payload.put("testEntries", testDepEntries);
+    if (guiInteractions != null && !guiInteractions.isEmpty()) {
+      payload.put("guiInteractionKeys", new ArrayList<>(guiInteractions.keySet()));
+    }
     socketWriter.write(ProtocolXml.toXml(payload));
     socketWriter.write("\n");
     socketWriter.flush();

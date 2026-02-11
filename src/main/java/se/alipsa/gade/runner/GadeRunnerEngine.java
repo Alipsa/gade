@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * parent bootstrap classloader. For GADE/Custom runtimes, it is loaded from the
  * system classloader which already has Groovy on {@code -cp}.
  * <p>
- * Entry point: {@link #run(BufferedReader, BufferedWriter, String, String[], String[])} — creates a
+ * Entry point: {@link #run(BufferedReader, BufferedWriter, String, String[], String[], String[])} — creates a
  * main/test {@link GroovyClassLoader} hierarchy, {@link GroovyShell} instances,
  * and enters the main read loop
  * handling eval, bindings, interrupt, setWorkingDir, shutdown, gui_response, gui_error.
@@ -62,11 +62,12 @@ public class GadeRunnerEngine {
    * @param reader          socket input
    * @param writer          socket output
    * @param runtimeType     runtime type name (GADE, GRADLE, MAVEN, CUSTOM)
-   * @param mainDepPaths    main-scope dependency paths
-   * @param testDepPaths    test-scope dependency paths (test-only delta)
+   * @param mainDepPaths          main-scope dependency paths
+   * @param testDepPaths          test-scope dependency paths (test-only delta)
+   * @param guiInteractionKeys    binding names for GUI interaction proxies (e.g. "io")
    */
   public static void run(BufferedReader reader, BufferedWriter writer, String runtimeType,
-                         String[] mainDepPaths, String[] testDepPaths) {
+                         String[] mainDepPaths, String[] testDepPaths, String[] guiInteractionKeys) {
     Binding binding;
     GroovyShell mainShell;
     GroovyShell testShell;
@@ -94,6 +95,16 @@ public class GadeRunnerEngine {
     }
 
     ConcurrentHashMap<String, CompletableFuture<Object>> guiPending = new ConcurrentHashMap<>();
+
+    if (guiInteractionKeys != null) {
+      for (String key : guiInteractionKeys) {
+        if (key != null && !key.isBlank()) {
+          RemoteInOut remoteInOut = new RemoteInOut(writer, guiPending);
+          remoteInOut.setScriptClassLoader((GroovyClassLoader) mainShell.getClassLoader());
+          binding.setVariable(key, remoteInOut);
+        }
+      }
+    }
 
     try {
       String line;
