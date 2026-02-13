@@ -36,10 +36,10 @@ configurations.all {
 
 dependencies {
   // Use the latest Groovy version for building this project
-  implementation 'org.apache.groovy:groovy-all:4.0.25'
+  implementation 'org.apache.groovy:groovy-all:5.0.2'
 
   implementation 'org.knowm.xchart:xchart:3.8.6'
-  implementation(platform("se.alipsa.matrix:matrix-bom:2.4.0"))
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.4.1-SNAPSHOT"))
   implementation 'se.alipsa.matrix:matrix-core'
   implementation 'se.alipsa.matrix:matrix-charts'
   implementation 'se.alipsa.matrix:matrix-datasets'
