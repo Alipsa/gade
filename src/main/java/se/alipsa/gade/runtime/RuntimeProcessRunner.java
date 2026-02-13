@@ -65,6 +65,15 @@ public class RuntimeProcessRunner implements Closeable {
       "gade.runner.diagnostics",
       "gade.runner.verbose"
   );
+  private static final List<String> INHERITED_DISPLAY_SYSTEM_PROPERTIES = List.of(
+      "glass.gtk.uiScale",
+      "glass.win.uiScale",
+      "sun.java2d.uiScale",
+      "sun.java2d.renderer",
+      "jdk.gtk.version",
+      "prism.order",
+      "prism.allowhidpi"
+  );
 
   private final RuntimeConfig runtime;
   private final List<String> classPathEntries;
@@ -153,6 +162,7 @@ public class RuntimeProcessRunner implements Closeable {
       cmd.add(resolveJavaExecutable());
       addInheritedNetworkSystemProperties(cmd);
       addInheritedRunnerSystemProperties(cmd);
+      addInheritedDisplaySystemProperties(cmd);
       cmd.add("-Dgade.runtime=" + (runtime.getType() == null ? RuntimeType.GADE.name() : runtime.getType().name()));
       if (hasProcessRootLoaderOnClasspath(cpOrdered)) {
         cmd.add("-Djava.system.class.loader=se.alipsa.gade.runner.GroovyProcessRootLoader");
@@ -209,6 +219,15 @@ public class RuntimeProcessRunner implements Closeable {
 
   private void addInheritedRunnerSystemProperties(List<String> cmd) {
     for (String key : INHERITED_RUNNER_SYSTEM_PROPERTIES) {
+      String value = System.getProperty(key);
+      if (value != null && !value.isBlank()) {
+        cmd.add("-D" + key + "=" + value);
+      }
+    }
+  }
+
+  private void addInheritedDisplaySystemProperties(List<String> cmd) {
+    for (String key : INHERITED_DISPLAY_SYSTEM_PROPERTIES) {
       String value = System.getProperty(key);
       if (value != null && !value.isBlank()) {
         cmd.add("-D" + key + "=" + value);
