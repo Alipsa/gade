@@ -3,6 +3,7 @@ package se.alipsa.gade.runner;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import se.alipsa.gade.runtime.ProtocolXml;
 
 import java.io.*;
@@ -80,10 +81,13 @@ public class GadeRunnerEngine {
         testLoader = createScriptLoader(runtimeType, mainLoader);
         addDependencyPaths(testLoader, testDepPaths);
       }
+      CompilerConfiguration config = new CompilerConfiguration();
+      config.setScriptBaseClass(GadeScript.class.getName());
+
       binding = new Binding();
       binding.setVariable("gadeRuntime", runtimeType);
-      mainShell = new GroovyShell(mainLoader, binding);
-      testShell = testLoader == null ? mainShell : new GroovyShell(testLoader, binding);
+      mainShell = new GroovyShell(mainLoader, binding, config);
+      testShell = testLoader == null ? mainShell : new GroovyShell(testLoader, binding, config);
       if (DIAGNOSTICS) {
         emitRuntimeDiagnostics(runtimeType, mainLoader, testLoader, mainDepPaths, testDepPaths);
       }

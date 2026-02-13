@@ -52,6 +52,6 @@ data = Matrix.builder('boxchart').data(
     'value': valueCol
   ).build()
 println data.content()
-boxChart2 = se.alipsa.groovy.charts.BoxChart.create("box plot demo2", data, 'category', 'value')
+boxChart2 = se.alipsa.matrix.charts.BoxChart.create("box plot demo2", data, 'category', 'value')
 io.display(boxChart2)
 io.display(SwingPlot.swing(boxChart2), 'matrix2 chart to xchart2')
