@@ -36,7 +36,7 @@ configurations.all {
 
 dependencies {
   // Use the latest Groovy version for building this project
-  implementation 'org.apache.groovy:groovy-all:4.0.25'
+  implementation 'org.apache.groovy:groovy-all:5.0.4'
 
   implementation 'org.knowm.xchart:xchart:3.8.6'
   implementation(platform("se.alipsa.matrix:matrix-bom:2.4.0"))
@@ -46,7 +46,7 @@ dependencies {
   implementation 'org.slf4j:slf4j-api:2.0.17'
   implementation 'org.slf4j:slf4j-simple:2.0.17'
   implementation 'org.openjfx:javafx-controls:21.0.10'
-  implementation "se.alipsa.gi:gi-swing:0.2.0"
+  implementation "se.alipsa.gi:gi-swing:0.3.0"
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }
