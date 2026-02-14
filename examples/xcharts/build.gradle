@@ -39,7 +39,7 @@ dependencies {
   implementation 'org.apache.groovy:groovy-all:5.0.4'
 
   implementation 'org.knowm.xchart:xchart:3.8.6'
-  implementation(platform("se.alipsa.matrix:matrix-bom:2.4.0"))
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.4.1-SNAPSHOT"))
   implementation 'se.alipsa.matrix:matrix-core'
   implementation 'se.alipsa.matrix:matrix-charts'
   implementation 'se.alipsa.matrix:matrix-datasets'

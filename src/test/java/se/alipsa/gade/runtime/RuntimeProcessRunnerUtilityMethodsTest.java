@@ -333,6 +333,52 @@ class RuntimeProcessRunnerUtilityMethodsTest {
     assertEquals(List.of("/cp/test.jar"), payload.get("testEntries"));
   }
 
+  // ========== Display System Properties Tests ==========
+
+  @Test
+  void testAddInheritedDisplaySystemPropertiesForwardsSetProperties() throws Exception {
+    RuntimeProcessRunner runner = createRunner();
+
+    System.setProperty("glass.gtk.uiScale", "200%");
+    System.setProperty("sun.java2d.uiScale", "2");
+    try {
+      Method method = RuntimeProcessRunner.class.getDeclaredMethod("addInheritedDisplaySystemProperties", List.class);
+      method.setAccessible(true);
+      List<String> cmd = new java.util.ArrayList<>();
+      method.invoke(runner, cmd);
+
+      assertTrue(cmd.contains("-Dglass.gtk.uiScale=200%"),
+          "Should forward glass.gtk.uiScale");
+      assertTrue(cmd.contains("-Dsun.java2d.uiScale=2"),
+          "Should forward sun.java2d.uiScale");
+    } finally {
+      System.clearProperty("glass.gtk.uiScale");
+      System.clearProperty("sun.java2d.uiScale");
+    }
+  }
+
+  @Test
+  void testAddInheritedDisplaySystemPropertiesSkipsUnsetProperties() throws Exception {
+    RuntimeProcessRunner runner = createRunner();
+
+    // Ensure none of the display properties are set
+    List<String> displayProps = List.of(
+        "glass.gtk.uiScale", "glass.win.uiScale", "sun.java2d.uiScale",
+        "sun.java2d.renderer", "jdk.gtk.version", "prism.order", "prism.allowhidpi"
+    );
+    for (String key : displayProps) {
+      System.clearProperty(key);
+    }
+
+    Method method = RuntimeProcessRunner.class.getDeclaredMethod("addInheritedDisplaySystemProperties", List.class);
+    method.setAccessible(true);
+    List<String> cmd = new java.util.ArrayList<>();
+    method.invoke(runner, cmd);
+
+    assertTrue(cmd.isEmpty(),
+        "Should not add any flags when no display properties are set");
+  }
+
   // ========== Helper Methods ==========
 
   private RuntimeProcessRunner createRunner() {

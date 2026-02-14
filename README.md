@@ -289,7 +289,7 @@ SPLASH_TIME=5
 @echo off
 
 REM Increase memory for large datasets
-set "JAVA_OPTS=-Xmx16G -Dglass.gtk.uiScale=200% -Dsun.java2d.uiScale=2"
+set "JAVA_OPTS=-Xmx16G -Dglass.win.uiScale=200% -Dsun.java2d.uiScale=2"
 
 REM Show console output (use java instead of javaw)
 SET JAVA_CMD=C:\Program Files\Java\jdk-21\bin\java.exe

@@ -29,10 +29,10 @@ data = boxData.apply('ccc') {
   it ?: 0   
 }
 for (colName in colNames) {
-  chart.addSeries(colName, data[colName]); 
+  chart.addSeries(colName, data[colName])
 }
 
-var panel = new XChartPanel<>(chart);
+var panel = new XChartPanel<>(chart)
 io.display(panel, 'xchart directly')
 
 //io.view(data)
@@ -44,14 +44,17 @@ io.display(SwingPlot.swing(boxChart), 'matrix chart to xchart')
 categoryCol = []
 valueCol = []
 for (colName in colNames) {
-  valueCol += boxData[colName]
-  categoryCol += [colName]*boxData[colName].size()
+  def vals = data[colName]
+  def nonNulls = vals.findAll { it != null }
+  valueCol += nonNulls
+  categoryCol += [colName] * nonNulls.size()
 }
 data = Matrix.builder('boxchart').data(
-    'category': categoryCol, 
+    'category': categoryCol,
     'value': valueCol
-  ).build()
+  ).types(String, int)
+  .build()
 println data.content()
-boxChart2 = se.alipsa.groovy.charts.BoxChart.create("box plot demo2", data, 'category', 'value')
-io.display(boxChart2)
+boxChart2 = se.alipsa.matrix.charts.BoxChart.create("box plot demo2", data, 'category', 'value')
+io.display(boxChart2, 'matrix chart directly')
 io.display(SwingPlot.swing(boxChart2), 'matrix2 chart to xchart2')
