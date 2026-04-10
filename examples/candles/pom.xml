@@ -14,7 +14,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <groovy4.version>5.0.4</groovy4.version>
     <tablesaw.version>0.44.1</tablesaw.version>
-    <log4j2.version>2.25.3</log4j2.version>
+    <log4j2.version>2.25.4</log4j2.version>
   </properties>
 
   <repositories>
