@@ -22,8 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.knowm.xchart.XChartPanel;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.environment.connections.ConnectionHandler;
-import se.alipsa.matrix.charts.Chart;
-import se.alipsa.matrix.charts.Plot;
+import se.alipsa.matrix.pict.Chart;
+import se.alipsa.matrix.chartexport.ChartToJfx;
 import se.alipsa.matrix.core.Row;
 import se.alipsa.matrix.sql.MatrixSql;
 import se.alipsa.groovy.resolver.*;
@@ -346,7 +346,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   public void display(Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    display(Plot.jfx(chart), false, title);
+    display(ChartToJfx.export(chart), false, title);
   }
 
   public void display(Node node, String... title) {
@@ -588,13 +588,13 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     return readImage.read(file);
   }
 
-  public void save(se.alipsa.matrix.charts.Chart chart, File file) {
+  public void save(se.alipsa.matrix.pict.Chart chart, File file) {
     double width = gui.getInoutComponent().getPlotsTab().getTabPane().getWidth();
     double height = gui.getInoutComponent().getPlotsTab().getTabPane().getHeight() - 20.0;
     save(chart, file, width, height, true);
   }
 
-  public void save(se.alipsa.matrix.charts.Chart chart, File file, double width, double height) {
+  public void save(se.alipsa.matrix.pict.Chart chart, File file, double width, double height) {
     save(chart, file, width, height, true);
   }
 
@@ -607,8 +607,8 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param height       the intended height of the png image
    * @param useGadeStyle style the chart with the same style as the current Gade style
    */
-  public void save(se.alipsa.matrix.charts.Chart chart, File file, double width, double height, boolean useGadeStyle) {
-    save(se.alipsa.matrix.charts.Plot.jfx(chart), file, width, height, useGadeStyle, false);
+  public void save(se.alipsa.matrix.pict.Chart chart, File file, double width, double height, boolean useGadeStyle) {
+    save(ChartToJfx.export(chart), file, width, height, useGadeStyle, false);
   }
 
   public void save(Region region, File file) {
