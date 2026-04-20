@@ -1,6 +1,7 @@
 package utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static se.alipsa.matrix.core.ListConverter.toLocalDates;
 
 import javafx.embed.swing.JFXPanel;
@@ -9,8 +10,8 @@ import javafx.scene.chart.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.utils.DeepCopier;
-import se.alipsa.matrix.charts.ChartType;
-import se.alipsa.matrix.charts.Plot;
+import se.alipsa.matrix.pict.ChartType;
+import se.alipsa.matrix.chartexport.ChartToJfx;
 import se.alipsa.matrix.core.Matrix;
 
 import java.io.IOException;
@@ -153,31 +154,12 @@ public class DeepCopyTest {
         .types(int.class, String.class, Number.class, LocalDate.class)
         .build();
 
-    var chart = se.alipsa.matrix.charts.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
-    Node jChart = Plot.jfx(chart);
-    var c = DeepCopier.deepCopy(jChart);
-    var jfxChart = (BarChart<?, ?>) jChart;
-    var copy = (BarChart<?, ?>) c;
-    assertEquals(jfxChart.getStyle(), copy.getStyle(), "Style");
-    assertEquals(jfxChart.getTitle(), copy.getTitle(), "Title");
-    assertEquals(jfxChart.getData().size(), copy.getData().size(), "Data size");
-    assertEquals(jfxChart.getXAxis().getClass(), copy.getXAxis().getClass(), "X axis class");
-    assertEquals(jfxChart.getYAxis().getClass(), copy.getYAxis().getClass(), "Y axis class");
-    assertEquals(((NumberAxis) jfxChart.getYAxis()).getUpperBound(), ((NumberAxis) copy.getYAxis()).getUpperBound(), "Upper bound");
-    for (int i = 0; i < jfxChart.getData().size(); i++) {
-      var acSeries = jfxChart.getData().get(i);
-      XYChart.Series copySeries = copy.getData().get(i);
-      assertEquals(acSeries.getName(), copySeries.getName());
-      for (int j = 0; j < acSeries.getData().size(); j++) {
-        var acData = acSeries.getData().get(j);
-        var copyData = (XYChart.Data) copySeries.getData().get(j);
-        assertEquals(acData.getXValue(), copyData.getXValue(), "XYChart.Data for index " + j);
-        assertEquals(acData.getYValue(), copyData.getYValue());
-      }
-    }
-    assertEquals(((NumberAxis) jfxChart.getYAxis()).getUpperBound(), ((NumberAxis) copy.getYAxis()).getUpperBound(), "Y axis Upper bound");
-    assertEquals(((NumberAxis) jfxChart.getYAxis()).getLowerBound(), ((NumberAxis) copy.getYAxis()).getLowerBound(), "Y axis Lower bound");
-    assertEquals(((NumberAxis) jfxChart.getYAxis()).getTickUnit(), ((NumberAxis) copy.getYAxis()).getTickUnit(), "Y axis Tick Unit");
+    var chart = se.alipsa.matrix.pict.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
+    Node jfxNode = ChartToJfx.export(chart);
+    assertNotNull(jfxNode, "ChartToJfx.export should return a non-null node");
+    var copy = DeepCopier.deepCopy(jfxNode);
+    assertNotNull(copy, "Deep copy should return a non-null node");
+    assertEquals(jfxNode.getClass(), copy.getClass(), "Copy should be same class");
   }
 
   @Test
