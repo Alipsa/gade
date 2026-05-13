@@ -9,9 +9,12 @@ import javafx.scene.chart.*;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.girod.javafx.svgimage.SVGImage;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -55,17 +58,34 @@ public class DeepCopier {
     if (node instanceof Region region) {
       return (T)deepCopy(region);
     }
+    if (node instanceof Shape shape) {
+      return (T)deepCopy(shape);
+    }
     throw new RuntimeException("Unknown node type: " + node.getClass());
   }
 
   public static Group deepCopy(Group node) {
-
+    if (node instanceof SVGImage svgImage) {
+      return deepCopy(svgImage);
+    }
     var children = node.getChildren();
     List<Node> clonedChildren = new ArrayList<>();
     for (var child : children) {
       clonedChildren.add(deepCopy(child));
     }
     return new Group(clonedChildren);
+  }
+
+  public static SVGImage deepCopy(SVGImage svgImage) {
+    var content = svgImage.getSVGContent();
+    if (content != null) {
+      return new SVGImage(content);
+    }
+    SVGImage copy = new SVGImage();
+    for (var child : svgImage.getChildren()) {
+      copy.getChildren().add(deepCopy(child));
+    }
+    return copy;
   }
 
   public static <T extends Region> T deepCopy(Region node) {
@@ -133,6 +153,37 @@ public class DeepCopier {
 
   public static Label deepCopy(Label label) {
     return new Label(label.getText(), label.getGraphic());
+  }
+
+  public static <T extends Shape> T deepCopy(Shape shape) {
+    if (shape instanceof Rectangle rectangle) {
+      return (T)deepCopy(rectangle);
+    }
+    if (shape instanceof Line line) {
+      return (T)deepCopy(line);
+    }
+    log.warn("Support for shape " + shape.getClass() + " not implemented!");
+    return (T)shape;
+  }
+
+  public static Rectangle deepCopy(Rectangle rect) {
+    Rectangle copy = new Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+    copy.setArcWidth(rect.getArcWidth());
+    copy.setArcHeight(rect.getArcHeight());
+    copy.setFill(rect.getFill());
+    copy.setStroke(rect.getStroke());
+    copy.setStrokeWidth(rect.getStrokeWidth());
+    copy.setStyle(rect.getStyle());
+    return copy;
+  }
+
+  public static Line deepCopy(Line line) {
+    Line copy = new Line(line.getStartX(), line.getStartY(), line.getEndX(), line.getEndY());
+    copy.setFill(line.getFill());
+    copy.setStroke(line.getStroke());
+    copy.setStrokeWidth(line.getStrokeWidth());
+    copy.setStyle(line.getStyle());
+    return copy;
   }
 
   /*public static LabeledText deepCopy(LabeledText labeledText) {

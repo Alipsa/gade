@@ -18,6 +18,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.girod.javafx.svgimage.SVGImage;
 import org.jetbrains.annotations.NotNull;
 import org.knowm.xchart.XChartPanel;
 import se.alipsa.gade.Gade;
@@ -344,9 +345,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   }
 
 
-  public void display(Chart chart, String... titleOpt) {
+  public void display(se.alipsa.matrix.pict.Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    display(ChartToJfx.export(chart), false, title);
+    SVGImage img = ChartToJfx.export(chart);
+    display(img, false, title);
   }
 
   public void display(Node node, String... title) {

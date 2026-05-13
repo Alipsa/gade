@@ -13,7 +13,7 @@ plugins {
   id('signing')
   id('maven-publish')
   //id("org.openjfx.javafxplugin") version "0.1.0"
-  id("se.alipsa.nexus-release-plugin").version'2.1.2'
+  id("se.alipsa.nexus-release-plugin").version'2.2.0'
   id("me.champeau.jmh").version("0.7.3") // JMH for performance benchmarks
 }
 
@@ -26,18 +26,18 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName = "${rootProject.name}-${version}.jar"
 ext.releaseTag = version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "5.0.5"
-ext.jacksonVersion = '2.21.2'
+ext.groovyVersion = "5.0.6"
+ext.jacksonVersion = '2.21.3'
 def jgitVersion = '7.6.0.202603022253-r' //'7.5.0.202512021534-r'
-ext.log4jVersion = "2.25.4"
+ext.log4jVersion = "2.26.0"
 ext.tikaVersion = '3.3.0'
 ext.openHtmlToPdfVersion = '1.1.37'
 
 //def jdkVersion = "25+37" // Does not work with hadoop and hence not with matrix parquet
 int javaLanguageVersion = 21
 def jdkVersion = "${javaLanguageVersion}.0.10+10"
-ext.embeddedGradleVersion = '9.3.1'
-ext.embeddedMavenVersion = '3.9.12'
+ext.embeddedGradleVersion = '9.5.0'
+ext.embeddedMavenVersion = '3.9.15'
 
 application {
   mainClass = 'se.alipsa.gade.Gade'
@@ -133,7 +133,7 @@ dependencies {
   implementation "com.fasterxml.jackson.core:jackson-annotations:2.21"
   implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
-  implementation "commons-io:commons-io:2.21.0"
+  implementation "commons-io:commons-io:2.22.0"
   implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
   implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
@@ -142,12 +142,12 @@ dependencies {
   implementation 'org.jetbrains:annotations:26.1.0'
   implementation 'io.github.classgraph:classgraph:4.8.184'
   implementation 'com.github.spotbugs:spotbugs-annotations:4.9.8'
-  implementation "se.alipsa.gi:gi-fx:0.3.0"
+  implementation "se.alipsa.gi:gi-fx:0.4.0-SNAPSHOT"
   implementation "org.commonmark:commonmark:0.28.0"
   implementation "org.commonmark:commonmark-ext-gfm-tables:0.28.0"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
   implementation 'se.alipsa.groovy:data-utils:2.0.6'
-  implementation('se.alipsa.gmd:gmd-core:3.0.2') {
+  implementation('se.alipsa.gmd:gmd-core:3.0.3-SNAPSHOT') {
     exclude group: 'se.alipsa.matrix', module: 'matrix-core'
     exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
     exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
@@ -170,7 +170,7 @@ dependencies {
   // Used by se.alipsa.gade.utils.SemanticVersion
   implementation "org.apache.maven:maven-artifact:${embeddedMavenVersion}"
   implementation "org.apache.maven:maven-model:${embeddedMavenVersion}"
-  implementation "se.alipsa:maven-utils:1.4.0"
+  implementation "se.alipsa:maven-utils:1.4.1"
 
   implementation('se.alipsa.groovy:dependency-resolver:1.1.0') {
     exclude group: 'se.alipsa', module: 'maven-utils'
@@ -187,8 +187,8 @@ dependencies {
   testImplementation 'net.jodah:concurrentunit:0.4.6'
   testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
   testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-  testImplementation 'org.eclipse.jetty:jetty-server:12.1.8'
-  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.8'
+  testImplementation 'org.eclipse.jetty:jetty-server:12.1.9'
+  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.9'
   testImplementation 'org.testfx:testfx-core:4.0.18'
   testImplementation 'org.testfx:testfx-junit5:4.0.18'
   testImplementation 'org.testfx:openjfx-monocle:21.0.2'
@@ -211,7 +211,7 @@ dependencies {
   testImplementation("org.openjfx:javafx-swing:${javaFXVersion}:${javaFXPlatform}") {
     transitive = false
   }
-  testImplementation 'se.alipsa.gi:gi-console:0.3.0'
+  testImplementation 'se.alipsa.gi:gi-console:0.4.0-SNAPSHOT'
   testImplementation 'org.mockito:mockito-core:5.23.0'
 }
 
@@ -697,6 +697,9 @@ tasks.named("dependencyUpdates").configure {
       all {
         if (isNonStable(it.candidate.version) && !isNonStable(it.currentVersion)) {
           reject('Release candidate')
+        }
+        if (it.candidate.group == 'org.openjfx' && it.candidate.version.tokenize('.')[0].toInteger() >= 24) {
+          reject('JavaFX 24+ requires Java 24+; bundled JDK is 21')
         }
       }
     }
