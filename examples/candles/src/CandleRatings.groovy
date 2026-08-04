@@ -24,8 +24,8 @@ import groovy.grape.Grape
 @Grab("tech.tablesaw:tablesaw-html:0.44.1")
 @Grab("tech.tablesaw:tablesaw-aggregate:0.44.1")
 @GrabConfig(systemClassLoader = true)
-@Grab(group = 'org.apache.logging.log4j', module = 'log4j-slf4j2-impl', version = '2.25.3')
-@Grab(group = 'org.apache.logging.log4j', module = 'log4j-core', version = '2.25.3')
+@Grab(group = 'org.apache.logging.log4j', module = 'log4j-slf4j2-impl', version = '2.26.1')
+@Grab(group = 'org.apache.logging.log4j', module = 'log4j-core', version = '2.26.1')
 
 import tech.tablesaw.api.*
 import tech.tablesaw.io.xlsx.XlsxReader
