@@ -19,12 +19,12 @@ import javafx.stage.DirectoryChooser;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.code.jstab.RhinoValueConverter;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
@@ -201,8 +201,8 @@ public class InoutComponent extends TabPane  {
     }
     // Instanceof check does not work due to module restrictions
     if (matrix.getClass().getName().contains(".ListAdapter")) {
-      // Due to erasure and whatever other strange reasons, in java 11 Nashorn return a List<ScriptObjectMirror> and still end up here
-      Alerts.warnFx("Cannot view a ListAdapter directly", "Convert " + matrix.getClass().getName() + " to a java 2D array before viewing using Java.to(data,'java.lang.Object[][]')");
+      // Due to erasure and script-engine adapters, this is not a regular Java list.
+      Alerts.warnFx("Cannot view a ListAdapter directly", "Convert " + matrix.getClass().getName() + " to a Java 2D array before viewing");
       return;
     }
 
@@ -226,12 +226,13 @@ public class InoutComponent extends TabPane  {
       return;
     }
     ConsoleTextArea console = gui.getConsoleComponent().getConsole();
-    //if (matrix instanceof NativeArray || matrix instanceof ScriptObjectMirror) {
-    if (matrix instanceof ScriptObjectMirror) {
-      Alerts.warnFx("Cannot View native javascript objects", "Use the View function or convert the matrix to a java 2d array before calling inout.View()");
-      return;
-    }
-    if (matrix instanceof Object[][]) {
+    if (matrix instanceof org.mozilla.javascript.NativeArray) {
+      try {
+        view2dArray(RhinoValueConverter.toObjectMatrix(matrix), title);
+      } catch (IllegalArgumentException e) {
+        Alerts.warnFx("Cannot View native JavaScript objects", e.getMessage());
+      }
+    } else if (matrix instanceof Object[][]) {
       view2dArray((Object[][])matrix, title);
     } else if (matrix instanceof Matrix tableMatrix) {
       viewTable(tableMatrix, title);

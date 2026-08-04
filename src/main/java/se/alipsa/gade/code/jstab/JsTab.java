@@ -7,7 +7,7 @@ import javafx.scene.control.CheckBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
@@ -65,9 +65,8 @@ public class JsTab extends ExecutableTab {
   }
 
   public void initSession() {
-    NashornScriptEngineFactory nashornScriptEngineFactory = new NashornScriptEngineFactory();
-    String[] options = new String[]{"--language=es6"};
-    engine = nashornScriptEngineFactory.getScriptEngine(options);
+    RhinoScriptEngineFactory rhinoScriptEngineFactory = new RhinoScriptEngineFactory();
+    engine = rhinoScriptEngineFactory.getScriptEngine();
 
     gui.guiInteractions.forEach((k,v) -> engine.put(k, v));
     try {

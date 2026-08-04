@@ -21,7 +21,7 @@ function validateMatrix(data) {
 
 function View(data, title='js[][]') {
    validateMatrix(data);
-   inout.View(Java.to(data,"java.lang.Object[][]"), title);
+   inout.view(data, title);
 }
 
 function transpose(matrix) {
