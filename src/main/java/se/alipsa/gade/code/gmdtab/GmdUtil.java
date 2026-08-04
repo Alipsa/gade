@@ -86,7 +86,7 @@ public class GmdUtil {
     );
     WebEngine webEngine = webView.getEngine();
     webEngine.setJavaScriptEnabled(true);
-    webEngine.setUserStyleSheetLocation(HtmlDecorator.BOOTSTRAP_CSS);
+    webEngine.setUserStyleSheetLocation(BOOTSTRAP_CSS);
     webEngine.getLoadWorker().stateProperty().addListener(( ov,  oldState, newState) ->  {
       log.debug("WebEngine loading state: {}", newState);
       if (newState == Worker.State.SUCCEEDED) {

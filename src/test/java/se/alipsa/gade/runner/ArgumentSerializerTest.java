@@ -8,6 +8,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.alipsa.gi.ShellResult;
 import se.alipsa.matrix.core.Matrix;
 
 import javax.imageio.ImageIO;
@@ -95,6 +96,18 @@ class ArgumentSerializerTest {
     };
     Object result = ArgumentSerializer.serialize(input);
     assertEquals("CustomObject", result, "Unknown type should convert to string");
+  }
+
+  @Test
+  void serializeShellResultForRemoteRuntime() {
+    Object serialized = ArgumentSerializer.serialize(new ShellResult("out", "err", 3));
+
+    assertInstanceOf(Map.class, serialized);
+    Map<?, ?> result = (Map<?, ?>) serialized;
+    assertEquals("out", result.get("stdout"));
+    assertEquals("err", result.get("stderr"));
+    assertEquals(3, result.get("exitCode"));
+    assertEquals(false, result.get("success"));
   }
 
   @Test

@@ -94,9 +94,29 @@ public class ArgumentSerializer {
       return ImageSerializer.serializeBufferedImage(arg);
     }
 
+    // ShellResult is available in the main process through gi-fx, but gi-fx
+    // is not available in external runtime processes. Serialize it as a plain
+    // map so remote Groovy scripts can access its properties.
+    if (className.equals("se.alipsa.gi.ShellResult")) {
+      return serializeShellResult(arg);
+    }
+
     // Fallback: convert to string
     System.err.println("ArgumentSerializer: Serializing unknown type as string: " + className);
     return arg.toString();
+  }
+
+  private static Map<String, Object> serializeShellResult(Object shellResult) {
+    try {
+      Map<String, Object> result = new HashMap<>();
+      result.put("stdout", shellResult.getClass().getMethod("getStdout").invoke(shellResult));
+      result.put("stderr", shellResult.getClass().getMethod("getStderr").invoke(shellResult));
+      result.put("exitCode", shellResult.getClass().getMethod("getExitCode").invoke(shellResult));
+      result.put("success", shellResult.getClass().getMethod("isSuccess").invoke(shellResult));
+      return result;
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalArgumentException("Unable to serialize ShellResult", e);
+    }
   }
 
   private static boolean isJavaFXNode(Object obj) {

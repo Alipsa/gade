@@ -9,7 +9,7 @@ plugins {
   id('org.beryx.runtime').version('2.0.1')
   //id "com.github.spotbugs" version "5.0.9"
   // Allows us to do gradle dependencyUpdates -Drevision=release
-  id("com.github.ben-manes.versions").version("0.54.0")
+  id("io.github.ben-manes.versions").version("0.58.0")
   id('signing')
   id('maven-publish')
   //id("org.openjfx.javafxplugin") version "0.1.0"
@@ -26,12 +26,12 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName = "${rootProject.name}-${version}.jar"
 ext.releaseTag = version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "5.0.6"
-ext.jacksonVersion = '2.21.3'
-def jgitVersion = '7.6.0.202603022253-r' //'7.5.0.202512021534-r'
-ext.log4jVersion = "2.26.0"
-ext.tikaVersion = '3.3.0'
-ext.openHtmlToPdfVersion = '1.1.37'
+ext.groovyVersion = "5.0.8"
+ext.jacksonVersion = '2.22.1'
+def jgitVersion = '7.7.1.202607240634-r' //'7.6.0.202603022253-r'
+ext.log4jVersion = "2.26.1"
+ext.tikaVersion = '3.3.2'
+ext.openHtmlToPdfVersion = '1.1.65'
 
 //def jdkVersion = "25+37" // Does not work with hadoop and hence not with matrix parquet
 int javaLanguageVersion = 21
@@ -125,12 +125,12 @@ dependencies {
   implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
   implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
   implementation 'org.apache.commons:commons-lang3:3.20.0'
-  implementation 'org.jsoup:jsoup:1.22.2'
+  implementation 'org.jsoup:jsoup:1.23.1'
   implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
   implementation 'org.fxmisc.richtext:richtextfx:0.11.7'
   implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
-  implementation "com.fasterxml.jackson.core:jackson-annotations:2.21"
+  implementation "com.fasterxml.jackson.core:jackson-annotations:2.22"
   implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
 
   implementation "commons-io:commons-io:2.22.0"
@@ -140,14 +140,14 @@ dependencies {
   implementation 'org.openjdk.nashorn:nashorn-core:15.7'
   implementation "org.gradle:gradle-tooling-api:${embeddedGradleVersion}"
   implementation 'org.jetbrains:annotations:26.1.0'
-  implementation 'io.github.classgraph:classgraph:4.8.184'
-  implementation 'com.github.spotbugs:spotbugs-annotations:4.9.8'
-  implementation "se.alipsa.gi:gi-fx:0.4.0-SNAPSHOT"
-  implementation "org.commonmark:commonmark:0.28.0"
-  implementation "org.commonmark:commonmark-ext-gfm-tables:0.28.0"
+  implementation 'io.github.classgraph:classgraph:4.8.186'
+  implementation 'com.github.spotbugs:spotbugs-annotations:4.10.3'
+  implementation "se.alipsa.gi:gi-fx:0.4.1-SNAPSHOT"
+  implementation "org.commonmark:commonmark:0.29.0"
+  implementation "org.commonmark:commonmark-ext-gfm-tables:0.29.0"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
   implementation 'se.alipsa.groovy:data-utils:2.0.6'
-  implementation('se.alipsa.gmd:gmd-core:3.0.3-SNAPSHOT') {
+  implementation('se.alipsa.gmd:gmd-core:3.1.0') {
     exclude group: 'se.alipsa.matrix', module: 'matrix-core'
     exclude group: 'se.alipsa.matrix', module: 'matrix-charts'
     exclude group: 'se.alipsa.matrix', module: 'matrix-xchart'
@@ -158,7 +158,7 @@ dependencies {
   implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openHtmlToPdfVersion}"
 
   implementation 'se.alipsa:simple-rest:1.1.1'
-  implementation(platform("se.alipsa.matrix:matrix-bom:2.5.0-SNAPSHOT"))
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.5.1"))
   implementation("se.alipsa.matrix:matrix-core")
   implementation("se.alipsa.matrix:matrix-stats")
   implementation("se.alipsa.matrix:matrix-charts")
@@ -177,18 +177,18 @@ dependencies {
   }
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
   implementation 'com.github.jsqlparser:jsqlparser:5.3'
-  implementation('com.manticore-projects.jsqlformatter:jsqlformatter:5.3.9') {
+  implementation('com.manticore-projects.jsqlformatter:jsqlformatter:5.4.1') {
     exclude group: 'com.github.jsqlparser', module: 'jsqlparser'
   }
 
-  testImplementation platform('org.junit:junit-bom:6.0.3')
+  testImplementation platform('org.junit:junit-bom:6.1.2')
   testImplementation 'com.h2database:h2:2.4.240'
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
   testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
   testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-  testImplementation 'org.eclipse.jetty:jetty-server:12.1.9'
-  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.9'
+  testImplementation 'org.eclipse.jetty:jetty-server:12.1.11'
+  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.11'
   testImplementation 'org.testfx:testfx-core:4.0.18'
   testImplementation 'org.testfx:testfx-junit5:4.0.18'
   testImplementation 'org.testfx:openjfx-monocle:21.0.2'
@@ -211,8 +211,14 @@ dependencies {
   testImplementation("org.openjfx:javafx-swing:${javaFXVersion}:${javaFXPlatform}") {
     transitive = false
   }
-  testImplementation 'se.alipsa.gi:gi-console:0.4.0-SNAPSHOT'
+  testImplementation 'se.alipsa.gi:gi-console:0.4.0'
   testImplementation 'org.mockito:mockito-core:5.23.0'
+}
+
+// Gradle Tooling API 9.5.0 requires this exact SLF4J version.
+// Keep it aligned when newer dependencies request a later patch version.
+configurations.configureEach {
+  resolutionStrategy.force 'org.slf4j:slf4j-api:2.0.17'
 }
 
 java {
@@ -345,7 +351,17 @@ tasks.named("processResources") {
   from(versionPropertiesFile)
 }
 
+// TestFX/JavaFX tests run in a separate JVM from the regular unit tests.
+// This avoids native JavaFX lifecycle conflicts when the full test suite exits.
+boolean shouldSkipTestFx = System.getProperty('skipTestFx') != null
+    ? System.getProperty('skipTestFx') == 'true'
+    : System.getProperty('os.name').toLowerCase().contains('mac')
+
 test {
+  // The GUI/TestFX suite runs separately, so the regular tests can use
+  // multiple isolated JVMs without sharing JavaFX lifecycle state.
+  maxParallelForks = 2
+
   // Headless mode is enabled by default using Monocle
   // Usage: ./gradlew test (headless, no windows)
   //        ./gradlew test -Dheadless=false (with windows)
@@ -372,10 +388,6 @@ test {
   // Skip TestFX tests with -DskipTestFx=true or automatically on macOS (known SIGTRAP crashes)
   // Usage: ./gradlew test -DskipTestFx=true
   // Override macOS auto-skip: ./gradlew test -DskipTestFx=false
-  boolean shouldSkipTestFx = System.getProperty('skipTestFx') != null
-      ? System.getProperty('skipTestFx') == 'true'
-      : System.getProperty('os.name').toLowerCase().contains('mac')
-
   if (!shouldSkipTestFx) {
     // TestFX Monocle accesses internal JavaFX packages reflectively.
     jvmArgs += [
@@ -403,7 +415,10 @@ test {
     logger.warn('If you see BUILD FAILED with SIGTRAP, check test results - they likely all passed.')
   }
 
-  useJUnitPlatform()
+  // GUI/TestFX tests are run by the separate guiTest task below.
+  useJUnitPlatform {
+    excludeTags 'gui'
+  }
   testLogging {
     // set options for log level LIFECYCLE
     events TestLogEvent.FAILED,
@@ -437,6 +452,56 @@ test {
       }
     }
   }
+}
+
+tasks.register('guiTest', Test) {
+  description = 'Runs JavaFX/TestFX GUI tests in an isolated test task'
+  group = 'verification'
+  dependsOn testClasses, runnerBootJar, runnerEngineJar
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  maxParallelForks = 1
+  shouldRunAfter test
+
+  onlyIf {
+    if (shouldSkipTestFx) {
+      logger.lifecycle('Skipping guiTest because TestFX is disabled')
+      return false
+    }
+    true
+  }
+
+  if (System.getProperty('headless', 'true') != 'false') {
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    if (!System.getProperty('os.name').toLowerCase().contains('mac') &&
+        !System.getProperty('os.name').toLowerCase().contains('win')) {
+      systemProperty 'prism.order', 'sw'
+    }
+    systemProperty 'testfx.headless', 'true'
+    systemProperty 'testfx.robot', 'glass'
+    systemProperty 'java.awt.headless', 'true'
+    systemProperty 'prism.text', 't2k'
+    systemProperty 'headless.geometry', '1920x1080-32'
+    systemProperty 'glass.noImplicitExit', 'true'
+    systemProperty 'glass.gtk.disableGtkTk', 'true'
+    systemProperty 'com.sun.javafx.isEmbedded', 'true'
+  }
+
+  jvmArgs += [
+      '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+      '--add-exports=javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED',
+      '--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+      '--add-opens=javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED'
+  ]
+
+  useJUnitPlatform {
+    includeTags 'gui'
+  }
+}
+
+tasks.named('check').configure {
+  dependsOn tasks.named('guiTest')
 }
 
 jacocoTestReport {

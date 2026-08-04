@@ -18,6 +18,7 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeItem.TreeModificationEvent;
 import javafx.scene.control.TreeView;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -45,6 +46,8 @@ public class FileTree extends TreeView<FileItem> {
 
   private final String folderUrl = Objects.requireNonNull(FileUtils.getResourceUrl("image/folder.png")).toExternalForm();
   private final String fileUrl = Objects.requireNonNull(FileUtils.getResourceUrl("image/file.png")).toExternalForm();
+  private final Image folderImage = new Image(folderUrl);
+  private final Image fileImage = new Image(fileUrl);
   private final String WORKING_DIR_PREF = "FileTree.WorkingDir";
   private final TreeItemComparator treeItemComparator = new TreeItemComparator();
   private final Gade gui;
@@ -167,7 +170,7 @@ public class FileTree extends TreeView<FileItem> {
       for (File child : children) {
         item.getChildren().add(createTree(child));
       }
-      item.setGraphic(new ImageView(folderUrl));
+      item.setGraphic(new ImageView(folderImage));
     } else {
       setLeafProperties(item);
     }
@@ -245,7 +248,7 @@ public class FileTree extends TreeView<FileItem> {
   }
 
   private void setLeafProperties(TreeItem<FileItem> item) {
-    item.setGraphic(new ImageView(fileUrl));
+    item.setGraphic(new ImageView(fileImage));
     ChangeListener<String> fillListener = (obs, oldName, newName) -> {
       TreeModificationEvent<FileItem> event = new TreeModificationEvent<>(TreeItem.valueChangedEvent(), item);
       //log.info("item {} changed color", item.getValue());
@@ -306,7 +309,7 @@ public class FileTree extends TreeView<FileItem> {
 
   private void addTreeNode(TreeItem<FileItem> dirItem, TreeItem<FileItem> fileItem) {
     if (fileItem.getValue().getFile().isDirectory()) {
-      fileItem.setGraphic(new ImageView(folderUrl));
+      fileItem.setGraphic(new ImageView(folderImage));
     } else {
       setLeafProperties(fileItem);
     }

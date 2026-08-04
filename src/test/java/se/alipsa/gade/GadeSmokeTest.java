@@ -8,7 +8,9 @@ import javafx.stage.Stage;
 import org.junit.jupiter.api.*;
 import org.testfx.framework.junit5.ApplicationTest;
 
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import java.util.prefs.Preferences;
 
 /**
  * Smoke test suite for Gade using TestFX.
@@ -37,8 +39,17 @@ import java.util.concurrent.TimeUnit;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class GadeSmokeTest extends ApplicationTest {
 
+  private static final String FILE_TREE_WORKING_DIR = "FileTree.WorkingDir";
+  private static String originalWorkingDir;
   private Gade gadeApp;
   private Stage stage;
+
+  @BeforeAll
+  static void isolateWorkingDirectory() {
+    Preferences preferences = Preferences.userRoot().node(Gade.class.getName());
+    originalWorkingDir = preferences.get(FILE_TREE_WORKING_DIR, null);
+    preferences.put(FILE_TREE_WORKING_DIR, Path.of("src/test/resources").toAbsolutePath().toString());
+  }
 
   @Override
   public void start(Stage stage) throws Exception {
@@ -170,7 +181,12 @@ class GadeSmokeTest extends ApplicationTest {
 
   @AfterAll
   static void tearDownClass() {
-    // Clean up any test files
+    Preferences preferences = Preferences.userRoot().node(Gade.class.getName());
+    if (originalWorkingDir == null) {
+      preferences.remove(FILE_TREE_WORKING_DIR);
+    } else {
+      preferences.put(FILE_TREE_WORKING_DIR, originalWorkingDir);
+    }
     // Platform.exit() will be called by TestFX
   }
 }

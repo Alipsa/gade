@@ -11,8 +11,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.utils.DeepCopier;
 import se.alipsa.matrix.pict.ChartType;
-import se.alipsa.matrix.chartexport.ChartToJfx;
 import se.alipsa.matrix.core.Matrix;
+import se.alipsa.matrix.pict.Plot;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -155,8 +155,8 @@ public class DeepCopyTest {
         .build();
 
     var chart = se.alipsa.matrix.pict.BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary");
-    Node jfxNode = ChartToJfx.export(chart);
-    assertNotNull(jfxNode, "ChartToJfx.export should return a non-null node");
+    Node jfxNode = Plot.jfx(chart);
+    assertNotNull(jfxNode, "Plot.jfx should return a non-null node");
     var copy = DeepCopier.deepCopy(jfxNode);
     assertNotNull(copy, "Deep copy should return a non-null node");
     assertEquals(jfxNode.getClass(), copy.getClass(), "Copy should be same class");

@@ -5,8 +5,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import se.alipsa.gade.console.ConsoleTextArea;
+import se.alipsa.gade.interaction.InOut;
 import se.alipsa.gade.runner.ArgumentSerializer;
 import se.alipsa.gi.GuiInteraction;
+import se.alipsa.gi.ShellResult;
 import se.alipsa.matrix.core.Matrix;
 
 import java.util.*;
@@ -77,6 +79,12 @@ class RuntimeProcessRunnerGuiIntegrationTest {
     assertEquals("test", ArgumentSerializer.deserialize("test"));
     assertEquals(true, ArgumentSerializer.deserialize(true));
     assertNull(ArgumentSerializer.deserialize(null));
+  }
+
+  @Test
+  void productionInOutExposesShellMethods() throws Exception {
+    assertEquals(String.class, InOut.class.getMethod("sh", String.class).getReturnType());
+    assertEquals(ShellResult.class, InOut.class.getMethod("shell", String.class).getReturnType());
   }
 
   @Test

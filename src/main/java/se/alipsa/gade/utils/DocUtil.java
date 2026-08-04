@@ -10,8 +10,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import org.jsoup.nodes.Entities;
 import org.w3c.dom.Document;
+import se.alipsa.gade.code.gmdtab.GmdUtil;
 import se.alipsa.gmd.core.Gmd;
-import se.alipsa.gmd.core.HtmlDecorator;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -39,7 +39,7 @@ public class DocUtil {
     WebView webview = new WebView();
     final WebEngine webEngine = webview.getEngine();
     webEngine.setJavaScriptEnabled(true);
-    webEngine.setUserStyleSheetLocation(HtmlDecorator.BOOTSTRAP_CSS);
+    webEngine.setUserStyleSheetLocation(GmdUtil.BOOTSTRAP_CSS);
     webEngine.getLoadWorker().stateProperty().addListener(
         (ov, oldState, newState) -> {
           if (newState == Worker.State.SUCCEEDED) {

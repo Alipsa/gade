@@ -22,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.runner.GadeRunnerEngine;
 import se.alipsa.gi.GuiInteraction;
+import se.alipsa.gi.ShellResult;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
@@ -346,7 +347,11 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
     ConsoleTextArea console = mock(ConsoleTextArea.class);
     GuiInteraction io = mock(GuiInteraction.class);
     String expectedIoResult = "io-ok-" + runtimeType.name().toLowerCase(Locale.ROOT);
+    String expectedShResult = "sh-ok-" + runtimeType.name().toLowerCase(Locale.ROOT);
+    String expectedShellStdout = "shell-out-" + runtimeType.name().toLowerCase(Locale.ROOT);
     when(io.prompt(anyString())).thenReturn(expectedIoResult);
+    when(io.sh(anyString())).thenReturn(expectedShResult);
+    when(io.shell(anyString())).thenReturn(new ShellResult(expectedShellStdout, "", 0));
 
     RuntimeProcessRunner runner = new RuntimeProcessRunner(
         runtime,
@@ -371,9 +376,19 @@ class RuntimeProcessRunnerRuntimeMatrixTest {
       Map<String, Object> ioBindings = Map.of(GadeRunnerEngine.GUI_INTERACTION_KEYS, List.of("io"));
       String ioResult = runner.eval("io.prompt('ping')", ioBindings).get(20, TimeUnit.SECONDS);
       assertEquals(expectedIoResult, ioResult, "io method call must round-trip through GUI protocol for " + runtimeType);
+
+      String shResult = runner.eval("io.sh('sh-command')", ioBindings).get(20, TimeUnit.SECONDS);
+      assertEquals(expectedShResult, shResult, "io.sh must round-trip through GUI protocol for " + runtimeType);
+
+      String shellStdout = runner.eval("io.shell('shell-command').stdout", ioBindings)
+          .get(20, TimeUnit.SECONDS);
+      assertEquals(expectedShellStdout, shellStdout,
+          "io.shell result properties must round-trip through GUI protocol for " + runtimeType);
     }
 
     verify(io, atLeastOnce()).prompt("ping");
+    verify(io).sh("sh-command");
+    verify(io).shell("shell-command");
   }
 
   private String buildGrabScript(GrabArtifact artifact) {

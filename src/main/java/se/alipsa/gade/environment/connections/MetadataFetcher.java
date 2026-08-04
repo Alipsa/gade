@@ -16,11 +16,10 @@ public class MetadataFetcher {
    * Retrieves column metadata and transforms it into a Map where keys are column headers
    * (e.g., "TABLE_NAME") and values are lists of all entries for that header.
    */
-  @SuppressWarnings("unchecked")
-  public static Map<String, List> getNonSystemColumnMetadata(Connection connection) throws SQLException {
+  public static Map<String, List<Object>> getNonSystemColumnMetadata(Connection connection) throws SQLException {
 
     // 1. Define the final map structure and initialize it
-    Map<String, List> finalColumnMap = new LinkedHashMap<>();
+    Map<String, List<Object>> finalColumnMap = new LinkedHashMap<>();
 
     // Define the column headers corresponding to your SQL query
     List<String> headers = Arrays.asList(

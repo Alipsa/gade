@@ -18,13 +18,12 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.girod.javafx.svgimage.SVGImage;
 import org.jetbrains.annotations.NotNull;
 import org.knowm.xchart.XChartPanel;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.environment.connections.ConnectionHandler;
 import se.alipsa.matrix.pict.Chart;
-import se.alipsa.matrix.chartexport.ChartToJfx;
+import se.alipsa.matrix.pict.Plot;
 import se.alipsa.matrix.core.Row;
 import se.alipsa.matrix.sql.MatrixSql;
 import se.alipsa.groovy.resolver.*;
@@ -36,6 +35,7 @@ import se.alipsa.gade.utils.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -69,6 +69,19 @@ public class InOut extends se.alipsa.gi.fx.InOut {
   public InOut() {
     gui = Gade.instance();
     readImage = new ReadImage();
+  }
+
+  /**
+   * Route the live output produced by {@code io.sh(...)} to Gade's console.
+   *
+   * gi-fx executes shell commands in the main Gade process, so its default
+   * {@code System.out} destination is the application process output rather
+   * than the script console. The gi-fx hook keeps the captured return value
+   * unchanged while making the command output visible to users.
+   */
+  @Override
+  protected PrintStream getShellOutputStream() {
+    return new PrintStream(gui.getConsoleComponent().getOutputStream(), true);
   }
 
   public Set<String> dbConnectionNames() {
@@ -347,8 +360,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
 
   public void display(se.alipsa.matrix.pict.Chart chart, String... titleOpt) {
     String title = titleOpt.length > 0 ? titleOpt[0] : removeExt(gui.getCodeComponent().getActiveScriptName());
-    SVGImage img = ChartToJfx.export(chart);
-    display(img, false, title);
+    display(Plot.jfx(chart), false, title);
   }
 
   public void display(Node node, String... title) {
@@ -610,7 +622,7 @@ public class InOut extends se.alipsa.gi.fx.InOut {
    * @param useGadeStyle style the chart with the same style as the current Gade style
    */
   public void save(se.alipsa.matrix.pict.Chart chart, File file, double width, double height, boolean useGadeStyle) {
-    save(ChartToJfx.export(chart), file, width, height, useGadeStyle, false);
+    save(Plot.jfx(chart), file, width, height, useGadeStyle, false);
   }
 
   public void save(Region region, File file) {
