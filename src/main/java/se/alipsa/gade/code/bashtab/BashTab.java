@@ -1,5 +1,7 @@
 package se.alipsa.gade.code.bashtab;
 
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,9 +12,12 @@ import se.alipsa.gade.code.ExecutableTab;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.utils.ExceptionAlert;
 
+import java.util.List;
+
 public class BashTab extends ExecutableTab {
 
   private final BashTextArea bashTextArea;
+  private final TextField argsField;
 
   private static final Logger log = LogManager.getLogger(BashTab.class);
 
@@ -22,6 +27,11 @@ public class BashTab extends ExecutableTab {
     bashTextArea = new BashTextArea(this);
     VirtualizedScrollPane<BashTextArea> scrollPane = new VirtualizedScrollPane<>(bashTextArea);
     pane.setCenter(scrollPane);
+
+    argsField = new TextField();
+    argsField.setPromptText("script arguments...");
+    argsField.setPrefWidth(250);
+    buttonPane.getChildren().addAll(new Label("Args:"), argsField);
   }
 
   @Override
@@ -42,7 +52,7 @@ public class BashTab extends ExecutableTab {
     ConsoleComponent consoleComponent = gui.getConsoleComponent();
     consoleComponent.running();
 
-    BashTask task = new BashTask(content, getFile(), gui, this) {
+    BashTask task = new BashTask(content, getFile(), BashTask.parseArgs(argsField.getText()), gui, this) {
       @Override
       public Void execute() throws Exception {
         try {

@@ -21,13 +21,52 @@ public abstract class BashTask extends CountDownTask<Void> {
 
   private final String content;
   private final File file;
+  private final List<String> args;
   private final Gade gui;
 
-  public BashTask(String content, File file, Gade gui, TaskListener taskListener) {
+  public BashTask(String content, File file, List<String> args, Gade gui, TaskListener taskListener) {
     super(taskListener);
     this.content = content;
     this.file = file;
+    this.args = args == null ? List.of() : args;
     this.gui = gui;
+  }
+
+  /**
+   * Parse a raw argument string into a list of tokens.
+   * Whitespace separates arguments; both single and double quotes can be used
+   * to group arguments containing spaces. Quotes are stripped from the token.
+   */
+  static List<String> parseArgs(String text) {
+    List<String> tokens = new ArrayList<>();
+    if (text == null || text.isBlank()) {
+      return tokens;
+    }
+    StringBuilder current = new StringBuilder();
+    Character quote = null;
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (quote != null) {
+        if (c == quote) {
+          quote = null;
+        } else {
+          current.append(c);
+        }
+      } else if (c == '\"' || c == '\'') {
+        quote = c;
+      } else if (Character.isWhitespace(c)) {
+        if (current.length() > 0) {
+          tokens.add(current.toString());
+          current.setLength(0);
+        }
+      } else {
+        current.append(c);
+      }
+    }
+    if (current.length() > 0) {
+      tokens.add(current.toString());
+    }
+    return tokens;
   }
 
   @Override
@@ -48,11 +87,16 @@ public abstract class BashTask extends CountDownTask<Void> {
     String title;
     if (file != null && file.isFile()) {
       command.add(file.getAbsolutePath());
+      command.addAll(args);
       workingDir = file.getParentFile();
       title = file.getName();
     } else {
       command.add("-c");
       command.add(content);
+      // When running via -c, the first extra arg becomes $0, so add a placeholder
+      // so that the user-supplied arguments map to $1, $2, etc.
+      command.add("_");
+      command.addAll(args);
       title = "bash";
     }
 
