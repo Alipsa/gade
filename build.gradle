@@ -30,6 +30,7 @@ ext.groovyVersion = "5.0.8"
 ext.jacksonVersion = '2.22.1'
 def jgitVersion = '7.7.1.202607240634-r' //'7.6.0.202603022253-r'
 ext.log4jVersion = "2.26.1"
+ext.rhinoVersion = "1.9.1"
 ext.tikaVersion = '3.3.2'
 ext.openHtmlToPdfVersion = '1.1.65'
 
@@ -137,7 +138,8 @@ dependencies {
   implementation "org.eclipse.jgit:org.eclipse.jgit:${jgitVersion}"
   implementation "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:${jgitVersion}"
 
-  implementation 'org.openjdk.nashorn:nashorn-core:15.7'
+  implementation "org.mozilla:rhino:${rhinoVersion}"
+  implementation "org.mozilla:rhino-engine:${rhinoVersion}"
   implementation "org.gradle:gradle-tooling-api:${embeddedGradleVersion}"
   implementation 'org.jetbrains:annotations:26.1.0'
   implementation 'io.github.classgraph:classgraph:4.8.186'

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.Properties;
-import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
 import se.alipsa.gade.utils.Alerts;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
@@ -54,7 +54,7 @@ public class AboutDialog {
     } catch (IOException e) {
       ExceptionAlert.showAlert("Failed to load properties file", e);
     }
-    NashornScriptEngineFactory nashornScriptEngineFactory = new NashornScriptEngineFactory();
+    RhinoScriptEngineFactory rhinoScriptEngineFactory = new RhinoScriptEngineFactory();
     StringBuilder content = new StringBuilder();
     content.append("\n Gade Version: ")
         .append(version)
@@ -68,9 +68,9 @@ public class AboutDialog {
         .append(")")
         .append("\n JavaFx Version: ").append(System.getProperty("javafx.runtime.version"))
         .append("\n Groovy version: ").append(GroovySystem.getVersion())
-        .append("\n Nashorn version: ").append(nashornScriptEngineFactory.getEngineVersion())
-        .append(" (").append(nashornScriptEngineFactory.getLanguageName())
-        .append(" ").append(nashornScriptEngineFactory.getLanguageVersion()).append(")")
+        .append("\n Rhino version: ").append(rhinoScriptEngineFactory.getEngineVersion())
+        .append(" (").append(rhinoScriptEngineFactory.getLanguageName())
+        .append(" ").append(rhinoScriptEngineFactory.getLanguageVersion()).append(")")
         .append("\n Matrix-core version: ").append(matrixCoreVersion)
         .append("\n Matrix-stats version: ").append(matrixStatsVersion)
         //.append("\n Matrix-spreadsheet version: ").append(matrixSpreadsheetVersion)

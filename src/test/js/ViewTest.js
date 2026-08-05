@@ -18,6 +18,5 @@ let arr = [
   [true, true, false, null],
   ['gree', 'yellow', NaN, null]
 ];
-inout.View(Java.to(arr,"java.lang.Object[][]"), "to Java");
-// this will fail
-inout.View(arr);
+io.view(arr, "to Java");
+io.view(arr);

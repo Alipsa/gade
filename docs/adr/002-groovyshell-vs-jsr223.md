@@ -179,7 +179,7 @@ ScriptEngine python = manager.getEngineByName("python");
 
 **Why this doesn't matter for Gade:**
 - Gade is specifically a **Groovy** IDE
-- We already have dedicated JavaScript tab (Nashorn/GraalVM)
+- We already have dedicated JavaScript tab (Rhino/GraalVM)
 - No plans to support Python, Ruby, etc. in embedded runtime
 - Gradle/Maven runtimes only execute Groovy
 
@@ -275,7 +275,7 @@ dependencies {
 
 **For Future Language Support:**
 - If we add Python, Ruby, etc., we'll use language-specific engines
-- JavaScript tab already uses Nashorn (JSR223-compatible but not required)
+- JavaScript tab already uses Rhino (JSR223-compatible but not required)
 
 ## Alternatives Considered
 

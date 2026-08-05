@@ -19,12 +19,13 @@ import javafx.stage.DirectoryChooser;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.mozilla.javascript.NativeArray;
 import se.alipsa.gade.Gade;
+import se.alipsa.gade.code.jstab.RhinoValueConverter;
 import se.alipsa.gade.console.ConsoleTextArea;
 import se.alipsa.gade.inout.plot.PlotsTab;
 import se.alipsa.gade.inout.viewer.ViewTab;
@@ -199,25 +200,27 @@ public class InoutComponent extends TabPane  {
       Alerts.warnFx("View", "matrix is null, cannot View");
       return;
     }
-    // Instanceof check does not work due to module restrictions
-    if (matrix.getClass().getName().contains(".ListAdapter")) {
-      // Due to erasure and whatever other strange reasons, in java 11 Nashorn return a List<ScriptObjectMirror> and still end up here
-      Alerts.warnFx("Cannot view a ListAdapter directly", "Convert " + matrix.getClass().getName() + " to a java 2D array before viewing using Java.to(data,'java.lang.Object[][]')");
+    if (matrix instanceof NativeArray) {
+      viewNativeArray(matrix, title);
       return;
     }
 
-    Matrix table = Matrix.builder().rows(matrix).build();
+    try {
+      Matrix table = Matrix.builder().rows(matrix).build();
 
-    /*
-    var t = transposeAny(matrix);
-    List<String> header = createAnonymousHeader(t.size());
-    StringColumn[] columns = new StringColumn[t.size()];
-    for (int i = 0; i < columns.length; i++) {
-      columns[i] = StringColumn.create(header.get(i), t.get(i).stream().map(String::valueOf).toArray(String[]::new));
+      /*
+      var t = transposeAny(matrix);
+      List<String> header = createAnonymousHeader(t.size());
+      StringColumn[] columns = new StringColumn[t.size()];
+      for (int i = 0; i < columns.length; i++) {
+        columns[i] = StringColumn.create(header.get(i), t.get(i).stream().map(String::valueOf).toArray(String[]::new));
+      }
+      Table table = Table.create().addColumns(columns);
+       */
+      viewTable(table, title);
+    } catch (RuntimeException e) {
+      warnViewFailure(e);
     }
-    Table table = Table.create().addColumns(columns);
-     */
-    viewTable(table, title);
   }
 
   public void view(Object matrix, String... title) {
@@ -226,18 +229,18 @@ public class InoutComponent extends TabPane  {
       return;
     }
     ConsoleTextArea console = gui.getConsoleComponent().getConsole();
-    //if (matrix instanceof NativeArray || matrix instanceof ScriptObjectMirror) {
-    if (matrix instanceof ScriptObjectMirror) {
-      Alerts.warnFx("Cannot View native javascript objects", "Use the View function or convert the matrix to a java 2d array before calling inout.View()");
-      return;
-    }
-    if (matrix instanceof Object[][]) {
-      view2dArray((Object[][])matrix, title);
+    if (matrix instanceof NativeArray) {
+      viewNativeArray(matrix, title);
+    } else if (matrix instanceof Object[][]) {
+      try {
+        view2dArray((Object[][]) matrix, title);
+      } catch (RuntimeException e) {
+        warnViewFailure(e);
+      }
     } else if (matrix instanceof Matrix tableMatrix) {
       viewTable(tableMatrix, title);
     } else if (matrix instanceof List) {
-      // Assume it's a list of rows
-      viewTable(Matrix.builder().rows((List<List>) matrix).build());
+      view((List<List>) matrix, title);
     } else if (matrix.getClass().getName().equals("org.apache.groovy.ginq.provider.collection.runtime.QueryableCollection")) {
       viewTable(Matrix.builder().ginqResult(matrix).build());
     }
@@ -254,6 +257,19 @@ public class InoutComponent extends TabPane  {
     }
     Matrix table = Matrix.builder().rows(objList).build();
     viewTable(table, title);
+  }
+
+  private void viewNativeArray(Object matrix, String... title) {
+    try {
+      view2dArray(RhinoValueConverter.toObjectMatrix(matrix), title);
+    } catch (RuntimeException e) {
+      warnViewFailure(e);
+    }
+  }
+
+  private void warnViewFailure(RuntimeException e) {
+    String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+    Alerts.warnFx("Cannot view matrix", message);
   }
 
   public void viewHtml(String html, String... title) {

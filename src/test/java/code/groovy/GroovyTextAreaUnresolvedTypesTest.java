@@ -13,7 +13,7 @@ public class GroovyTextAreaUnresolvedTypesTest {
   void sampleScript_shouldNotFlagWordsInsideStrings() {
     String code = String.join("\n",
         "@GrabConfig(systemClassLoader=true)",
-        "@Grab('org.openjdk.nashorn:nashorn-core:15.6')",
+        "@Grab('org.mozilla:rhino:1.9.1')",
         "@Grab('ant:ant-optional:1.5.3-1')",
         "import groovy.ant.AntBuilder",
         "import org.apache.tools.ant.DefaultLogger",
