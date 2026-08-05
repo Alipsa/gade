@@ -3,6 +3,9 @@ package se.alipsa.gade.code.bashtab;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,5 +42,31 @@ class BashTextAreaTest {
 
     assertTrue(styles.contains("keyword"), "expected keyword style on later lines");
     assertFalse(styles.contains("string"), "unclosed quote should not create a runaway string style");
+  }
+
+  @Test
+  void doesNotAllowComplexSingleQuoteIdiomToSpanLines() throws IOException {
+    String code = Files.readString(Path.of("src/test/resources/bash/releaseSnippet.sh"));
+    StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
+
+    // Find the end of the problematic grep/sed line (line 3 of the snippet).
+    int firstNewline = code.indexOf('\n');
+    int secondNewline = code.indexOf('\n', firstNewline + 1);
+    int endOfProblematicLine = code.indexOf('\n', secondNewline + 1);
+
+    long stringStyleAfterProblematicLine = 0;
+    long pos = 0;
+    for (int i = 0; i < spans.getSpanCount(); i++) {
+      var span = spans.getStyleSpan(i);
+      long start = pos;
+      long end = pos + span.getLength();
+      if (start > endOfProblematicLine && span.getStyle().contains("string")) {
+        stringStyleAfterProblematicLine += span.getLength();
+      }
+      pos = end;
+    }
+
+    assertTrue(stringStyleAfterProblematicLine == 0,
+        "string style should not span past the line containing the single-quote idiom");
   }
 }
