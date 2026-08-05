@@ -21,7 +21,7 @@ function validateMatrix(data) {
 
 function View(data, title='js[][]') {
    validateMatrix(data);
-   inout.view(data, title);
+   io.view(data, title);
 }
 
 function transpose(matrix) {

@@ -2,7 +2,8 @@ package se.alipsa.gade.code.jstab;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeArray;
-import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.Undefined;
+import org.mozilla.javascript.UniqueTag;
 
 /**
  * Converts Rhino JavaScript values used by the JavaScript tab into Java values.
@@ -39,11 +40,11 @@ public final class RhinoValueConverter {
   }
 
   private static Object toJavaValue(Object value) {
+    if (value == Undefined.instance || value == UniqueTag.NOT_FOUND) {
+      return null;
+    }
     if (value instanceof NativeArray array) {
       return toObjectArray(array);
-    }
-    if (value instanceof Scriptable scriptable) {
-      return Context.jsToJava(scriptable, Object.class);
     }
     return Context.jsToJava(value, Object.class);
   }

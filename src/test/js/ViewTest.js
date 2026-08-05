@@ -18,5 +18,5 @@ let arr = [
   [true, true, false, null],
   ['gree', 'yellow', NaN, null]
 ];
-inout.view(arr, "to Java");
-inout.view(arr);
+io.view(arr, "to Java");
+io.view(arr);

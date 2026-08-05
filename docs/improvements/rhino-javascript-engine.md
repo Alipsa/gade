@@ -16,8 +16,9 @@ The existing JavaScript tab behavior is preserved:
 
 - JavaScript sessions retain their bindings, output/error routing, and restart controls.
 - The `View(data, title)` helper remains available.
-- JavaScript arrays are converted to Java matrices by Gade’s Java-side Rhino conversion code.
-- JavaScript code should use `inout.view(data, title)` when calling the lower-level interaction
+- JavaScript arrays are converted to Java matrices by Gade’s Java-side Rhino conversion code
+  before they are passed to the matrix builder.
+- JavaScript code should use `io.view(data, title)` when calling the lower-level interaction
   object directly; Nashorn’s `Java.to(...)` is not required.
 
 ## Testing
