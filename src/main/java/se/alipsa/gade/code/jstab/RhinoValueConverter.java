@@ -46,7 +46,25 @@ public final class RhinoValueConverter {
     if (value instanceof NativeArray array) {
       return toObjectArray(array);
     }
-    return Context.jsToJava(value, Object.class);
+    Object javaValue = Context.jsToJava(value, Object.class);
+    if (javaValue instanceof Double number) {
+      return narrowIntegral(number);
+    }
+    return javaValue;
+  }
+
+  private static Object narrowIntegral(Double number) {
+    double value = number;
+    if (!Double.isFinite(value) || value != Math.rint(value)) {
+      return number;
+    }
+    if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+      return number.intValue();
+    }
+    if (value >= Long.MIN_VALUE && value < 0x1.0p63) {
+      return number.longValue();
+    }
+    return number;
   }
 
   private static int checkedLength(NativeArray array) {

@@ -34,8 +34,8 @@ class RhinoScriptEngineTest {
 
     assertInstanceOf(NativeArray.class, value);
     Object[][] matrix = RhinoValueConverter.toObjectMatrix(value);
-    assertArrayEquals(new Object[]{1.0, 2.0}, matrix[0]);
-    assertArrayEquals(new Object[]{3.0, 4.0}, matrix[1]);
+    assertArrayEquals(new Object[]{1, 2}, matrix[0]);
+    assertArrayEquals(new Object[]{3, 4}, matrix[1]);
   }
 
   @Test
@@ -50,8 +50,8 @@ class RhinoScriptEngineTest {
     Object[][] matrix = RhinoValueConverter.toObjectMatrix(target.value);
     assertEquals("list", target.overload);
     assertEquals("sample", target.title);
-    assertArrayEquals(new Object[]{1.0, 2.0}, matrix[0]);
-    assertArrayEquals(new Object[]{3.0, 4.0}, matrix[1]);
+    assertArrayEquals(new Object[]{1, 2}, matrix[0]);
+    assertArrayEquals(new Object[]{3, 4}, matrix[1]);
   }
 
   @Test
@@ -61,8 +61,22 @@ class RhinoScriptEngineTest {
     Object[][] matrix = RhinoValueConverter.toObjectMatrix(
         engine.eval("[[1, , 3], [undefined, NaN, true]]"));
 
-    assertArrayEquals(new Object[]{1.0, null, 3.0}, matrix[0]);
+    assertArrayEquals(new Object[]{1, null, 3}, matrix[0]);
     assertArrayEquals(new Object[]{null, Double.NaN, true}, matrix[1]);
+  }
+
+  @Test
+  void accessesJavaFxClassesThroughRhinoPackages() throws Exception {
+    ScriptEngine engine = new RhinoScriptEngineFactory().getScriptEngine();
+
+    Object types = engine.eval("""
+        var fx = new JavaImporter(Packages.javafx.scene.chart, Packages.javafx.collections);
+        with (fx) {
+          [typeof PieChart, typeof FXCollections, typeof PieChart.Data].join(',');
+        }
+        """);
+
+    assertEquals("function,function,function", types);
   }
 
   private static String readBundledInitScript() throws IOException {
