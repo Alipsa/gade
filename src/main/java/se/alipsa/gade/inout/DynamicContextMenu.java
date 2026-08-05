@@ -721,12 +721,11 @@ public class DynamicContextMenu extends ContextMenu {
          credentialsProvider = GitUtils.getStoredCredentials(url);
       }
       if (credentialsProvider == null) {
-         File gitCredentials = GitUtils.getCredentialsFile();
-         if (gitCredentials.exists()) {
-            Alerts.warnFx("No credentials provider found", "add " + url + " to " + gitCredentials);
-         } else {
-            Alerts.warnFx("No credentials provider found", gitCredentials + " is missing");
-         }
+         // A credentials provider is optional. JGit may authenticate through SSH keys,
+         // an agent, or another configured mechanism, so the absence of an entry in
+         // ~/.git-credentials is not an error by itself. If authentication is actually
+         // required, the transport error handler will prompt for credentials.
+         log.debug("No stored credentials found for {}; letting JGit use its configured authentication", url);
       }
       return credentialsProvider;
    }
