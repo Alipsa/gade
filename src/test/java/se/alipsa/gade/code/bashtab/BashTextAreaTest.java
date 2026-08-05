@@ -27,4 +27,17 @@ class BashTextAreaTest {
     assertTrue(styles.contains("comment"), "expected comment style");
     assertFalse(styles.isEmpty(), "expected some styles");
   }
+
+  @Test
+  void doesNotAllowUnclosedQuoteToSwallowFollowingLines() {
+    String code = "echo \"unclosed\nif true; then\n  echo done\nfi\n";
+    StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
+
+    Set<String> styles = spans.stream()
+        .flatMap(span -> span.getStyle().stream())
+        .collect(Collectors.toSet());
+
+    assertTrue(styles.contains("keyword"), "expected keyword style on later lines");
+    assertFalse(styles.contains("string"), "unclosed quote should not create a runaway string style");
+  }
 }

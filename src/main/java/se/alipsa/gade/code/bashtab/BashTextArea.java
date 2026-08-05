@@ -33,7 +33,9 @@ public class BashTextArea extends CodeTextArea {
   private static final String VARIABLE_PATTERN = "\\$\\{[^}]*\\}|\\$[A-Za-z_][A-Za-z0-9_]*";
   private static final String OPERATOR_PATTERN = "&&|\\|\\||;;|<<|>>|<=|>=|==|!=|=|!|&|\\||;|<|>|\\+|\\*|-|/|%|~";
   private static final String DIGIT_PATTERN = "\\b\\d+\\b";
-  private static final String STRING_PATTERN = "\"[^\"]*\"|'[^']*'";
+  // Keep strings single-line and allow escaped chars inside double-quoted strings.
+  // This prevents an unclosed quote from swallowing the rest of the file.
+  private static final String STRING_PATTERN = "\"(?:[^\"\\\\]|\\\\.)*\"|'[^'\\n]*'";
   private static final String COMMENT_PATTERN = "#[^\\n]*";
 
   private static final Pattern PATTERN = Pattern.compile(
