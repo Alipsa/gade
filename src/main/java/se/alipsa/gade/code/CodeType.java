@@ -34,7 +34,13 @@ public enum CodeType {
   R("R code"),
 
   /** SAS code content */
-  SAS("SAS code");
+  SAS("SAS code"),
+
+  /** Bash shell script content */
+  BASH("Bash script"),
+
+  /** Python code content */
+  PYTHON("Python code");
 
   CodeType(String displayValue) {
     this.displayValue = displayValue;

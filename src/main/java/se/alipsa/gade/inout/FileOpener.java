@@ -78,6 +78,12 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".r", ".s") || strEquals(type, "text/x-rsrc")) {
         return codeComponent.addTab(file, CodeType.R);
       }
+      if (strEndsWith(fileNameLower, ".py") || strEquals(type, "text/x-python")) {
+        return codeComponent.addTab(file, CodeType.PYTHON);
+      }
+      if (strEndsWith(fileNameLower, ".sh", ".bash") || strEquals(type, "application/x-sh")) {
+        return codeComponent.addTab(file, CodeType.BASH);
+      }
       if (strEndsWith(fileNameLower, ".svg") || strEquals(type, "image/svg+xml")) {
         displaySvgInPlots(file);
         return null;
@@ -90,8 +96,7 @@ public class FileOpener {
         return codeComponent.addTab(file, CodeType.XML);
       }
       if (strStartsWith(type, "text")
-                 || strEquals(type, "application/x-bat",
-          "application/x-sh")
+                 || strEquals(type, "application/x-bat")
                  || "namespace".equals(fileNameLower)
                  || "description".equals(fileNameLower)
                  || strEndsWith(fileNameLower, ".txt", ".csv", ".gitignore", ".properties", "props")) {
@@ -183,6 +188,8 @@ public class FileOpener {
     if (name.endsWith(".md") || name.endsWith(".rmd")) return CodeType.MD;
     if (name.endsWith(".sas")) return CodeType.SAS;
     if (name.endsWith(".r") || name.endsWith(".s")) return CodeType.R;
+    if (name.endsWith(".py")) return CodeType.PYTHON;
+    if (name.endsWith(".sh") || name.endsWith(".bash")) return CodeType.BASH;
     if (name.endsWith(".svg") || name.endsWith(".xml") || name.endsWith(".xsl") || name.endsWith(".xslt")
         || name.endsWith(".xsd") || name.endsWith(".fxml") || name.endsWith(".html") || name.endsWith(".htm")
         || name.endsWith(".xhtml")) return CodeType.XML;
