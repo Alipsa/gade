@@ -393,6 +393,7 @@ test {
   if (!shouldSkipTestFx) {
     // TestFX Monocle accesses internal JavaFX packages reflectively.
     jvmArgs += [
+        '--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED',
         '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
         '--add-exports=javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED',
         '--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
@@ -491,6 +492,7 @@ tasks.register('guiTest', Test) {
   }
 
   jvmArgs += [
+      '--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED',
       '--add-exports=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
       '--add-exports=javafx.graphics/com.sun.glass.ui.monocle=ALL-UNNAMED',
       '--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
