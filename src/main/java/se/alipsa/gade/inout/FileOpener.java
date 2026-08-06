@@ -81,7 +81,8 @@ public class FileOpener {
       if (strEndsWith(fileNameLower, ".py") || strEquals(type, "text/x-python")) {
         return codeComponent.addTab(file, CodeType.PYTHON);
       }
-      if (strEndsWith(fileNameLower, ".sh", ".bash") || strEquals(type, "application/x-sh")) {
+      if (strEndsWith(fileNameLower, ".sh", ".bash")
+          || strEquals(type, "application/x-sh", "text/x-shellscript")) {
         return codeComponent.addTab(file, CodeType.BASH);
       }
       if (strEndsWith(fileNameLower, ".svg") || strEquals(type, "image/svg+xml")) {

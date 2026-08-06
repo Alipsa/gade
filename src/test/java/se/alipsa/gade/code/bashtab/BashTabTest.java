@@ -38,6 +38,16 @@ class BashTabTest {
   }
 
   @Test
+  void parseArgsSupportsEscapedQuotesInsideQuotes() {
+    assertEquals(List.of("with \"quotes\""),
+        BashTask.parseArgs("\"with \\\"quotes\\\"\""));
+    assertEquals(List.of("with 'quotes'"),
+        BashTask.parseArgs("'with \\'quotes\\''"));
+    assertEquals(List.of("a", "b\\c", "d"),
+        BashTask.parseArgs("a \"b\\\\c\" d"));
+  }
+
+  @Test
   void buildCommandRunsCurrentContentEvenForSavedFiles() {
     File file = new File("example.sh");
 

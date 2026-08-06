@@ -1,8 +1,6 @@
 package se.alipsa.gade.code.pythontab;
 
 import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
@@ -12,9 +10,7 @@ import java.io.File;
 
 public class PythonTab extends TextAreaTab {
 
-  private PythonTextArea pythonTextArea;
-
-  private static Logger log = LogManager.getLogger(PythonTab.class);
+  private final PythonTextArea pythonTextArea;
 
   public PythonTab(String title, Gade gui) {
     super(gui, CodeType.PYTHON);

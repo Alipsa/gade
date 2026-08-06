@@ -4,8 +4,8 @@ import org.fxmisc.richtext.model.StyleSpans;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,6 +26,7 @@ class BashTextAreaTest {
 
     assertTrue(styles.contains("keyword"), "expected keyword style");
     assertTrue(styles.contains("function"), "expected function style");
+    assertTrue(styles.contains("variable"), "expected variable style");
     assertTrue(styles.contains("string"), "expected string style");
     assertTrue(styles.contains("comment"), "expected comment style");
     assertFalse(styles.isEmpty(), "expected some styles");
@@ -49,7 +50,7 @@ class BashTextAreaTest {
     String code = "echo $# args here\n";
     StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
 
-    assertTrue(stylesAt(spans, code.indexOf("$#")).contains("function"),
+    assertTrue(stylesAt(spans, code.indexOf("$#")).contains("variable"),
         "$# should be highlighted as a variable");
     assertTrue(stylesAt(spans, code.indexOf("args")).isEmpty(),
         "the # of $# should not start a comment");
@@ -60,7 +61,7 @@ class BashTextAreaTest {
     String code = "target=$1\nshift\n";
     StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
 
-    assertTrue(stylesAt(spans, code.indexOf("$1")).contains("function"),
+    assertTrue(stylesAt(spans, code.indexOf("$1")).contains("variable"),
         "$1 should be highlighted as a variable");
   }
 
@@ -75,7 +76,10 @@ class BashTextAreaTest {
 
   @Test
   void doesNotAllowComplexSingleQuoteIdiomToSpanLines() throws IOException {
-    String code = Files.readString(Path.of("src/test/resources/bash/releaseSnippet.sh"));
+    String code;
+    try (InputStream is = getClass().getResourceAsStream("/bash/releaseSnippet.sh")) {
+      code = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    }
     StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
 
     // Find the end of the problematic grep/sed line (line 3 of the snippet).

@@ -41,12 +41,14 @@ public class BashTextArea extends CodeTextArea {
   private static final String DIGIT_PATTERN = "\\b\\d+\\b";
   // Keep strings single-line and allow escaped chars inside double-quoted strings.
   // This prevents an unclosed quote from swallowing the rest of the file.
+  // Strings are matched before comments so that a # inside a quoted string is not
+  // treated as the start of a comment.
   private static final String STRING_PATTERN = "\"(?:[^\"\\\\]|\\\\.)*\"|'[^'\\n]*'";
   private static final String COMMENT_PATTERN = "#[^\\n]*";
 
   private static final Pattern PATTERN = Pattern.compile(
-      "(?<COMMENT>" + COMMENT_PATTERN + ")"
-          + "|(?<STRING>" + STRING_PATTERN + ")"
+      "(?<STRING>" + STRING_PATTERN + ")"
+          + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
           + "|(?<KEYWORD>" + KEYWORD_PATTERN + ")"
           + "|(?<FUNCTIONS>" + FUNCTIONS_PATTERN + ")"
           + "|(?<VARIABLE>" + VARIABLE_PATTERN + ")"
@@ -84,11 +86,11 @@ public class BashTextArea extends CodeTextArea {
     StyleSpansBuilder<Collection<String>> spansBuilder = new StyleSpansBuilder<>();
     while (matcher.find()) {
       String styleClass =
-          matcher.group("COMMENT") != null ? "comment" :
-              matcher.group("STRING") != null ? "string" :
+          matcher.group("STRING") != null ? "string" :
+              matcher.group("COMMENT") != null ? "comment" :
                   matcher.group("KEYWORD") != null ? "keyword" :
                       matcher.group("FUNCTIONS") != null ? "function" :
-                          matcher.group("VARIABLE") != null ? "function" :
+                          matcher.group("VARIABLE") != null ? "variable" :
                               matcher.group("PAREN") != null ? "paren" :
                                   matcher.group("BRACE") != null ? "brace" :
                                       matcher.group("BRACKET") != null ? "bracket" :

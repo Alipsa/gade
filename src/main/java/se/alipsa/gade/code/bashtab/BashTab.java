@@ -3,8 +3,6 @@ package se.alipsa.gade.code.bashtab;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeTextArea;
 import se.alipsa.gade.code.CodeType;
@@ -16,8 +14,6 @@ public class BashTab extends ExecutableTab {
 
   private final BashTextArea bashTextArea;
   private final TextField argsField;
-
-  private static final Logger log = LogManager.getLogger(BashTab.class);
 
   public BashTab(String title, Gade gui) {
     super(gui, CodeType.BASH);
@@ -76,7 +72,11 @@ public class BashTab extends ExecutableTab {
         ex = throwable;
       }
       consoleComponent.waiting();
-      ExceptionAlert.showAlert(ex.getMessage(), ex);
+      if (ex instanceof BashTask.BashInterruptedException) {
+        consoleComponent.getConsole().appendWarningFx("Bash execution interrupted");
+      } else {
+        ExceptionAlert.showAlert(ex.getMessage(), ex);
+      }
       gui.getConsoleComponent().promptAndScrollToEnd();
     });
     consoleComponent.startTaskWhenOthersAreFinished(task, "bash");

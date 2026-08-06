@@ -50,6 +50,16 @@ public abstract class BashTask extends CountDownTask<Void> {
   private volatile Process process;
   private volatile boolean stopRequested;
 
+  /**
+   * Marker exception used when a bash task is cancelled by the user. It is not
+   * surfaced as an error dialog because interruption is an intentional action.
+   */
+  static class BashInterruptedException extends RuntimeException {
+    BashInterruptedException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
   public BashTask(String content, File file, List<String> args, Gade gui, TaskListener taskListener) {
     super(taskListener);
     this.content = content;
@@ -62,6 +72,8 @@ public abstract class BashTask extends CountDownTask<Void> {
    * Parse a raw argument string into a list of tokens.
    * Whitespace separates arguments; both single and double quotes can be used
    * to group arguments containing spaces. Quotes are stripped from the token.
+   * A quote character can be escaped with a backslash to include it literally
+   * inside a quoted argument (e.g. {@code "with \"quotes\""}).
    */
   static List<String> parseArgs(String text) {
     List<String> tokens = new ArrayList<>();
@@ -74,6 +86,14 @@ public abstract class BashTask extends CountDownTask<Void> {
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
       if (quote != null) {
+        if (c == '\\' && i + 1 < text.length()) {
+          char next = text.charAt(i + 1);
+          if (next == quote || next == '\\') {
+            current.append(next);
+            i++;
+            continue;
+          }
+        }
         if (c == quote) {
           quote = null;
         } else {
@@ -177,11 +197,11 @@ public abstract class BashTask extends CountDownTask<Void> {
     } catch (InterruptedException e) {
       destroyProcess();
       Thread.currentThread().interrupt();
-      throw new RuntimeException("Bash execution interrupted", e);
+      throw new BashInterruptedException("Bash execution interrupted", e);
     } catch (IOException e) {
       if (stopRequested || Thread.currentThread().isInterrupted()) {
         Thread.currentThread().interrupt();
-        throw new RuntimeException("Bash execution interrupted", e);
+        throw new BashInterruptedException("Bash execution interrupted", e);
       }
       throw e;
     } finally {
@@ -216,6 +236,10 @@ public abstract class BashTask extends CountDownTask<Void> {
     List<String> command = new ArrayList<>();
     command.add("bash");
     command.add("-c");
+    // Passing the content inline means the unsaved editor buffer runs as-is. Very large
+    // buffers can exceed OS command-line length limits (e.g. ~32k on Windows, ~2MB on
+    // Linux); for typical build/release scripts this is not an issue. If it becomes one,
+    // consider writing the content to a temporary script file instead.
     command.add(content);
     // bash -c assigns the first argument after the script to $0.
     command.add(file == null ? "_" : file.getAbsolutePath());
