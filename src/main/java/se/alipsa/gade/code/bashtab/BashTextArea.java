@@ -1,5 +1,7 @@
 package se.alipsa.gade.code.bashtab;
 
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 import se.alipsa.gade.code.CodeTextArea;
@@ -30,7 +32,11 @@ public class BashTextArea extends CodeTextArea {
   private static final String PAREN_PATTERN = "\\(|\\)";
   private static final String BRACE_PATTERN = "\\{|\\}";
   private static final String BRACKET_PATTERN = "\\[|\\]";
-  private static final String VARIABLE_PATTERN = "\\$\\{[^}]*\\}|\\$[A-Za-z_][A-Za-z0-9_]*";
+  // The last alternative covers positional ($1) and special ($#, $?, $$, $!, $@, $*, $-)
+  // parameters. Matching $# matters beyond looks: without it the # is picked up by the
+  // comment pattern, greying out the rest of the line.
+  private static final String VARIABLE_PATTERN =
+      "\\$\\{[^}]*\\}|\\$[A-Za-z_][A-Za-z0-9_]*|\\$[0-9#?$!@*-]";
   private static final String OPERATOR_PATTERN = "&&|\\|\\||;;|<<|>>|<=|>=|==|!=|=|!|&|\\||;|<|>|\\+|\\*|-|/|%|~";
   private static final String DIGIT_PATTERN = "\\b\\d+\\b";
   // Keep strings single-line and allow escaped chars inside double-quoted strings.
@@ -56,6 +62,20 @@ public class BashTextArea extends CodeTextArea {
 
   public BashTextArea(BashTab parent) {
     super(parent);
+    addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+      if (e.isControlDown() && KeyCode.ENTER.equals(e.getCode())) {
+        // Unlike the Groovy and Javascript tabs there is no session to carry state between
+        // runs, so running a single line in isolation would rarely do what the user means.
+        // Run the selection if there is one, the whole script otherwise.
+        String selected = selectedTextProperty().getValue();
+        if (selected != null && !selected.isEmpty()) {
+          parent.runBash(selected);
+        } else {
+          parent.runBash();
+        }
+        e.consume();
+      }
+    });
   }
 
   public static StyleSpans<Collection<String>> computeHighlightingFor(String text) {

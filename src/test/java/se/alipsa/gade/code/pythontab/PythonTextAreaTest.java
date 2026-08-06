@@ -42,6 +42,40 @@ class PythonTextAreaTest {
         "triple-single-quoted content should remain a string");
   }
 
+  @Test
+  void keepsTripleQuotedStringContainingSingleQuoteCharsTogether() {
+    String code = "doc = \"\"\"He said \"hi\" there\"\"\"\n"
+        + "if True: pass\n";
+    StyleSpans<Collection<String>> spans = PythonTextArea.computeHighlightingFor(code);
+
+    assertTrue(stylesAt(spans, code.indexOf("He said")).contains("string"),
+        "text before the inner quote should be a string");
+    assertTrue(stylesAt(spans, code.indexOf("there")).contains("string"),
+        "text after the inner quote should be a string");
+    assertTrue(stylesAt(spans, code.indexOf("if True")).contains("keyword"),
+        "the docstring should not leak into the following line");
+  }
+
+  @Test
+  void keepsMultilineDocstringTogether() {
+    String code = "doc = \"\"\"line one\nif not code\n\"\"\"\nreturn 1\n";
+    StyleSpans<Collection<String>> spans = PythonTextArea.computeHighlightingFor(code);
+
+    assertTrue(stylesAt(spans, code.indexOf("if not")).contains("string"),
+        "keywords inside a docstring should stay string styled");
+    assertTrue(stylesAt(spans, code.indexOf("return")).contains("keyword"),
+        "code after the docstring should be highlighted again");
+  }
+
+  @Test
+  void doesNotAllowUnterminatedTripleQuoteToSwallowFollowingLines() {
+    String code = "bad = \"\"\"unterminated\nif True: pass\n";
+    StyleSpans<Collection<String>> spans = PythonTextArea.computeHighlightingFor(code);
+
+    assertTrue(stylesAt(spans, code.indexOf("if True")).contains("keyword"),
+        "an unterminated docstring should not create a runaway string style");
+  }
+
   private static Set<String> stylesAt(StyleSpans<Collection<String>> spans, int position) {
     int offset = 0;
     for (int i = 0; i < spans.getSpanCount(); i++) {

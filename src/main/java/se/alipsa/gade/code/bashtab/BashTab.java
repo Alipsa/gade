@@ -12,8 +12,6 @@ import se.alipsa.gade.code.ExecutableTab;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gade.utils.ExceptionAlert;
 
-import java.util.List;
-
 public class BashTab extends ExecutableTab {
 
   private final BashTextArea bashTextArea;

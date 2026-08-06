@@ -11,13 +11,37 @@ import se.alipsa.gade.console.ScriptThread;
 import se.alipsa.gade.console.WarningAppenderWriter;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BashTask extends CountDownTask<Void> {
+
+  /**
+   * The charset a child process writes its output in. This is the platform native encoding,
+   * which since JDK 18 is no longer the same thing as {@link Charset#defaultCharset()}.
+   */
+  private static final Charset PROCESS_CHARSET = Charset.forName(
+      System.getProperty("native.encoding", Charset.defaultCharset().name()),
+      Charset.defaultCharset());
+
+  /** How long to wait for the stderr drain thread after the process has exited. */
+  private static final long STDERR_DRAIN_TIMEOUT_MS = 5000;
+
+  /** Processes started by this task type that have not yet terminated. */
+  private static final Set<Process> runningProcesses = ConcurrentHashMap.newKeySet();
+
+  static {
+    // A child process outlives the JVM that started it, so kill whatever is still
+    // running when Gade shuts down rather than leaving orphans behind.
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> runningProcesses.forEach(BashTask::destroy)));
+  }
 
   private final String content;
   private final File file;
@@ -109,20 +133,25 @@ public abstract class BashTask extends CountDownTask<Void> {
 
     try {
       process = pb.start();
+      runningProcesses.add(process);
+      // Nothing ever writes to the child stdin, so close it right away. Otherwise a script
+      // that reads stdin blocks forever on a pipe that will never receive anything.
+      closeQuietly(process.getOutputStream());
       if (stopRequested || Thread.currentThread().isInterrupted()) {
         destroyProcess();
+        runningProcesses.remove(process);
         throw new InterruptedException("Bash execution interrupted");
       }
     } catch (IOException e) {
-      Platform.runLater(() -> console.appendWarningFx("Failed to start bash: " + e.getMessage()));
+      console.appendWarningFx("Failed to start bash: " + e.getMessage());
       throw e;
     }
 
     try (
         AppenderWriter out = new AppenderWriter(console);
         WarningAppenderWriter err = new WarningAppenderWriter(console);
-        BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()))
+        BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream(), PROCESS_CHARSET));
+        BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream(), PROCESS_CHARSET))
     ) {
       Thread errThread = new Thread(() -> drainStream(stdErr, err));
       errThread.setDaemon(true);
@@ -135,10 +164,15 @@ public abstract class BashTask extends CountDownTask<Void> {
       }
 
       int exitCode = process.waitFor();
-      errThread.join(1000);
+      // The process has exited so the remaining stderr is buffered and readable at once,
+      // which the drain thread gets through in no time. The wait is still bounded because
+      // a background child of the script can keep the stderr pipe open indefinitely.
+      errThread.join(STDERR_DRAIN_TIMEOUT_MS);
 
-      if (exitCode != 0) {
-        throw new RuntimeException("Bash script exited with code " + exitCode);
+      if (exitCode != 0 && !stopRequested) {
+        // A non-zero exit is a normal outcome for a shell script, so report it in the
+        // console instead of raising an error dialog.
+        console.appendWarningFx("Script exited with code " + exitCode);
       }
     } catch (InterruptedException e) {
       destroyProcess();
@@ -152,6 +186,7 @@ public abstract class BashTask extends CountDownTask<Void> {
       throw e;
     } finally {
       destroyProcess();
+      runningProcesses.remove(process);
       process = null;
     }
     return null;
@@ -169,7 +204,10 @@ public abstract class BashTask extends CountDownTask<Void> {
   }
 
   private void destroyProcess() {
-    Process current = process;
+    destroy(process);
+  }
+
+  private static void destroy(Process current) {
     if (current == null || !current.isAlive()) {
       return;
     }
@@ -177,12 +215,20 @@ public abstract class BashTask extends CountDownTask<Void> {
     current.destroyForcibly();
   }
 
+  private static void closeQuietly(Closeable closeable) {
+    try {
+      closeable.close();
+    } catch (IOException e) {
+      // Nothing useful to do about it
+    }
+  }
+
   private void drainStream(BufferedReader reader, WarningAppenderWriter writer) {
     try {
       String line;
       while ((line = reader.readLine()) != null) {
+        // No trailing newline needed, appendWarningFx adds one.
         writer.write(line.toCharArray(), 0, line.length());
-        writer.write("\n".toCharArray(), 0, 1);
       }
     } catch (IOException e) {
       // Stream closed, ignore

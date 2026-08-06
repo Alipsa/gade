@@ -45,6 +45,35 @@ class BashTextAreaTest {
   }
 
   @Test
+  void treatsSpecialParametersAsVariablesRatherThanComments() {
+    String code = "echo $# args here\n";
+    StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
+
+    assertTrue(stylesAt(spans, code.indexOf("$#")).contains("function"),
+        "$# should be highlighted as a variable");
+    assertTrue(stylesAt(spans, code.indexOf("args")).isEmpty(),
+        "the # of $# should not start a comment");
+  }
+
+  @Test
+  void highlightsPositionalParameters() {
+    String code = "target=$1\nshift\n";
+    StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
+
+    assertTrue(stylesAt(spans, code.indexOf("$1")).contains("function"),
+        "$1 should be highlighted as a variable");
+  }
+
+  @Test
+  void stillTreatsAStandaloneHashAsAComment() {
+    String code = "grep foo # real comment\n";
+    StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
+
+    assertTrue(stylesAt(spans, code.indexOf("# real")).contains("comment"),
+        "expected comment style");
+  }
+
+  @Test
   void doesNotAllowComplexSingleQuoteIdiomToSpanLines() throws IOException {
     String code = Files.readString(Path.of("src/test/resources/bash/releaseSnippet.sh"));
     StyleSpans<Collection<String>> spans = BashTextArea.computeHighlightingFor(code);
@@ -68,5 +97,17 @@ class BashTextAreaTest {
 
     assertTrue(stringStyleAfterProblematicLine == 0,
         "string style should not span past the line containing the single-quote idiom");
+  }
+
+  private static Set<String> stylesAt(StyleSpans<Collection<String>> spans, int position) {
+    int offset = 0;
+    for (int i = 0; i < spans.getSpanCount(); i++) {
+      var span = spans.getStyleSpan(i);
+      if (position >= offset && position < offset + span.getLength()) {
+        return Set.copyOf(span.getStyle());
+      }
+      offset += span.getLength();
+    }
+    return Set.of();
   }
 }

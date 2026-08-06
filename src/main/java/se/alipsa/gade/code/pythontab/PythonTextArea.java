@@ -37,9 +37,12 @@ public class PythonTextArea extends CodeTextArea {
   private static final String BRACKET_PATTERN = "\\[|\\]";
   private static final String OPERATOR_PATTERN = "//|\\*\\*|\\+\\+|--|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=|==|!=|<=|>=|<|>|=|\\+|-|\\*|/|%|&|\\||\\^|~|@";
   private static final String DIGIT_PATTERN = "\\b\\d+\\b";
+  // Triple quoted strings span lines and may contain single quote characters, so they are
+  // matched reluctantly up to the closing delimiter. Single quoted strings stay on one line
+  // so that an unclosed quote cannot swallow the rest of the file.
   private static final String STRING_PATTERN =
-      "\"\"\"(?:[^\"\\\\]|\\\\.)*\"\"\""
-          + "|'''(?:[^'\\\\]|\\\\.)*'''"
+      "\"\"\"(?:\\\\.|[^\\\\])*?\"\"\""
+          + "|'''(?:\\\\.|[^\\\\])*?'''"
           + "|'(?:[^'\\\\\\n]|\\\\.)*'"
           + "|\"(?:[^\"\\\\\\n]|\\\\.)*\"";
   private static final String COMMENT_PATTERN = "#[^\\n]*";
