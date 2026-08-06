@@ -119,7 +119,7 @@ public abstract class BashTask extends CountDownTask<Void> {
     ConsoleTextArea console = consoleComponent.getConsole();
 
     List<String> command = buildCommand(content, file, args);
-    File workingDir = file == null ? null : file.getParentFile();
+    File workingDir = workingDir();
     String title = file == null ? "bash" : file.getName();
 
     ProcessBuilder pb = new ProcessBuilder(command);
@@ -190,6 +190,26 @@ public abstract class BashTask extends CountDownTask<Void> {
       process = null;
     }
     return null;
+  }
+
+  /**
+   * The directory to run the script from, which is Gade's working directory as set by the
+   * file tree.
+   * <p>
+   * Note that this must be passed to the ProcessBuilder explicitly. The file tree changes the
+   * working directory by setting the user.dir property, but that does not move the actual
+   * current directory of the JVM, so a ProcessBuilder left to its default would start the
+   * script in the Gade installation directory instead.
+   *
+   * @return the working directory, or null to leave the ProcessBuilder default in place
+   */
+  static File workingDir() {
+    String userDir = System.getProperty("user.dir");
+    if (userDir == null || userDir.isBlank()) {
+      return null;
+    }
+    File dir = new File(userDir);
+    return dir.isDirectory() ? dir : null;
   }
 
   static List<String> buildCommand(String content, File file, List<String> args) {

@@ -30,11 +30,17 @@ bash -c <editor content> <script path> <args...>
 
 Passing the content rather than the path means the editor buffer runs as it is, with no need to
 save first. `bash -c` assigns the first argument after the script to `$0`, so `$0` is still the
-script path and `$1` onwards are the arguments from the field. The working directory is the
-directory of the file, or the Gade working directory for an unsaved tab.
+script path and `$1` onwards are the arguments from the field.
 
 Notes on the process handling:
 
+- The script runs from Gade's working directory, the one the file tree points at, the same as a
+  Groovy script does. The file tree changes it by setting the `user.dir` property
+  ([`FileTree`](../../src/main/java/se/alipsa/gade/inout/FileTree.java)), which does not move the
+  actual current directory of the JVM, so it has to be passed to the `ProcessBuilder` explicitly.
+  A `ProcessBuilder` left to its own default would start the script in the Gade installation
+  directory. [`RuntimeProcessRunner`](../../src/main/java/se/alipsa/gade/runtime/RuntimeProcessRunner.java)
+  does the same thing for the Groovy subprocess.
 - The child stdin is closed immediately after start. Nothing ever writes to it, so a script that
   calls `read` would otherwise block forever on a pipe that never receives anything.
 - Output is decoded with the platform native encoding (`native.encoding`), which since JDK 18 is
@@ -77,7 +83,8 @@ Both highlighters are regex based, like the existing ones. Two cases needed care
   `src/test/resources/bash/releaseSnippet.sh`.
 - `PythonTextAreaTest` covers the basic styles plus escaped quotes, docstrings containing quote
   characters, multi-line docstrings, and an unterminated `"""`.
-- `BashTabTest` covers argument parsing and command construction.
+- `BashTabTest` covers argument parsing, command construction, and the working directory
+  resolution.
 
 Run them with `./gradlew test --tests "se.alipsa.gade.code.bashtab.*" --tests "se.alipsa.gade.code.pythontab.*" -g ./.gradle-user`.
 
