@@ -270,6 +270,10 @@
     -fx-fill: lightskyblue;
 }
 
+.variable {
+    -fx-fill: plum;
+}
+
 .info {
     -fx-fill: lightgreen;
 }

@@ -126,6 +126,9 @@ public class MenuBuilder {
       case JAVA, GROOVY:
         lineComment = "//";
         break;
+      case BASH, PYTHON:
+        lineComment = "#";
+        break;
       default:
         return;
     }
@@ -778,6 +781,14 @@ public class MenuBuilder {
     MenuItem nR = new MenuItem("R");
     nR.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.R));
     fileMenu.getItems().add(nR);
+
+    MenuItem nBash = new MenuItem("Bash");
+    nBash.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.BASH));
+    fileMenu.getItems().add(nBash);
+
+    MenuItem nPython = new MenuItem("Python");
+    nPython.setOnAction(a -> gui.getCodeComponent().addCodeTab(CodeType.PYTHON));
+    fileMenu.getItems().add(nPython);
 
     MenuItem save = new MenuItem("Save  ctrl+S");
     save.setOnAction(this::saveContent);

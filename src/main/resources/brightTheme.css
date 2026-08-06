@@ -107,6 +107,10 @@
     -fx-fill: mediumblue;
 }
 
+.variable {
+    -fx-fill: darkmagenta;
+}
+
 .info {
     -fx-fill: green;
 }
