@@ -37,7 +37,11 @@ public class PythonTextArea extends CodeTextArea {
   private static final String BRACKET_PATTERN = "\\[|\\]";
   private static final String OPERATOR_PATTERN = "//|\\*\\*|\\+\\+|--|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=|==|!=|<=|>=|<|>|=|\\+|-|\\*|/|%|&|\\||\\^|~|@";
   private static final String DIGIT_PATTERN = "\\b\\d+\\b";
-  private static final String STRING_PATTERN = "\"\"\"[^\"]*\"\"\"|'[^']*'|\"[^\"]*\"";
+  private static final String STRING_PATTERN =
+      "\"\"\"(?:[^\"\\\\]|\\\\.)*\"\"\""
+          + "|'''(?:[^'\\\\]|\\\\.)*'''"
+          + "|'(?:[^'\\\\\\n]|\\\\.)*'"
+          + "|\"(?:[^\"\\\\\\n]|\\\\.)*\"";
   private static final String COMMENT_PATTERN = "#[^\\n]*";
 
   private static final Pattern PATTERN = Pattern.compile(

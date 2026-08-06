@@ -2,6 +2,7 @@ package se.alipsa.gade.code.bashtab;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,5 +26,19 @@ class BashTabTest {
     assertTrue(BashTask.parseArgs("").isEmpty());
     assertTrue(BashTask.parseArgs("   ").isEmpty());
     assertTrue(BashTask.parseArgs(null).isEmpty());
+  }
+
+  @Test
+  void parseArgsPreservesEmptyQuotedArguments() {
+    assertEquals(List.of("", "a", "", "b c"),
+        BashTask.parseArgs("\"\" a '' \"b c\""));
+  }
+
+  @Test
+  void buildCommandRunsCurrentContentEvenForSavedFiles() {
+    File file = new File("example.sh");
+
+    assertEquals(List.of("bash", "-c", "echo current", file.getAbsolutePath(), "one two"),
+        BashTask.buildCommand("echo current", file, List.of("one two")));
   }
 }

@@ -23,6 +23,8 @@ public abstract class BashTask extends CountDownTask<Void> {
   private final File file;
   private final List<String> args;
   private final Gade gui;
+  private volatile Process process;
+  private volatile boolean stopRequested;
 
   public BashTask(String content, File file, List<String> args, Gade gui, TaskListener taskListener) {
     super(taskListener);
@@ -44,6 +46,7 @@ public abstract class BashTask extends CountDownTask<Void> {
     }
     StringBuilder current = new StringBuilder();
     Character quote = null;
+    boolean tokenStarted = false;
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
       if (quote != null) {
@@ -54,16 +57,19 @@ public abstract class BashTask extends CountDownTask<Void> {
         }
       } else if (c == '\"' || c == '\'') {
         quote = c;
+        tokenStarted = true;
       } else if (Character.isWhitespace(c)) {
-        if (current.length() > 0) {
+        if (tokenStarted) {
           tokens.add(current.toString());
           current.setLength(0);
+          tokenStarted = false;
         }
       } else {
         current.append(c);
+        tokenStarted = true;
       }
     }
-    if (current.length() > 0) {
+    if (tokenStarted) {
       tokens.add(current.toString());
     }
     return tokens;
@@ -71,7 +77,14 @@ public abstract class BashTask extends CountDownTask<Void> {
 
   @Override
   public ScriptThread createThread() {
-    ScriptThread thread = new ScriptThread(this, taskListener);
+    ScriptThread thread = new ScriptThread(this, taskListener) {
+      @Override
+      public void interrupt() {
+        stopRequested = true;
+        destroyProcess();
+        super.interrupt();
+      }
+    };
     thread.setDaemon(false);
     return thread;
   }
@@ -81,24 +94,9 @@ public abstract class BashTask extends CountDownTask<Void> {
     ConsoleComponent consoleComponent = gui.getConsoleComponent();
     ConsoleTextArea console = consoleComponent.getConsole();
 
-    List<String> command = new ArrayList<>();
-    command.add("bash");
-    File workingDir = null;
-    String title;
-    if (file != null && file.isFile()) {
-      command.add(file.getAbsolutePath());
-      command.addAll(args);
-      workingDir = file.getParentFile();
-      title = file.getName();
-    } else {
-      command.add("-c");
-      command.add(content);
-      // When running via -c, the first extra arg becomes $0, so add a placeholder
-      // so that the user-supplied arguments map to $1, $2, etc.
-      command.add("_");
-      command.addAll(args);
-      title = "bash";
-    }
+    List<String> command = buildCommand(content, file, args);
+    File workingDir = file == null ? null : file.getParentFile();
+    String title = file == null ? "bash" : file.getName();
 
     ProcessBuilder pb = new ProcessBuilder(command);
     if (workingDir != null) {
@@ -109,9 +107,12 @@ public abstract class BashTask extends CountDownTask<Void> {
     final String runTitle = title;
     Platform.runLater(() -> console.append(runTitle, true));
 
-    Process process;
     try {
       process = pb.start();
+      if (stopRequested || Thread.currentThread().isInterrupted()) {
+        destroyProcess();
+        throw new InterruptedException("Bash execution interrupted");
+      }
     } catch (IOException e) {
       Platform.runLater(() -> console.appendWarningFx("Failed to start bash: " + e.getMessage()));
       throw e;
@@ -140,11 +141,40 @@ public abstract class BashTask extends CountDownTask<Void> {
         throw new RuntimeException("Bash script exited with code " + exitCode);
       }
     } catch (InterruptedException e) {
-      process.destroy();
+      destroyProcess();
       Thread.currentThread().interrupt();
       throw new RuntimeException("Bash execution interrupted", e);
+    } catch (IOException e) {
+      if (stopRequested || Thread.currentThread().isInterrupted()) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("Bash execution interrupted", e);
+      }
+      throw e;
+    } finally {
+      destroyProcess();
+      process = null;
     }
     return null;
+  }
+
+  static List<String> buildCommand(String content, File file, List<String> args) {
+    List<String> command = new ArrayList<>();
+    command.add("bash");
+    command.add("-c");
+    command.add(content);
+    // bash -c assigns the first argument after the script to $0.
+    command.add(file == null ? "_" : file.getAbsolutePath());
+    command.addAll(args == null ? List.of() : args);
+    return command;
+  }
+
+  private void destroyProcess() {
+    Process current = process;
+    if (current == null || !current.isAlive()) {
+      return;
+    }
+    current.toHandle().descendants().forEach(ProcessHandle::destroyForcibly);
+    current.destroyForcibly();
   }
 
   private void drainStream(BufferedReader reader, WarningAppenderWriter writer) {
