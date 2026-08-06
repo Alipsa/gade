@@ -455,7 +455,14 @@ public class ConsoleComponent extends BorderPane {
 
   private void showTooltip(Control control) {
     Tooltip customTooltip = control.getTooltip();
+    if (customTooltip == null || control.getScene() == null
+        || control.getScene().getWindow() == null) {
+      return;
+    }
     Stage owner = gui.getStage();
+    if (owner == null) {
+      return;
+    }
     Point2D p = control.localToScene(10.0, 20.0);
 
     customTooltip.setAutoHide(true);

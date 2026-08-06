@@ -66,14 +66,11 @@ public class BashTextArea extends CodeTextArea {
     super(parent);
     addEventHandler(KeyEvent.KEY_PRESSED, e -> {
       if (e.isControlDown() && KeyCode.ENTER.equals(e.getCode())) {
-        // Unlike the Groovy and Javascript tabs there is no session to carry state between
-        // runs, so running a single line in isolation would rarely do what the user means.
-        // Run the selection if there is one, the whole script otherwise.
         String selected = selectedTextProperty().getValue();
         if (selected != null && !selected.isEmpty()) {
           parent.runBash(selected);
         } else {
-          parent.runBash();
+          parent.runBash(getText(getCurrentParagraph()));
         }
         e.consume();
       }
