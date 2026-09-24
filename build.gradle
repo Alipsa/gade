@@ -9,7 +9,7 @@ plugins {
   id('org.beryx.runtime').version('2.0.1')
   //id "com.github.spotbugs" version "5.0.9"
   // Allows us to do gradle dependencyUpdates -Drevision=release
-  id("io.github.ben-manes.versions").version("0.58.0")
+  id("io.github.ben-manes.versions").version("0.64.0")
   id('signing')
   id('maven-publish')
   //id("org.openjfx.javafxplugin") version "0.1.0"
@@ -26,19 +26,19 @@ ext.nexusUrl = version.contains("SNAPSHOT")
 ext.jarName = "${rootProject.name}-${version}.jar"
 ext.releaseTag = version.endsWith('SNAPSHOT') ? "${version}-beta" : "${version}-GA"
 
-ext.groovyVersion = "5.0.8"
-ext.jacksonVersion = '2.22.1'
-def jgitVersion = '7.7.1.202607240634-r' //'7.6.0.202603022253-r'
+ext.groovyVersion = "5.1.3"
+ext.jacksonVersion = '2.22.3'
+def jgitVersion = '7.8.0.202609011348-r' // '7.7.1.202607240634-r'
 ext.log4jVersion = "2.26.1"
 ext.rhinoVersion = "1.9.1"
 ext.tikaVersion = '3.3.2'
-ext.openHtmlToPdfVersion = '1.1.65'
+ext.openHtmlToPdfVersion = '1.1.86'
 
 //def jdkVersion = "25+37" // Does not work with hadoop and hence not with matrix parquet
 int javaLanguageVersion = 21
 def jdkVersion = "${javaLanguageVersion}.0.10+10"
 ext.embeddedGradleVersion = '9.5.0'
-ext.embeddedMavenVersion = '3.9.15'
+ext.embeddedMavenVersion = '3.9.16'
 
 application {
   mainClass = 'se.alipsa.gade.Gade'
@@ -126,7 +126,7 @@ dependencies {
   implementation "org.apache.tika:tika-parsers-standard-package:${tikaVersion}"
   implementation "org.apache.tika:tika-parser-text-module:${tikaVersion}"
   implementation 'org.apache.commons:commons-lang3:3.20.0'
-  implementation 'org.jsoup:jsoup:1.23.1'
+  implementation 'org.jsoup:jsoup:1.23.2'
   implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
   implementation 'org.fxmisc.richtext:richtextfx:0.11.7'
   implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
@@ -142,11 +142,11 @@ dependencies {
   implementation "org.mozilla:rhino-engine:${rhinoVersion}"
   implementation "org.gradle:gradle-tooling-api:${embeddedGradleVersion}"
   implementation 'org.jetbrains:annotations:26.1.0'
-  implementation 'io.github.classgraph:classgraph:4.8.186'
-  implementation 'com.github.spotbugs:spotbugs-annotations:4.10.3'
+  implementation 'io.github.classgraph:classgraph:4.8.196'
+  implementation 'com.github.spotbugs:spotbugs-annotations:4.10.4'
   implementation "se.alipsa.gi:gi-fx:0.4.1-SNAPSHOT"
-  implementation "org.commonmark:commonmark:0.29.0"
-  implementation "org.commonmark:commonmark-ext-gfm-tables:0.29.0"
+  implementation "org.commonmark:commonmark:0.30.0"
+  implementation "org.commonmark:commonmark-ext-gfm-tables:0.30.0"
   implementation 'se.alipsa:fx-yearmonth-picker:1.1.0'
   implementation 'se.alipsa.groovy:data-utils:2.0.6'
   implementation('se.alipsa.gmd:gmd-core:3.1.0') {
@@ -160,7 +160,7 @@ dependencies {
   implementation "io.github.openhtmltopdf:openhtmltopdf-svg-support:${openHtmlToPdfVersion}"
 
   implementation 'se.alipsa:simple-rest:1.1.1'
-  implementation(platform("se.alipsa.matrix:matrix-bom:2.5.1"))
+  implementation(platform("se.alipsa.matrix:matrix-bom:2.6.0"))
   implementation("se.alipsa.matrix:matrix-core")
   implementation("se.alipsa.matrix:matrix-stats")
   implementation("se.alipsa.matrix:matrix-charts")
@@ -178,19 +178,19 @@ dependencies {
     exclude group: 'se.alipsa', module: 'maven-utils'
   }
   //implementation 'com.github.hervegirod:fxsvgimage:1.4'
-  implementation 'com.github.jsqlparser:jsqlparser:5.3'
+  implementation 'com.github.jsqlparser:jsqlparser:5.4'
   implementation('com.manticore-projects.jsqlformatter:jsqlformatter:5.4.1') {
     exclude group: 'com.github.jsqlparser', module: 'jsqlparser'
   }
 
-  testImplementation platform('org.junit:junit-bom:6.1.2')
-  testImplementation 'com.h2database:h2:2.4.240'
+  testImplementation platform('org.junit:junit-bom:6.1.3')
+  testImplementation 'com.h2database:h2:2.5.250'
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
   testImplementation "org.eclipse.jgit:org.eclipse.jgit.http.server:${jgitVersion}"
   testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
-  testImplementation 'org.eclipse.jetty:jetty-server:12.1.11'
-  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.11'
+  testImplementation 'org.eclipse.jetty:jetty-server:12.1.13'
+  testImplementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.13'
   testImplementation 'org.testfx:testfx-core:4.0.18'
   testImplementation 'org.testfx:testfx-junit5:4.0.18'
   testImplementation 'org.testfx:openjfx-monocle:21.0.2'
@@ -214,7 +214,7 @@ dependencies {
     transitive = false
   }
   testImplementation 'se.alipsa.gi:gi-console:0.4.0'
-  testImplementation 'org.mockito:mockito-core:5.23.0'
+  testImplementation 'org.mockito:mockito-core:5.24.0'
 }
 
 // Gradle Tooling API 9.5.0 requires this exact SLF4J version.
