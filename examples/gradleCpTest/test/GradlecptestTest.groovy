@@ -1,5 +1,4 @@
 import org.junit.jupiter.api.*
-import se.alipsa.groovy.matrix.*
 import org.codehaus.groovy.runtime.InvokerHelper
 
 class GradlecptestTest {

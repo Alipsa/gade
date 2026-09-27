@@ -1,8 +1,6 @@
 import se.alipsa.matrix.datasets.Dataset
+import se.alipsa.matrix.xchart.ScatterChart
 
 data = Dataset.airquality()
-scatterChart = ScatterChart.create("Temperature and Ozone", data, "Temp", "Ozone")
-io.display(scatterChart, 'jfx plot')
-
-io.display(SwingPlot.swing(scatterChart), "Swingchart")
-
+chart = ScatterChart.builder(data).title('Temperature and Ozone').x('Temp').y('Ozone').build()
+io.display(chart.exportSwing(), 'Temperature and Ozone')

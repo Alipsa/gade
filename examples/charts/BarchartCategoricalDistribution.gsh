@@ -1,10 +1,9 @@
 // Show a diagram of a categorical variable
-import se.alipsa.groovy.datasets.*
-import se.alipsa.groovy.matrix.*
-import se.alipsa.groovy.charts.*
+import se.alipsa.matrix.core.Stat
+import se.alipsa.matrix.pict.*
 
 // Fair, Good, Very Good, Premium, Ideal
-column = Dataset.diamonds()["cut"]
+column = ['Fair', 'Good', 'Very Good', 'Premium', 'Ideal', 'Ideal', 'Premium']
 freq = Stat.frequency(column)
 chart = BarChart.createVertical('Diamonds cut distribution', freq, 'Value', 'Frequency')
 

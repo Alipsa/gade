@@ -18,6 +18,7 @@
 .DS_Store
 /examples/xcharts/build/
 /examples/gradleCpTest/.gradle/
+/examples/gradleCpTest/build/
 /examples/HousePrices/.gradle/
 /.gradle-user/.tmp/gradle-worker-classpath2653560404117127488txt
 /.gradle-user/.tmp/gradle-worker-classpath5423809954702821974txt

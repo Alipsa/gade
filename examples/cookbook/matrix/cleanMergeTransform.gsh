@@ -1,7 +1,6 @@
-import se.alipsa.groovy.matrix.*
-import static se.alipsa.groovy.matrix.Stat.*
-import static se.alipsa.groovy.matrix.Matrix.*
-import se.alipsa.groovy.charts.*
+import se.alipsa.matrix.core.*
+import static se.alipsa.matrix.core.Stat.*
+import static se.alipsa.matrix.core.Matrix.*
 
 data = Matrix.builder().data(new File(io.scriptDir(), "../../data/airquality.csv"))
     .build()
@@ -16,7 +15,7 @@ data = Matrix.builder().data(new File(io.scriptDir(), "../../data/airquality.csv
   ]
 )
 
-sortedData = data.sortBy(["Month": ASC, "Day": ASC, "Temp": DESC, "Ozone": DESC])
+sortedData = data.orderBy(["Month": ASC, "Day": ASC, "Temp": DESC, "Ozone": DESC])
 //sortedData.content()
 
 def windChill(temp, wind) {
@@ -41,7 +40,7 @@ def comparator = { a,b ->
   windChill(a[tempIdx], a[windIdx]) <=> windChill(b[tempIdx], b[windIdx])
 } as Comparator 
 
-comparedData = data.sortBy(comparator)
+comparedData = data.orderBy(comparator)
 //io.view(comparedData, "matrix")
 
 // Remove rows with missing Solar.R values
@@ -54,10 +53,10 @@ def solarIdx = data.columnIndex('Solar.R')
 filtered = data.subset { row ->
   !(row[windIdx] > 20) || !(row[solarIdx] < 20)
 }
-//io.view(filtered.sortBy(['Month': ASC, 'Day': ASC]))
+//io.view(filtered.orderBy(['Month': ASC, 'Day': ASC]))
 
 filtered2 = data.subset{
   (it[windIdx] < 20) && (it[solarIdx] > 20)
 }
 
-io.view(filtered2.sortBy(['Month': ASC, 'Day': ASC]))
+io.view(filtered2.orderBy(['Month': ASC, 'Day': ASC]))

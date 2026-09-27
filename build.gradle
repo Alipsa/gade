@@ -818,6 +818,53 @@ tasks.named('assemble').configure { dependsOn runnerBootJar, runnerEngineJar }
 tasks.named('run').configure { dependsOn runnerBootJar, runnerEngineJar }
 tasks.named('runtime').configure { dependsOn runnerBootJar, runnerEngineJar }
 tasks.named('test').configure { dependsOn runnerBootJar, runnerEngineJar }
+
+// Compile the scripts that use Gade's bundled Matrix API without running their UI code.
+// Standalone Gradle projects under examples/ compile against their own build files.
+def bundledMatrixExamples = files(
+    'examples/charts/Barchart.groovy',
+    'examples/charts/areaChart.groovy',
+    'examples/charts/piechart.groovy',
+    'examples/charts/Histogram.gsh',
+    'examples/charts/BarchartCategoricalDistribution.gsh',
+    'examples/cookbook/matrix/explore.gsh',
+    'examples/cookbook/matrix/cleanMergeTransform.gsh'
+)
+def examplesOutputDir = layout.buildDirectory.dir('classes/examples').get().asFile
+
+tasks.register('compileExamples', JavaExec) {
+  group = 'verification'
+  description = 'Compile examples that use the Matrix libraries bundled with Gade.'
+  dependsOn classes
+  inputs.files(bundledMatrixExamples)
+  outputs.dir(examplesOutputDir)
+  classpath = sourceSets.main.runtimeClasspath + configurations.compileClasspath
+  mainClass = 'org.codehaus.groovy.tools.FileSystemCompiler'
+  args '-d', examplesOutputDir.absolutePath
+  args bundledMatrixExamples.files.collect { it.absolutePath }
+  doFirst { examplesOutputDir.mkdirs() }
+}
+
+tasks.register('compileXchartExamples', GradleBuild) {
+  group = 'verification'
+  description = 'Compile the standalone XChart example project.'
+  dir = file('examples/xcharts')
+  tasks = ['compileGroovy']
+}
+
+['project', 'library', 'gradleCpTest'].each { exampleProject ->
+  tasks.register("compile${exampleProject.capitalize()}Examples", GradleBuild) {
+    group = 'verification'
+    description = "Compile the standalone ${exampleProject} example project."
+    dir = file("examples/${exampleProject}")
+    tasks = ['compileGroovy']
+  }
+}
+
+tasks.named('compileExamples').configure {
+  dependsOn compileXchartExamples, compileProjectExamples, compileLibraryExamples, compileGradleCpTestExamples
+}
+tasks.named('test').configure { dependsOn compileExamples }
 tasks.matching { it.name in ['jre', 'runtime', 'runtimeZip', 'jpackage'] }.configureEach {
   notCompatibleWithConfigurationCache('Beryx runtime tasks currently access Project at execution time')
 }

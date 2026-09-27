@@ -1,9 +1,7 @@
-import se.alipsa.groovy.datasets.*
-import se.alipsa.groovy.charts.*
+import se.alipsa.matrix.datasets.Dataset
+import se.alipsa.matrix.core.Stat
+import se.alipsa.matrix.xchart.BarChart
 
-chart = Histogram.create("Mtcars.mpg", Dataset.mtcars(), "mpg", 5)
-io.display(chart, "jfx Histogram")
-
-
-swingChart = SwingPlot.swing(chart)
-io.display(swingChart, "Matrix chart to XChart")
+frequency = Stat.frequency(Dataset.mtcars(), 'mpg')
+chart = BarChart.builder(frequency).title('Mtcars mpg').x('Value').y('Frequency').build()
+io.display(chart.exportSwing(), 'Mtcars mpg distribution')
