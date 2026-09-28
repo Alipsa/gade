@@ -2,6 +2,7 @@ package se.alipsa.gade.runtime;
 
 import javafx.application.Platform;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import se.alipsa.gade.console.ConsoleTextArea;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.verify;
  * Integration test suite for RuntimeProcessRunner GUI interaction handling.
  * Tests focus on argument serialization/deserialization and method resolution.
  */
+@Tag("gui")
 class RuntimeProcessRunnerGuiIntegrationTest {
 
   @BeforeAll

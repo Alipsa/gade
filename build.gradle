@@ -466,9 +466,9 @@ tasks.register('guiTest', Test) {
   maxParallelForks = 1
   shouldRunAfter test
 
-  onlyIf {
+  onlyIf { Task task ->
     if (shouldSkipTestFx) {
-      logger.lifecycle('Skipping guiTest because TestFX is disabled')
+      task.logger.lifecycle('Skipping guiTest because TestFX is disabled')
       return false
     }
     true

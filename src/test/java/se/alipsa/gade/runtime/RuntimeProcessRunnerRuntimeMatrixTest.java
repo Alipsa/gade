@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import groovy.lang.GroovyShell;
 import javafx.embed.swing.JFXPanel;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import se.alipsa.gade.console.ConsoleTextArea;
@@ -45,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
+@Tag("gui")
 class RuntimeProcessRunnerRuntimeMatrixTest {
 
   private static final String TABLESAW_GRAB_SCRIPT = """

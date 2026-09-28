@@ -7,6 +7,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gi.ShellResult;
 import se.alipsa.matrix.core.Matrix;
@@ -21,6 +22,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("gui")
 class ArgumentSerializerTest {
 
   @BeforeAll

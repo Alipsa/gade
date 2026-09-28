@@ -8,6 +8,7 @@ import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import javafx.scene.chart.*;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.utils.DeepCopier;
 import se.alipsa.matrix.pict.ChartDirection;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag("gui")
 public class DeepCopyTest {
 
   @BeforeAll

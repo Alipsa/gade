@@ -16,6 +16,7 @@ import javafx.scene.web.WebView;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
@@ -23,6 +24,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.console.ConsoleComponent;
 import se.alipsa.gmd.core.GmdException;
 
+@Tag("gui")
 class GmdUtilPdfTest {
 
   private static Field instanceField;

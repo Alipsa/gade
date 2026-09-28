@@ -25,6 +25,7 @@ import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import se.alipsa.gade.Gade;
@@ -40,6 +41,7 @@ import se.alipsa.gade.runtime.RuntimeType;
  * Verifies that GroovyTab.runGroovy executes Groovy code using a custom runtime
  * derived from JAVA_HOME and GROOVY_HOME.
  */
+@Tag("gui")
 class GroovyTabRunGroovyTest {
 
   private static final Logger log = LogManager.getLogger(GroovyTabRunGroovyTest.class);
