@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -21,6 +22,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import se.alipsa.gade.console.ConsoleTextArea;
+import se.alipsa.gade.interaction.InOut;
+import se.alipsa.gi.GuiInteraction;
 
 /**
  * Test suite for RuntimeProcessRunner protocol handling covering:
@@ -33,6 +36,24 @@ import se.alipsa.gade.console.ConsoleTextArea;
 class RuntimeProcessRunnerProtocolTest {
 
   // ========== Handle Message Edge Cases ==========
+
+  @Test
+  void displayUsesTheSpecificFilePathAndStringOverloads() throws Exception {
+    RuntimeProcessRunner runner = createRunner(mock(ConsoleTextArea.class));
+    InOut io = mock(InOut.class);
+    Method invokeMethod = RuntimeProcessRunner.class.getDeclaredMethod(
+        "invokeMethod", GuiInteraction.class, String.class, Object[].class);
+    invokeMethod.setAccessible(true);
+
+    File file = new File("chart.png");
+    invokeMethod.invoke(runner, new Object[]{io, "display", new Object[]{file, "chart"}});
+    invokeMethod.invoke(runner, new Object[]{io, "display", new Object[]{file.toPath(), "chart path"}});
+    invokeMethod.invoke(runner, new Object[]{io, "display", new Object[]{file.getAbsolutePath(), "chart path"}});
+
+    verify(io).display(file, "chart");
+    verify(io).display(file.toPath(), "chart path");
+    verify(io).display(file.getAbsolutePath(), "chart path");
+  }
 
   @Test
   void testHandleMessageWithNullType() throws Exception {

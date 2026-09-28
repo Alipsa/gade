@@ -44,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -434,6 +435,10 @@ public class InOut extends se.alipsa.gi.fx.InOut {
     } else {
       display(file.getAbsolutePath(), title);
     }
+  }
+
+  public void display(Path path, String... title) {
+    display(path == null ? (File) null : path.toFile(), title);
   }
 
   public void display(String fileName, String... title) {

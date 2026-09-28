@@ -822,7 +822,9 @@ tasks.named('test').configure { dependsOn runnerBootJar, runnerEngineJar }
 // Compile the scripts that use Gade's bundled Matrix API without running their UI code.
 // Standalone Gradle projects under examples/ compile against their own build files.
 def bundledMatrixExamples = files(
+    'examples/charm/SimpleExample.groovy',
     'examples/charts/Barchart.groovy',
+    'examples/charts/JfxBubbleChart.groovy',
     'examples/charts/areaChart.groovy',
     'examples/charts/piechart.groovy',
     'examples/charts/Histogram.gsh',

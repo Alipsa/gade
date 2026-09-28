@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,6 +59,13 @@ public class ArgumentSerializer {
     // File - serialize as path (always available)
     if (arg instanceof File) {
       return serializeFile((File) arg);
+    }
+
+    if (arg instanceof Path path) {
+      Map<String, Object> map = new HashMap<>();
+      map.put("_type", "java.nio.file.Path");
+      map.put("path", path.toAbsolutePath().toString());
+      return map;
     }
 
     // Collections and Maps pass through (protocol layer will handle)
@@ -172,6 +180,8 @@ public class ArgumentSerializer {
             break;
           case "java.io.File":
             return deserializeFile(map);
+          case "java.nio.file.Path":
+            return Path.of((String) map.get("path"));
           default:
             System.err.println("ArgumentSerializer: Unknown type for deserialization: " + type);
         }

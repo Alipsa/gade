@@ -671,10 +671,12 @@ public class RuntimeProcessRunner implements Closeable {
 
       Class<?> argType = args[i].getClass();
 
-      if (paramType.isAssignableFrom(argType)) {
-        score += 10; // Exact or subtype match
+      if (paramType.equals(argType)) {
+        score += 30; // Prefer the exact overload
+      } else if (paramType.isAssignableFrom(argType)) {
+        score += paramType.equals(Object.class) ? 1 : 20;
       } else if (isCompatiblePrimitive(paramType, argType)) {
-        score += 5; // Primitive/wrapper match
+        score += 15; // Primitive/wrapper match
       } else {
         return -1; // Incompatible type
       }

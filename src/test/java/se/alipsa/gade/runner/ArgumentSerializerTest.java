@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import se.alipsa.groovy.datautil.ConnectionInfo;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -350,6 +351,14 @@ class ArgumentSerializerTest {
 
     File resultFile = (File) deserialized;
     assertEquals(file.getAbsolutePath(), resultFile.getAbsolutePath(), "File paths should match");
+  }
+
+  @Test
+  void serializePathRoundTrip() {
+    Path path = Path.of("chart.png").toAbsolutePath();
+    Object serialized = ArgumentSerializer.serialize(path);
+
+    assertEquals(path, ArgumentSerializer.deserialize(serialized));
   }
 
   @Test

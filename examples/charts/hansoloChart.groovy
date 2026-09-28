@@ -1,5 +1,4 @@
 @Grab('eu.hansolo.fx:charts:17.1.27')
-//io.addDependency('eu.hansolo.fx:charts:17.1.27')
 import eu.hansolo.fx.charts.*
 import eu.hansolo.fx.charts.data.ChartItem;
 import eu.hansolo.fx.charts.data.Connection;
@@ -8,14 +7,17 @@ import eu.hansolo.fx.charts.event.ChartEvt;
 import eu.hansolo.toolbox.evt.Evt;
 import eu.hansolo.toolbox.evt.EvtObserver;
 import eu.hansolo.toolbox.evt.EvtType;
-import javafx.application.Application;
-import javafx.geometry.Insets;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.stage.Stage;
 
+import javax.imageio.ImageIO;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 
 // Setup Data
@@ -99,32 +101,54 @@ items.forEach(item -> {
     });
 });
 
-// Setup Chart
-arcChart = ArcChartBuilder.create()
-                          .prefSize(600, 600)
-                          .items(items)
-                          .connectionOpacity(0.75)
-                          .decimals(0)
-                          .coloredConnections(false)
-                          .sortByCluster(true)
-                          .useFullCircle(true)
-                          .weightDots(true)
-                          .weightConnections(true)
-                          .build();
-
-EvtObserver<ChartEvt> connectionObserver = e -> {
-    EvtType<? extends Evt> type = e.getEvtType();
-    if (type.equals(ChartEvt.CONNECTION_SELECTED_TO) || type.equals(ChartEvt.CONNECTION_SELECTED_FROM) || type.equals(ChartEvt.CONNECTION_SELECTED)) {
-        if (e.getSource() instanceof Connection) {
-            Connection connection = (Connection) e.getSource();
-            System.out.println("From: " + connection.getOutgoingItem().getName() + " -> to: " + connection.getIncomingItem().getName() + " -> Value: " + connection.getValue());
-        }
-    }
-};
-arcChart.getConnections().forEach(connection -> connection.addChartEvtObserver(ChartEvt.ANY, connectionObserver));
-io.display(arcChart, "hansolo chart")
+try {
+    Platform.startup({});
+} catch (IllegalStateException ignored) {
+    // The toolkit is already running when the script is executed again.
+}
 
 file = io.projectFile("arcChart.png")
+def render = new FutureTask({ ->
+    def arcChart = ArcChartBuilder.create()
+                              .prefSize(600, 600)
+                              .items(items)
+                              .connectionOpacity(0.75)
+                              .decimals(0)
+                              .coloredConnections(false)
+                              .sortByCluster(true)
+                              .useFullCircle(true)
+                              .weightDots(true)
+                              .weightConnections(true)
+                              .build();
 
-io.save(arcChart, file, 800, 600, true)
-io.display(file, "saved hansolo chart")
+    EvtObserver<ChartEvt> connectionObserver = e -> {
+        EvtType<? extends Evt> type = e.getEvtType();
+        if (type.equals(ChartEvt.CONNECTION_SELECTED_TO) || type.equals(ChartEvt.CONNECTION_SELECTED_FROM) || type.equals(ChartEvt.CONNECTION_SELECTED)) {
+            if (e.getSource() instanceof Connection) {
+                Connection connection = (Connection) e.getSource();
+                System.out.println("From: " + connection.getOutgoingItem().getName() + " -> to: " + connection.getIncomingItem().getName() + " -> Value: " + connection.getValue());
+            }
+        }
+    };
+    arcChart.getConnections().forEach(connection -> connection.addChartEvtObserver(ChartEvt.ANY, connectionObserver));
+
+    def root = new StackPane(arcChart)
+    new Scene(root, 800, 800)
+    root.applyCss()
+    root.layout()
+    ImageIO.write(SwingFXUtils.fromFXImage(root.snapshot(null, null), null), 'png', file)
+    return null
+} as Callable)
+Platform.runLater(render)
+try {
+    render.get()
+} catch (ExecutionException e) {
+    if (e.cause instanceof NoClassDefFoundError &&
+            e.cause.message?.contains('javafx.scene.control.Tooltip')) {
+        throw new IllegalStateException(
+            'JavaFX controls failed to initialize in this Groovy session. ' +
+                'Choose Session > Restart Groovy, then run the script again.', e.cause)
+    }
+    throw e
+}
+io.display(file, "hansolo chart")

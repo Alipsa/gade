@@ -1,3 +1,6 @@
+@Grab('se.alipsa.matrix:matrix-core:3.9.0')
+@Grab('se.alipsa.matrix:matrix-pict:0.6.0')
+import se.alipsa.groovy.svg.io.SvgWriter
 import java.time.LocalDate
 import se.alipsa.matrix.core.Matrix
 import se.alipsa.matrix.pict.*
@@ -12,30 +15,15 @@ empData = Matrix.builder().data(
   ).types(int, String, Number, LocalDate)
   .build()
 
-chart = BarChart.createVertical("Salaries", empData, "emp_name", ChartType.BASIC, "salary")
-chart.legend.visible = true
-chart.legend.position = se.alipsa.matrix.pict.Style.Position.LEFT
-io.display(chart, "charts barchart")
-
-swingChart = Plot.swing(chart)
-//c = swingChart.getChart()
-//c.getStyler().setLegendPosition(org.knowm.xchart.style.Styler.LegendPosition.OutsideN)
-io.display(swingChart)
-
-
+chart = BarChart.builder(empData)
+    .title('Salaries')
+    .x('emp_name')
+    .y('salary')
+    .vertical()
+    .legendVisible(true)
+    .legendPosition(Style.Position.LEFT)
+    .build()
+io.displaySvg(SvgWriter.toXml(Plot.svg(chart)), "charts barchart")
 file = io.projectFile("barchart.png")
-
-jfxChart = Plot.jfx(chart)
-io.display(jfxChart, true, "jfx barchart")
-jfxFile = io.projectFile("jfxBarchart.png")
-io.save(jfxChart, jfxFile, 640, 480) 
-io.display(jfxFile)
-io.display(jfxChart, true, "jfx barchart2")
-
-io.save(chart, file, 800, 600)
+Plot.png(chart, file, 800, 600)
 io.display(file)
-file2 = io.projectFile("barchart2.png")
-io.save(chart, file2)
-io.display(file2)
-
-""

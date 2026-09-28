@@ -1,14 +1,11 @@
 @Grab('org.jfree:jfreechart:1.5.3')
-@Grab(group='org.jfree', module='jfreechart-fx', version='1.0.1')
-//io.addDependency('org.jfree:jfreechart:1.5.3')
-//io.addDependency('org.jfree:jfreechart-fx:1.0.1')
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
 import java.awt.RadialGradientPaint
 import java.awt.geom.Point2D
 import org.jfree.chart.ChartFactory
-import org.jfree.chart.fx.ChartViewer;
+import org.jfree.chart.ChartUtils
 import org.jfree.chart.title.TextTitle;
 import org.jfree.chart.ui.HorizontalAlignment;
 import org.jfree.chart.ui.RectangleEdge;
@@ -65,9 +62,7 @@ source.setPaint(Color.WHITE)
 source.setPosition(RectangleEdge.BOTTOM)
 source.setHorizontalAlignment(HorizontalAlignment.RIGHT)
 chart.addSubtitle(source)
-viewer = new ChartViewer(chart)
-io.display(viewer, "Smart Phones")
 
 file = io.projectFile("SmartPhones.png")
-io.save(viewer, file, 1024, 768, false)
-io.display(file)
+ChartUtils.saveChartAsPNG(file, chart, 1024, 768)
+io.display(file, "Smart Phones")

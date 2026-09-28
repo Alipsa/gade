@@ -1,3 +1,6 @@
+@Grab('se.alipsa.matrix:matrix-core:3.9.0')
+@Grab('se.alipsa.matrix:matrix-pict:0.6.0')
+import se.alipsa.groovy.svg.io.SvgWriter
 import java.time.LocalDate
 import se.alipsa.matrix.core.*
 import se.alipsa.matrix.pict.*
@@ -13,17 +16,8 @@ empData = Matrix.builder().data(
   ).types(int, String, Number, LocalDate).build()
 
 chart = AreaChart.create("Salaries", empData, "emp_name", "salary")
-io.display(chart, "charts areachart")
-
-jfxChart = Plot.jfx(chart)
-io.display(jfxChart, "jfx areachart")
-
-io.display(jfxChart, true, "jfxcopy areachart")
+io.displaySvg(SvgWriter.toXml(Plot.svg(chart)), "charts areachart")
 
 file = io.projectFile("charts areachart.png")
-io.save(chart, file, 800, 600)
+Plot.png(chart, file, 800, 600)
 io.display(file)
-
-file2 = io.projectFile("areachart2.png")
-io.save(chart, file2)
-io.display(file2, "io.save")

@@ -1,27 +1,27 @@
-import javafx.application.Platform
-import javafx.embed.swing.JFXPanel
-import javafx.scene.Node
-import javafx.scene.control.Alert
-import javafx.scene.paint.Color
-import javafx.stage.Modality
-import se.alipsa.groovy.charm.*
-import javafx.scene.shape.Rectangle
+@Grab('se.alipsa.matrix:matrix-core:3.9.0')
+@Grab('se.alipsa.matrix:matrix-charts:0.6.0')
+import se.alipsa.groovy.svg.io.SvgWriter
+import se.alipsa.matrix.charm.Scale
 
+import static se.alipsa.matrix.charm.Charts.plot
 
-CharmChartFx chart = new CharmChartFx()
-chart.addTitle("Hello world top", Position.TOP_RIGHT)
-chart.addTitle("Hello world left", Position.LEFT_CENTER)
-chart.addLegend(['Orange': Color.ORANGE, 'Blue': Color.BLUE], Position.BOTTOM_CENTER)
-        .setBackground(Color.LIGHTBLUE)
-        .setBorder(Color.RED)
+def chart = plot(color: ['Orange', 'Blue'], value: [3, 5]) {
+  mapping {
+    x = 'color'
+    y = 'value'
+    fill = 'color'
+  }
+  layers {
+    geomCol()
+  }
+  scale {
+    fill = Scale.manual(Orange: '#FFA500', Blue: '#0000FF')
+  }
+  labels {
+    title = 'Hello world'
+    x = 'Color'
+    y = 'Value'
+  }
+}.build()
 
-
-PlotPane plotPane = new PlotPane(300, 200)
-Rectangle rect = new Rectangle(10, 10, 200, 200);
-rect.setFill(Color.BLUE);
-def gc = plotPane.getGraphicsContext2D()
-gc.setFill(rect.getFill())
-gc.fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight())
-
-chart.add(plotPane)
-io.display(chart, "Charm chart")
+io.displaySvg(SvgWriter.toXml(chart.render()), 'Charm chart')
