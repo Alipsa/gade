@@ -96,6 +96,10 @@ public class DynamicContextMenu extends ContextMenu {
       copyMI.setOnAction(e -> fileTree.copySelectionToClipboard());
       getItems().add(copyMI);
 
+      MenuItem copyPathMI = new MenuItem("copy path");
+      copyPathMI.setOnAction(e -> ClipboardUtils.copyText(currentFile.getAbsolutePath()));
+      getItems().add(copyPathMI);
+
       openMI = new MenuItem("open");
       openMI.setOnAction(e -> {
          TextAreaTab tab = gui.getCodeComponent().getTab(currentFile);

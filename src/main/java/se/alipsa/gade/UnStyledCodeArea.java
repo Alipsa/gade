@@ -3,6 +3,8 @@ package se.alipsa.gade;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.fxmisc.richtext.CodeArea;
+import se.alipsa.gade.utils.ClipboardUtils;
+import se.alipsa.gade.utils.SystemUtils;
 
 public class UnStyledCodeArea extends CodeArea {
 
@@ -23,7 +25,13 @@ public class UnStyledCodeArea extends CodeArea {
           forwardedCommandDown = true;
         } else if (forwardedCommandDown || event.isMetaDown()) {
           if (KeyCode.C.equals(event.getCode())) {
-            copy();
+            if (SystemUtils.getPlatform() == SystemUtils.OS.MAC) {
+              if (!getSelectedText().isEmpty()) {
+                ClipboardUtils.copyText(getSelectedText());
+              }
+            } else {
+              copy();
+            }
             suppressNextTypedEvent = true;
             event.consume();
           } else if (KeyCode.V.equals(event.getCode())) {

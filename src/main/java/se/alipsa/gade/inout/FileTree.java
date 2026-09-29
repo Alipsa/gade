@@ -20,8 +20,6 @@ import javafx.scene.control.TreeItem.TreeModificationEvent;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +31,7 @@ import se.alipsa.gade.Gade;
 import se.alipsa.gade.code.CodeComponent;
 import se.alipsa.gade.code.TextAreaTab;
 import se.alipsa.gade.utils.Alerts;
+import se.alipsa.gade.utils.ClipboardUtils;
 import se.alipsa.gade.utils.ExceptionAlert;
 import se.alipsa.gade.utils.FileUtils;
 import se.alipsa.gade.utils.git.GitUtils;
@@ -382,10 +381,8 @@ public class FileTree extends TreeView<FileItem> {
 
   void copySelectionToClipboard() {
     TreeItem<FileItem> treeItem = getSelectionModel().getSelectedItem();
-    final ClipboardContent clipboardContent = new ClipboardContent();
     String value = treeItem.getValue().getFile().getName();
-    clipboardContent.putString(value);
-    Clipboard.getSystemClipboard().setContent(clipboardContent);
+    ClipboardUtils.copyText(value);
   }
 
   public Git getGit() {

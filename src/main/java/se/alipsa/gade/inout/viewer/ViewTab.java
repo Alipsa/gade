@@ -12,8 +12,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.scene.control.*;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -216,9 +214,7 @@ public class ViewTab extends Tab {
 
     strb.append(joiner);
 
-    ClipboardContent clipboardContent = new ClipboardContent();
-    clipboardContent.putString(strb.toString());
-    Clipboard.getSystemClipboard().setContent(clipboardContent);
+    ClipboardUtils.copyText(strb.toString());
   }
 
   @SuppressWarnings("rawtypes")
@@ -258,9 +254,7 @@ public class ViewTab extends Tab {
         }
       }
     }
-    final ClipboardContent clipboardContent = new ClipboardContent();
-    clipboardContent.putString(strb.toString());
-    Clipboard.getSystemClipboard().setContent(clipboardContent);
+    ClipboardUtils.copyText(strb.toString());
   }
 
   private void exportRowsToCsv(final TableView<?> table, List<String> headerList, String... title) {
@@ -301,9 +295,7 @@ public class ViewTab extends Tab {
       if (outFile == null ) {
         // v1.1 UX IMPROVEMENT: Add explicit "Copy to Clipboard" button instead of auto-copying on cancel.
         // Current behavior: Cancelling file save automatically copies CSV to clipboard as fallback.
-        final ClipboardContent clipboardContent = new ClipboardContent();
-        clipboardContent.putString(sw.toString());
-        Clipboard.getSystemClipboard().setContent(clipboardContent);
+        ClipboardUtils.copyText(sw.toString());
         Alerts.info("Export to CSV", "File export cancelled, CSV copied to clipboard!");
       } else {
         FileUtils.writeToFile(outFile, sw.toString());

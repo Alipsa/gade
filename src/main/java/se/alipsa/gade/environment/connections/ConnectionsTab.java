@@ -8,8 +8,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -663,10 +661,8 @@ public class ConnectionsTab extends Tab {
   }
 
   private void copySelectionToClipboard(final TreeItem<String> treeItem) {
-    final ClipboardContent clipboardContent = new ClipboardContent();
     String columnName = getSqlNodeValue(treeItem);
-    clipboardContent.putString(columnName);
-    Clipboard.getSystemClipboard().setContent(clipboardContent);
+    ClipboardUtils.copyText(columnName);
   }
 
   /**
